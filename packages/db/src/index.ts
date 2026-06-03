@@ -8,3 +8,5 @@ export const databaseRuntime = {
   package: "@queue/db",
   boundary: "server-only"
 } as const;
+
+export * from "./schema";
