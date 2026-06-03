@@ -19,8 +19,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Duo And Profile
 
-- [ ] **DUO-01**: Authenticated user without a duo can create a pairing code
-- [ ] **DUO-02**: Authenticated user can join a duo by entering a valid pairing code
+- [ ] **DUO-01**: Authenticated user without a duo can create a six-character pairing code
+- [ ] **DUO-02**: Authenticated user can join a duo by entering a valid six-character pairing code
 - [ ] **DUO-03**: A pairing code expires or can be revoked before it is used
 - [ ] **DUO-04**: A duo can never contain more than two members, including under concurrent pairing attempts
 - [ ] **DUO-05**: User can view the shared identity and pairing date of their duo
@@ -44,6 +44,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **BRND-10**: User with reduced-motion preference receives an equivalent low-motion experience
 - [ ] **BRND-11**: User sees appropriate single-line and stacked QUEUE/2 logo variants on dark and light backgrounds
 - [ ] **BRND-12**: User sees global grain, sharp 4px or pill radii, and scanlines only inside the roulette experience
+- [ ] **BRND-13**: User receives accessible QUEUE/2-styled toast feedback for important actions, with high-impact variants reserved for matches, achievements and level-ups
 
 ### Catalog And Library
 
@@ -234,6 +235,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRND-10 | Phase 7 | Pending |
 | BRND-11 | Phase 1 | Pending |
 | BRND-12 | Phase 7 | Pending |
+| BRND-13 | Phase 1 | Pending |
 | CAT-01 | Phase 2 | Pending |
 | CAT-02 | Phase 2 | Pending |
 | CAT-03 | Phase 2 | Pending |
@@ -340,8 +342,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | META-08 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 133 total
-- Mapped to phases: 133
+- v1 requirements: 134 total
+- Mapped to phases: 134
 - Unmapped: 0
 
 ---

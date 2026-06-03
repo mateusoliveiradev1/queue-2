@@ -49,51 +49,36 @@
 ## Recommended Project Structure
 
 ```text
-src/
-|-- app/
-|   |-- (public)/                 # landing, login, cadastro e parear
-|   |-- app/                      # area autenticada
-|   |-- api/auth/[...all]/        # Better Auth handler
-|   |-- api/cron/                 # runners protegidos
-|   |-- layout.tsx                # metadata global e fontes
-|   `-- opengraph-image.tsx       # OG image
-|-- components/
-|   |-- brand/                    # wordmark, /2, grain e pointer
-|   |-- ui/                       # primitivos reestilizados
-|   `-- game/                     # capa, raridade e estados
-|-- features/
-|   |-- duo/
-|   |-- catalog/
-|   |-- discovery/
-|   |-- sessions/
-|   |-- gamification/
-|   |-- roulette/
-|   `-- hall/
-|-- server/
-|   |-- auth/
-|   |-- db/
-|   |-- domain/
-|   |-- jobs/
-|   `-- integrations/
+apps/
+`-- web/
+    |-- src/app/                  # landing, auth, parear e area autenticada
+    |-- src/features/             # dominios de produto e UI de jornada
+    |-- src/server/               # auth, dominio, jobs e integracoes
+    |-- src/lib/                  # helpers locais da aplicacao
+    `-- tests/                    # unit, integration e e2e da aplicacao
+packages/
 |-- db/
-|   |-- schema/
-|   |-- migrations/
-|   `-- seeds/
-|-- lib/
-|-- styles/
-`-- tests/
-    |-- unit/
-    |-- integration/
-    `-- e2e/
+|   |-- src/schema/               # schemas Drizzle de auth e dominio
+|   |-- migrations/               # SQL, RLS, funcoes e constraints
+|   `-- seeds/                    # catalogos de achievements e quests
+|-- ui/
+|   |-- src/brand/                # wordmark, /2, grain e pointer
+|   |-- src/primitives/           # primitivos reestilizados
+|   `-- src/feedback/             # toaster e feedback de acoes
+`-- config/                       # TypeScript, lint e configuracoes comuns
+pnpm-workspace.yaml
+turbo.json
 ```
 
 ### Structure Rationale
 
-- **`app/`:** Mantem convencoes Next.js para routing, metadata, OG e handlers.
-- **`features/`:** Agrupa UI e comportamento por dominio do produto, evitando uma pasta de componentes sem ownership.
-- **`server/domain/`:** Centraliza regras que nunca podem depender do cliente.
-- **`db/`:** Torna schema, migrations, policies e seeds revisaveis.
-- **`tests/`:** Separa regras puras, integracao Postgres/RLS e jornadas completas.
+- **`apps/web/`:** Mantem o produto como uma unica aplicacao Next.js e evita microfrontends desnecessarios.
+- **`apps/web/src/features/`:** Agrupa UI e comportamento por dominio do produto, evitando uma pasta de componentes sem ownership.
+- **`apps/web/src/server/`:** Centraliza regras que nunca podem depender do cliente.
+- **`packages/db/`:** Torna schema, migrations, policies e seeds reutilizaveis por app e tooling.
+- **`packages/ui/`:** Torna marca, primitivos e toaster consistentes sem adotar um tema generico.
+- **`packages/config/`:** Evita divergencia entre TypeScript, lint e tarefas dos workspaces.
+- **`pnpm` + Turborepo:** Mantem dependencias locais explicitas e tarefas orientadas pelo grafo.
 
 ## Architectural Patterns
 

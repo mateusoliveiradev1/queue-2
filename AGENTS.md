@@ -18,6 +18,7 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 - **Database**: Neon Postgres substitui Lovable Cloud - dados, migrations e isolamento devem ser projetados para PostgreSQL.
 - **Authentication**: Better Auth self-hosted substitui Neon Auth e Clerk - a equipe assume operacao e configuracao segura do sistema de auth.
 - **Framework**: Next.js App Router e Vercel formam a base de producao - o prototipo Lovable permanece apenas como referencia visual.
+- **Repository**: `pnpm` workspaces e Turborepo organizam a aplicacao web, banco, UI e configuracoes compartilhadas sem separar o produto em microfrontends.
 - **Security**: Dados de uma dupla nunca podem vazar para outra - autorizacao de servidor e RLS devem ser verificadas.
 - **Secrets**: `RAWG_API_KEY`, credenciais de email, secrets de auth e conexoes privilegiadas permanecem no servidor.
 - **External data**: RAWG exige atribuicao; tempo estimado e disponibilidade precisam expor fonte e frescor.
@@ -34,6 +35,8 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
 | Node.js | 24 LTS | Runtime local, build e funcoes de servidor | E a linha Active LTS atual e reduz risco operacional para um projeto novo. |
+| pnpm | 11.5.1 | Package manager e workspaces | Possui suporte nativo a monorepos e protocolo `workspace:` para dependencias locais explicitas. |
+| Turborepo | 2.9.16 | Orquestracao do monorepo | Coordena build, lint, typecheck e testes dos pacotes compartilhados com cache e grafo de dependencias. |
 | Next.js | 16.2.7 | Framework full-stack React | App Router oferece routing, Server Components, Route Handlers, metadata, OG image e PWA com suporte maduro na Vercel. |
 | React | 19.2.7 | Camada de interface | Versao compativel com Next.js 16 para UI responsiva e interativa. |
 | TypeScript | 5.9.3 | Tipagem estatica | Linha 5.x conservadora enquanto TypeScript 6 ainda exige validacao explicita de compatibilidade no ecossistema. |
@@ -58,6 +61,7 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 | `web-push` | 3.6.7 | Envio de push web | Use para lembretes de sessao e match live depois de opt-in explicito. |
 | Resend | 6.12.4 | Email transacional | Use para verificacao de email e recuperacao de senha. |
 | `@react-email/components` | 1.0.12 | Templates de email | Use para emails consistentes com a marca. |
+| Sonner | 2.0.7 | Base comportamental do toaster | Use com estilos QUEUE/2 customizados; nao exponha o visual padrao da biblioteca. |
 ### Development Tools
 | Tool | Purpose | Notes |
 |------|---------|-------|
@@ -79,6 +83,7 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 | Drizzle ORM | Prisma | Usar se a equipe priorizar o ecossistema Prisma e aceitar mais distancia de SQL/RLS. |
 | Server-mediated data access | Neon Data API | Reavaliar quando a Data API sair de Beta e houver um caso claro para acesso direto ou edge. |
 | Vercel Cron + job table | Scheduler externo | Usar se o plano Vercel nao permitir a frequencia de lembretes ou se forem necessarias garantias de retry gerenciadas. |
+| Turborepo enxuto | Repositorio Next.js unico | Um repositorio unico seria mais simples se nao houvesse desejo de monorepo ou pacotes compartilhados com fronteiras reais. |
 ## What NOT to Use
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
@@ -89,6 +94,7 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 | HLTB scraping | Nao ha API publica oficial identificada e o uso pode criar risco legal e operacional. | Campo neutro `tempo estimado` com fonte e override manual. |
 | WebSocket persistente desde o inicio | Aumenta operacao sem ser necessario para a maioria dos estados de dupla. | Revalidacao, polling curto e push onde faz sentido. |
 | Tema shadcn padrao | Produziria a aparencia SaaS generica que o projeto quer evitar. | Tokens e composicao QUEUE/2 sobre primitivos acessiveis. |
+| Microfrontends | Um unico produto e um unico time nao justificam deploys independentes e roteamento distribuido. | Um app `apps/web` com pacotes compartilhados. |
 ## Stack Patterns by Variant
 - Execute em funcao de dominio no servidor dentro de uma unica transacao.
 - Registre idempotency key e evento de dominio quando houver efeitos derivados.
@@ -96,6 +102,8 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 - Revalide o estado autoritativo do servidor; nao confie em estado local para premios ou confirmacoes.
 - Armazene timezone da dupla e dados do job no banco.
 - Use o cron apenas como runner que busca trabalhos vencidos e idempotentes.
+- Mantenha-o em `apps/web` ate existir uma fronteira compartilhada real.
+- Extraia apenas banco, UI e configuracoes comuns no scaffold inicial.
 ## Version Compatibility
 | Package A | Compatible With | Notes |
 |-----------|-----------------|-------|
@@ -106,6 +114,8 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 | TypeScript 5.9.3 | Stack acima | Escolha conservadora; validar antes de migrar para TypeScript 6. |
 ## Sources
 - https://nodejs.org/en/about/previous-releases - status das linhas LTS do Node.js.
+- https://pnpm.io/workspaces - suporte nativo a workspaces e protocolo `workspace:`.
+- https://turborepo.dev/docs/crafting-your-repository/structuring-a-repository - estrutura recomendada de repositorio.
 - https://nextjs.org/docs/app - App Router, metadata, Route Handlers, PWA e testes.
 - https://tanstack.com/start/latest/docs/framework/react/overview - TanStack Start ainda em Release Candidate.
 - https://better-auth.com/docs/integrations/next - integracao Better Auth com Next.js.

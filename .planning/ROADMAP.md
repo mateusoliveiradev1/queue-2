@@ -23,13 +23,13 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 ### Phase 1: Fundacao, Marca, Auth E Dupla
 **Goal**: Usuarios podem acessar uma experiencia QUEUE/2 segura, customizada e limitada a uma dupla fixa de exatamente dois membros.
 **Depends on**: Nothing (first phase)
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, DUO-01, DUO-02, DUO-03, DUO-04, DUO-05, DUO-06, DUO-07, DUO-08, DUO-09, DUO-10, BRND-01, BRND-02, BRND-03, BRND-04, BRND-05, BRND-06, BRND-11, SAFE-05, SAFE-07, SAFE-08, SAFE-09, META-02
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, DUO-01, DUO-02, DUO-03, DUO-04, DUO-05, DUO-06, DUO-07, DUO-08, DUO-09, DUO-10, BRND-01, BRND-02, BRND-03, BRND-04, BRND-05, BRND-06, BRND-11, BRND-13, SAFE-05, SAFE-07, SAFE-08, SAFE-09, META-02
 **Success Criteria** (what must be TRUE):
   1. Usuario pode criar conta, verificar email, entrar, permanecer autenticado, recuperar senha, gerenciar sessoes e sair pelas telas customizadas QUEUE/2.
   2. Dois usuarios podem formar uma dupla por codigo expiravel ou revogavel, mas uma terceira pessoa nunca consegue entrar, inclusive com tentativas concorrentes.
   3. Membros podem ver a identidade compartilhada, editar perfil, definir timezone e preferencias, sem criar progresso ou sessoes solo.
   4. Duas duplas distintas nao conseguem acessar dados uma da outra, e secrets de servidor nunca aparecem no navegador.
-  5. A experiencia base ja exibe wordmark, brand mark, tokens, tipografia, ponteiro recorrente, loading `/2` e variantes de logo coerentes.
+  5. A experiencia base ja exibe wordmark, brand mark, tokens, tipografia, ponteiro recorrente, loading `/2`, variantes de logo e toaster QUEUE/2 coerentes.
 **Plans**: TBD
 **UI hint**: yes
 

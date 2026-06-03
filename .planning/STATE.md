@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 1 of 7 (Fundacao, Marca, Auth E Dupla)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-06-03 - Project initialized with research, requirements and roadmap
+Last activity: 2026-06-03 - Added pnpm, Turborepo, modern Next.js 16 and branded toaster decisions
 
 Progress: [----------] 0%
 
@@ -43,6 +43,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
 - Next.js App Router and Vercel are the production base; the Lovable prototype is a visual reference.
+- The repository uses pnpm workspaces and a lean Turborepo with one Next.js app plus db, ui and config packages.
 - Neon Postgres replaces Lovable Cloud, with Better Auth self-hosted and server-mediated domain access.
 - The complete Plano Final v7 is v1 scope and will be delivered across seven phases.
 - External completion time is presented as sourced `tempo estimado`, not mandatory HLTB data.

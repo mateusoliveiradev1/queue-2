@@ -101,6 +101,9 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - Bordas sao sharp, radius e raro, e a composicao evita cards aninhados, tiles genericos e excesso de glow.
 - Glow so tem significado quando representa raridade, roleta, conquista ou estado live.
 - A landing usa scrollytelling curto: hero monumental, mini-roleta, ritual da dupla, dashboard, Hall da Moral e CTA.
+- A tela `/parear` segue a semente visual aprovada: wordmark central, alternancia clara entre criar dupla e entrar com codigo, explicacao curta e CTA lime dominante.
+- O codigo de pareamento possui seis caracteres amigaveis, expira, pode ser revogado e exige rate limiting para manter a entrada simples sem enfraquecer a seguranca.
+- Feedback de acoes usa um toaster proprio da marca, acessivel e visualmente refinado; variantes de alto impacto ficam reservadas para match, conquista e level-up.
 - A experiencia possui as mesmas capacidades em mobile e desktop, mas nao a mesma composicao.
 - Mobile-first orienta sessoes, confirmacoes e uso diario; desktop ganha mais densidade para descoberta, biblioteca e stats.
 - Motion deve ter proposito, com easing controlado e suporte a `prefers-reduced-motion`.
@@ -191,7 +194,9 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 ### Backend And Data Architecture
 
 - Lovable Cloud foi removido da arquitetura.
-- Next.js App Router e a base full-stack da aplicacao, com deploy e funcoes de servidor na Vercel.
+- Next.js 16 App Router e a base full-stack da aplicacao, usando recursos estaveis modernos como Server Components, Server Actions, Route Handlers e Turbopack, com deploy e funcoes de servidor na Vercel.
+- O repositorio usa `pnpm` workspaces e Turborepo em uma estrutura enxuta: `apps/web`, `packages/db`, `packages/ui` e `packages/config`.
+- A aplicacao permanece um unico produto Next.js; Turborepo organiza pacotes compartilhados e tarefas, nao microfrontends.
 - Neon Postgres e o banco principal.
 - Better Auth self-hosted e o sistema de autenticacao, executado no runtime da aplicacao e usando o mesmo Neon Postgres.
 - Drizzle ORM e a camada tipada de schema, queries e migrations, com SQL explicito para RLS, funcoes e constraints avancadas.
@@ -255,6 +260,7 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - **Database**: Neon Postgres substitui Lovable Cloud - dados, migrations e isolamento devem ser projetados para PostgreSQL.
 - **Authentication**: Better Auth self-hosted substitui Neon Auth e Clerk - a equipe assume operacao e configuracao segura do sistema de auth.
 - **Framework**: Next.js App Router e Vercel formam a base de producao - o prototipo Lovable permanece apenas como referencia visual.
+- **Repository**: `pnpm` workspaces e Turborepo organizam a aplicacao web, banco, UI e configuracoes compartilhadas sem separar o produto em microfrontends.
 - **Security**: Dados de uma dupla nunca podem vazar para outra - autorizacao de servidor e RLS devem ser verificadas.
 - **Secrets**: `RAWG_API_KEY`, credenciais de email, secrets de auth e conexoes privilegiadas permanecem no servidor.
 - **External data**: RAWG exige atribuicao; tempo estimado e disponibilidade precisam expor fonte e frescor.
@@ -280,6 +286,8 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 | Acesso de dominio mediado pelo servidor por padrao | Evita tornar Neon Data API Beta uma dependencia critica da v1 | - Pending |
 | RLS por dupla como defesa em profundidade | Isolamento de dados e requisito estrutural do produto | - Pending |
 | Next.js App Router e Vercel como base de producao | O repositorio e greenfield e TanStack Start ainda esta em Release Candidate; a base escolhida reduz risco operacional | - Pending |
+| Next.js 16 moderno, mas apenas em versoes estaveis | App Router, Server Components, Server Actions, Route Handlers e Turbopack entregam a base moderna sem depender de canary | - Pending |
+| `pnpm` workspaces e Turborepo enxuto | O usuario quer monorepo e os pacotes de banco, UI e configuracao possuem fronteiras uteis, sem justificar microfrontends | - Pending |
 | Drizzle ORM com SQL explicito para recursos avancados | Mantem queries tipadas sem esconder transacoes, RLS e constraints de Postgres | - Pending |
 | `tempo estimado` no lugar de HLTB obrigatorio | Nao foi identificada API publica oficial de HLTB; a UI deve representar apenas dados com fonte permitida | - Pending |
 | Dados de disponibilidade com fonte e frescor | Game Pass e ofertas mudam e nao devem parecer verdade em tempo real sem verificacao | - Pending |

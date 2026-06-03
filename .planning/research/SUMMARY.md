@@ -9,7 +9,7 @@
 
 QUEUE/2 e um produto full-stack centrado em uma unidade de uso incomum e estrutural: exatamente dois jogadores. A arquitetura precisa tratar a dupla como tenant, identidade de progresso e fonte de toda gamificacao. O maior risco nao esta em desenhar telas isoladas, mas em manter pareamento, confirmacoes, XP, pity, streaks, jobs e stats coerentes quando os dois usuarios agem em momentos diferentes ou repetem requests.
 
-A recomendacao e construir um monolito modular em Next.js App Router sobre Neon Postgres, com Better Auth self-hosted, Drizzle e acesso de dominio mediado pelo servidor. O prototipo Lovable permanece como referencia visual, mas TanStack Start ainda esta em Release Candidate; como o repositorio e greenfield, Next.js oferece uma base mais conservadora para deploy, metadata, PWA, Route Handlers e integracao Vercel.
+A recomendacao e construir um monolito modular em Next.js App Router sobre Neon Postgres, com Better Auth self-hosted, Drizzle e acesso de dominio mediado pelo servidor. O repositorio usa `pnpm` workspaces e um Turborepo enxuto para `apps/web`, banco, UI e configuracoes compartilhadas, sem separar o produto em microfrontends. O prototipo Lovable permanece como referencia visual, mas TanStack Start ainda esta em Release Candidate; como o repositorio e greenfield, Next.js oferece uma base mais conservadora para deploy, metadata, PWA, Route Handlers e integracao Vercel.
 
 O produto deve usar transacoes, ledger de XP, eventos/outbox e RLS como defesa em profundidade desde a fundacao. Dados externos precisam ser tratados com cuidado: RAWG exige atribuicao e nao redistribuicao, nao ha API publica oficial de HLTB identificada e Game Pass nao deve ser apresentado como dado em tempo real sem fonte. A interface deve reservar espetaculo para momentos especiais e manter as tarefas diarias calmas, acessiveis e rapidas.
 
@@ -17,10 +17,11 @@ O produto deve usar transacoes, ledger de XP, eventos/outbox e RLS como defesa e
 
 ### Recommended Stack
 
-Use Next.js 16.2.7, React 19.2.7, TypeScript 5.9.3, Tailwind CSS 4.3.0, Better Auth 1.6.14, Drizzle ORM 0.45.2 e Neon Postgres. Hospede na Vercel, alinhe a regiao das Functions ao Neon e use Vercel Cron apenas como runner de jobs persistidos.
+Use pnpm 11.5.1, Turborepo 2.9.16, Next.js 16.2.7, React 19.2.7, TypeScript 5.9.3, Tailwind CSS 4.3.0, Better Auth 1.6.14, Drizzle ORM 0.45.2 e Neon Postgres. Hospede na Vercel, alinhe a regiao das Functions ao Neon e use Vercel Cron apenas como runner de jobs persistidos.
 
 **Core technologies:**
 - **Next.js App Router:** framework full-stack estavel com routing, server boundary, metadata, OG e PWA.
+- **pnpm + Turborepo:** workspaces e tarefas com fronteiras uteis, cache e dependencias locais explicitas.
 - **Neon Postgres:** fonte de verdade para dados relacionais, transacoes, constraints e RLS.
 - **Better Auth self-hosted:** controle total da autenticacao e UX sem depender de Neon Auth Beta.
 - **Drizzle ORM:** schema e queries tipadas sem esconder SQL avancado.
