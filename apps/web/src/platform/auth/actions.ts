@@ -32,7 +32,7 @@ export const authStatusMessages = {
     reenviado: "Se houver uma conta pendente com esse email, um novo link sera enviado.",
     "email-corrigido": "Registramos uma nova verificacao para o email informado.",
     "email-invalido": "Informe um email valido para receber a verificacao.",
-    "correcao-incompleta": "Para corrigir sem sessao ativa, informe nome, email e senha novamente.",
+    "correcao-incompleta": "Confira o email cadastrado, o novo email e a senha antes de tentar de novo.",
     "link-invalido": "Link expirado ou ja usado. Solicite um novo envio abaixo."
   },
   recover: {

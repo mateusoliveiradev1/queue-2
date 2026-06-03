@@ -213,6 +213,14 @@ describe("auth pages wired to flow states", () => {
     expect(screen.getByText(/solicitar um novo envio agora/i)).toBeInTheDocument();
   });
 
+  it("requests the original email when verification context is missing", async () => {
+    render(await VerifyEmailPage());
+
+    expect(screen.getByLabelText(/email pendente/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email cadastrado/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/corrigir email/i)).toBeInTheDocument();
+  });
+
   it("renders reset request with neutral enumeration-safe copy", async () => {
     render(
       await RecoverPasswordPage({

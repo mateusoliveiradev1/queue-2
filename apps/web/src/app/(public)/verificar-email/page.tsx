@@ -90,7 +90,21 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
             initialSeconds={startsCooldown ? AUTH_RESEND_COOLDOWN_SECONDS : 0}
           />
           <form action={correctEmailAction} className="form-stack">
-            <input name="currentEmail" type="hidden" value={email ?? ""} />
+            {email ? (
+              <input name="currentEmail" type="hidden" value={email} />
+            ) : (
+              <div className="field">
+                <label htmlFor="current-email">Email cadastrado</label>
+                <input
+                  autoComplete="email"
+                  className="queue2-input"
+                  id="current-email"
+                  name="currentEmail"
+                  required
+                  type="email"
+                />
+              </div>
+            )}
             <div className="field">
               <label htmlFor="correct-email">Corrigir email</label>
               <input
