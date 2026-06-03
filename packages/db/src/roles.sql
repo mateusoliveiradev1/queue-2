@@ -49,3 +49,6 @@ GRANT SELECT ON ALL TABLES IN SCHEMA ops TO queue2_readonly;
 GRANT queue2_app_runtime TO queue2_migrator;
 GRANT queue2_worker TO queue2_migrator;
 GRANT queue2_readonly TO queue2_migrator;
+GRANT queue2_app_runtime TO neondb_owner;
+GRANT queue2_worker TO neondb_owner;
+GRANT queue2_readonly TO neondb_owner;

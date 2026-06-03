@@ -3,7 +3,7 @@ status: partial
 phase: 01-fundacao-modular-marca-auth-e-dupla
 source: [01-VERIFICATION.md]
 started: 2026-06-03T13:00:54Z
-updated: 2026-06-03T15:35:00Z
+updated: 2026-06-03T16:17:56Z
 ---
 
 # Phase 1 Human UAT
@@ -33,15 +33,18 @@ result: [pending]
 
 ### 5. Visual Brand And Feedback Review
 expected: Public, pairing and authenticated screens feel intentionally QUEUE/2; /2 icon/loading, calm and special toasts, focus, contrast and reduced motion are coherent on mobile and desktop.
-result: [pending]
+result: partial
+evidence: User reviewed the login screen and liked the overall visual direction. Follow-up polish requested for Phase 1.1: make the `/2`/logo entry navigate back to the landing page, reconsider whether the form badge should be the full logo instead of isolated `/2`, and improve the left-side composition/details without waiting for the final Phase 7 landing.
 
 ## Summary
 
 total: 5
 passed: 1
-issues: 0
-pending: 4
+issues: 1
+pending: 3
 skipped: 0
 blocked: 0
 
 ## Gaps
+
+- Phase 1.1 candidate: auth/landing visual polish before Phase 2. Scope: login card navigation/logo, left-panel refinement, and a better interim landing while keeping the final public landing in Phase 7.
