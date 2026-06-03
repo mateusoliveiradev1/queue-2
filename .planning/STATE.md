@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-03-PLAN.md
-last_updated: "2026-06-03T10:32:44.602Z"
+stopped_at: Completed 01-04-PLAN.md
+last_updated: "2026-06-03T11:06:42.095Z"
 last_activity: 2026-06-03
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 3
-  percent: 50
+  completed_plans: 4
+  percent: 67
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 01 (fundacao-modular-marca-auth-e-dupla) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-06-03
 
-Progress: [█████░░░░░] 50%
+Progress: [███████░░░] 67%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [█████░░░░░] 50%
 | Phase 01 P01 | 8 min | 3 tasks | 21 files |
 | Phase 01 P02 | 16 min | 3 tasks | 24 files |
 | Phase 01 P03 | 17 min | 3 tasks | 25 files |
+| Phase 01-fundacao-modular-marca-auth-e-dupla P01-04 | 24m | 3 tasks | 25 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,10 @@ Recent decisions affecting current work:
 - [Phase 01]: Brand primitives live in @queue/ui with no app-domain imports, while app globals import the token CSS contract. — Keeps brand reusable and preserves the architecture rule that shared UI cannot depend on app domains.
 - [Phase 01]: Pairing and auth pages expose stable form names and labels now, but future side effects stay disabled or no-op until auth/duo behavior plans wire validation. — Allows Plan 04/05 to bind behavior without redesigning the Phase 1 surfaces.
 - [Phase 01]: Phase 1 app surfaces use locked, non-interactive next-step rows instead of enabled buttons for future catalog, roulette and Hall capabilities. — Keeps the UI honest while later phase capabilities remain unwired.
+- [Phase 01-04]: Better Auth owns auth endpoints through delegated route handler; QUEUE/2 auth flow policy lives in platform server actions.
+- [Phase 01-04]: Email correction uses Better Auth changeEmail when a session exists and otherwise records a new verification state safely.
+- [Phase 01-04]: Proxy checks are UX-only; protected pages and server actions remain the authorization source.
+- [Phase 01-04]: Profile session revocation submits session ids; the server resolves Better Auth tokens before revoking.
 
 ### Pending Todos
 
@@ -103,6 +108,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-03T10:32:44.596Z
-Stopped at: Completed 01-03-PLAN.md
+Last session: 2026-06-03T11:06:42.089Z
+Stopped at: Completed 01-04-PLAN.md
 Resume file: None

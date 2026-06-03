@@ -9,13 +9,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Authentication
 
-- [ ] **AUTH-01**: User can create an account with email and password
-- [ ] **AUTH-02**: User receives an email verification flow after signup
-- [ ] **AUTH-03**: User can log in with email and password
-- [ ] **AUTH-04**: User can reset a forgotten password through an email link
-- [ ] **AUTH-05**: User session persists across browser refreshes
-- [ ] **AUTH-06**: User can view and revoke their active sessions
-- [ ] **AUTH-07**: User can log out from the authenticated app
+- [x] **AUTH-01**: User can create an account with email and password
+- [x] **AUTH-02**: User receives an email verification flow after signup
+- [x] **AUTH-03**: User can log in with email and password
+- [x] **AUTH-04**: User can reset a forgotten password through an email link
+- [x] **AUTH-05**: User session persists across browser refreshes
+- [x] **AUTH-06**: User can view and revoke their active sessions
+- [x] **AUTH-07**: User can log out from the authenticated app
 
 ### Duo And Profile
 
@@ -74,12 +74,12 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Security Assurance
 
 - [x] **SEC-01**: Project maintains a threat model covering protected assets, trust boundaries and abuse cases
-- [ ] **SEC-02**: Every Server Action, Route Handler, cron endpoint and server-side mutation validates input and authorizes the current session
-- [ ] **SEC-03**: Proxy or middleware is never the sole authorization gate for protected data or mutations
-- [ ] **SEC-04**: Pairing, search, external integration and economy-sensitive endpoints use persistent abuse rate limits
-- [ ] **SEC-05**: Production responses use an explicit Content Security Policy, HSTS, frame protection, content-type protection and restrictive referrer policy
+- [x] **SEC-02**: Every Server Action, Route Handler, cron endpoint and server-side mutation validates input and authorizes the current session
+- [x] **SEC-03**: Proxy or middleware is never the sole authorization gate for protected data or mutations
+- [x] **SEC-04**: Pairing, search, external integration and economy-sensitive endpoints use persistent abuse rate limits
+- [x] **SEC-05**: Production responses use an explicit Content Security Policy, HSTS, frame protection, content-type protection and restrictive referrer policy
 - [ ] **SEC-06**: User-generated text is treated as untrusted and cannot execute as HTML or script
-- [ ] **SEC-07**: Logs and error responses redact sensitive values while preserving security-relevant audit events
+- [x] **SEC-07**: Logs and error responses redact sensitive values while preserving security-relevant audit events
 - [ ] **SEC-08**: Dependency, secret and static analysis checks run before deployment
 - [ ] **SEC-09**: Production launch includes a recorded review of applicable OWASP ASVS 5.0 Level 2 controls
 - [ ] **SEC-10**: Secret rotation, session revocation and incident-response procedures are tested before launch
@@ -201,8 +201,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SAFE-04**: Failed scheduled work can be retried without duplicating user-visible effects
 - [x] **SAFE-05**: Secrets such as RAWG, email, auth and privileged database credentials never reach the browser
 - [ ] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
-- [ ] **SAFE-07**: Authentication attempts are protected by persistent rate limiting suitable for a serverless runtime
-- [ ] **SAFE-08**: Authentication uses secure trusted origins, cookies and secrets in every deployed environment
+- [x] **SAFE-07**: Authentication attempts are protected by persistent rate limiting suitable for a serverless runtime
+- [x] **SAFE-08**: Authentication uses secure trusted origins, cookies and secrets in every deployed environment
 - [x] **SAFE-09**: Development, preview or test, and production data use separate Neon branches
 
 ### Landing, Metadata And PWA
@@ -245,13 +245,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 | Phase 1 | Pending |
-| AUTH-02 | Phase 1 | Pending |
-| AUTH-03 | Phase 1 | Pending |
-| AUTH-04 | Phase 1 | Pending |
-| AUTH-05 | Phase 1 | Pending |
-| AUTH-06 | Phase 1 | Pending |
-| AUTH-07 | Phase 1 | Pending |
+| AUTH-01 | Phase 1 | Complete |
+| AUTH-02 | Phase 1 | Complete |
+| AUTH-03 | Phase 1 | Complete |
+| AUTH-04 | Phase 1 | Complete |
+| AUTH-05 | Phase 1 | Complete |
+| AUTH-06 | Phase 1 | Complete |
+| AUTH-07 | Phase 1 | Complete |
 | DUO-01 | Phase 1 | Pending |
 | DUO-02 | Phase 1 | Pending |
 | DUO-03 | Phase 1 | Pending |
@@ -295,12 +295,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-11 | Phase 1 | Complete |
 | DATA-12 | Phase 1 | Complete |
 | SEC-01 | Phase 1 | Complete |
-| SEC-02 | Phase 1 | Pending |
-| SEC-03 | Phase 1 | Pending |
-| SEC-04 | Phase 1 | Pending |
-| SEC-05 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Complete |
+| SEC-03 | Phase 1 | Complete |
+| SEC-04 | Phase 1 | Complete |
+| SEC-05 | Phase 1 | Complete |
 | SEC-06 | Phase 1 | Pending |
-| SEC-07 | Phase 1 | Pending |
+| SEC-07 | Phase 1 | Complete |
 | SEC-08 | Phase 1 | Pending |
 | SEC-09 | Phase 7 | Pending |
 | SEC-10 | Phase 7 | Pending |
@@ -398,8 +398,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-04 | Phase 4 | Pending |
 | SAFE-05 | Phase 1 | Complete |
 | SAFE-06 | Phase 6 | Pending |
-| SAFE-07 | Phase 1 | Pending |
-| SAFE-08 | Phase 1 | Pending |
+| SAFE-07 | Phase 1 | Complete |
+| SAFE-08 | Phase 1 | Complete |
 | SAFE-09 | Phase 1 | Complete |
 | META-01 | Phase 7 | Pending |
 | META-02 | Phase 1 | Complete |
