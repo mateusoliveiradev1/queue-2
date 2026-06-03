@@ -4,6 +4,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   pgSchema,
   smallint,
   text,
@@ -175,6 +176,82 @@ export const catalogGameAvailability = catalogSchema.table(
     check(
       "catalog_game_availability_status_chk",
       sql`${table.status} IN ('available', 'unavailable', 'unverified')`
+    )
+  ]
+);
+
+export const catalogGameLocalizations = catalogSchema.table(
+  "game_localizations",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    gameId: uuid("game_id")
+      .notNull()
+      .references(() => catalogGames.id, { onDelete: "cascade" }),
+    locale: varchar("locale", { length: 16 }).notNull(),
+    version: integer("version").notNull(),
+    status: varchar("status", { length: 24 }).notNull().default("draft"),
+    title: text("title"),
+    description: text("description"),
+    source: varchar("source", { length: 80 }).notNull(),
+    sourceUrl: text("source_url"),
+    rawSourceHash: text("raw_source_hash"),
+    provenance: jsonb("provenance").notNull().default(sql`'{}'::jsonb`),
+    authorKind: varchar("author_kind", { length: 32 }).notNull(),
+    authorId: text("author_id"),
+    reviewerKind: varchar("reviewer_kind", { length: 32 }),
+    reviewerId: text("reviewer_id"),
+    reviewNotes: text("review_notes"),
+    qualityCheck: jsonb("quality_check").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
+    publishedAt: timestamp("published_at", { withTimezone: true })
+  },
+  (table) => [
+    uniqueIndex("catalog_game_localizations_game_locale_version_uidx").on(
+      table.gameId,
+      table.locale,
+      table.version
+    ),
+    index("catalog_game_localizations_published_lookup_idx").on(
+      table.gameId,
+      table.locale,
+      table.status,
+      table.publishedAt,
+      table.version
+    ),
+    check(
+      "catalog_game_localizations_version_positive_chk",
+      sql`${table.version} >= 1`
+    ),
+    check(
+      "catalog_game_localizations_status_chk",
+      sql`${table.status} IN ('draft', 'review', 'published', 'rejected')`
+    ),
+    check(
+      "catalog_game_localizations_locale_chk",
+      sql`char_length(btrim(${table.locale})) > 0`
+    ),
+    check(
+      "catalog_game_localizations_published_ready_chk",
+      sql`
+        ${table.status} <> 'published'
+        OR (
+          ${table.description} IS NOT NULL
+          AND char_length(btrim(${table.description})) > 0
+          AND ${table.reviewerKind} IS NOT NULL
+          AND ${table.reviewerId} IS NOT NULL
+          AND ${table.reviewedAt} IS NOT NULL
+          AND ${table.publishedAt} IS NOT NULL
+          AND ${table.qualityCheck} ?& array[
+            'coop_facts_checked',
+            'spoilers_avoided',
+            'facts_not_invented',
+            'natural_pt_br',
+            'queue2_tone_controlled'
+          ]
+        )
+      `
     )
   ]
 );

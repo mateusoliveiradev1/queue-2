@@ -33,7 +33,8 @@ describe.skipIf(!testDatabaseUrl)("catalog source schema", () => {
         ('catalog.game_platforms'),
         ('catalog.game_genres'),
         ('catalog.game_time_estimates'),
-        ('catalog.game_availability')
+        ('catalog.game_availability'),
+        ('catalog.game_localizations')
       ) AS expected(object_name)
     `);
 
@@ -104,5 +105,68 @@ describe.skipIf(!testDatabaseUrl)("catalog source schema", () => {
       worker_can_insert: true,
       worker_can_update: true
     });
+  });
+
+  test("creates reviewed localization table with runtime read-only privileges", async () => {
+    const columns = await pool.query<{ column_name: string }>(`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = 'catalog'
+        AND table_name = 'game_localizations'
+        AND column_name IN (
+          'game_id',
+          'locale',
+          'version',
+          'status',
+          'description',
+          'source',
+          'source_url',
+          'raw_source_hash',
+          'provenance',
+          'author_kind',
+          'author_id',
+          'reviewer_kind',
+          'reviewer_id',
+          'review_notes',
+          'quality_check',
+          'reviewed_at',
+          'published_at'
+        )
+    `);
+
+    expect(columns.rows).toHaveLength(17);
+
+    const privileges = await pool.query<{
+      app_can_select: boolean;
+      app_can_insert: boolean;
+      app_can_update: boolean;
+      worker_can_insert: boolean;
+      worker_can_update: boolean;
+    }>(`
+      SELECT
+        has_table_privilege('queue2_app_runtime', 'catalog.game_localizations', 'SELECT') AS app_can_select,
+        has_table_privilege('queue2_app_runtime', 'catalog.game_localizations', 'INSERT') AS app_can_insert,
+        has_table_privilege('queue2_app_runtime', 'catalog.game_localizations', 'UPDATE') AS app_can_update,
+        has_table_privilege('queue2_worker', 'catalog.game_localizations', 'INSERT') AS worker_can_insert,
+        has_table_privilege('queue2_worker', 'catalog.game_localizations', 'UPDATE') AS worker_can_update
+    `);
+
+    expect(privileges.rows[0]).toMatchObject({
+      app_can_select: true,
+      app_can_insert: false,
+      app_can_update: false,
+      worker_can_insert: true,
+      worker_can_update: true
+    });
+
+    const index = await pool.query<{ indexname: string }>(`
+      SELECT indexname
+      FROM pg_indexes
+      WHERE schemaname = 'catalog'
+        AND tablename = 'game_localizations'
+        AND indexname = 'catalog_game_localizations_published_lookup_idx'
+    `);
+
+    expect(index.rows).toHaveLength(1);
   });
 });
