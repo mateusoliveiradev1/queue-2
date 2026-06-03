@@ -31,7 +31,11 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Duas duplas distintas nao conseguem acessar dados uma da outra, e constraints, RLS forcado, roles separadas, transacoes e testes concorrentes preservam os invariantes centrais.
   4. Migrations de banco passam em base vazia e upgrade, queries criticas possuem indices revisados e existe uma estrategia de restore testavel antes do lancamento.
   5. Auth, rate limits, headers, validacao, logs e scans atendem ao contrato de seguranca, enquanto a experiencia base exibe a marca e feedback QUEUE/2 coerentes.
-**Plans**: TBD
+**Plans**: 02-01, 02-02, 02-03
+**Plan Waves**:
+  - **Wave 1**: `02-01` - Catalog source, RAWG adapter and `catalog` schema.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `02-02` - Duo platforms, library state, RLS and match-score rules.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `02-03` - Authenticated catalog, library and game-detail UI.
 **UI hint**: yes
 
 ### Phase 01.1: Polimento Auth e Landing Intermediaria (INSERTED)
@@ -146,7 +150,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundacao Modular, Marca, Auth E Dupla | 4/6 | In Progress |  |
-| 2. Catalogo E Biblioteca | 0/TBD | Not started | - |
+| 2. Catalogo E Biblioteca | 0/3 | Ready to execute | - |
 | 3. Descoberta E Matches | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
