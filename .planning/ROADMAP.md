@@ -13,6 +13,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 1: Fundacao Modular, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura sobre arquitetura e dados verificaveis.
 - [x] **Phase 01.1: Polimento Auth e Landing Intermediaria (INSERTED)** - A experiencia publica inicial ganha acabamento visual e navegacao de marca sem antecipar a landing final.
 - [x] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
+- [ ] **Phase 02.1: Localizacao e Qualidade do Catalogo (INSERTED)** - O catalogo fica localizado em portugues brasileiro, sincronizavel e pronto para sustentar descoberta sem dados crus.
 - [ ] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
@@ -65,9 +66,27 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   - **Wave 3 *(blocked on Wave 2 completion)*:** `02-03` - Authenticated catalog, library and game-detail UI.
 **UI hint**: yes
 
+### Phase 02.1: Localizacao e Qualidade do Catalogo (INSERTED)
+
+**Goal**: O catalogo deixa de depender de descricoes cruas em ingles e passa a ter uma estrategia confiavel, cacheada e atribuida para textos PT-BR, mantendo RAWG seguro no servidor.
+**Depends on:** Phase 2
+**Requirements**: CAT-01, CAT-02, CAT-03, CAT-04, CAT-05, SAFE-05
+**Success Criteria** (what must be TRUE):
+  1. Existe uma decisao documentada para traducao/localizacao do catalogo, incluindo provedor, custo, fallback, risco de invencao e criterio de qualidade.
+  2. Sincronizacao RAWG deixa de ser operacao manual ad hoc e passa a ter caminho versionado, seguro e repetivel para popular/atualizar jogos.
+  3. Descricoes PT-BR sao servidas de cache persistido ou curadoria explicita, nunca traduzidas em runtime da pagina.
+  4. A UI diferencia fonte de dados/imagens RAWG, fonte da traducao/localizacao, frescor e indisponibilidade sem esconder atribuicao.
+  5. Testes cobrem sync, fallback de localizacao, ausencia de segredo no cliente e renderizacao do detalhe em portugues.
+**Plans**: 02.1-01, 02.1-02, 02.1-03
+**Plan Waves**:
+  - **Wave 1**: `02.1-01` - Persistent PT-BR localization contract and published catalog reads.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `02.1-02` - Auditable RAWG sync, curation-preserving upserts and draft provider boundary.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `02.1-03` - Source/freshness UI, no-English fallback and localization quality tests.
+**UI hint**: yes
+
 ### Phase 3: Descoberta E Matches
 **Goal**: A dupla pode reduzir indecisao, descobrir coops compativeis e transformar preferencias individuais em uma fila compartilhada.
-**Depends on**: Phase 2
+**Depends on**: Phase 02.1
 **Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05, DISC-06, DISC-07, DISC-08, DISC-09, DISC-10, DISC-11, DISC-12
 **Success Criteria** (what must be TRUE):
   1. Membros podem usar swipe duplo e match live para descobrir quando ambos aprovam o mesmo jogo.
@@ -145,13 +164,14 @@ These gates apply to every phase and cannot be deferred as polish:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Fundacao Modular, Marca, Auth E Dupla | 6/6 | Complete | 2026-06-03 |
 | 01.1. Polimento Auth e Landing Intermediaria | 1/1 | Complete | 2026-06-03 |
 | 2. Catalogo E Biblioteca | 3/3 | Complete | 2026-06-03 |
+| 02.1. Localizacao e Qualidade do Catalogo | 0/3 | Ready to execute | - |
 | 3. Descoberta E Matches | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
