@@ -12,6 +12,8 @@ requires:
 provides:
   - "Better Auth email/password runtime with Drizzle Postgres adapter"
   - "Email verification, login, password reset, logout and session revocation server actions"
+  - "Progressive password checklist and verification resend countdown"
+  - "Structured redacting Better Auth logger"
   - "Protected server-side session gates for authenticated pages"
   - "UX-only Next.js proxy redirect for authenticated route entry"
   - "Auth flow and auth security test coverage"
@@ -32,6 +34,10 @@ key-files:
     - apps/web/tests/auth-flow.test.ts
     - apps/web/tests/auth-security.test.ts
     - apps/web/tests/server-only-stub.ts
+    - apps/web/src/platform/auth/password-policy.ts
+    - apps/web/src/platform/auth/logger.ts
+    - apps/web/src/components/signup-fields.tsx
+    - apps/web/src/components/verification-resend-form.tsx
   modified:
     - apps/web/src/platform/auth/server.ts
     - apps/web/src/platform/auth/session.ts
@@ -47,7 +53,9 @@ key-files:
 
 key-decisions:
   - "Better Auth owns auth endpoints through the delegated route handler; product auth flow logic lives in server actions."
-  - "Email correction uses Better Auth changeEmail when a session exists and otherwise records a new verification state safely instead of email-only account mutation."
+  - "Email correction verifies pending-account credentials, updates the same unverified user and sends a new verification link that invalidates the old email lookup."
+  - "Verification links return to a resend-capable QUEUE/2 page before verified users continue to pairing."
+  - "Better Auth logs are reduced to structured event categories and discard argument payloads."
   - "Proxy checks are explicitly UX-only; protected pages/actions perform server-side session validation."
   - "Profile revocation never exposes Better Auth session tokens in HTML; forms submit session ids and the server resolves tokens."
 
@@ -80,6 +88,7 @@ completed: 2026-06-03
 - Replaced placeholder public auth forms with typed server actions for signup, login, verification resend/correction, password reset completion/request and logout.
 - Added protected server-side session gates for authenticated pages, profile session list/revoke controls and a UX-only `proxy.ts` redirect.
 - Added `auth-flow` and `auth-security` Vitest coverage for auth actions, unverified-user containment, session management, reset flow, rate-limit storage, trusted origins, secure cookies and error redaction.
+- Added a progressive password checklist, real resend cooldown countdown, expired-link resend recovery and structured redacting Better Auth logging.
 
 ## Task Commits
 
@@ -89,10 +98,15 @@ completed: 2026-06-03
 
 **Plan metadata:** pending final docs commit
 
+**Post-plan verifier fixes:** `7060053`, `8711193`, `a9ba921`
+
 ## Files Created/Modified
 
 - `apps/web/src/platform/auth/server.ts` - Better Auth runtime, Drizzle adapter, secure cookies, trusted origins, verification, reset and session policy.
 - `apps/web/src/platform/auth/actions.ts` - Server actions and validation helpers for public auth flows.
+- `apps/web/src/platform/auth/password-policy.ts` - Client-safe password policy shared by progressive UI and server validation.
+- `apps/web/src/platform/auth/logger.ts` - Structured Better Auth logger that drops sensitive message and argument payloads.
+- `apps/web/src/components/signup-fields.tsx` and `verification-resend-form.tsx` - Progressive password and resend cooldown behavior.
 - `apps/web/src/platform/auth/session.ts` - Server session validation, verified-session redirects, active-session listing, revoke and logout actions.
 - `apps/web/src/platform/auth/email.ts` - Server-only Resend email sender adapter for verification and reset.
 - `apps/web/src/platform/auth/rate-limit.ts` - Persistent database-backed auth rate-limit policy.
@@ -108,7 +122,8 @@ completed: 2026-06-03
 ## Decisions Made
 
 - Better Auth endpoint behavior stays delegated to `/api/auth/[...all]`; QUEUE/2 auth form policy lives in platform server actions so routes do not accumulate product rules.
-- Email correction cannot safely mutate an account by email alone when Better Auth does not issue an unverified signup session. The implementation uses `changeEmail` when a session exists and otherwise records a new verification state with name/email/password validation.
+- Better Auth required-email-verification signups do not issue a session. Email correction therefore verifies the pending account with the original email and password, updates that same unverified user through the internal adapter, then sends a new verification link to the corrected address.
+- Verification callbacks return to `/verificar-email` with neutral state so expired or used links can explain the failure and offer a new send without exposing Better Auth details.
 - The proxy checks only for a likely Better Auth session cookie and is documented as UX-only. Protected pages and actions are the source of authorization.
 - Profile session revocation submits `sessionId`, not a Better Auth session token; the server lists the current user's sessions and resolves the token internally before revoking.
 
@@ -132,10 +147,10 @@ completed: 2026-06-03
 - **Verification:** `pnpm --filter @queue/web typecheck`, `pnpm --filter @queue/web test -- auth-flow`
 - **Committed in:** `15ab98d`
 
-**3. [Rule 2 - Missing Critical] Enabled safe Better Auth email-change support**
+**3. [Rule 2 - Missing Critical] Enabled Better Auth email-change support**
 - **Found during:** Task 2
 - **Issue:** Verification-page email correction required Better Auth change-email support, but the runtime config did not enable it.
-- **Fix:** Enabled `user.changeEmail` with `updateEmailWithoutVerification` and added a safe fallback that records a new verification state without email-only account mutation.
+- **Fix:** Enabled `user.changeEmail` with `updateEmailWithoutVerification`; the later verifier closure replaced the original fallback with credential-verified same-user pending-account mutation.
 - **Files modified:** `apps/web/src/platform/auth/server.ts`, `apps/web/src/platform/auth/actions.ts`
 - **Verification:** `pnpm --filter @queue/web test -- auth-flow`, `pnpm --filter @queue/web typecheck`
 - **Committed in:** `15ab98d`
@@ -148,14 +163,30 @@ completed: 2026-06-03
 - **Verification:** `pnpm --filter @queue/web test -- auth-security`
 - **Committed in:** `debdc31`
 
+**5. [Verifier - Security] Preserved the pending account during email correction**
+- **Found during:** Goal-backward phase verification
+- **Issue:** The original unverified-session fallback could create a second account instead of preserving the pending account and invalidating its old verification lookup.
+- **Fix:** Required valid original credentials, updated the same unverified user, and sent the replacement verification link to the corrected email.
+- **Files modified:** `apps/web/src/platform/auth/actions.ts`, `apps/web/src/app/(public)/verificar-email/page.tsx`, `apps/web/tests/auth-flow.test.ts`, `apps/web/tests/phase-1-e2e.spec.ts`
+- **Verification:** `pnpm --filter @queue/web test`, `pnpm --filter @queue/web typecheck`, `pnpm lint`, `pnpm verify`
+- **Committed in:** `7060053`
+
+**6. [Verifier - Missing Critical] Closed progressive auth UX and redacted logging gaps**
+- **Found during:** Goal-backward phase verification
+- **Issue:** Password rules and resend cooldown were static copy, invalid verification links did not reliably return to a resend-capable page, and Better Auth still used its detailed default logger.
+- **Fix:** Added a client-safe password policy with progressive checklist, a real countdown form, verification callback recovery, and a structured logger that discards sensitive message/argument payloads.
+- **Files modified:** `apps/web/src/platform/auth/*`, `apps/web/src/components/signup-fields.tsx`, `apps/web/src/components/verification-resend-form.tsx`, `apps/web/src/app/(public)/*`, `apps/web/tests/auth-*.test.ts`
+- **Verification:** `pnpm --filter @queue/web test`, `pnpm --filter @queue/web typecheck`, `pnpm lint`, `pnpm check:architecture`
+- **Committed in:** `8711193`, `a9ba921`
+
 ---
 
-**Total deviations:** 4 auto-fixed (3 Rule 3, 1 Rule 2)
+**Total deviations:** 6 auto-fixed (3 Rule 3, 1 Rule 2, 2 verifier closures)
 **Impact on plan:** All fixes were required for correctness, security or testability of the planned auth work. No unrelated product scope was added.
 
 ## Issues Encountered
 
-- Better Auth required-email-verification signups do not create an unverified session; the email-correction flow was adjusted to avoid insecure email-only mutation.
+- Better Auth required-email-verification signups do not create an unverified session; the final email-correction flow verifies credentials and updates the same pending account.
 - Current Next.js App Router docs require `searchParams` to be awaited, so public auth pages became async and the existing UI tests were updated accordingly.
 - `server-only` works as a runtime guard but needs a test-only shim for source-level security tests.
 - `roadmap.update-plan-progress` reported 4 completed summaries but left the visible roadmap row at `3/6`; the Phase 1 progress row was corrected manually to `4/6`.
@@ -175,10 +206,7 @@ These are documented in `.env.example`. No auth gate blocked local implementatio
 
 ## Known Stubs
 
-- `apps/web/src/app/app/page.tsx` - Dashboard duo/fila values remain the intentional Phase 01 shell until real pairing/catalog plans provide data.
-- `apps/web/src/app/app/dupla/page.tsx` - Duo identity, second member and preferences remain intentional placeholders until pairing and duo-settings plans provide data.
-
-These stubs do not block Plan 01-04 because auth, verification, reset, session gating and revocation now use real server-side auth operations.
+None in the Phase 1 auth, verification, reset, session gating or revocation scope.
 
 ## Threat Flags
 
@@ -191,6 +219,7 @@ None beyond the planned auth, session, proxy and email/reset surfaces already co
 - `pnpm --filter @queue/web test -- auth-security` - passed
 - `pnpm --filter @queue/web test -- brand-ui` - passed
 - `pnpm --filter @queue/web test -- auth` - passed
+- `pnpm --filter @queue/web test` - passed, 62 tests after verifier closure
 - `pnpm check:architecture` - passed
 - Client-component secret scan for `RESEND_API_KEY`, `BETTER_AUTH_SECRET`, `DATABASE_URL`, `EMAIL_FROM`, `RAWG_API_KEY`, `AUTH_SECRET` - passed
 

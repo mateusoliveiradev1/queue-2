@@ -11,7 +11,8 @@ provides:
   - "QUEUE/2 OKLCH token contract, font contract and reusable brand primitives"
   - "Single-line and stacked QUEUE/2 wordmark variants plus /2 mark and roulette pointer motif"
   - "/2 SVG stroke loading state with reduced-motion fallback"
-  - "Sonner-backed accessible QUEUE/2 toast foundation"
+  - "Sonner-backed accessible QUEUE/2 toast feedback for important actions"
+  - "/2 favicon placeholder and App Router loading surface"
   - "Custom public login, signup, email verification, password reset and pairing route surfaces"
   - "Phase 1 authenticated shell, empty dashboard, profile and duo surfaces"
   - "Testing Library smoke coverage for public and authenticated route rendering"
@@ -42,6 +43,9 @@ key-files:
     - "apps/web/src/app/app/perfil/page.tsx"
     - "apps/web/src/app/app/dupla/page.tsx"
     - "apps/web/tests/brand-ui.test.tsx"
+    - "apps/web/src/app/icon.svg"
+    - "apps/web/src/app/loading.tsx"
+    - "apps/web/src/components/status-toast.tsx"
   modified:
     - "packages/ui/package.json"
     - "packages/ui/src/index.ts"
@@ -84,6 +88,7 @@ completed: 2026-06-03
 - Added custom Brazilian Portuguese public pages for login, signup, verification, password recovery and pairing.
 - Added the Phase 1 authenticated shell with empty dashboard, profile and duo pages that reserve future behavior without enabling fake features.
 - Added Vitest/Testing Library smoke tests covering public and authenticated route rendering plus labeled form controls.
+- Wired the existing loader and toast primitives into real App Router and important-action contexts, including a restrained special pairing-success toast and `/2` favicon placeholder.
 
 ## Task Commits
 
@@ -93,6 +98,8 @@ completed: 2026-06-03
 
 **Plan metadata:** committed after this summary is written.
 
+**Post-plan verifier fix:** `8711193`
+
 ## Files Created/Modified
 
 - `packages/ui/src/tokens.css` - Shared QUEUE/2 OKLCH tokens, radius, spacing, focus, form, toast and reduced-motion styles.
@@ -101,6 +108,8 @@ completed: 2026-06-03
 - `packages/ui/src/feedback/toast.tsx` - Sonner-backed toast wrapper with calm and special variants.
 - `apps/web/src/app/globals.css` - App global styles importing the shared token contract.
 - `apps/web/src/app/layout.tsx` - Root theme/toaster wiring.
+- `apps/web/src/app/icon.svg` and `apps/web/src/app/loading.tsx` - `/2` favicon placeholder and route loading surface.
+- `apps/web/src/components/status-toast.tsx` - Calm and special important-action toast bridge.
 - `apps/web/src/app/(public)/*/page.tsx` - Public login, signup, verification, reset and pairing surfaces.
 - `apps/web/src/components/app-shell.tsx` - Phase 1 authenticated navigation shell.
 - `apps/web/src/app/app/**/*.tsx` - Empty dashboard, profile and duo surfaces.
@@ -162,15 +171,7 @@ completed: 2026-06-03
 
 ## Known Stubs
 
-| File | Line | Reason |
-| --- | --- | --- |
-| `apps/web/src/app/(public)/parear/page.tsx` | 6 | Static pairing code `Q2K7M9` demonstrates code/copy/validity UI until real duo pairing actions are wired. |
-| `apps/web/src/app/app/page.tsx` | 61 | Static `Fila sem nome` duo label reserves empty dashboard context before real duo identity is loaded. |
-| `apps/web/src/app/app/page.tsx` | 66 | Static `2 vagas` explains the `/2` invariant before real membership data is loaded. |
-| `apps/web/src/app/app/page.tsx` | 71 | Static `0 jogos` empty queue state is intentional because catalog/library behavior is later phase scope. |
-| `apps/web/src/app/app/perfil/page.tsx` | 37 | Static display name reserves profile UI until authenticated profile data is wired. |
-| `apps/web/src/app/app/dupla/page.tsx` | 37 | Static duo name reserves duo identity UI until real duo data is wired. |
-| `apps/web/src/app/app/dupla/page.tsx` | 54 | Static partner label reserves the second member slot until real membership data is wired. |
+The original auth and duo UI placeholders were resolved by Plans 01-04 and 01-05. The empty `0 jogos` dashboard state remains intentional until catalog/library phases provide real queue data.
 
 ## Threat Flags
 
@@ -198,7 +199,7 @@ None - no external service configuration required.
 
 ## Next Phase Readiness
 
-The brand and route surfaces are ready for Plan 01-04/01-05 to wire Better Auth and duo behavior. Static values and no-op public Server Actions must be replaced by authenticated, validated, rate-limited server behavior before Phase 1 can claim auth/duo functionality.
+Plans 01-04 and 01-05 wired Better Auth and duo behavior. The verifier closure also connected the branded loader, favicon placeholder and important-action toast feedback to real app contexts.
 
 ## Self-Check: PASSED
 

@@ -2,7 +2,7 @@
 phase: 01-fundacao-modular-marca-auth-e-dupla
 reviewed: 2026-06-03T09:34:51-03:00
 depth: standard
-files_reviewed: 96
+files_reviewed: 104
 files_reviewed_list:
   - .env.example
   - .gitignore
@@ -21,11 +21,16 @@ files_reviewed_list:
   - apps/web/src/app/app/page.tsx
   - apps/web/src/app/app/perfil/page.tsx
   - apps/web/src/app/globals.css
+  - apps/web/src/app/icon.svg
   - apps/web/src/app/layout.tsx
+  - apps/web/src/app/loading.tsx
   - apps/web/src/app/page.tsx
   - apps/web/src/components/app-shell.tsx
   - apps/web/src/components/copy-pairing-code.tsx
+  - apps/web/src/components/signup-fields.tsx
+  - apps/web/src/components/status-toast.tsx
   - apps/web/src/components/timezone-input.tsx
+  - apps/web/src/components/verification-resend-form.tsx
   - apps/web/src/modules/duo/application/create-pairing-code.ts
   - apps/web/src/modules/duo/application/get-duo-dashboard.ts
   - apps/web/src/modules/duo/application/join-duo.ts
@@ -39,10 +44,13 @@ files_reviewed_list:
   - apps/web/src/platform/auth/actions.ts
   - apps/web/src/platform/auth/client.ts
   - apps/web/src/platform/auth/email.ts
+  - apps/web/src/platform/auth/logger.ts
+  - apps/web/src/platform/auth/password-policy.ts
   - apps/web/src/platform/auth/rate-limit.ts
   - apps/web/src/platform/auth/server.ts
   - apps/web/src/platform/auth/session.ts
   - apps/web/src/platform/rate-limit/persistent.ts
+  - apps/web/src/platform/security/audit.ts
   - apps/web/src/platform/server-only.ts
   - apps/web/src/security/headers.ts
   - apps/web/tests/accessibility.spec.ts
@@ -107,8 +115,8 @@ findings:
   total: 0
 resolved_findings:
   critical: 2
-  warning: 5
-  total: 7
+  warning: 6
+  total: 8
 status: clean
 ---
 
@@ -116,12 +124,12 @@ status: clean
 
 **Reviewed:** 2026-06-03T09:34:51-03:00
 **Depth:** standard
-**Files Reviewed:** 96
+**Files Reviewed:** 104
 **Status:** clean
 
 ## Summary
 
-The initial review found two release-blocking data/security defects and five correctness or test-reliability issues. All seven were fixed in `b279c0a` and `a287d8d`; the follow-up review is clean.
+The initial review found two release-blocking data/security defects and five correctness or test-reliability issues. A verifier follow-up review found one verification-recovery form mismatch. All eight were fixed in `b279c0a`, `a287d8d`, `8711193` and `a9ba921`; the follow-up review is clean.
 
 ## Resolution
 
@@ -129,6 +137,7 @@ The initial review found two release-blocking data/security defects and five cor
 - Runtime and worker roles can update only `app.duos.name`, `timezone` and `updated_at`; progression and pairing-state columns are no longer directly writable.
 - Pairing creation validates timezone, revoke rejects forged non-UUID IDs before repository access, and race-lost classification references the exact active code row observed by the claimant.
 - Session-revocation E2E coverage revokes all non-current sessions, and role DDL probes run in independent transactions.
+- Verification recovery requests the original email when callback context is absent, and its neutral error copy matches the actual fields.
 - Local unit, typecheck, lint, production build and Phase 1 gate checks pass. Live database and Playwright checks remain explicit external-environment skips.
 
 ## Resolved Critical Issues
@@ -190,6 +199,14 @@ The initial review found two release-blocking data/security defects and five cor
 **Issue:** The preceding denied `CREATE TABLE` aborts the transaction. The `ALTER TABLE` statement then fails only because the transaction is aborted, and the assertion explicitly accepts that message. The test therefore does not prove that the runtime role lacks alter/migration capability.
 
 **Fix:** Run the create and alter probes in separate transactions and require an ownership or permission-denied error for each.
+
+### WR-06: Verification recovery form can request fields it does not render
+
+**File:** `apps/web/src/app/(public)/verificar-email/page.tsx`
+
+**Issue:** The neutral correction error asked for a name that the final form no longer collected, while opening the page without an email left `currentEmail` empty and made safe correction impossible.
+
+**Fix:** Request the original registered email only when callback context does not already provide it, and align the neutral error copy with the rendered fields.
 
 ---
 

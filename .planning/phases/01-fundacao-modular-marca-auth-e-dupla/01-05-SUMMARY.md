@@ -15,6 +15,7 @@ provides:
   - "Duo domain rules and application use cases for pairing, identity and shared settings"
   - "RLS-scoped duo repository with atomic claim and revoke database functions"
   - "Persistent pairing-attempt rate limits"
+  - "Redacted pairing-attempt security logs and successful pairing audit records"
   - "Server-backed pairing, dashboard, profile and duo settings pages"
   - "Duo flow, domain and application-isolation test coverage"
 affects: [duo, security, app-router, database, future-catalog, future-gameplay]
@@ -40,6 +41,7 @@ key-files:
     - apps/web/src/modules/duo/infrastructure/duo-repository.ts
     - apps/web/src/modules/duo/presentation/view-models.ts
     - apps/web/src/platform/rate-limit/persistent.ts
+    - apps/web/src/platform/security/audit.ts
     - packages/db/src/migrations/0002_pairing_runtime.sql
     - packages/db/src/migrations/0003_review_hardening.sql
     - apps/web/tests/duo-domain.test.ts
@@ -66,6 +68,7 @@ patterns-established:
   - "Duo pages consume public module view models and actions instead of importing repository internals."
   - "Duo-scoped reads and mutations use withAppUserTransaction and never privileged migrator access."
   - "Pairing failures map to neutral inactive, limited and race-lost product states."
+  - "Pairing audit records retain outcomes without logging submitted codes or credentials."
 
 requirements-completed: [DUO-01, DUO-02, DUO-03, DUO-04, DUO-05, DUO-06, DUO-07, DUO-08, DUO-09, DUO-10, SEC-02, SEC-04, SEC-06, SEC-07]
 
@@ -91,6 +94,7 @@ completed: 2026-06-03
 - Added an RLS-scoped Drizzle repository, atomic pairing claim and revoke functions, and persistent pairing-attempt rate limits.
 - Replaced pairing, dashboard, profile and duo placeholders with server-backed authoritative state and route enforcement.
 - Added domain, flow and application-isolation tests covering pairing outcomes, no-solo behavior, plain-text validation and cross-duo denial.
+- Added redacted pairing-attempt security records and a duo-scoped `duo.pairing_completed` audit event after successful claims.
 
 ## Task Commits
 
@@ -100,7 +104,7 @@ completed: 2026-06-03
 
 **Plan metadata:** pending final docs commit
 
-**Post-plan review fixes:** `b279c0a`, `a287d8d`
+**Post-plan review/verifier fixes:** `b279c0a`, `a287d8d`, `8711193`
 
 ## Files Created/Modified
 
@@ -110,6 +114,7 @@ completed: 2026-06-03
 - `apps/web/src/modules/duo/presentation/view-models.ts` - Portuguese route-facing states and messages.
 - `apps/web/src/modules/duo/index.ts` - Server-only public duo module actions and view helpers.
 - `apps/web/src/platform/rate-limit/persistent.ts` - Database-backed operation rate limiter.
+- `apps/web/src/platform/security/audit.ts` - Structured pairing-attempt audit log contract without codes or credentials.
 - `apps/web/src/app/(public)/parear/page.tsx` - Pairing code creation, revoke and join flow.
 - `apps/web/src/app/app/*` - Duo-scoped dashboard, profile and shared settings pages.
 - `packages/db/src/migrations/0002_pairing_runtime.sql` - Restricted pairing claim and revoke runtime functions.
@@ -163,9 +168,17 @@ completed: 2026-06-03
 - **Verification:** `pnpm --filter @queue/web test`, `pnpm typecheck`, `pnpm lint`, `pnpm verify`, `pnpm phase:1:gate`
 - **Committed in:** `b279c0a`, `a287d8d`
 
+**5. [Verifier - Security] Retained pairing audit events without sensitive values**
+- **Found during:** Goal-backward phase verification
+- **Issue:** Pairing outcomes were user-visible but did not retain an explicit security audit event outside the settings-update path.
+- **Fix:** Logged redacted pairing-attempt outcomes and inserted a duo-scoped successful-pairing audit event without the submitted code.
+- **Files modified:** `apps/web/src/app/(public)/parear/page.tsx`, `apps/web/src/platform/security/audit.ts`, `apps/web/src/modules/duo/infrastructure/duo-repository.ts`
+- **Verification:** `pnpm --filter @queue/web test`, `pnpm --filter @queue/web typecheck`, `pnpm lint`, `pnpm check:architecture`
+- **Committed in:** `8711193`
+
 ---
 
-**Total deviations:** 4 auto-fixed (1 Rule 1, 1 Rule 2, 1 Rule 3, 1 code review)
+**Total deviations:** 5 auto-fixed (1 Rule 1, 1 Rule 2, 1 Rule 3, 1 code review, 1 verifier closure)
 **Impact on plan:** The fixes preserve the planned duo scope while making pairing concurrency, authorization and production builds reliable.
 
 ## Issues Encountered
@@ -191,7 +204,7 @@ None in the Phase 1 duo pairing, identity, profile or shared-settings scope.
 - `pnpm --filter @queue/web test -- duo-domain` - passed
 - `pnpm --filter @queue/web test -- duo` - passed
 - `pnpm --filter @queue/web test -- duo-flow` - passed
-- `pnpm --filter @queue/web test` - passed
+- `pnpm --filter @queue/web test` - passed, 62 tests after verifier closure
 - `pnpm --filter @queue/web typecheck` - passed
 - `pnpm --filter @queue/db typecheck` - passed
 - `pnpm check:architecture` - passed

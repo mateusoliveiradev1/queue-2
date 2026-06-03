@@ -22,6 +22,7 @@ provides:
   - "Runtime role, forced-RLS and hot-query index integration checks"
   - "Concrete Neon restore rehearsal runbook and evidence template"
   - "Single Phase 1 security and verification gate command"
+  - "Structured redacting auth/security audit log contract"
 affects: [security, release-gates, database, app-router, ci, future-phases]
 
 tech-stack:
@@ -43,6 +44,8 @@ key-files:
     - packages/db/tests/role-privileges.test.ts
     - scripts/check-secrets.mjs
     - scripts/phase-1-gate.mjs
+    - apps/web/src/platform/auth/logger.ts
+    - apps/web/src/platform/security/audit.ts
   modified:
     - apps/web/next.config.ts
     - apps/web/package.json
@@ -64,6 +67,7 @@ patterns-established:
   - "Every phase gate can add local checks and environment-gated live checks without claiming skipped controls passed."
   - "Restore readiness is recorded as an executable checklist plus evidence table, not a general promise."
   - "Hot-query index review is backed by integration test plans and documented EXPLAIN rehearsal."
+  - "Security logs retain event categories while omitting sensitive payloads."
 
 requirements-completed: [SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06, SEC-07, SEC-08, DATA-04, DATA-09, DATA-10, DATA-11, DATA-12, DUO-04, DUO-09, SAFE-05, SAFE-07, SAFE-08, SAFE-09]
 
@@ -90,6 +94,7 @@ completed: 2026-06-03
 - Added Playwright auth, pairing, third-member, session-revocation, cross-duo route and axe accessibility suites with exact missing-fixture diagnostics.
 - Added database role privilege, forced-RLS and hot-query index-plan checks plus a concrete Neon restore rehearsal runbook.
 - Added `pnpm phase:1:gate` to orchestrate architecture, typecheck, lint, unit, database, build, secret, dependency and browser checks.
+- Added structured Better Auth and security audit records that retain event categories while discarding sensitive payloads.
 
 ## Task Commits
 
@@ -99,7 +104,7 @@ completed: 2026-06-03
 
 **Plan metadata:** pending final docs commit
 
-**Post-plan review fix:** `b279c0a`
+**Post-plan review/verifier fixes:** `b279c0a`, `8711193`
 
 ## Files Created/Modified
 
@@ -115,6 +120,7 @@ completed: 2026-06-03
 - `scripts/phase-1-gate.mjs` - Single Phase 1 verification orchestrator.
 - `packages/config/eslint/index.js` and `package.json` - Real shared ESLint static analysis and gate scripts.
 - `.planning/SECURITY.md` and `.env.example` - Verification contract, branch separation and browser fixture documentation.
+- `apps/web/src/platform/auth/logger.ts` and `apps/web/src/platform/security/audit.ts` - Redacted structured logging and security event records.
 
 ## Decisions Made
 
@@ -124,6 +130,7 @@ completed: 2026-06-03
 - The Phase 1 gate allows explicit missing-environment skips because local development may not have Neon or a deployed browser fixture, but the output states that those skips remain release blockers.
 - `pnpm audit --prod --audit-level high` is the blocking dependency threshold. The current audit has no high or critical findings and reports two moderate advisories.
 - Runtime and worker duo updates are restricted to Phase 1 settings columns, with progression and pairing-state columns denied by column privilege tests.
+- Better Auth warning/error output is reduced to structured event categories, and explicit session-revocation/pairing audit events omit tokens, emails, passwords and codes.
 
 ## Deviations from Plan
 
@@ -177,9 +184,17 @@ completed: 2026-06-03
 - **Verification:** `pnpm --filter @queue/web test:e2e`, `pnpm --filter @queue/db test:integration`, `pnpm lint`, `pnpm verify`, `pnpm phase:1:gate`
 - **Committed in:** `b279c0a`
 
+**7. [Verifier - Security] Added executable redacted logging evidence**
+- **Found during:** Goal-backward phase verification
+- **Issue:** The security contract claimed structured redacted logs and retained session/pairing audit events, but Better Auth still used its detailed default logger and explicit audit calls were incomplete.
+- **Fix:** Added a structured logger that discards Better Auth payloads plus explicit session-revocation and pairing audit events with focused tests.
+- **Files modified:** `apps/web/src/platform/auth/logger.ts`, `apps/web/src/platform/security/audit.ts`, `apps/web/src/platform/auth/server.ts`, `apps/web/src/platform/auth/session.ts`, `apps/web/tests/auth-security.test.ts`
+- **Verification:** `pnpm --filter @queue/web test`, `pnpm --filter @queue/web typecheck`, `pnpm lint`, `pnpm check:architecture`
+- **Committed in:** `8711193`
+
 ---
 
-**Total deviations:** 6 auto-fixed (3 Rule 2, 2 Rule 3, 1 code review)
+**Total deviations:** 7 auto-fixed (3 Rule 2, 2 Rule 3, 1 code review, 1 verifier closure)
 **Impact on plan:** The fixes make the planned checks executable and prevent false-positive verification without adding product scope.
 
 ## Issues Encountered
@@ -212,7 +227,7 @@ None in the Phase 1 security header, scanner, test or gate implementation.
 
 - `pnpm --filter @queue/web test -- security-headers` - passed
 - `pnpm check:secrets` - passed against source and generated client bundle
-- `pnpm --filter @queue/web test` - passed, 55 tests
+- `pnpm --filter @queue/web test` - passed, 62 tests
 - `pnpm --filter @queue/web test:e2e` - exited 0, 14 tests explicitly skipped without E2E fixture env
 - `pnpm --filter @queue/db test:integration` - exited 0, 11 tests explicitly skipped without `TEST_DATABASE_URL`
 - `pnpm lint` - passed
