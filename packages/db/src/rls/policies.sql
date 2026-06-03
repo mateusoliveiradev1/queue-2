@@ -108,6 +108,54 @@ CREATE POLICY app_duo_preferences_update_members ON app.duo_preferences
   USING (app.has_duo_membership(app.current_user_id(), duo_id))
   WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
 
+ALTER TABLE app.member_platforms ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.member_platforms FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_member_platforms_select_members ON app.member_platforms;
+DROP POLICY IF EXISTS app_member_platforms_insert_own ON app.member_platforms;
+DROP POLICY IF EXISTS app_member_platforms_update_own ON app.member_platforms;
+CREATE POLICY app_member_platforms_select_members ON app.member_platforms
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_member_platforms_insert_own ON app.member_platforms
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_member_platforms_update_own ON app.member_platforms
+  FOR UPDATE TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  )
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.duo_library_games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.duo_library_games FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_duo_library_games_select_members ON app.duo_library_games;
+DROP POLICY IF EXISTS app_duo_library_games_insert_members ON app.duo_library_games;
+DROP POLICY IF EXISTS app_duo_library_games_update_members ON app.duo_library_games;
+CREATE POLICY app_duo_library_games_select_members ON app.duo_library_games
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_duo_library_games_insert_members ON app.duo_library_games
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    added_by_user_id = app.current_user_id()
+    AND status_updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_duo_library_games_update_members ON app.duo_library_games
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    status_updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
 ALTER TABLE ops.domain_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops.domain_events FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ops_domain_events_select_members ON ops.domain_events;

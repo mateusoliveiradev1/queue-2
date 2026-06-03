@@ -43,6 +43,10 @@ GRANT UPDATE (name, timezone, updated_at) ON app.duos TO queue2_app_runtime, que
 GRANT SELECT ON app.duo_members TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON app.pairing_codes TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT, UPDATE ON app.duo_preferences TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.member_platforms TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (enabled, updated_at) ON app.member_platforms TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.duo_library_games TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (status, status_updated_by_user_id, updated_at) ON app.duo_library_games TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA app TO queue2_readonly;
 
 GRANT SELECT, INSERT ON ops.domain_events TO queue2_app_runtime, queue2_worker;

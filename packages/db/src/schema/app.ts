@@ -14,6 +14,7 @@ import {
 import { sql } from "drizzle-orm";
 
 import { authUsers } from "./auth";
+import { catalogGames } from "./catalog";
 
 export const appSchema = pgSchema("app");
 
@@ -110,3 +111,73 @@ export const duoPreferences = appSchema.table("duo_preferences", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
 });
+
+export const memberPlatforms = appSchema.table(
+  "member_platforms",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "cascade" }),
+    platform: varchar("platform", { length: 40 }).notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_member_platforms_user_platform_uidx").on(
+      table.userId,
+      table.platform
+    ),
+    index("app_member_platforms_duo_platform_idx").on(
+      table.duoId,
+      table.platform,
+      table.enabled
+    ),
+    check(
+      "app_member_platforms_platform_chk",
+      sql`${table.platform} IN ('pc', 'playstation', 'xbox', 'switch', 'steam-deck')`
+    )
+  ]
+);
+
+export const duoLibraryGames = appSchema.table(
+  "duo_library_games",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    catalogGameId: uuid("catalog_game_id")
+      .notNull()
+      .references(() => catalogGames.id, { onDelete: "restrict" }),
+    status: varchar("status", { length: 20 }).notNull().default("wishlist"),
+    addedByUserId: text("added_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    statusUpdatedByUserId: text("status_updated_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_duo_library_games_duo_catalog_uidx").on(
+      table.duoId,
+      table.catalogGameId
+    ),
+    index("app_duo_library_games_duo_status_idx").on(
+      table.duoId,
+      table.status,
+      table.updatedAt
+    ),
+    index("app_duo_library_games_catalog_idx").on(table.catalogGameId),
+    check(
+      "app_duo_library_games_status_chk",
+      sql`${table.status} IN ('wishlist', 'jogando', 'pausado', 'zerado', 'dropado')`
+    )
+  ]
+);
