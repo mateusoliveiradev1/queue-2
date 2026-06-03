@@ -15,7 +15,9 @@
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "check:architecture": "turbo run check:architecture",
-    "verify": "turbo run check:architecture typecheck lint test test:integration"
+    "check:secrets": "node scripts/check-secrets.mjs",
+    "audit:dependencies": "pnpm audit --prod --audit-level high",
+    "verify": "pnpm check:secrets && turbo run check:architecture typecheck lint test test:integration"
   },
   "devDependencies": {
     "turbo": "2.9.16",
