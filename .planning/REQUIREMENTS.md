@@ -22,13 +22,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **DUO-01**: Authenticated user without a duo can create a six-character pairing code
 - [ ] **DUO-02**: Authenticated user can join a duo by entering a valid six-character pairing code
 - [ ] **DUO-03**: A pairing code expires or can be revoked before it is used
-- [ ] **DUO-04**: A duo can never contain more than two members, including under concurrent pairing attempts
+- [x] **DUO-04**: A duo can never contain more than two members, including under concurrent pairing attempts
 - [ ] **DUO-05**: User can view the shared identity and pairing date of their duo
 - [ ] **DUO-06**: User can edit their own display name and profile settings
 - [ ] **DUO-07**: Duo can set a timezone used by resets, streaks and scheduled sessions
 - [ ] **DUO-08**: Duo can configure shared notification and audio preferences
-- [ ] **DUO-09**: User can only access data that belongs to their own duo
-- [ ] **DUO-10**: User cannot create solo play sessions or solo progress
+- [x] **DUO-09**: User can only access data that belongs to their own duo
+- [x] **DUO-10**: User cannot create solo play sessions or solo progress
 
 ### Brand And App Experience
 
@@ -58,22 +58,22 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Database Integrity
 
-- [ ] **DATA-01**: Database tables are assigned to explicit `auth`, `catalog`, `app` or `ops` schema ownership
-- [ ] **DATA-02**: Every domain table uses primary keys, foreign keys, nullability, unique constraints and check constraints to enforce practical invariants
-- [ ] **DATA-03**: Every duo-scoped table has `duo_id` with default-deny RLS enabled and forced
-- [ ] **DATA-04**: Web runtime uses a least-privileged non-owner role without `BYPASSRLS`, separate from migrator and worker credentials
-- [ ] **DATA-05**: Authenticated database identity is set transaction-locally so pooled connections cannot leak authorization context
-- [ ] **DATA-06**: Every `SECURITY DEFINER` function uses schema-qualified references, a safe fixed `search_path` and restricted execution privileges
-- [ ] **DATA-07**: Concurrent requests cannot violate duo membership, Principal game, Jogando limit, confirmation or idempotency invariants
-- [ ] **DATA-08**: XP ledger, domain events, roulette history and audit facts are append-only in normal application flows and can rebuild derived totals
-- [ ] **DATA-09**: Migrations apply to an empty database and upgrade the previous schema in automated integration tests
-- [ ] **DATA-10**: Applied migrations remain immutable and use a direct database connection rather than a pooled transaction connection
-- [ ] **DATA-11**: Hot queries, foreign keys and RLS predicates have reviewed indexes, bounded reads and query-plan verification
-- [ ] **DATA-12**: Production has a documented restore strategy and a successful restore test before launch
+- [x] **DATA-01**: Database tables are assigned to explicit `auth`, `catalog`, `app` or `ops` schema ownership
+- [x] **DATA-02**: Every domain table uses primary keys, foreign keys, nullability, unique constraints and check constraints to enforce practical invariants
+- [x] **DATA-03**: Every duo-scoped table has `duo_id` with default-deny RLS enabled and forced
+- [x] **DATA-04**: Web runtime uses a least-privileged non-owner role without `BYPASSRLS`, separate from migrator and worker credentials
+- [x] **DATA-05**: Authenticated database identity is set transaction-locally so pooled connections cannot leak authorization context
+- [x] **DATA-06**: Every `SECURITY DEFINER` function uses schema-qualified references, a safe fixed `search_path` and restricted execution privileges
+- [x] **DATA-07**: Concurrent requests cannot violate duo membership, Principal game, Jogando limit, confirmation or idempotency invariants
+- [x] **DATA-08**: XP ledger, domain events, roulette history and audit facts are append-only in normal application flows and can rebuild derived totals
+- [x] **DATA-09**: Migrations apply to an empty database and upgrade the previous schema in automated integration tests
+- [x] **DATA-10**: Applied migrations remain immutable and use a direct database connection rather than a pooled transaction connection
+- [x] **DATA-11**: Hot queries, foreign keys and RLS predicates have reviewed indexes, bounded reads and query-plan verification
+- [x] **DATA-12**: Production has a documented restore strategy and a successful restore test before launch
 
 ### Security Assurance
 
-- [ ] **SEC-01**: Project maintains a threat model covering protected assets, trust boundaries and abuse cases
+- [x] **SEC-01**: Project maintains a threat model covering protected assets, trust boundaries and abuse cases
 - [ ] **SEC-02**: Every Server Action, Route Handler, cron endpoint and server-side mutation validates input and authorizes the current session
 - [ ] **SEC-03**: Proxy or middleware is never the sole authorization gate for protected data or mutations
 - [ ] **SEC-04**: Pairing, search, external integration and economy-sensitive endpoints use persistent abuse rate limits
@@ -203,7 +203,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
 - [ ] **SAFE-07**: Authentication attempts are protected by persistent rate limiting suitable for a serverless runtime
 - [ ] **SAFE-08**: Authentication uses secure trusted origins, cookies and secrets in every deployed environment
-- [ ] **SAFE-09**: Development, preview or test, and production data use separate Neon branches
+- [x] **SAFE-09**: Development, preview or test, and production data use separate Neon branches
 
 ### Landing, Metadata And PWA
 
@@ -255,13 +255,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DUO-01 | Phase 1 | Pending |
 | DUO-02 | Phase 1 | Pending |
 | DUO-03 | Phase 1 | Pending |
-| DUO-04 | Phase 1 | Pending |
+| DUO-04 | Phase 1 | Complete |
 | DUO-05 | Phase 1 | Pending |
 | DUO-06 | Phase 1 | Pending |
 | DUO-07 | Phase 1 | Pending |
 | DUO-08 | Phase 1 | Pending |
-| DUO-09 | Phase 1 | Pending |
-| DUO-10 | Phase 1 | Pending |
+| DUO-09 | Phase 1 | Complete |
+| DUO-10 | Phase 1 | Complete |
 | BRND-01 | Phase 1 | Pending |
 | BRND-02 | Phase 1 | Pending |
 | BRND-03 | Phase 1 | Pending |
@@ -282,19 +282,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ARCH-05 | Phase 1 | Complete |
 | ARCH-06 | Phase 1 | Complete |
 | ARCH-07 | Phase 1 | Complete |
-| DATA-01 | Phase 1 | Pending |
-| DATA-02 | Phase 1 | Pending |
-| DATA-03 | Phase 1 | Pending |
-| DATA-04 | Phase 1 | Pending |
-| DATA-05 | Phase 1 | Pending |
-| DATA-06 | Phase 1 | Pending |
-| DATA-07 | Phase 1 | Pending |
-| DATA-08 | Phase 1 | Pending |
-| DATA-09 | Phase 1 | Pending |
-| DATA-10 | Phase 1 | Pending |
-| DATA-11 | Phase 1 | Pending |
-| DATA-12 | Phase 1 | Pending |
-| SEC-01 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Complete |
+| DATA-02 | Phase 1 | Complete |
+| DATA-03 | Phase 1 | Complete |
+| DATA-04 | Phase 1 | Complete |
+| DATA-05 | Phase 1 | Complete |
+| DATA-06 | Phase 1 | Complete |
+| DATA-07 | Phase 1 | Complete |
+| DATA-08 | Phase 1 | Complete |
+| DATA-09 | Phase 1 | Complete |
+| DATA-10 | Phase 1 | Complete |
+| DATA-11 | Phase 1 | Complete |
+| DATA-12 | Phase 1 | Complete |
+| SEC-01 | Phase 1 | Complete |
 | SEC-02 | Phase 1 | Pending |
 | SEC-03 | Phase 1 | Pending |
 | SEC-04 | Phase 1 | Pending |
@@ -400,7 +400,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-06 | Phase 6 | Pending |
 | SAFE-07 | Phase 1 | Pending |
 | SAFE-08 | Phase 1 | Pending |
-| SAFE-09 | Phase 1 | Pending |
+| SAFE-09 | Phase 1 | Complete |
 | META-01 | Phase 7 | Pending |
 | META-02 | Phase 1 | Pending |
 | META-03 | Phase 7 | Pending |

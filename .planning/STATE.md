@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-01-PLAN.md
-last_updated: "2026-06-03T04:02:09.169Z"
+stopped_at: Completed 01-02-PLAN.md
+last_updated: "2026-06-03T04:24:15.592Z"
 last_activity: 2026-06-03
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 1
-  percent: 17
+  completed_plans: 2
+  percent: 33
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 01 (fundacao-modular-marca-auth-e-dupla) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-06-03
 
-Progress: [██░░░░░░░░] 17%
+Progress: [███░░░░░░░] 33%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [██░░░░░░░░] 17%
 
 *Updated after each plan completion*
 | Phase 01 P01 | 8 min | 3 tasks | 21 files |
+| Phase 01 P02 | 16 min | 3 tasks | 24 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,10 @@ Recent decisions affecting current work:
 - [Phase 01]: Architecture checks run through the root pnpm script via Turborepo and the @queue/web package. — Keeps the plan-level gate graph-aware while executing one deterministic root checker.
 - [Phase 01]: The initial db package is explicitly server-only before any database schema is introduced. — Prevents future Client Components from normalizing database imports.
 - [Phase 01]: pnpm build approval for sharp is recorded in pnpm-workspace.yaml. — Keeps Next.js dependency installation non-interactive under pnpm 11.
+- [Phase 01]: Duo creation and pairing claims use SQL function paths. — The runtime role does not receive direct duo membership writes, preserving the /2 invariant.
+- [Phase 01]: Runtime database identity uses transaction-local queue2.user_id. — This prevents pooled Neon connections from leaking authorization context between requests.
+- [Phase 01]: Database integration tests are gated on TEST_DATABASE_URL with explicit skip output. — Local execution remains honest while Neon branch-backed tests stay executable when configured.
+- [Phase 01]: Neon restore rehearsal is a branch-based pre-launch gate. — Restore proof is tracked separately from implementation and must run before production launch.
 
 ### Pending Todos
 
@@ -94,6 +99,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-03T04:02:09.164Z
-Stopped at: Completed 01-01-PLAN.md
+Last session: 2026-06-03T04:23:03.847Z
+Stopped at: Completed 01-02-PLAN.md
 Resume file: None
