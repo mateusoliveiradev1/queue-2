@@ -19,7 +19,9 @@ O nome comunica as duas camadas centrais do produto: `Queue` e a fila de jogos d
 - **Authentication**: Better Auth self-hosted substitui Neon Auth e Clerk - a equipe assume operacao e configuracao segura do sistema de auth.
 - **Framework**: Next.js App Router e Vercel formam a base de producao - o prototipo Lovable permanece apenas como referencia visual.
 - **Repository**: `pnpm` workspaces e Turborepo organizam a aplicacao web, banco, UI e configuracoes compartilhadas sem separar o produto em microfrontends.
+- **Architecture**: O monolito modular possui dominios com APIs publicas e checks automaticos - imports internos entre dominios e regras de negocio em routes/UI sao proibidos.
 - **Security**: Dados de uma dupla nunca podem vazar para outra - autorizacao de servidor e RLS devem ser verificadas.
+- **Assurance**: Seguranca absoluta e banco perfeito nao sao promessas tecnicamente honestas - a v1 usa contratos verificaveis, ASVS Level 2, least privilege, restore testado e gates de release.
 - **Secrets**: `RAWG_API_KEY`, credenciais de email, secrets de auth e conexoes privilegiadas permanecem no servidor.
 - **External data**: RAWG exige atribuicao; tempo estimado e disponibilidade precisam expor fonte e frescor.
 - **Visual quality**: UI deve parecer produto intencional e proprio, nao template SaaS ou arcade neon generico.
@@ -136,7 +138,17 @@ Conventions not yet established. Will populate as patterns emerge during develop
 <!-- GSD:architecture-start source:ARCHITECTURE.md -->
 ## Architecture
 
-Architecture not yet mapped. Follow existing patterns found in the codebase.
+The binding modular architecture contract is `.planning/ARCHITECTURE.md`.
+The binding security and data contract is `.planning/SECURITY.md`.
+
+Read both files before changing module boundaries, database schema, authentication, authorization, server actions, route handlers, jobs or integrations.
+
+Key rules:
+- The product is one modular Next.js application, not microfrontends.
+- Domain modules expose public entrypoints and cannot deep-import each other's internals.
+- Business rules do not live in routes, React components or infrastructure adapters.
+- The web runtime uses least-privileged database access with forced RLS for duo-scoped data.
+- Known critical or high security findings block phase completion.
 <!-- GSD:architecture-end -->
 
 <!-- GSD:skills-start source:skills/ -->

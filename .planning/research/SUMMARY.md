@@ -11,7 +11,7 @@ QUEUE/2 e um produto full-stack centrado em uma unidade de uso incomum e estrutu
 
 A recomendacao e construir um monolito modular em Next.js App Router sobre Neon Postgres, com Better Auth self-hosted, Drizzle e acesso de dominio mediado pelo servidor. O repositorio usa `pnpm` workspaces e um Turborepo enxuto para `apps/web`, banco, UI e configuracoes compartilhadas, sem separar o produto em microfrontends. O prototipo Lovable permanece como referencia visual, mas TanStack Start ainda esta em Release Candidate; como o repositorio e greenfield, Next.js oferece uma base mais conservadora para deploy, metadata, PWA, Route Handlers e integracao Vercel.
 
-O produto deve usar transacoes, ledger de XP, eventos/outbox e RLS como defesa em profundidade desde a fundacao. Dados externos precisam ser tratados com cuidado: RAWG exige atribuicao e nao redistribuicao, nao ha API publica oficial de HLTB identificada e Game Pass nao deve ser apresentado como dado em tempo real sem fonte. A interface deve reservar espetaculo para momentos especiais e manter as tarefas diarias calmas, acessiveis e rapidas.
+O produto deve usar transacoes, ledger de XP, eventos/outbox e RLS como defesa em profundidade desde a fundacao. Modularidade precisa ser verificada por APIs publicas, dependency direction e checks automaticos, nao apenas por pastas. Seguranca usa OWASP ASVS 5.0 Level 2 como baseline de lancamento, roles separadas, RLS forcado, migrations e restore testados. Dados externos precisam ser tratados com cuidado: RAWG exige atribuicao e nao redistribuicao, nao ha API publica oficial de HLTB identificada e Game Pass nao deve ser apresentado como dado em tempo real sem fonte.
 
 ## Key Findings
 
@@ -50,8 +50,8 @@ O servidor e a unica autoridade para regras de dominio. Toda mutacao critica val
 
 **Major components:**
 1. **App Router UI** - paginas publicas, app autenticado, metadata e composicao adaptativa.
-2. **Auth and server boundary** - Better Auth, validacao, autorizacao e handlers.
-3. **Domain services** - pareamento, biblioteca, sessoes, gamificacao e roleta.
+2. **Domain modules** - APIs publicas, regras framework-free, use cases e adapters por capacidade.
+3. **Auth and server boundary** - Better Auth, validacao, autorizacao e handlers.
 4. **Neon Postgres** - schemas, constraints, RLS, ledger, eventos e read models.
 5. **Job and integration adapters** - RAWG, Resend, Web Push e runner agendado.
 
@@ -64,14 +64,16 @@ O servidor e a unica autoridade para regras de dominio. Toda mutacao critica val
 5. **Jobs perdidos** - cron apenas acorda uma fila persistida com retry e observabilidade.
 6. **Dados externos mal representados** - atribuir RAWG e registrar fonte/frescor de estimativas e disponibilidade.
 7. **UX visualmente cansativa** - utilidade calma, espetaculo pontual e reduced motion.
+8. **Modularidade de fachada** - falhar checks em deep imports, regras em routes e vazamentos client/server.
+9. **RLS ilusorio** - usar role non-owner real, RLS forcado e testes cross-duo.
 
 ## Implications for Roadmap
 
 ### Phase 1: Fundacao, Marca, Auth E Dupla
 **Rationale:** Toda feature depende de identidade, membership e isolamento corretos.
-**Delivers:** Scaffold Next.js, tokens QUEUE/2, Better Auth, perfil, pareamento, schema base, RLS e testes de isolamento.
+**Delivers:** Scaffold Next.js, contratos modulares, tokens QUEUE/2, Better Auth, perfil, pareamento, schema base, roles, RLS forcado, migrations e testes de isolamento.
 **Addresses:** Auth, identidade, dupla fixa e seguranca.
-**Avoids:** Vazamento entre duplas e terceiro membro.
+**Avoids:** Vazamento entre duplas, terceiro membro, modularidade de fachada e RLS ilusorio.
 
 ### Phase 2: Catalogo E Biblioteca
 **Rationale:** Descoberta, roleta e sessoes precisam de jogos normalizados e backlog real.
@@ -121,6 +123,7 @@ O servidor e a unica autoridade para regras de dominio. Toda mutacao critica val
 
 Phases likely needing deeper research during planning:
 - **Phase 1:** desenho exato de RLS com Better Auth self-hosted e role de aplicacao.
+- **Phase 1:** enforcement de modulos, threat model, migration tests e restore strategy.
 - **Phase 2:** contrato RAWG, normalizacao e estrategia de fonte para tempo/disponibilidade.
 - **Phase 3:** recomendacao cold-start e match score.
 - **Phase 4:** push web, jobs e regras de timezone.
@@ -148,6 +151,7 @@ Phases with standard patterns:
 - **Vercel plan:** lembretes precisos exigem frequencia que o plano Hobby nao oferece.
 - **Balanceamento:** XP, pity, raridade e quests precisam de simulacao e ajuste durante implementacao.
 - **Recomendacao colaborativa:** so deve ganhar peso depois de haver dados suficientes.
+- **Assurance:** ASVS Level 2 exige checklist aplicavel, evidencia e revisao antes do lancamento.
 
 ## Sources
 

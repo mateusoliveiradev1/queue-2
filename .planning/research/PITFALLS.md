@@ -137,6 +137,44 @@ Scanlines fora da roleta, glow sem significado, muitas superficies aninhadas ou 
 **Phase to address:**
 Phase 1 para tokens e shell; todas as fases de UI devem preservar o contrato.
 
+---
+
+### Pitfall 8: Modularidade De Fachada
+
+**What goes wrong:**
+O repositorio possui pastas e pacotes, mas routes, componentes e modulos importam internals uns dos outros e qualquer mudanca afeta tudo.
+
+**Why it happens:**
+Estrutura visual e confundida com dependency direction e enforcement.
+
+**How to avoid:**
+Use APIs publicas estreitas, dominio sem framework, eventos versionados e checks que falham em imports proibidos ou vazamentos client/server.
+
+**Warning signs:**
+Imports profundos entre modulos, regras de negocio em `page.tsx`, acesso ao banco em componentes ou um pacote `utils` sem ownership.
+
+**Phase to address:**
+Phase 1 - Fundacao modular, marca, auth e dupla.
+
+---
+
+### Pitfall 9: RLS Existe Mas O Runtime Pode Ignora-lo
+
+**What goes wrong:**
+Policies parecem corretas, mas a aplicacao conecta como owner ou role com `BYPASSRLS`, tornando o isolamento ilusorio.
+
+**Why it happens:**
+Credenciais de migration, worker e runtime sao reutilizadas por conveniencia.
+
+**How to avoid:**
+Separe roles, force RLS em tabelas por dupla, use contexto transaction-local e teste o runtime real contra tentativas cross-duo.
+
+**Warning signs:**
+Uma unica `DATABASE_URL` serve para migrations e runtime, ou testes de RLS rodam apenas como admin.
+
+**Phase to address:**
+Phase 1 - Fundacao modular, marca, auth e dupla.
+
 ## Technical Debt Patterns
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
@@ -147,6 +185,8 @@ Phase 1 para tokens e shell; todas as fases de UI devem preservar o contrato.
 | Um cron para tudo | Menos endpoints | Falhas parciais e retries dificeis | Apenas como runner de jobs |
 | Hardcode de regras de raridade | Prototipo rapido | Balanceamento quebra historico | Somente com versao explicita da regra |
 | WebSocket para todo estado | Sensacao de real-time | Operacao e debugging maiores | Apenas apos provar necessidade |
+| Pastas por feature sem enforcement | Aparencia organizada | Acoplamento cresce sem ser detectado | Never |
+| Uma unica role de banco | Configuracao simples | RLS e least privilege deixam de proteger o runtime | Never |
 
 ## Integration Gotchas
 
@@ -178,6 +218,7 @@ Phase 1 para tokens e shell; todas as fases de UI devem preservar o contrato.
 | Secret externo no cliente | Abuso de quota e vazamento | Variaveis server-only e adapters de integracao. |
 | Push subscription sem ownership | Notificacao enviada ao usuario errado | Vincular subscription ao usuario autenticado e permitir revogacao. |
 | Confirmacao dupla baseada em payload cliente | Falsificacao de parceiro | Derivar identidade da sessao e registrar cada confirmador. |
+| Runtime conectado como owner | Bypass silencioso de RLS | Role non-owner sem `BYPASSRLS`, RLS forcado e testes com credencial real. |
 
 ## UX Pitfalls
 
@@ -200,6 +241,9 @@ Phase 1 para tokens e shell; todas as fases de UI devem preservar o contrato.
 - [ ] **Jobs:** falha e retry preservam idempotencia e ficam observaveis.
 - [ ] **RAWG:** atribuicao aparece onde dados ou imagens sao usados.
 - [ ] **Acessibilidade:** reduced motion, teclado, foco, contraste, audio mute e touch targets foram verificados.
+- [ ] **Modularidade:** imports proibidos, deep imports e vazamentos client/server falham automaticamente.
+- [ ] **Banco:** migrations vazias/upgrade, role real de runtime, RLS forcado e restore foram verificados.
+- [ ] **Seguranca:** threat model, scans, ASVS Level 2 e testes adversariais foram registrados.
 
 ## Recovery Strategies
 
@@ -222,6 +266,8 @@ Phase 1 para tokens e shell; todas as fases de UI devem preservar o contrato.
 | XP duplicado | Phase 5 | Ledger unico por causa e replay de requests. |
 | Roleta manipulavel | Phase 6 | Resultado persistido antes da animacao. |
 | Visual cansativo | Todas as fases UI | Auditoria Impeccable, axe e reduced motion. |
+| Modularidade de fachada | Phase 1 | Checks automaticos falham em imports proibidos. |
+| Runtime ignora RLS | Phase 1 | Testes cross-duo usam a mesma role do runtime web. |
 
 ## Sources
 
@@ -233,6 +279,10 @@ Phase 1 para tokens e shell; todas as fases de UI devem preservar o contrato.
 - https://vercel.com/docs/limits/overview - limites de cron por plano.
 - https://rawg.io/apidocs - atribuicao, limites e nao redistribuicao.
 - https://developer.mozilla.org/en-US/docs/Web/API/Push_API - push web.
+- https://owasp.org/www-project-application-security-verification-standard/ - baseline ASVS.
+- https://turborepo.dev/docs/reference/boundaries - boundary checks.
+- `.planning/ARCHITECTURE.md` - contrato de modularidade.
+- `.planning/SECURITY.md` - contrato de seguranca e dados.
 
 ---
 *Pitfalls research for: QUEUE/2*

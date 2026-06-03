@@ -46,6 +46,45 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **BRND-12**: User sees global grain, sharp 4px or pill radii, and scanlines only inside the roulette experience
 - [ ] **BRND-13**: User receives accessible QUEUE/2-styled toast feedback for important actions, with high-impact variants reserved for matches, achievements and level-ups
 
+### Modular Architecture
+
+- [ ] **ARCH-01**: Codebase is organized as a modular monolith with explicit modules for duo, catalog, library, discovery, play, gamification, roulette and hall
+- [ ] **ARCH-02**: Each domain module exposes a narrow public entrypoint and other modules cannot deep-import its internals
+- [ ] **ARCH-03**: Domain rules can be tested without importing Next.js, React, Drizzle, Better Auth, browser APIs or external SDKs
+- [ ] **ARCH-04**: Routes, Server Actions, Route Handlers and React components delegate business decisions to application use cases
+- [ ] **ARCH-05**: Cross-domain mutations and derived effects use the owning module's public contract or versioned domain events
+- [ ] **ARCH-06**: Shared packages contain reusable database, UI or configuration concerns and cannot depend on application domain modules
+- [ ] **ARCH-07**: Automated architecture checks fail on forbidden imports, undeclared workspace dependencies and client/server boundary leaks
+
+### Database Integrity
+
+- [ ] **DATA-01**: Database tables are assigned to explicit `auth`, `catalog`, `app` or `ops` schema ownership
+- [ ] **DATA-02**: Every domain table uses primary keys, foreign keys, nullability, unique constraints and check constraints to enforce practical invariants
+- [ ] **DATA-03**: Every duo-scoped table has `duo_id` with default-deny RLS enabled and forced
+- [ ] **DATA-04**: Web runtime uses a least-privileged non-owner role without `BYPASSRLS`, separate from migrator and worker credentials
+- [ ] **DATA-05**: Authenticated database identity is set transaction-locally so pooled connections cannot leak authorization context
+- [ ] **DATA-06**: Every `SECURITY DEFINER` function uses schema-qualified references, a safe fixed `search_path` and restricted execution privileges
+- [ ] **DATA-07**: Concurrent requests cannot violate duo membership, Principal game, Jogando limit, confirmation or idempotency invariants
+- [ ] **DATA-08**: XP ledger, domain events, roulette history and audit facts are append-only in normal application flows and can rebuild derived totals
+- [ ] **DATA-09**: Migrations apply to an empty database and upgrade the previous schema in automated integration tests
+- [ ] **DATA-10**: Applied migrations remain immutable and use a direct database connection rather than a pooled transaction connection
+- [ ] **DATA-11**: Hot queries, foreign keys and RLS predicates have reviewed indexes, bounded reads and query-plan verification
+- [ ] **DATA-12**: Production has a documented restore strategy and a successful restore test before launch
+
+### Security Assurance
+
+- [ ] **SEC-01**: Project maintains a threat model covering protected assets, trust boundaries and abuse cases
+- [ ] **SEC-02**: Every Server Action, Route Handler, cron endpoint and server-side mutation validates input and authorizes the current session
+- [ ] **SEC-03**: Proxy or middleware is never the sole authorization gate for protected data or mutations
+- [ ] **SEC-04**: Pairing, search, external integration and economy-sensitive endpoints use persistent abuse rate limits
+- [ ] **SEC-05**: Production responses use an explicit Content Security Policy, HSTS, frame protection, content-type protection and restrictive referrer policy
+- [ ] **SEC-06**: User-generated text is treated as untrusted and cannot execute as HTML or script
+- [ ] **SEC-07**: Logs and error responses redact sensitive values while preserving security-relevant audit events
+- [ ] **SEC-08**: Dependency, secret and static analysis checks run before deployment
+- [ ] **SEC-09**: Production launch includes a recorded review of applicable OWASP ASVS 5.0 Level 2 controls
+- [ ] **SEC-10**: Secret rotation, session revocation and incident-response procedures are tested before launch
+- [ ] **SEC-11**: Final adversarial testing covers cross-duo IDOR, injection, replay, concurrency and privilege-escalation paths
+
 ### Catalog And Library
 
 - [ ] **CAT-01**: Duo can browse a catalog of games synchronized from RAWG
@@ -236,6 +275,36 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRND-11 | Phase 1 | Pending |
 | BRND-12 | Phase 7 | Pending |
 | BRND-13 | Phase 1 | Pending |
+| ARCH-01 | Phase 1 | Pending |
+| ARCH-02 | Phase 1 | Pending |
+| ARCH-03 | Phase 1 | Pending |
+| ARCH-04 | Phase 1 | Pending |
+| ARCH-05 | Phase 1 | Pending |
+| ARCH-06 | Phase 1 | Pending |
+| ARCH-07 | Phase 1 | Pending |
+| DATA-01 | Phase 1 | Pending |
+| DATA-02 | Phase 1 | Pending |
+| DATA-03 | Phase 1 | Pending |
+| DATA-04 | Phase 1 | Pending |
+| DATA-05 | Phase 1 | Pending |
+| DATA-06 | Phase 1 | Pending |
+| DATA-07 | Phase 1 | Pending |
+| DATA-08 | Phase 1 | Pending |
+| DATA-09 | Phase 1 | Pending |
+| DATA-10 | Phase 1 | Pending |
+| DATA-11 | Phase 1 | Pending |
+| DATA-12 | Phase 1 | Pending |
+| SEC-01 | Phase 1 | Pending |
+| SEC-02 | Phase 1 | Pending |
+| SEC-03 | Phase 1 | Pending |
+| SEC-04 | Phase 1 | Pending |
+| SEC-05 | Phase 1 | Pending |
+| SEC-06 | Phase 1 | Pending |
+| SEC-07 | Phase 1 | Pending |
+| SEC-08 | Phase 1 | Pending |
+| SEC-09 | Phase 7 | Pending |
+| SEC-10 | Phase 7 | Pending |
+| SEC-11 | Phase 7 | Pending |
 | CAT-01 | Phase 2 | Pending |
 | CAT-02 | Phase 2 | Pending |
 | CAT-03 | Phase 2 | Pending |
@@ -342,10 +411,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | META-08 | Phase 7 | Pending |
 
 **Coverage:**
-- v1 requirements: 134 total
-- Mapped to phases: 134
+- v1 requirements: 164 total
+- Mapped to phases: 164
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-03 after roadmap creation*
+*Last updated: 2026-06-03 after architecture and security hardening*

@@ -51,10 +51,9 @@
 ```text
 apps/
 `-- web/
-    |-- src/app/                  # landing, auth, parear e area autenticada
-    |-- src/features/             # dominios de produto e UI de jornada
-    |-- src/server/               # auth, dominio, jobs e integracoes
-    |-- src/lib/                  # helpers locais da aplicacao
+    |-- src/app/                  # routing, layouts e composicao
+    |-- src/modules/              # dominios com APIs publicas e camadas internas
+    |-- src/platform/             # auth, jobs, integracoes e adapters de runtime
     `-- tests/                    # unit, integration e e2e da aplicacao
 packages/
 |-- db/
@@ -73,12 +72,14 @@ turbo.json
 ### Structure Rationale
 
 - **`apps/web/`:** Mantem o produto como uma unica aplicacao Next.js e evita microfrontends desnecessarios.
-- **`apps/web/src/features/`:** Agrupa UI e comportamento por dominio do produto, evitando uma pasta de componentes sem ownership.
-- **`apps/web/src/server/`:** Centraliza regras que nunca podem depender do cliente.
+- **`apps/web/src/modules/`:** Agrupa dominio, use cases, adapters e apresentacao por capacidade de negocio com um unico entrypoint publico.
+- **`apps/web/src/platform/`:** Centraliza auth, jobs, integracoes e runtime sem permitir que dominios dependam desses detalhes.
 - **`packages/db/`:** Torna schema, migrations, policies e seeds reutilizaveis por app e tooling.
 - **`packages/ui/`:** Torna marca, primitivos e toaster consistentes sem adotar um tema generico.
 - **`packages/config/`:** Evita divergencia entre TypeScript, lint e tarefas dos workspaces.
 - **`pnpm` + Turborepo:** Mantem dependencias locais explicitas e tarefas orientadas pelo grafo.
+
+O contrato obrigatorio de estrutura, dependency direction e enforcement vive em `.planning/ARCHITECTURE.md`.
 
 ## Architectural Patterns
 
@@ -128,6 +129,18 @@ await tx.insert(duoXpLedger).values({
 **What:** Dashboard, Hall e stats leem dados derivados de eventos e sessoes, sem permitir edicao manual de totais.
 **When to use:** Horas coop, jogo favorito, streaks, nivel e replay.
 **Trade-offs:** Algumas queries podem precisar de views/materializacao depois, mas a fonte de verdade permanece clara.
+
+### Pattern 6: Public Module API
+
+**What:** Cada dominio expoe um `index.ts` estreito; outros dominios nao importam seus internals.
+**When to use:** Em toda comunicacao entre duo, catalog, library, discovery, play, gamification, roulette e hall.
+**Trade-offs:** Exige contratos explicitos, mas impede acoplamento invisivel e torna mudancas locais previsiveis.
+
+### Pattern 7: Framework-Free Domain
+
+**What:** Regras de negocio nao importam Next.js, React, Drizzle, Better Auth ou SDKs externos.
+**When to use:** Invariantes, calculos de XP, pity, streak, status e confirmacoes.
+**Trade-offs:** Requer ports e adapters, mas permite testes rapidos e troca de infraestrutura sem reescrever regras.
 
 ## Data Flow
 
@@ -184,6 +197,9 @@ Invariantes importantes:
 - Ledger, eventos e historicos usam idempotency keys unicas.
 - Tabelas de dominio com `duo_id` recebem RLS e testes de isolamento.
 - Funcoes `security definer` definem `search_path` seguro e privilegios minimos.
+- O runtime web usa role non-owner sem `BYPASSRLS`; migrator e worker usam credenciais separadas.
+- RLS e forcado nas tabelas por dupla para evitar bypass acidental do owner.
+- Migrations sao testadas em base vazia e upgrade, e restore e exercitado antes do lancamento.
 
 ## Scaling Considerations
 
@@ -219,6 +235,12 @@ Invariantes importantes:
 **Why it's wrong:** Falhas parciais sao dificeis de repetir e Vercel Cron nao tenta novamente.
 **Do this instead:** Cron apenas acorda um runner de jobs persistidos e idempotentes.
 
+### Anti-Pattern 4: Modularidade Apenas Em Pastas
+
+**What people do:** Criam pastas por feature, mas permitem imports profundos, regras em routes e acesso direto ao banco de qualquer lugar.
+**Why it's wrong:** O acoplamento continua invisivel e cada mudanca espalha regressao por varios dominios.
+**Do this instead:** Expor APIs publicas, aplicar dependency direction e falhar checks automaticos em imports proibidos.
+
 ## Integration Points
 
 ### External Services
@@ -238,6 +260,7 @@ Invariantes importantes:
 | Domain <-> database | Drizzle + SQL explicito | Toda operacao critica ocorre em transacao. |
 | Domain <-> gamification | Evento transacional | Evita acoplamento de todas as regras em uma funcao gigante. |
 | Jobs <-> integrations | Adapters server-only | Facilita testes, retries e troca de fornecedor. |
+| Module <-> module | Public contract ou domain event | Deep imports e writes diretos em tabelas de outro modulo sao proibidos. |
 
 ## Sources
 
@@ -250,6 +273,9 @@ Invariantes importantes:
 - https://www.postgresql.org/docs/current/sql-createfunction.html - seguranca de `SECURITY DEFINER`.
 - https://www.postgresql.org/docs/current/explicit-locking.html - locks transacionais e advisory locks.
 - https://vercel.com/docs/cron-jobs/manage-cron-jobs - seguranca, UTC e ausencia de retry.
+- https://turborepo.dev/docs/reference/boundaries - boundary checks em Turborepo.
+- `.planning/ARCHITECTURE.md` - contrato definitivo de modularidade.
+- `.planning/SECURITY.md` - contrato definitivo de seguranca e dados.
 
 ---
 *Architecture research for: QUEUE/2*

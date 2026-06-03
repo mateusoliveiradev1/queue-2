@@ -10,7 +10,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Fundacao, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura e formam uma dupla fixa.
+- [ ] **Phase 1: Fundacao Modular, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura sobre arquitetura e dados verificaveis.
 - [ ] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
 - [ ] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
@@ -20,16 +20,16 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 
 ## Phase Details
 
-### Phase 1: Fundacao, Marca, Auth E Dupla
-**Goal**: Usuarios podem acessar uma experiencia QUEUE/2 segura, customizada e limitada a uma dupla fixa de exatamente dois membros.
+### Phase 1: Fundacao Modular, Marca, Auth E Dupla
+**Goal**: Usuarios podem acessar uma experiencia QUEUE/2 segura, customizada e limitada a uma dupla fixa, sobre fronteiras modulares e dados verificaveis.
 **Depends on**: Nothing (first phase)
-**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, DUO-01, DUO-02, DUO-03, DUO-04, DUO-05, DUO-06, DUO-07, DUO-08, DUO-09, DUO-10, BRND-01, BRND-02, BRND-03, BRND-04, BRND-05, BRND-06, BRND-11, BRND-13, SAFE-05, SAFE-07, SAFE-08, SAFE-09, META-02
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, DUO-01, DUO-02, DUO-03, DUO-04, DUO-05, DUO-06, DUO-07, DUO-08, DUO-09, DUO-10, BRND-01, BRND-02, BRND-03, BRND-04, BRND-05, BRND-06, BRND-11, BRND-13, ARCH-01, ARCH-02, ARCH-03, ARCH-04, ARCH-05, ARCH-06, ARCH-07, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07, DATA-08, DATA-09, DATA-10, DATA-11, DATA-12, SEC-01, SEC-02, SEC-03, SEC-04, SEC-05, SEC-06, SEC-07, SEC-08, SAFE-05, SAFE-07, SAFE-08, SAFE-09, META-02
 **Success Criteria** (what must be TRUE):
-  1. Usuario pode criar conta, verificar email, entrar, permanecer autenticado, recuperar senha, gerenciar sessoes e sair pelas telas customizadas QUEUE/2.
-  2. Dois usuarios podem formar uma dupla por codigo expiravel ou revogavel, mas uma terceira pessoa nunca consegue entrar, inclusive com tentativas concorrentes.
-  3. Membros podem ver a identidade compartilhada, editar perfil, definir timezone e preferencias, sem criar progresso ou sessoes solo.
-  4. Duas duplas distintas nao conseguem acessar dados uma da outra, e secrets de servidor nunca aparecem no navegador.
-  5. A experiencia base ja exibe wordmark, brand mark, tokens, tipografia, ponteiro recorrente, loading `/2`, variantes de logo e toaster QUEUE/2 coerentes.
+  1. Usuario pode criar conta, verificar email, entrar, recuperar senha, gerenciar sessoes e formar uma dupla por codigo sem permitir um terceiro membro.
+  2. Dominios possuem APIs publicas e dependency direction verificadas automaticamente, enquanto routes, UI e Client Components nao conseguem importar regras ou recursos server-only indevidos.
+  3. Duas duplas distintas nao conseguem acessar dados uma da outra, e constraints, RLS forcado, roles separadas, transacoes e testes concorrentes preservam os invariantes centrais.
+  4. Migrations de banco passam em base vazia e upgrade, queries criticas possuem indices revisados e existe uma estrategia de restore testavel antes do lancamento.
+  5. Auth, rate limits, headers, validacao, logs e scans atendem ao contrato de seguranca, enquanto a experiencia base exibe a marca e feedback QUEUE/2 coerentes.
 **Plans**: TBD
 **UI hint**: yes
 
@@ -101,15 +101,27 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 ### Phase 7: Hall, Stats E Lancamento
 **Goal**: A dupla pode celebrar sua historia em um produto publico, responsivo, acessivel e pronto para ser compartilhado.
 **Depends on**: Phase 6
-**Requirements**: HALL-01, HALL-02, HALL-03, HALL-04, HALL-05, HALL-06, HALL-07, HALL-08, HALL-09, BRND-07, BRND-08, BRND-09, BRND-10, BRND-12, META-01, META-03, META-04, META-05, META-06, META-07, META-08
+**Requirements**: HALL-01, HALL-02, HALL-03, HALL-04, HALL-05, HALL-06, HALL-07, HALL-08, HALL-09, BRND-07, BRND-08, BRND-09, BRND-10, BRND-12, SEC-09, SEC-10, SEC-11, META-01, META-03, META-04, META-05, META-06, META-07, META-08
 **Success Criteria** (what must be TRUE):
   1. Cada membro pode revisar um jogo concluido, ver as duas reviews lado a lado e consultar a media da dupla.
   2. A dupla pode revisitar jogos no Hall da Moral, usar uma alternativa plana acessivel e reproduzir sua historia por timeline.
   3. A dupla pode consultar horas coop, vibe match, jogo favorito e dias pareados sem qualquer ranking interno.
   4. Visitantes entendem o ritual pela landing curta, e links compartilhados exibem titulos, descricao, metadata, JSON-LD e OG image corretos.
-  5. O produto final e instalavel como PWA, possui icon set completo e preserva capacidades, acessibilidade, reduced motion e disciplina visual em mobile e desktop.
+  5. O produto final e instalavel como PWA, preserva acessibilidade e disciplina visual, e so lanca depois de ASVS Level 2, incident response e testes adversariais registrados.
 **Plans**: TBD
 **UI hint**: yes
+
+## Quality Gates
+
+These gates apply to every phase and cannot be deferred as polish:
+
+- Architecture changes must preserve `.planning/ARCHITECTURE.md`; forbidden imports, deep imports and client/server leaks fail automated checks.
+- Database changes must identify ownership, constraints, RLS impact, indexes, migration coverage and concurrency behavior.
+- New endpoints and mutations must validate input, authorize the current session and include adversarial tests where relevant.
+- Known critical or high security findings block phase completion.
+- Changes to trust boundaries, protected assets or abuse cases update `.planning/SECURITY.md`.
+- Phase 1 cannot complete without the foundation gate in `.planning/SECURITY.md`.
+- Production launch cannot complete without the release gate in `.planning/SECURITY.md`.
 
 ## Progress
 
@@ -118,7 +130,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundacao, Marca, Auth E Dupla | 0/TBD | Not started | - |
+| 1. Fundacao Modular, Marca, Auth E Dupla | 0/TBD | Not started | - |
 | 2. Catalogo E Biblioteca | 0/TBD | Not started | - |
 | 3. Descoberta E Matches | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |

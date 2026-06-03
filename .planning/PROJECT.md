@@ -26,6 +26,7 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - [ ] A dupla pode revisitar sua historia no Hall da Moral e acompanhar estatisticas colaborativas.
 - [ ] Toda a experiencia publica e autenticada expressa a identidade visual QUEUE/2 com qualidade de produto final.
 - [ ] O backend protege dados por dupla, executa regras transacionais e integra o catalogo RAWG com seguranca.
+- [ ] A arquitetura permanece modular, o banco preserva invariantes e a seguranca e verificada por gates objetivos antes de cada entrega.
 
 ### Out of Scope
 
@@ -108,6 +109,17 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - Mobile-first orienta sessoes, confirmacoes e uso diario; desktop ganha mais densidade para descoberta, biblioteca e stats.
 - Motion deve ter proposito, com easing controlado e suporte a `prefers-reduced-motion`.
 - O processo visual usara Impeccable como disciplina de `shape`, `critique`, `audit` e `polish`, sem substituir a identidade propria do QUEUE/2.
+
+### Architecture, Data And Security Assurance
+
+- O contrato definitivo de modularidade vive em `.planning/ARCHITECTURE.md`.
+- O contrato definitivo de seguranca e integridade de dados vive em `.planning/SECURITY.md`.
+- QUEUE/2 e um monolito modular: uma aplicacao Next.js, com dominios separados por APIs publicas, dependency direction e checks automaticos.
+- Modularidade nao significa criar pacotes indiscriminadamente; significa impedir imports internos entre dominios, regras de negocio em routes/UI e vazamento de server-only para o cliente.
+- O banco usa constraints, RLS forcado, roles de minimo privilegio, transacoes, locks e idempotencia para preservar invariantes mesmo sob concorrencia.
+- Nenhuma promessa de "100% seguro" e tratada como realista. O alvo e defesa em profundidade, testes adversariais e OWASP ASVS 5.0 Level 2 como baseline de lancamento.
+- Fase 1 nao pode terminar sem provar isolamento entre duplas, limite de dois membros, migrations validas e fronteiras modulares.
+- Lancamento nao pode ocorrer com findings criticos ou altos conhecidos sem resolucao.
 
 ### Core Product Principle: Everything Belongs To The Duo
 
@@ -261,7 +273,9 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - **Authentication**: Better Auth self-hosted substitui Neon Auth e Clerk - a equipe assume operacao e configuracao segura do sistema de auth.
 - **Framework**: Next.js App Router e Vercel formam a base de producao - o prototipo Lovable permanece apenas como referencia visual.
 - **Repository**: `pnpm` workspaces e Turborepo organizam a aplicacao web, banco, UI e configuracoes compartilhadas sem separar o produto em microfrontends.
+- **Architecture**: O monolito modular possui dominios com APIs publicas e checks automaticos - imports internos entre dominios e regras de negocio em routes/UI sao proibidos.
 - **Security**: Dados de uma dupla nunca podem vazar para outra - autorizacao de servidor e RLS devem ser verificadas.
+- **Assurance**: Seguranca absoluta e banco perfeito nao sao promessas tecnicamente honestas - a v1 usa contratos verificaveis, ASVS Level 2, least privilege, restore testado e gates de release.
 - **Secrets**: `RAWG_API_KEY`, credenciais de email, secrets de auth e conexoes privilegiadas permanecem no servidor.
 - **External data**: RAWG exige atribuicao; tempo estimado e disponibilidade precisam expor fonte e frescor.
 - **Visual quality**: UI deve parecer produto intencional e proprio, nao template SaaS ou arcade neon generico.
@@ -288,6 +302,9 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 | Next.js App Router e Vercel como base de producao | O repositorio e greenfield e TanStack Start ainda esta em Release Candidate; a base escolhida reduz risco operacional | - Pending |
 | Next.js 16 moderno, mas apenas em versoes estaveis | App Router, Server Components, Server Actions, Route Handlers e Turbopack entregam a base moderna sem depender de canary | - Pending |
 | `pnpm` workspaces e Turborepo enxuto | O usuario quer monorepo e os pacotes de banco, UI e configuracao possuem fronteiras uteis, sem justificar microfrontends | - Pending |
+| Monolito modular com fronteiras obrigatorias | A modularidade precisa ser verificavel por contratos, dependency direction e checks, nao apenas por estrutura de pastas | - Pending |
+| Contratos de arquitetura e seguranca como gates | "100% modular" e "100% seguro" so podem ser aproximados com criterios objetivos que bloqueiam entregas inseguras | - Pending |
+| OWASP ASVS 5.0 Level 2 como baseline de lancamento | Fornece uma referencia verificavel adequada para uma aplicacao web que protege contas e dados privados | - Pending |
 | Drizzle ORM com SQL explicito para recursos avancados | Mantem queries tipadas sem esconder transacoes, RLS e constraints de Postgres | - Pending |
 | `tempo estimado` no lugar de HLTB obrigatorio | Nao foi identificada API publica oficial de HLTB; a UI deve representar apenas dados com fonte permitida | - Pending |
 | Dados de disponibilidade com fonte e frescor | Game Pass e ofertas mudam e nao devem parecer verdade em tempo real sem verificacao | - Pending |
@@ -310,4 +327,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-03 after project research*
+*Last updated: 2026-06-03 after architecture and security hardening*

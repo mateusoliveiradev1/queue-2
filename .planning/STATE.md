@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 1 - Fundacao, Marca, Auth E Dupla
+**Current focus:** Phase 1 - Fundacao Modular, Marca, Auth E Dupla
 
 ## Current Position
 
-Phase: 1 of 7 (Fundacao, Marca, Auth E Dupla)
+Phase: 1 of 7 (Fundacao Modular, Marca, Auth E Dupla)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-06-03 - Added pnpm, Turborepo, modern Next.js 16 and branded toaster decisions
+Last activity: 2026-06-03 - Added binding modular architecture, database integrity and security contracts
 
 Progress: [----------] 0%
 
@@ -44,6 +44,8 @@ Recent decisions affecting current work:
 
 - Next.js App Router and Vercel are the production base; the Lovable prototype is a visual reference.
 - The repository uses pnpm workspaces and a lean Turborepo with one Next.js app plus db, ui and config packages.
+- `.planning/ARCHITECTURE.md` and `.planning/SECURITY.md` are binding quality gates for all phases.
+- OWASP ASVS 5.0 Level 2 is the launch baseline; absolute security is not treated as a credible promise.
 - Neon Postgres replaces Lovable Cloud, with Better Auth self-hosted and server-mediated domain access.
 - The complete Plano Final v7 is v1 scope and will be delivered across seven phases.
 - External completion time is presented as sourced `tempo estimado`, not mandatory HLTB data.
@@ -57,6 +59,7 @@ None yet.
 - Precise 30-minute reminders require a scheduler frequency not available on Vercel Hobby.
 - RAWG attribution and external data freshness must remain visible in implementation.
 - Economy balance for XP, pity, rarity and quests needs simulation during planning.
+- Restore capability and the applicable ASVS checklist must be validated before production launch.
 
 ## Deferred Items
 
