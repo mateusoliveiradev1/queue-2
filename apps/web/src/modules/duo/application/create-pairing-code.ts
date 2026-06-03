@@ -2,17 +2,19 @@ import {
   canCreatePairingCode,
   classifyMembershipState,
   DEFAULT_DUO_TIMEZONE,
+  isValidTimezone,
   validatePlainText
 } from "../domain/duo-policy";
 import {
   createPairingCodeFromRandomIndex,
-  getPairingCodeExpiry
+  getPairingCodeExpiry,
+  isPairingCodeId
 } from "../domain/pairing-code";
 import type { DuoRepository, PairingCodeRecord } from "./ports";
 
 export type CreatePairingCodeResult =
   | { ok: true; state: "code-created" | "code-active"; code: PairingCodeRecord }
-  | { ok: false; state: "already-paired" };
+  | { ok: false; state: "already-paired" | "invalid-timezone" };
 
 export async function createPairingCodeUseCase(
   input: {
@@ -26,6 +28,12 @@ export async function createPairingCodeUseCase(
     now: () => Date;
   }
 ): Promise<CreatePairingCodeResult> {
+  const timezone = input.timezone?.trim() || DEFAULT_DUO_TIMEZONE;
+
+  if (!isValidTimezone(timezone)) {
+    return { ok: false, state: "invalid-timezone" };
+  }
+
   const displayName = validatePlainText(input.displayName, "display-name");
   await dependencies.repository.ensureProfile(
     input.userId,
@@ -63,7 +71,7 @@ export async function createPairingCodeUseCase(
         userId: input.userId,
         code,
         expiresAt,
-        timezone: input.timezone?.trim() || DEFAULT_DUO_TIMEZONE
+        timezone
       });
 
   return { ok: true, state: "code-created", code: createdCode };
@@ -73,6 +81,10 @@ export async function revokePairingCodeUseCase(
   input: { userId: string; pairingCodeId: string },
   repository: DuoRepository
 ): Promise<{ ok: true; state: "code-revoked" } | { ok: false; state: "code-inactive" }> {
+  if (!isPairingCodeId(input.pairingCodeId)) {
+    return { ok: false, state: "code-inactive" };
+  }
+
   const revoked = await repository.revokePairingCode(input);
 
   return revoked

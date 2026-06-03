@@ -21,10 +21,10 @@ const repositorySource = readFileSync(
   "utf8"
 );
 const rateLimitSource = readFileSync("src/platform/rate-limit/persistent.ts", "utf8");
-const pairingMigrationSource = readFileSync(
-  "../../packages/db/src/migrations/0002_pairing_runtime.sql",
-  "utf8"
-);
+const pairingMigrationSource = [
+  readFileSync("../../packages/db/src/migrations/0002_pairing_runtime.sql", "utf8"),
+  readFileSync("../../packages/db/src/migrations/0003_review_hardening.sql", "utf8")
+].join("\n");
 const pairingPageSource = readFileSync("src/app/(public)/parear/page.tsx", "utf8");
 const dashboardPageSource = readFileSync("src/app/app/page.tsx", "utf8");
 const duoPageSource = readFileSync("src/app/app/dupla/page.tsx", "utf8");
@@ -62,6 +62,37 @@ describe("duo pairing flow", () => {
 
     expect(revoked).toEqual({ ok: true, state: "code-revoked" });
     await expect(repository.getActivePairingCode("user-1")).resolves.toBeNull();
+  });
+
+  it("rejects invalid creation timezone and forged revoke ids before repository access", async () => {
+    const repository = new FakeDuoRepository();
+
+    await expect(
+      createPairingCodeUseCase(
+        {
+          userId: "user-1",
+          displayName: "Jogador 1",
+          timezone: "Timezone inventado"
+        },
+        {
+          repository,
+          randomIndex: () => 0,
+          now: () => new Date("2026-06-03T12:00:00.000Z")
+        }
+      )
+    ).resolves.toEqual({ ok: false, state: "invalid-timezone" });
+    await expect(
+      revokePairingCodeUseCase(
+        {
+          userId: "user-1",
+          pairingCodeId: "not-a-uuid"
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: false, state: "code-inactive" });
+
+    expect(repository.ensureProfileCalls).toBe(0);
+    expect(repository.revokeCalls).toBe(0);
   });
 
   it("maps invalid, inactive, already-paired and race-lost joins without leaking details", async () => {
@@ -173,6 +204,7 @@ describe("duo persistence contract", () => {
     expect(pairingMigrationSource).toContain("SECURITY DEFINER");
     expect(pairingMigrationSource).toContain("SET search_path = app, auth, ops, pg_catalog");
     expect(pairingMigrationSource).toContain("pairing_code_formed");
+    expect(pairingMigrationSource).toContain("WHERE code.id = target_pairing_code_id");
     expect(pairingMigrationSource).toContain("revoke_pairing_code");
     expect(pairingMigrationSource).toContain("REVOKE ALL ON FUNCTION");
   });
@@ -248,8 +280,12 @@ class FakeDuoRepository implements DuoRepository {
   readonly contexts = new Map<string, DuoUserContextRecord>();
   readonly codes = new Map<string, PairingCodeRecord>();
   claimOutcome: PairingClaimOutcome = { state: "inactive" };
+  ensureProfileCalls = 0;
+  revokeCalls = 0;
 
   async ensureProfile(userId: string, displayName: string) {
+    this.ensureProfileCalls += 1;
+
     if (!this.contexts.has(userId)) {
       this.contexts.set(userId, { profileDisplayName: displayName, membership: null });
     }
@@ -313,6 +349,7 @@ class FakeDuoRepository implements DuoRepository {
   }
 
   async revokePairingCode(input: { userId: string; pairingCodeId: string }) {
+    this.revokeCalls += 1;
     const code = Array.from(this.codes.values()).find(
       (candidate) => candidate.id === input.pairingCodeId
     );
@@ -356,7 +393,7 @@ class FakeDuoRepository implements DuoRepository {
 
   private makeCode(duoId: string, value: string, expiresAt: Date): PairingCodeRecord {
     const code = {
-      id: `code-${this.codes.size + 1}`,
+      id: `00000000-0000-4000-8000-${String(this.codes.size + 1).padStart(12, "0")}`,
       duoId,
       code: value,
       expiresAt,

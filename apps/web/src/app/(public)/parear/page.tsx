@@ -217,6 +217,10 @@ async function createPairingCodeAction(formData: FormData) {
   });
 
   if (!result.ok) {
+    if (result.state === "invalid-timezone") {
+      redirect(buildDuoPath("/parear", { estado: "timezone-invalido", modo: "criar" }));
+    }
+
     redirect(buildDuoPath("/app", { estado: "ja-pareado" }));
   }
 

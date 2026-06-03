@@ -17,6 +17,7 @@ import {
 import {
   createPairingCodeFromRandomIndex,
   getPairingCodeState,
+  isPairingCodeId,
   isPairingCodeFormat,
   normalizePairingCode
 } from "../src/modules/duo/domain/pairing-code";
@@ -27,6 +28,8 @@ describe("pairing code domain", () => {
     expect(isPairingCodeFormat("Q2K7M9")).toBe(true);
     expect(isPairingCodeFormat("Q2I7O9")).toBe(false);
     expect(isPairingCodeFormat("Q2K7M")).toBe(false);
+    expect(isPairingCodeId("00000000-0000-4000-8000-000000000001")).toBe(true);
+    expect(isPairingCodeId("code-1")).toBe(false);
   });
 
   it("creates a deterministic code from an injected random index", () => {
@@ -156,7 +159,7 @@ describe("create pairing code use case", () => {
 
 function createRepository(context: DuoUserContextRecord): DuoRepository {
   const code: PairingCodeRecord = {
-    id: "code-1",
+    id: "00000000-0000-4000-8000-000000000001",
     duoId: context.membership?.duoId ?? "duo-new",
     code: "ABCDEF",
     expiresAt: new Date("2026-06-04T12:00:00.000Z"),

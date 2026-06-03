@@ -2,6 +2,9 @@ export const PAIRING_CODE_LENGTH = 6;
 export const PAIRING_CODE_EXPIRY_HOURS = 24;
 export const PAIRING_CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
+const PAIRING_CODE_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 export type PairingCodeState = "active" | "inactive";
 export type PairingJoinFailureState =
   | "invalid"
@@ -25,6 +28,10 @@ export function isPairingCodeFormat(value: string): boolean {
   return new RegExp(`^[${PAIRING_CODE_ALPHABET}]{${PAIRING_CODE_LENGTH}}$`).test(
     normalizePairingCode(value)
   );
+}
+
+export function isPairingCodeId(value: string): boolean {
+  return PAIRING_CODE_ID_PATTERN.test(value.trim());
 }
 
 export function createPairingCodeFromRandomIndex(
