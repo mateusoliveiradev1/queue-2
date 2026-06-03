@@ -20,6 +20,7 @@ export const authStatusMessages = {
   signup: {
     "dados-invalidos": "Revise os campos antes de criar a conta.",
     "senha-invalida": "A senha ainda nao cumpre todos os requisitos.",
+    "senha-comprometida": "Essa senha aparece em vazamentos conhecidos. Escolha outra.",
     "senhas-diferentes": "As senhas informadas nao conferem.",
     "erro-cadastro": "Nao foi possivel criar a conta com esses dados agora."
   },
@@ -36,6 +37,7 @@ export const authStatusMessages = {
     enviado: "Se o email existir, o link de recuperacao chega por la.",
     "dados-invalidos": "Revise os campos e tente de novo.",
     "senha-invalida": "A nova senha ainda nao cumpre todos os requisitos.",
+    "senha-comprometida": "Essa senha aparece em vazamentos conhecidos. Escolha outra.",
     "link-invalido": "Link expirado ou ja usado. Solicite um novo link.",
     "senha-alterada": "Senha alterada. Entre com a nova senha para seguir."
   }

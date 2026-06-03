@@ -26,6 +26,12 @@ import {
   resendVerificationAction,
   signupAction
 } from "../src/platform/auth/server-actions";
+import {
+  checkPasswordBreach,
+  hashPasswordSha1,
+  parsePwnedPasswordRangeResponse,
+  shouldCheckPwnedPasswords
+} from "../src/platform/auth/password-breach";
 
 const serverActionsSource = readFileSync("src/platform/auth/server-actions.ts", "utf8");
 
@@ -65,6 +71,53 @@ describe("auth flow server actions", () => {
     expect(validateQueuePassword("Fila!2026").ok).toBe(true);
   });
 
+  it("checks breached passwords through SHA-1 k-anonymity range lookup", async () => {
+    const leakedPassword = "FilaExposta!2026";
+    const passwordHash = hashPasswordSha1(leakedPassword);
+    const suffix = passwordHash.slice(5);
+    const fetcher = vi.fn(
+      async () =>
+        new Response(`${suffix}:3303003\r\n00000000000000000000000000000000000:1`, {
+          status: 200
+        })
+    );
+
+    expect(passwordHash).toMatch(/^[A-F0-9]{40}$/);
+    expect(parsePwnedPasswordRangeResponse(`${suffix}:10`, suffix)).toBe(10);
+    expect(shouldCheckPwnedPasswords({ NODE_ENV: "test" } as NodeJS.ProcessEnv)).toBe(false);
+    expect(
+      shouldCheckPwnedPasswords({
+        NODE_ENV: "production",
+        AUTH_PASSWORD_BREACH_CHECK: "false"
+      } as NodeJS.ProcessEnv)
+    ).toBe(false);
+
+    await expect(
+      checkPasswordBreach(leakedPassword, {
+        env: {
+          NODE_ENV: "test",
+          AUTH_PASSWORD_BREACH_CHECK: "true"
+        } as NodeJS.ProcessEnv,
+        fetcher
+      })
+    ).resolves.toMatchObject({
+      checked: true,
+      compromised: true,
+      occurrences: 3303003
+    });
+
+    expect(fetcher).toHaveBeenCalledWith(
+      `https://api.pwnedpasswords.com/range/${passwordHash.slice(0, 5)}`,
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          "Add-Padding": "true"
+        })
+      })
+    );
+    expect(JSON.stringify(fetcher.mock.calls)).not.toContain(leakedPassword);
+    expect(JSON.stringify(fetcher.mock.calls)).not.toContain(passwordHash);
+  });
+
   it("normalizes route targets without leaking submitted email casing", () => {
     expect(normalizeAuthEmail("  Pessoa@Example.COM  ")).toBe("pessoa@example.com");
     expect(buildAuthPath("/login", { estado: "saiu" })).toBe("/login?estado=saiu");
@@ -79,6 +132,8 @@ describe("auth flow server actions", () => {
   it("delegates to Better Auth endpoints for real auth operations", () => {
     expect(serverActionsSource).toContain("confirmPassword");
     expect(serverActionsSource).toContain("senhas-diferentes");
+    expect(serverActionsSource).toContain("checkPasswordBreach");
+    expect(serverActionsSource).toContain("senha-comprometida");
     expect(serverActionsSource).toContain("auth.api.signUpEmail");
     expect(serverActionsSource).toContain("auth.api.signInEmail");
     expect(serverActionsSource).toContain("auth.api.sendVerificationEmail");
@@ -140,6 +195,28 @@ describe("auth pages wired to flow states", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/senhas informadas nao conferem/i);
     expect(screen.getByRole("list", { name: /checklist da senha/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /criar conta/i })).toBeInTheDocument();
+  });
+
+  it("renders compromised password states for signup and reset completion", async () => {
+    render(
+      await SignupPage({
+        searchParams: Promise.resolve({ estado: "senha-comprometida" })
+      })
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(/vazamentos conhecidos/i);
+    cleanup();
+
+    render(
+      await RecoverPasswordPage({
+        searchParams: Promise.resolve({
+          token: "reset-token-123456",
+          estado: "senha-comprometida"
+        })
+      })
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(/vazamentos conhecidos/i);
   });
 
   it("updates the signup password checklist while the user types", async () => {

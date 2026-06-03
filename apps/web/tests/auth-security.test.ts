@@ -11,6 +11,10 @@ import {
 import { authStatusMessages } from "../src/platform/auth/actions";
 import { sendAuthEmail, shouldUseDevelopmentEmailLog } from "../src/platform/auth/email";
 import { serializeAuthLogRecord } from "../src/platform/auth/logger";
+import {
+  passwordBreachCheckPolicy,
+  shouldCheckPwnedPasswords
+} from "../src/platform/auth/password-breach";
 import { serializeSecurityAuditEvent } from "../src/platform/security/audit";
 
 const sessionSource = readFileSync("src/platform/auth/session.ts", "utf8");
@@ -89,7 +93,17 @@ describe("auth runtime security policy", () => {
   it("uses persistent rate-limit storage instead of process memory", () => {
     expect(AUTH_RATE_LIMIT_STORAGE).toBe("database");
     expect(authRateLimitAudit.storage).toBe("database");
+    expect(authRateLimitAudit.keyScope).toBe("client-ip-and-auth-path");
     expect(authRateLimitAudit.serverlessSafe).toBe(true);
+    expect(authRateLimitAudit.ipHeaders).toEqual([
+      "x-forwarded-for",
+      "x-real-ip",
+      "cf-connecting-ip"
+    ]);
+    expect(authRateLimitAudit.rules["/sign-up/email"]).toEqual({
+      window: 300,
+      max: 5
+    });
     expect(authRateLimitAudit.storage).not.toMatch(/memory|process/i);
     expect(authRuntimePolicy.rateLimit.storage).toBe("database");
     expect(authSchemaSource).toContain('bigint("last_request", { mode: "number" })');
@@ -142,6 +156,18 @@ describe("auth runtime security policy", () => {
     expect(serverActionsSource).toContain("auth.api.requestPasswordReset");
     expect(serverActionsSource).toContain("auth.api.resetPassword");
     expect(serverActionsSource).toContain("validateQueuePassword");
+    expect(serverActionsSource).toContain("checkPasswordBreach");
+    expect(authRuntimePolicy.emailAndPassword.compromisedPasswordCheck).toEqual(
+      passwordBreachCheckPolicy
+    );
+    expect(passwordBreachCheckPolicy.sends).toBe("sha1-prefix-only");
+    expect(shouldCheckPwnedPasswords({ NODE_ENV: "production" } as NodeJS.ProcessEnv)).toBe(true);
+    expect(
+      shouldCheckPwnedPasswords({
+        NODE_ENV: "development",
+        AUTH_PASSWORD_BREACH_CHECK: "true"
+      } as NodeJS.ProcessEnv)
+    ).toBe(true);
     expect(sessionSource).toContain("shouldRequireEmailVerification()");
   });
 

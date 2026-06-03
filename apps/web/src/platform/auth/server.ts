@@ -15,6 +15,7 @@ import { nextCookies } from "better-auth/next-js";
 
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
 import { authLogger } from "./logger";
+import { passwordBreachCheckPolicy } from "./password-breach";
 import { authRateLimitAudit, authRateLimitOptions } from "./rate-limit";
 
 type Queue2AuthDatabase = ReturnType<typeof createDrizzleClient>;
@@ -44,7 +45,8 @@ export const authRuntimePolicy = {
     enabled: true,
     requireEmailVerification: true,
     minPasswordLength: 8,
-    maxPasswordLength: 128
+    maxPasswordLength: 128,
+    compromisedPasswordCheck: passwordBreachCheckPolicy
   },
   emailVerification: {
     sendOnSignUp: true,

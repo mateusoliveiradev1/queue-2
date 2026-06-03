@@ -11,6 +11,7 @@ import {
   normalizeAuthEmail,
   validateQueuePassword
 } from "./actions";
+import { checkPasswordBreach } from "./password-breach";
 
 const displayNameSchema = z.string().trim().min(2).max(40);
 const emailSchema = z.string().trim().email().max(320);
@@ -68,6 +69,10 @@ export async function signupAction(formData: FormData) {
 
   if (!passwordValidation.ok) {
     return redirectTo(buildAuthPath("/cadastro", { estado: "senha-invalida" }));
+  }
+
+  if ((await checkPasswordBreach(password)).compromised) {
+    return redirectTo(buildAuthPath("/cadastro", { estado: "senha-comprometida" }));
   }
 
   let target = buildVerificationPath(email, "cadastro");
@@ -277,6 +282,15 @@ export async function completePasswordResetAction(formData: FormData) {
       buildAuthPath("/recuperar-senha", {
         token: parsed.data.token,
         estado: "senha-invalida"
+      })
+    );
+  }
+
+  if ((await checkPasswordBreach(parsed.data.password)).compromised) {
+    return redirectTo(
+      buildAuthPath("/recuperar-senha", {
+        token: parsed.data.token,
+        estado: "senha-comprometida"
       })
     );
   }

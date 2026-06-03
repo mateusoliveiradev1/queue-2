@@ -63,6 +63,7 @@ Progress: [██████████] 100%
 
 | Date | Task | Summary |
 |------|------|---------|
+| 2026-06-03 | auth-senha-vazada-rate-limit | Cadastro e reset bloqueiam senhas comprometidas via k-anonymity SHA-1; auditoria de rate limit explicita storage, headers e regras por endpoint. |
 | 2026-06-03 | auth-signup-confirmacao-senha | Cadastro exige confirmacao de senha no cliente e no Server Action, com copy da politica alinhada a validacao real. |
 
 ## Accumulated Context
