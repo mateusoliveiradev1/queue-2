@@ -80,7 +80,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SEC-05**: Production responses use an explicit Content Security Policy, HSTS, frame protection, content-type protection and restrictive referrer policy
 - [x] **SEC-06**: User-generated text is treated as untrusted and cannot execute as HTML or script
 - [x] **SEC-07**: Logs and error responses redact sensitive values while preserving security-relevant audit events
-- [ ] **SEC-08**: Dependency, secret and static analysis checks run before deployment
+- [x] **SEC-08**: Dependency, secret and static analysis checks run before deployment
 - [ ] **SEC-09**: Production launch includes a recorded review of applicable OWASP ASVS 5.0 Level 2 controls
 - [ ] **SEC-10**: Secret rotation, session revocation and incident-response procedures are tested before launch
 - [ ] **SEC-11**: Final adversarial testing covers cross-duo IDOR, injection, replay, concurrency and privilege-escalation paths
@@ -301,7 +301,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-05 | Phase 1 | Complete |
 | SEC-06 | Phase 1 | Complete |
 | SEC-07 | Phase 1 | Complete |
-| SEC-08 | Phase 1 | Pending |
+| SEC-08 | Phase 1 | Complete |
 | SEC-09 | Phase 7 | Pending |
 | SEC-10 | Phase 7 | Pending |
 | SEC-11 | Phase 7 | Pending |
