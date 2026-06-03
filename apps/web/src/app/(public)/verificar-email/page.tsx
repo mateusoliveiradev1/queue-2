@@ -83,6 +83,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
             </p>
           </form>
           <form action={correctEmailAction} className="form-stack">
+            <input name="currentEmail" type="hidden" value={email ?? ""} />
             <div className="field">
               <label htmlFor="correct-email">Corrigir email</label>
               <input
@@ -92,18 +93,6 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
                 name="email"
                 required
                 type="email"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="correct-display-name">Nome de exibicao</label>
-              <input
-                autoComplete="name"
-                className="queue2-input"
-                id="correct-display-name"
-                maxLength={40}
-                name="displayName"
-                required
-                type="text"
               />
             </div>
             <div className="field">
@@ -121,8 +110,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
               Corrigir e enviar de novo
             </button>
             <p className="support-copy">
-              Use o email correto, nome e senha para gerar um novo link sem expor
-              detalhes da conta.
+              Confirme a senha para preservar o cadastro e invalidar o link anterior.
             </p>
           </form>
           <form action={logoutAction}>

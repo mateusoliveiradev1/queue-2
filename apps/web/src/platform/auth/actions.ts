@@ -77,6 +77,12 @@ const resetRequestSchema = z.object({
   email: emailSchema
 });
 
+const correctEmailSchema = z.object({
+  currentEmail: emailSchema,
+  email: emailSchema,
+  password: passwordSchema
+});
+
 const resetCompletionSchema = z.object({
   token: tokenSchema,
   password: passwordSchema
@@ -267,8 +273,8 @@ export async function resendVerificationAction(formData: FormData) {
 export async function correctEmailAction(formData: FormData) {
   "use server";
 
-  const parsed = signupSchema.safeParse({
-    displayName: formData.get("displayName"),
+  const parsed = correctEmailSchema.safeParse({
+    currentEmail: formData.get("currentEmail"),
     email: formData.get("email"),
     password: formData.get("password")
   });
@@ -277,37 +283,52 @@ export async function correctEmailAction(formData: FormData) {
     return redirectTo(buildAuthPath("/verificar-email", { estado: "correcao-incompleta" }));
   }
 
+  const currentEmail = normalizeAuthEmail(parsed.data.currentEmail);
   const email = normalizeAuthEmail(parsed.data.email);
-  const displayName = parsed.data.displayName.trim();
   const password = parsed.data.password;
-  const passwordValidation = validateQueuePassword(password, { displayName, email });
-
-  if (!passwordValidation.ok) {
-    return redirectTo(buildAuthPath("/verificar-email", { email, estado: "correcao-incompleta" }));
-  }
+  let corrected = false;
 
   try {
     const { auth, requestHeaders } = await getAuthRuntime();
 
     try {
-      await auth.api.changeEmail({
+      await auth.api.signInEmail({
         body: {
-          newEmail: email,
-          callbackURL: AUTH_PAIRING_CALLBACK_URL
-        },
-        headers: requestHeaders
-      });
-    } catch {
-      await auth.api.signUpEmail({
-        body: {
-          name: displayName,
-          email,
+          email: currentEmail,
           password,
           callbackURL: AUTH_PAIRING_CALLBACK_URL,
           rememberMe: true
         },
         headers: requestHeaders
       });
+    } catch (error) {
+      if (!isUnverifiedEmailError(error)) {
+        throw error;
+      }
+    }
+
+    const context = await auth.$context;
+    const pendingUser = await context.internalAdapter.findUserByEmail(currentEmail);
+
+    if (!pendingUser?.user || pendingUser.user.emailVerified) {
+      throw new Error("pending_user_not_found");
+    }
+
+    if (currentEmail !== email) {
+      const destinationUser = await context.internalAdapter.findUserByEmail(email);
+
+      if (destinationUser) {
+        throw new Error("pending_email_destination_unavailable");
+      }
+
+      const updatedUser = await context.internalAdapter.updateUserByEmail(currentEmail, {
+        email,
+        emailVerified: false
+      });
+
+      if (!updatedUser) {
+        throw new Error("pending_email_update_failed");
+      }
     }
 
     await auth.api.sendVerificationEmail({
@@ -317,11 +338,15 @@ export async function correctEmailAction(formData: FormData) {
       },
       headers: requestHeaders
     });
+
+    corrected = true;
   } catch {
-    // A neutral redirect avoids leaking whether the corrected email already has an account.
+    // Keep the result neutral; the UI must not reveal which credential or email failed.
   }
 
-  return redirectTo(buildVerificationPath(email, "email-corrigido"));
+  return redirectTo(
+    buildVerificationPath(email, corrected ? "email-corrigido" : "correcao-incompleta")
+  );
 }
 
 export async function requestPasswordResetAction(formData: FormData) {

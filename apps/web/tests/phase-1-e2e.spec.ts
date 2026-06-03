@@ -45,7 +45,9 @@ test.describe("Phase 1 auth and duo flow", () => {
   );
 
   test("signup, verification surface and reset request use the custom auth flow", async ({ page }) => {
-    const uniqueEmail = `queue2-e2e-${Date.now()}@example.com`;
+    const timestamp = Date.now();
+    const uniqueEmail = `queue2-e2e-${timestamp}@example.com`;
+    const correctedEmail = `queue2-e2e-corrected-${timestamp}@example.com`;
 
     await page.goto("/cadastro");
     await page.getByLabel(/nome de exibicao/i).fill("Jogador E2E");
@@ -58,8 +60,16 @@ test.describe("Phase 1 auth and duo flow", () => {
     await expect(page.getByRole("button", { name: /reenviar email/i })).toBeVisible();
     await expect(page.getByLabel(/corrigir email/i)).toBeVisible();
 
+    await page.getByLabel(/corrigir email/i).fill(correctedEmail);
+    await page.getByLabel(/senha escolhida/i).fill("Fila!2026-E2E");
+    await page.getByRole("button", { name: /corrigir e enviar de novo/i }).click();
+
+    await expect(page).toHaveURL(/\/verificar-email\?/);
+    await expect(page.getByRole("status")).toContainText(/nova verificacao/i);
+    await expect(page.getByText(correctedEmail)).toBeVisible();
+
     await page.goto("/recuperar-senha");
-    await page.getByLabel(/email da conta/i).fill(uniqueEmail);
+    await page.getByLabel(/email da conta/i).fill(correctedEmail);
     await page.getByRole("button", { name: /enviar link seguro/i }).click();
 
     await expect(page).toHaveURL(/\/recuperar-senha\?estado=enviado/);

@@ -73,7 +73,6 @@ describe("auth flow server actions", () => {
     expect(actionsSource).toContain("auth.api.signUpEmail");
     expect(actionsSource).toContain("auth.api.signInEmail");
     expect(actionsSource).toContain("auth.api.sendVerificationEmail");
-    expect(actionsSource).toContain("auth.api.changeEmail");
     expect(actionsSource).toContain("auth.api.requestPasswordReset");
     expect(actionsSource).toContain("auth.api.resetPassword");
     expect(actionsSource).toContain("auth.api.signOut");
@@ -86,8 +85,12 @@ describe("auth flow server actions", () => {
     expect(actionsSource).not.toContain('target = "/app"');
   });
 
-  it("records a new verification state for corrected emails using Better Auth capabilities", () => {
-    expect(actionsSource).toMatch(/changeEmail[\s\S]*signUpEmail[\s\S]*sendVerificationEmail/);
+  it("preserves a pending account when correcting email and invalidates the old lookup", () => {
+    expect(actionsSource).toMatch(
+      /currentEmail[\s\S]*signInEmail[\s\S]*internalAdapter\.updateUserByEmail[\s\S]*sendVerificationEmail/
+    );
+    expect(actionsSource).toContain("emailVerified: false");
+    expect(actionsSource).not.toMatch(/correctEmailAction[\s\S]*auth\.api\.signUpEmail/);
     expect(actionsSource).toContain("AUTH_PAIRING_CALLBACK_URL");
     expect(getAuthStatusMessage("verify", "email-corrigido")).toMatch(/nova verificacao/i);
   });
@@ -160,8 +163,8 @@ describe("auth pages wired to flow states", () => {
     expect(screen.getByRole("button", { name: /reenviar email/i })).toBeInTheDocument();
     expect(screen.getByText(new RegExp(`${AUTH_RESEND_COOLDOWN_SECONDS} segundos`, "i"))).toBeInTheDocument();
     expect(screen.getByLabelText(/corrigir email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/nome de exibicao/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/senha escolhida/i)).toBeInTheDocument();
+    expect(screen.getByText(/preservar o cadastro/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sair desta conta/i })).toBeInTheDocument();
   });
 
