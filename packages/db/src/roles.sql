@@ -36,7 +36,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA auth TO queue2_readonly;
 GRANT SELECT, INSERT, UPDATE ON app.profiles TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT, UPDATE ON app.duos TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON app.duo_members TO queue2_app_runtime, queue2_worker;
-GRANT SELECT, INSERT, UPDATE ON app.pairing_codes TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.pairing_codes TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT, UPDATE ON app.duo_preferences TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA app TO queue2_readonly;
 

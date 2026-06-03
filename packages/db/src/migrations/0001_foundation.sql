@@ -249,7 +249,7 @@ GRANT SELECT ON ALL TABLES IN SCHEMA auth TO queue2_readonly;
 GRANT SELECT, INSERT, UPDATE ON app.profiles TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT, UPDATE ON app.duos TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON app.duo_members TO queue2_app_runtime, queue2_worker;
-GRANT SELECT, INSERT, UPDATE ON app.pairing_codes TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.pairing_codes TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT, UPDATE ON app.duo_preferences TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA app TO queue2_readonly;
 
@@ -257,3 +257,258 @@ GRANT SELECT, INSERT ON ops.domain_events TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON ops.audit_events TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON ops.idempotency_keys TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA ops TO queue2_readonly;
+
+CREATE OR REPLACE FUNCTION app.current_user_id()
+RETURNS text
+LANGUAGE sql
+STABLE
+SET search_path = app, pg_catalog
+AS $$
+  SELECT nullif(current_setting('queue2.user_id', true), '')
+$$;
+
+CREATE OR REPLACE FUNCTION app.has_duo_membership(uid text, target_duo_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = app, pg_catalog
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM app.duo_members AS member
+    WHERE member.user_id = uid
+      AND member.duo_id = target_duo_id
+  )
+$$;
+
+CREATE OR REPLACE FUNCTION app.create_duo_with_pairing_code(
+  owner_user_id text,
+  duo_name text,
+  pairing_code text,
+  expires_at timestamptz,
+  duo_timezone text DEFAULT 'America/Sao_Paulo'
+)
+RETURNS TABLE (duo_id uuid, pairing_code_id uuid)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = app, auth, ops, pg_catalog
+AS $$
+DECLARE
+  new_duo_id uuid;
+  new_pairing_code_id uuid;
+BEGIN
+  IF app.current_user_id() IS DISTINCT FROM owner_user_id THEN
+    RAISE EXCEPTION 'database identity does not match owner_user_id' USING ERRCODE = '28000';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM app.duo_members AS member WHERE member.user_id = owner_user_id) THEN
+    RAISE EXCEPTION 'user_already_in_duo' USING ERRCODE = '23505';
+  END IF;
+
+  INSERT INTO app.duos (name, timezone)
+  VALUES (nullif(duo_name, ''), duo_timezone)
+  RETURNING id INTO new_duo_id;
+
+  INSERT INTO app.duo_members (duo_id, user_id, member_slot)
+  VALUES (new_duo_id, owner_user_id, 1);
+
+  INSERT INTO app.duo_preferences (duo_id)
+  VALUES (new_duo_id);
+
+  INSERT INTO app.pairing_codes (duo_id, code, created_by_user_id, expires_at)
+  VALUES (new_duo_id, upper(pairing_code), owner_user_id, expires_at)
+  RETURNING id INTO new_pairing_code_id;
+
+  duo_id := new_duo_id;
+  pairing_code_id := new_pairing_code_id;
+  RETURN NEXT;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION app.claim_pairing_code(pairing_code text, claimant_user_id text)
+RETURNS uuid
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = app, auth, ops, pg_catalog
+AS $$
+DECLARE
+  target_duo_id uuid;
+BEGIN
+  IF app.current_user_id() IS DISTINCT FROM claimant_user_id THEN
+    RAISE EXCEPTION 'database identity does not match claimant_user_id' USING ERRCODE = '28000';
+  END IF;
+
+  IF EXISTS (SELECT 1 FROM app.duo_members AS member WHERE member.user_id = claimant_user_id) THEN
+    RAISE EXCEPTION 'user_already_in_duo' USING ERRCODE = '23505';
+  END IF;
+
+  UPDATE app.pairing_codes AS code
+  SET claimed_by_user_id = claimant_user_id,
+      claimed_at = now()
+  WHERE code.code = upper(pairing_code)
+    AND code.revoked_at IS NULL
+    AND code.claimed_at IS NULL
+    AND code.expires_at > now()
+  RETURNING code.duo_id INTO target_duo_id;
+
+  IF target_duo_id IS NULL THEN
+    RAISE EXCEPTION 'pairing_code_inactive' USING ERRCODE = 'P0001';
+  END IF;
+
+  INSERT INTO app.duo_members (duo_id, user_id, member_slot)
+  VALUES (target_duo_id, claimant_user_id, 2);
+
+  UPDATE app.duos
+  SET paired_at = coalesce(paired_at, now()),
+      updated_at = now()
+  WHERE id = target_duo_id;
+
+  RETURN target_duo_id;
+END;
+$$;
+
+REVOKE ALL ON FUNCTION app.current_user_id() FROM PUBLIC;
+REVOKE ALL ON FUNCTION app.has_duo_membership(text, uuid) FROM PUBLIC;
+REVOKE ALL ON FUNCTION app.create_duo_with_pairing_code(text, text, text, timestamptz, text) FROM PUBLIC;
+REVOKE ALL ON FUNCTION app.claim_pairing_code(text, text) FROM PUBLIC;
+
+GRANT EXECUTE ON FUNCTION app.current_user_id() TO queue2_app_runtime, queue2_worker, queue2_readonly;
+GRANT EXECUTE ON FUNCTION app.has_duo_membership(text, uuid) TO queue2_app_runtime, queue2_worker, queue2_readonly;
+GRANT EXECUTE ON FUNCTION app.create_duo_with_pairing_code(text, text, text, timestamptz, text) TO queue2_app_runtime, queue2_worker;
+GRANT EXECUTE ON FUNCTION app.claim_pairing_code(text, text) TO queue2_app_runtime, queue2_worker;
+
+ALTER TABLE app.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.profiles FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_profiles_select_own ON app.profiles;
+DROP POLICY IF EXISTS app_profiles_insert_own ON app.profiles;
+DROP POLICY IF EXISTS app_profiles_update_own ON app.profiles;
+CREATE POLICY app_profiles_select_own ON app.profiles
+  FOR SELECT TO PUBLIC
+  USING (user_id = app.current_user_id());
+CREATE POLICY app_profiles_insert_own ON app.profiles
+  FOR INSERT TO PUBLIC
+  WITH CHECK (user_id = app.current_user_id());
+CREATE POLICY app_profiles_update_own ON app.profiles
+  FOR UPDATE TO PUBLIC
+  USING (user_id = app.current_user_id())
+  WITH CHECK (user_id = app.current_user_id());
+
+ALTER TABLE app.duos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.duos FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_duos_select_members ON app.duos;
+DROP POLICY IF EXISTS app_duos_insert_authenticated ON app.duos;
+DROP POLICY IF EXISTS app_duos_update_members ON app.duos;
+CREATE POLICY app_duos_select_members ON app.duos
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), id));
+CREATE POLICY app_duos_insert_authenticated ON app.duos
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.current_user_id() IS NOT NULL);
+CREATE POLICY app_duos_update_members ON app.duos
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), id));
+
+ALTER TABLE app.duo_members ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.duo_members FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_duo_members_select_own ON app.duo_members;
+DROP POLICY IF EXISTS app_duo_members_insert_pairing_flow ON app.duo_members;
+CREATE POLICY app_duo_members_select_own ON app.duo_members
+  FOR SELECT TO PUBLIC
+  USING (user_id = app.current_user_id());
+CREATE POLICY app_duo_members_insert_pairing_flow ON app.duo_members
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND (
+      member_slot = 1
+      OR (
+        member_slot = 2
+        AND EXISTS (
+          SELECT 1
+          FROM app.pairing_codes AS code
+          WHERE code.duo_id = app.duo_members.duo_id
+            AND code.claimed_by_user_id = app.current_user_id()
+            AND code.claimed_at IS NOT NULL
+        )
+      )
+    )
+  );
+
+ALTER TABLE app.pairing_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.pairing_codes FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_pairing_codes_select_visible ON app.pairing_codes;
+DROP POLICY IF EXISTS app_pairing_codes_insert_members ON app.pairing_codes;
+DROP POLICY IF EXISTS app_pairing_codes_update_members_or_claimant ON app.pairing_codes;
+CREATE POLICY app_pairing_codes_select_visible ON app.pairing_codes
+  FOR SELECT TO PUBLIC
+  USING (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    OR claimed_by_user_id = app.current_user_id()
+  );
+CREATE POLICY app_pairing_codes_insert_members ON app.pairing_codes
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    created_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_pairing_codes_update_members_or_claimant ON app.pairing_codes
+  FOR UPDATE TO PUBLIC
+  USING (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    OR (revoked_at IS NULL AND claimed_at IS NULL AND expires_at > now())
+  )
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    OR claimed_by_user_id = app.current_user_id()
+  );
+
+ALTER TABLE app.duo_preferences ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.duo_preferences FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_duo_preferences_select_members ON app.duo_preferences;
+DROP POLICY IF EXISTS app_duo_preferences_insert_members ON app.duo_preferences;
+DROP POLICY IF EXISTS app_duo_preferences_update_members ON app.duo_preferences;
+CREATE POLICY app_duo_preferences_select_members ON app.duo_preferences
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_duo_preferences_insert_members ON app.duo_preferences
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_duo_preferences_update_members ON app.duo_preferences
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE ops.domain_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.domain_events FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ops_domain_events_select_members ON ops.domain_events;
+DROP POLICY IF EXISTS ops_domain_events_insert_members ON ops.domain_events;
+CREATE POLICY ops_domain_events_select_members ON ops.domain_events
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_domain_events_insert_members ON ops.domain_events
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE ops.audit_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.audit_events FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ops_audit_events_select_members ON ops.audit_events;
+DROP POLICY IF EXISTS ops_audit_events_insert_members ON ops.audit_events;
+CREATE POLICY ops_audit_events_select_members ON ops.audit_events
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_audit_events_insert_members ON ops.audit_events
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE ops.idempotency_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.idempotency_keys FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ops_idempotency_keys_select_members ON ops.idempotency_keys;
+DROP POLICY IF EXISTS ops_idempotency_keys_insert_members ON ops.idempotency_keys;
+CREATE POLICY ops_idempotency_keys_select_members ON ops.idempotency_keys
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_idempotency_keys_insert_members ON ops.idempotency_keys
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
