@@ -1,3 +1,12 @@
+import "server-only";
+
+import { addGameToWishlistUseCase } from "./application/add-game-to-wishlist";
+import { getLibraryGameDetailUseCase } from "./application/get-library-game-detail";
+import { getLibraryOverviewUseCase } from "./application/get-library-overview";
+import { moveLibraryGameUseCase } from "./application/move-library-game";
+import { updateMemberPlatformsUseCase } from "./application/update-member-platforms";
+import { libraryRepository } from "./infrastructure/library-repository";
+
 export {
   getCommonPlatforms,
   isPlatformKey,
@@ -55,3 +64,43 @@ export type {
   MoveLibraryGameResult,
   UpdateMemberPlatformsResult
 } from "./application/ports";
+
+export {
+  toLibraryGameDetailView,
+  toLibraryOverviewView,
+  type LibraryGameDetailView,
+  type LibraryOverviewView
+} from "./presentation/view-models";
+
+export function getLibraryOverview(userId: string) {
+  return getLibraryOverviewUseCase(userId, libraryRepository);
+}
+
+export function updateMemberPlatforms(input: {
+  userId: string;
+  platforms: string[];
+}) {
+  return updateMemberPlatformsUseCase(input, libraryRepository);
+}
+
+export function addGameToWishlist(input: {
+  userId: string;
+  catalogGameId: string;
+}) {
+  return addGameToWishlistUseCase(input, libraryRepository);
+}
+
+export function moveLibraryGame(input: {
+  userId: string;
+  catalogGameId: string;
+  status: string;
+}) {
+  return moveLibraryGameUseCase(input, libraryRepository);
+}
+
+export function getLibraryGameDetail(input: {
+  userId: string;
+  catalogGameId: string;
+}) {
+  return getLibraryGameDetailUseCase(input, libraryRepository);
+}
