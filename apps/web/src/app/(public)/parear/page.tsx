@@ -52,7 +52,7 @@ export default function PairingPage() {
 
         <section className="auth-panel" aria-label="Pareamento por codigo">
           <QueueMark size={52} />
-          <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
+          <div className="pairing-tabs" role="group" aria-label="Modo de pareamento">
             <button
               aria-pressed={mode === "create"}
               className="queue2-button"
@@ -91,7 +91,7 @@ export default function PairingPage() {
                 >
                   Copiar codigo
                 </button>
-                <button className="queue2-button" data-tone="quiet" type="button">
+                <button className="queue2-button" data-tone="quiet" disabled type="button">
                   Revogar convite
                 </button>
               </div>
@@ -119,7 +119,7 @@ export default function PairingPage() {
                   type="text"
                 />
               </div>
-              <button className="queue2-button" data-tone="primary" type="submit">
+              <button className="queue2-button" data-tone="primary" disabled type="submit">
                 Entrar com codigo
               </button>
               <p className="support-copy">
