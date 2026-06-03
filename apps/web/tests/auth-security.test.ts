@@ -5,6 +5,7 @@ import { authRateLimitAudit, AUTH_RATE_LIMIT_STORAGE } from "../src/platform/aut
 import {
   authRuntimePolicy,
   resolveTrustedOrigins,
+  shouldRequireEmailVerification,
   shouldUseSecureCookies
 } from "../src/platform/auth/server";
 import { authStatusMessages } from "../src/platform/auth/actions";
@@ -124,10 +125,24 @@ describe("auth runtime security policy", () => {
 
   it("keeps reset flow, verification and password policies explicit", () => {
     expect(authRuntimePolicy.emailAndPassword.requireEmailVerification).toBe(true);
+    expect(shouldRequireEmailVerification({ NODE_ENV: "development" } as NodeJS.ProcessEnv)).toBe(true);
+    expect(
+      shouldRequireEmailVerification({
+        NODE_ENV: "development",
+        AUTH_REQUIRE_EMAIL_VERIFICATION: "false"
+      } as NodeJS.ProcessEnv)
+    ).toBe(false);
+    expect(
+      shouldRequireEmailVerification({
+        NODE_ENV: "production",
+        AUTH_REQUIRE_EMAIL_VERIFICATION: "false"
+      } as NodeJS.ProcessEnv)
+    ).toBe(true);
     expect(serverSource).toContain("revokeSessionsOnPasswordReset: true");
     expect(serverActionsSource).toContain("auth.api.requestPasswordReset");
     expect(serverActionsSource).toContain("auth.api.resetPassword");
     expect(serverActionsSource).toContain("validateQueuePassword");
+    expect(sessionSource).toContain("shouldRequireEmailVerification()");
   });
 
   it("allows local auth email logging only outside production", async () => {

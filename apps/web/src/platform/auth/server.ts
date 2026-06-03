@@ -87,6 +87,7 @@ export function createBetterAuthOptions(
 ): BetterAuthOptions {
   const baseURL = resolveBetterAuthUrl(env);
   const useSecureCookies = shouldUseSecureCookies(env, baseURL);
+  const requireEmailVerification = shouldRequireEmailVerification(env);
 
   return {
     appName: "QUEUE/2",
@@ -101,7 +102,7 @@ export function createBetterAuthOptions(
     logger: authLogger,
     emailAndPassword: {
       enabled: true,
-      requireEmailVerification: true,
+      requireEmailVerification,
       minPasswordLength: 8,
       maxPasswordLength: 128,
       resetPasswordTokenExpiresIn: 60 * 60,
@@ -111,8 +112,8 @@ export function createBetterAuthOptions(
       }
     },
     emailVerification: {
-      sendOnSignUp: true,
-      sendOnSignIn: true,
+      sendOnSignUp: requireEmailVerification,
+      sendOnSignIn: requireEmailVerification,
       autoSignInAfterVerification: true,
       expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url }) => {
@@ -183,6 +184,14 @@ export function resolveTrustedOrigins(
 
 export function shouldUseSecureCookies(env: Queue2AuthEnv, baseURL: string): boolean {
   return env.NODE_ENV === "production" || baseURL.startsWith("https://");
+}
+
+export function shouldRequireEmailVerification(env: Queue2AuthEnv = process.env): boolean {
+  if (env.NODE_ENV === "production") {
+    return true;
+  }
+
+  return env.AUTH_REQUIRE_EMAIL_VERIFICATION !== "false";
 }
 
 function resolveAuthDatabaseUrl(env: Queue2AuthEnv): string {

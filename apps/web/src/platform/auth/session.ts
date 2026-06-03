@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { recordSecurityAuditEvent } from "../security/audit";
-import { auth } from "./server";
+import { auth, shouldRequireEmailVerification } from "./server";
 
 export type QueueSession = Awaited<ReturnType<typeof auth.api.getSession>>;
 export type QueueSessionUser = NonNullable<QueueSession>["user"];
@@ -32,7 +32,7 @@ export async function requireVerifiedSession(): Promise<NonNullable<QueueSession
     redirect(AUTH_LOGIN_PATH);
   }
 
-  if (!session.user.emailVerified) {
+  if (shouldRequireEmailVerification() && !session.user.emailVerified) {
     redirect(
       buildPath(AUTH_VERIFY_EMAIL_PATH, {
         email: session.user.email,
@@ -105,7 +105,7 @@ export async function logoutCurrentSessionAction(_formData?: FormData) {
 export async function redirectAuthenticatedUserToPairing() {
   const session = await getCurrentSession();
 
-  if (session?.user.emailVerified) {
+  if (session && (!shouldRequireEmailVerification() || session.user.emailVerified)) {
     redirect("/parear");
   }
 }

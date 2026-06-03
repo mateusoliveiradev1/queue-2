@@ -66,7 +66,7 @@ export async function signupAction(formData: FormData) {
   let target = buildVerificationPath(email, "cadastro");
 
   try {
-    const { auth, requestHeaders } = await getAuthRuntime();
+    const { auth, requestHeaders, requireEmailVerification } = await getAuthRuntime();
     await auth.api.signUpEmail({
       body: {
         name: displayName,
@@ -77,6 +77,7 @@ export async function signupAction(formData: FormData) {
       },
       headers: requestHeaders
     });
+    target = requireEmailVerification ? target : AUTH_PAIRING_CALLBACK_URL;
   } catch (error) {
     logDevelopmentAuthActionError("signup", error);
     target = buildAuthPath("/cadastro", { estado: "erro-cadastro" });
@@ -99,7 +100,7 @@ export async function loginAction(formData: FormData) {
   let target = AUTH_PAIRING_CALLBACK_URL;
 
   try {
-    const { auth, requestHeaders } = await getAuthRuntime();
+    const { auth, requestHeaders, requireEmailVerification } = await getAuthRuntime();
     const result = await auth.api.signInEmail({
       body: {
         email,
@@ -110,7 +111,7 @@ export async function loginAction(formData: FormData) {
       headers: requestHeaders
     });
 
-    if (result.user && !result.user.emailVerified) {
+    if (requireEmailVerification && result.user && !result.user.emailVerified) {
       target = buildVerificationPath(email, "verifique-email");
     }
   } catch (error) {
@@ -337,10 +338,14 @@ function logDevelopmentAuthActionError(action: string, error: unknown) {
 }
 
 async function getAuthRuntime() {
-  const [{ headers }, { auth }] = await Promise.all([import("next/headers"), import("./server")]);
+  const [{ headers }, { auth, shouldRequireEmailVerification }] = await Promise.all([
+    import("next/headers"),
+    import("./server")
+  ]);
 
   return {
     auth,
+    requireEmailVerification: shouldRequireEmailVerification(),
     requestHeaders: await headers()
   };
 }
