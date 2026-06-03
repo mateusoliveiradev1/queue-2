@@ -59,25 +59,29 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
         <div className="public-intro queue2-grain">
           <PublicBrandLink variant="stacked" />
           <div>
-            <p className="eyebrow">/2 e regra de produto</p>
+            <p className="eyebrow">/2 e regra do jogo</p>
             <h1 className="page-title" id="pair-title">
-              Parear a dupla
+              Fechar a dupla
             </h1>
             <p className="lede">
-              Crie um convite ou entre com codigo. Quando os dois chegam, a fila
-              deixa de ser minha e vira nossa.
+              Crie um codigo para a outra pessoa ou use o convite que ela mandou.
+              QUEUE/2 so comeca quando os dois estao dentro.
             </p>
           </div>
           <PublicRitualStrip steps={["convite", "2/2", "fila"]} />
           <div className="neutral-state">
             <RoulettePointer aria-hidden="true" label="" tone="accent" />
-            <span>A dupla fica fixa nesta fase: exatamente dois jogadores.</span>
+            <span>Sem terceiro lugar: exatamente dois jogadores.</span>
           </div>
         </div>
 
         <section className="auth-panel" aria-label="Pareamento por codigo">
           <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={getSearchParam(params?.estado)} />
+          <div className="auth-panel-header">
+            <h2>{mode === "criar" ? "Criar convite" : "Usar convite"}</h2>
+            <p>Um codigo ativo fecha a dupla sem expor dados de outras contas.</p>
+          </div>
           <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
             <a
               aria-selected={mode === "criar"}
@@ -130,8 +134,8 @@ function CreateCodePanel({
     return (
       <div className="form-stack">
         <p className="support-copy">
-          Compartilhe este codigo com a outra pessoa. O convite vale por 24 horas e
-          pode ser revogado antes do uso.
+          Envie este codigo para a outra pessoa. O convite vale por 24 horas e pode
+          ser revogado antes do uso.
         </p>
         <output
           className="pairing-code"
@@ -160,11 +164,11 @@ function CreateCodePanel({
   return (
     <form action={createPairingCodeAction} className="form-stack">
       <p className="support-copy">
-        Crie um codigo de seis caracteres para convidar a outra pessoa da dupla.
+        Gere um codigo de seis caracteres para quem vai dividir a fila com voce.
       </p>
       <TimezoneInput defaultValue={timezone} detectOnMount />
       <p className="support-copy">
-        Confirme o timezone detectado. Resets e sessoes futuras usam esse fuso.
+        Confirme o fuso da dupla. Sessoes e lembretes futuros usam esse horario.
       </p>
       <button className="queue2-button" data-tone="primary" type="submit">
         Criar codigo da dupla
@@ -206,7 +210,7 @@ function JoinCodePanel({ disabled }: { disabled: boolean }) {
         Entrar com codigo
       </button>
       <p className="support-copy">
-        Inserir um codigo ativo forma a dupla imediatamente.
+        Um codigo ativo forma a dupla imediatamente.
       </p>
     </form>
   );

@@ -26,13 +26,13 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
         <div className="public-intro queue2-grain">
           <PublicBrandLink />
           <div>
-            <p className="eyebrow">Cadastro da dupla fixa</p>
+            <p className="eyebrow">Comece pelo seu lado</p>
             <h1 className="page-title" id="signup-title">
-              Criar conta para jogar junto
+              Criar sua entrada
             </h1>
             <p className="lede">
-              A conta e individual, mas o produto inteiro pertence a uma dupla.
-              Depois da verificacao, o proximo passo e parear.
+              A conta e sua. A fila nasce quando outra pessoa entra pelo
+              convite.
             </p>
           </div>
           <PublicRitualStrip steps={["conta", "email", "dupla"]} />
@@ -41,6 +41,10 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
         <form action={signupAction} className="auth-panel">
           <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
+          <div className="auth-panel-header">
+            <h2>Cadastro</h2>
+            <p>Use um email real. A verificacao libera o pareamento.</p>
+          </div>
           {statusMessage ? (
             <p className="neutral-state" role="status">
               {statusMessage}

@@ -31,6 +31,7 @@ input {
 .home-shell {
   display: grid;
   min-height: 100svh;
+  overflow: hidden;
   padding: clamp(24px, 5vw, 64px);
   place-items: center;
 }
@@ -47,6 +48,7 @@ input {
 .home-copy {
   align-content: center;
   display: grid;
+  gap: 0;
   min-height: min(760px, calc(100svh - 128px));
 }
 
@@ -74,13 +76,24 @@ input {
   margin-top: var(--space-7);
 }
 
+.home-proofline {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.5;
+  margin: var(--space-6) 0 0;
+  max-width: 42rem;
+  text-transform: uppercase;
+}
+
 .home-ritual-board {
   align-self: center;
   background: color-mix(in oklch, var(--surface) 86%, black);
   border: 1px solid color-mix(in oklch, var(--ink-muted) 22%, transparent);
   border-radius: var(--radius-sharp);
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
   padding: clamp(20px, 4vw, 32px);
 }
 
@@ -99,6 +112,10 @@ input {
 .home-board-header span,
 .home-board-footer {
   color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .home-board-header strong {
@@ -110,17 +127,23 @@ input {
 
 .home-queue-preview {
   display: grid;
-  gap: var(--space-3);
   margin: 0;
   padding: 0;
 }
 
 .home-queue-preview li {
-  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
-  border-radius: var(--radius-sharp);
+  align-items: start;
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: 3ch minmax(0, 1fr);
   list-style: none;
-  min-height: 96px;
-  padding: var(--space-4);
+  min-height: 88px;
+  padding: var(--space-5) 0;
+}
+
+.home-queue-preview li:last-child {
+  border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
 }
 
 .home-queue-preview li > span {
@@ -177,6 +200,7 @@ input {
 
 .auth-panel {
   background: color-mix(in oklch, var(--surface) 88%, black);
+  align-content: start;
   display: grid;
   gap: var(--space-6);
   padding: clamp(24px, 4vw, 40px);
@@ -198,6 +222,31 @@ input {
 .public-brand-link:hover .queue2-mark {
   border-color: color-mix(in oklch, var(--primary) 76%, var(--ink));
   transform: translateY(-1px);
+}
+
+.auth-panel-header {
+  border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  display: grid;
+  gap: var(--space-3);
+  padding-bottom: var(--space-5);
+}
+
+.auth-panel-header h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.auth-panel-header p {
+  color: var(--ink-muted);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 36rem;
 }
 
 .public-ritual-strip {
@@ -296,6 +345,7 @@ input {
   font-weight: 800;
   min-height: 44px;
   padding: 10px 0;
+  text-underline-offset: 0.18em;
 }
 
 .support-copy {
@@ -344,6 +394,37 @@ input {
 .queue2-button:disabled {
   cursor: not-allowed;
   opacity: 0.56;
+}
+
+.queue2-button,
+.text-link,
+.queue2-input {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.queue2-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.queue2-button[data-tone="quiet"]:hover {
+  background: color-mix(in oklch, var(--primary) 8%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 82%, var(--ink));
+}
+
+.queue2-button[data-tone="primary"]:hover {
+  background: color-mix(in oklch, var(--primary) 88%, var(--ink));
+}
+
+.queue2-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.queue2-input:hover:not(:disabled) {
+  border-color: color-mix(in oklch, var(--ink-muted) 52%, transparent);
 }
 
 .route-list {

@@ -34,8 +34,8 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
               Recuperar senha
             </h1>
             <p className="lede">
-              Se o email existir, o link chega por la. A mensagem e neutra para
-              proteger contas e evitar enumeracao.
+              Peca um link para voltar. Se o email existir, a gente envia sem
+              expor quais contas estao cadastradas.
             </p>
           </div>
           <PublicRitualStrip steps={["senha", "entrar", "dupla"]} />
@@ -44,6 +44,14 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
         <form action={token ? completePasswordResetAction : requestPasswordResetAction} className="auth-panel">
           <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
+          <div className="auth-panel-header">
+            <h2>{token ? "Nova senha" : "Enviar link"}</h2>
+            <p>
+              {token
+                ? "Escolha uma senha forte para retomar a fila."
+                : "Informe o email da conta. O retorno fica neutro por seguranca."}
+            </p>
+          </div>
           {statusMessage ? (
             <p className="neutral-state" role="status">
               {statusMessage}
@@ -86,7 +94,7 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
             </a>
           </div>
           <p className="support-copy">
-            O link expira e pode ser solicitado de novo se nao chegar.
+            O link expira. Se nao chegar, solicite outro depois de alguns minutos.
           </p>
         </form>
       </section>

@@ -154,17 +154,17 @@ describe("public QUEUE/2 route surfaces", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
-    expect(screen.getByText(/fila real de jogos coop/i)).toBeInTheDocument();
+    expect(screen.getByText(/nenhum jogo entra sozinho/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^entrar$/i })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: /criar conta/i })).toHaveAttribute("href", "/cadastro");
-    expect(screen.getByRole("link", { name: /parear dupla/i })).toHaveAttribute("href", "/parear");
-    expect(screen.getByText(/base publica pronta para a dupla/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /parear agora/i })).toHaveAttribute("href", "/parear");
+    expect(screen.getByText(/sem terceiro lugar/i)).toBeInTheDocument();
   });
 
   it("renders login with accessible email and password fields", async () => {
     render(await LoginPage());
 
-    expect(screen.getByRole("heading", { name: /entrar na fila da dupla/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /voltar para a fila/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
   });
@@ -229,7 +229,7 @@ describe("public QUEUE/2 route surfaces", () => {
 
     expect(screen.getByRole("heading", { name: /recuperar senha/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email da conta/i)).toBeInTheDocument();
-    expect(screen.getByText(/mensagem e neutra/i)).toBeInTheDocument();
+    expect(screen.getByText(/sem expor quais contas/i)).toBeInTheDocument();
   });
 
   it("renders pairing create-code mode with copy and validity", async () => {

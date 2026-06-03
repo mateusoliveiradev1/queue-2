@@ -26,13 +26,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
         <div className="public-intro queue2-grain">
           <PublicBrandLink variant="stacked" />
           <div>
-            <p className="eyebrow">A fila e nossa.</p>
+            <p className="eyebrow">Acesso da dupla</p>
             <h1 className="page-title" id="login-title">
-              Entrar na fila da dupla
+              Voltar para a fila
             </h1>
             <p className="lede">
-              Use o email verificado para voltar ao ritual da dupla. Sem ranking
-              individual, sem modo solo.
+              Entre para continuar a dupla que voce ja formou. Progresso aqui e
+              acordo, nao ranking individual.
             </p>
           </div>
           <PublicRitualStrip steps={["entrar", "parear", "jogar"]} />
@@ -42,9 +42,10 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
         <form action={loginAction} className="auth-panel" aria-describedby="login-copy">
           <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
-          <p className="support-copy" id="login-copy">
-            Entre com email verificado e senha para voltar ao ritual da dupla.
-          </p>
+          <div className="auth-panel-header" id="login-copy">
+            <h2>Entrar</h2>
+            <p>Use o email verificado e sua senha.</p>
+          </div>
           {statusMessage ? (
             <p className="neutral-state" role="status">
               {statusMessage}

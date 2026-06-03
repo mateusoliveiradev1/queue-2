@@ -61,24 +61,24 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
               Verifique seu email
             </h1>
             <p className="lede">
-              Enquanto o email nao for confirmado, a conta fica nesta tela.
-              Depois disso, o caminho segue para parear a dupla.
+              Abra o link para liberar o pareamento. Se digitou errado ou o link
+              expirou, resolva aqui sem recomecar o cadastro.
             </p>
           </div>
           <PublicRitualStrip steps={["email", "parear", "fila"]} />
           <div className="neutral-state">
             <RoulettePointer aria-hidden="true" label="" tone="accent" />
-            <span>Link expirado ou usado? Peca um novo envio sem detalhes tecnicos.</span>
+            <span>Link expirado ou usado? Peca outro envio.</span>
           </div>
         </div>
 
         <div className="auth-panel">
           <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
-          <p className="support-copy">
-            Enviamos a verificacao para o email cadastrado. O reenvio usa uma espera
-            curta para proteger a fila.
-          </p>
+          <div className="auth-panel-header">
+            <h2>Confirmar email</h2>
+            <p>Enviamos um link para o email cadastrado.</p>
+          </div>
           {email ? (
             <p className="support-copy">
               Email pendente: <strong>{email}</strong>
@@ -136,7 +136,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
               Corrigir e enviar de novo
             </button>
             <p className="support-copy">
-              Confirme a senha para preservar o cadastro e invalidar o link anterior.
+              Confirme a senha para trocar o email e invalidar o link anterior.
             </p>
           </form>
           <form action={logoutAction}>

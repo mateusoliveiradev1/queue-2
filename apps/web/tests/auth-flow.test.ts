@@ -278,7 +278,7 @@ describe("auth pages wired to flow states", () => {
     expect(screen.getByText(new RegExp(`${AUTH_RESEND_COOLDOWN_SECONDS} segundos`, "i"))).toBeInTheDocument();
     expect(screen.getByLabelText(/corrigir email/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/senha escolhida/i)).toBeInTheDocument();
-    expect(screen.getByText(/preservar o cadastro/i)).toBeInTheDocument();
+    expect(screen.getByText(/trocar o email e invalidar o link anterior/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sair desta conta/i })).toBeInTheDocument();
 
     await act(async () => {
