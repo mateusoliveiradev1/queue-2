@@ -1,22 +1,25 @@
 import type { Metadata } from "next";
 import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
 
+import {
+  getAuthStatusMessage,
+  queuePasswordRules,
+  signupAction
+} from "../../../platform/auth/actions";
+
 export const metadata: Metadata = {
   title: "Cadastro - QUEUE/2"
 };
 
-async function requestSignup(_formData: FormData) {
-  "use server";
-}
+type SignupPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-const passwordRules = [
-  "Pelo menos 8 caracteres",
-  "Uma letra e um numero",
-  "Um simbolo ou caractere especial",
-  "Nada de senha reutilizada"
-] as const;
+export default async function SignupPage({ searchParams }: SignupPageProps = {}) {
+  const params = (await searchParams) ?? {};
+  const state = getSearchParam(params.estado);
+  const statusMessage = getAuthStatusMessage("signup", state);
 
-export default function SignupPage() {
   return (
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="signup-title">
@@ -34,8 +37,13 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <form action={requestSignup} className="auth-panel">
+        <form action={signupAction} className="auth-panel">
           <QueueMark size={52} />
+          {statusMessage ? (
+            <p className="neutral-state" role="status">
+              {statusMessage}
+            </p>
+          ) : null}
           <div className="form-stack">
             <div className="field">
               <label htmlFor="signup-display-name">Nome de exibicao</label>
@@ -74,10 +82,10 @@ export default function SignupPage() {
             </div>
           </div>
           <ul className="password-checklist" id="password-rules" aria-label="Checklist da senha">
-            {passwordRules.map((rule) => (
-              <li data-rule-state="pending" key={rule}>
+            {queuePasswordRules.map((rule) => (
+              <li data-rule-state="pending" key={rule.id}>
                 <RoulettePointer aria-hidden="true" label="" />
-                <span>{rule}</span>
+                <span>{rule.label}</span>
               </li>
             ))}
           </ul>
@@ -93,4 +101,12 @@ export default function SignupPage() {
       </section>
     </main>
   );
+}
+
+function getSearchParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
 }

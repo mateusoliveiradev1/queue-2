@@ -51,6 +51,12 @@ export const authRuntimePolicy = {
     autoSignInAfterVerification: true,
     expiresIn: 60 * 60
   },
+  user: {
+    changeEmail: {
+      enabled: true,
+      updateEmailWithoutVerification: true
+    }
+  },
   rateLimit: authRateLimitAudit,
   cookies: {
     prefix: "queue2",
@@ -96,6 +102,12 @@ export function createBetterAuthOptions(
       expiresIn: 60 * 60,
       sendVerificationEmail: async ({ user, url }) => {
         await sendVerificationEmail({ user, url });
+      }
+    },
+    user: {
+      changeEmail: {
+        enabled: true,
+        updateEmailWithoutVerification: true
       }
     },
     session: {

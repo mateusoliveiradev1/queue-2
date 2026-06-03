@@ -1,15 +1,26 @@
 import type { Metadata } from "next";
 import { QueueMark, QueueWordmark } from "@queue/ui";
 
+import {
+  completePasswordResetAction,
+  getAuthStatusMessage,
+  requestPasswordResetAction
+} from "../../../platform/auth/actions";
+
 export const metadata: Metadata = {
   title: "Recuperar senha - QUEUE/2"
 };
 
-async function requestPasswordReset(_formData: FormData) {
-  "use server";
-}
+type RecoverPasswordPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default function RecoverPasswordPage() {
+export default async function RecoverPasswordPage({ searchParams }: RecoverPasswordPageProps = {}) {
+  const params = (await searchParams) ?? {};
+  const token = getSearchParam(params.token);
+  const state = getSearchParam(params.estado) ?? (getSearchParam(params.error) ? "link-invalido" : null);
+  const statusMessage = getAuthStatusMessage("recover", state);
+
   return (
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="recover-title">
@@ -27,22 +38,44 @@ export default function RecoverPasswordPage() {
           </div>
         </div>
 
-        <form action={requestPasswordReset} className="auth-panel">
+        <form action={token ? completePasswordResetAction : requestPasswordResetAction} className="auth-panel">
           <QueueMark size={52} />
-          <div className="field">
-            <label htmlFor="reset-email">Email da conta</label>
-            <input
-              autoComplete="email"
-              className="queue2-input"
-              id="reset-email"
-              name="email"
-              required
-              type="email"
-            />
-          </div>
+          {statusMessage ? (
+            <p className="neutral-state" role="status">
+              {statusMessage}
+            </p>
+          ) : null}
+          {token ? (
+            <div className="form-stack">
+              <input name="token" type="hidden" value={token} />
+              <div className="field">
+                <label htmlFor="reset-password">Nova senha</label>
+                <input
+                  autoComplete="new-password"
+                  className="queue2-input"
+                  id="reset-password"
+                  name="password"
+                  required
+                  type="password"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="field">
+              <label htmlFor="reset-email">Email da conta</label>
+              <input
+                autoComplete="email"
+                className="queue2-input"
+                id="reset-email"
+                name="email"
+                required
+                type="email"
+              />
+            </div>
+          )}
           <div className="form-actions">
             <button className="queue2-button" data-tone="primary" type="submit">
-              Enviar link seguro
+              {token ? "Alterar senha" : "Enviar link seguro"}
             </button>
             <a className="text-link queue2-focusable" href="/login">
               Voltar ao login
@@ -55,4 +88,12 @@ export default function RecoverPasswordPage() {
       </section>
     </main>
   );
+}
+
+function getSearchParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
 }

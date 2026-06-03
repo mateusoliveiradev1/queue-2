@@ -1,23 +1,40 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
+
+import {
+  AUTH_PAIRING_CALLBACK_URL,
+  AUTH_RESEND_COOLDOWN_SECONDS,
+  correctEmailAction,
+  getAuthStatusMessage,
+  logoutAction,
+  resendVerificationAction
+} from "../../../platform/auth/actions";
 
 export const metadata: Metadata = {
   title: "Verificar email - QUEUE/2"
 };
 
-async function resendVerification(_formData: FormData) {
-  "use server";
-}
+type VerifyEmailPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-async function correctEmail(_formData: FormData) {
-  "use server";
-}
+export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageProps = {}) {
+  const params = (await searchParams) ?? {};
+  const token = getSearchParam(params.token);
+  const email = getSearchParam(params.email);
+  const state = getSearchParam(params.estado) ?? (getSearchParam(params.error) ? "link-invalido" : null);
+  const statusMessage = getAuthStatusMessage("verify", state);
 
-async function logoutUnverified(_formData: FormData) {
-  "use server";
-}
+  if (token) {
+    const verifySearchParams = new URLSearchParams({
+      token,
+      callbackURL: AUTH_PAIRING_CALLBACK_URL
+    });
 
-export default function VerifyEmailPage() {
+    redirect(`/api/auth/verify-email?${verifySearchParams.toString()}`);
+  }
+
   return (
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="verify-title">
@@ -42,19 +59,30 @@ export default function VerifyEmailPage() {
         <div className="auth-panel">
           <QueueMark size={52} />
           <p className="support-copy">
-            Enviamos a verificacao para o email cadastrado. O reenvio usa uma
-            espera curta para proteger a fila.
+            Enviamos a verificacao para o email cadastrado. O reenvio usa uma espera
+            curta para proteger a fila.
           </p>
-          <form action={resendVerification} className="form-stack">
+          {email ? (
+            <p className="support-copy">
+              Email pendente: <strong>{email}</strong>
+            </p>
+          ) : null}
+          {statusMessage ? (
+            <p className="neutral-state" role="status">
+              {statusMessage}
+            </p>
+          ) : null}
+          <form action={resendVerificationAction} className="form-stack">
             <input name="intent" type="hidden" value="resend-verification" />
+            <input name="email" type="hidden" value={email ?? ""} />
             <button className="queue2-button" data-tone="primary" type="submit">
               Reenviar email
             </button>
             <p className="support-copy" aria-live="polite">
-              Novo reenvio disponivel em 60 segundos.
+              Novo reenvio disponivel em {AUTH_RESEND_COOLDOWN_SECONDS} segundos.
             </p>
           </form>
-          <form action={correctEmail} className="form-stack">
+          <form action={correctEmailAction} className="form-stack">
             <div className="field">
               <label htmlFor="correct-email">Corrigir email</label>
               <input
@@ -66,11 +94,38 @@ export default function VerifyEmailPage() {
                 type="email"
               />
             </div>
+            <div className="field">
+              <label htmlFor="correct-display-name">Nome de exibicao</label>
+              <input
+                autoComplete="name"
+                className="queue2-input"
+                id="correct-display-name"
+                maxLength={40}
+                name="displayName"
+                required
+                type="text"
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="correct-password">Senha escolhida</label>
+              <input
+                autoComplete="current-password"
+                className="queue2-input"
+                id="correct-password"
+                name="password"
+                required
+                type="password"
+              />
+            </div>
             <button className="queue2-button" data-tone="quiet" type="submit">
               Corrigir e enviar de novo
             </button>
+            <p className="support-copy">
+              Use o email correto, nome e senha para gerar um novo link sem expor
+              detalhes da conta.
+            </p>
           </form>
-          <form action={logoutUnverified}>
+          <form action={logoutAction}>
             <button className="queue2-button" data-tone="quiet" type="submit">
               Sair desta conta
             </button>
@@ -79,4 +134,12 @@ export default function VerifyEmailPage() {
       </section>
     </main>
   );
+}
+
+function getSearchParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
 }

@@ -1,15 +1,21 @@
 import type { Metadata } from "next";
 import { QueueMark, QueueWordmark, RouletteDivider } from "@queue/ui";
 
+import { getAuthStatusMessage, loginAction } from "../../../platform/auth/actions";
+
 export const metadata: Metadata = {
   title: "Entrar - QUEUE/2"
 };
 
-async function requestLogin(_formData: FormData) {
-  "use server";
-}
+type LoginPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
+  const params = (await searchParams) ?? {};
+  const state = getSearchParam(params.estado);
+  const statusMessage = getAuthStatusMessage("login", state);
+
   return (
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="login-title">
@@ -28,11 +34,16 @@ export default function LoginPage() {
           <RouletteDivider />
         </div>
 
-        <form action={requestLogin} className="auth-panel" aria-describedby="login-copy">
+        <form action={loginAction} className="auth-panel" aria-describedby="login-copy">
           <QueueMark size={52} />
           <p className="support-copy" id="login-copy">
-            A entrada real sera conectada ao fluxo seguro de autenticacao da Fase 1.
+            Entre com email verificado e senha para voltar ao ritual da dupla.
           </p>
+          {statusMessage ? (
+            <p className="neutral-state" role="status">
+              {statusMessage}
+            </p>
+          ) : null}
           <div className="form-stack">
             <div className="field">
               <label htmlFor="login-email">Email</label>
@@ -75,4 +86,12 @@ export default function LoginPage() {
       </section>
     </main>
   );
+}
+
+function getSearchParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
 }

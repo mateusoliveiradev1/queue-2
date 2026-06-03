@@ -16,16 +16,16 @@ afterEach(() => {
 });
 
 describe("public QUEUE/2 route surfaces", () => {
-  it("renders login with accessible email and password fields", () => {
-    render(createElement(LoginPage));
+  it("renders login with accessible email and password fields", async () => {
+    render(await LoginPage());
 
     expect(screen.getByRole("heading", { name: /entrar na fila da dupla/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
   });
 
-  it("renders signup with progressive password checklist hooks", () => {
-    render(createElement(SignupPage));
+  it("renders signup with progressive password checklist hooks", async () => {
+    render(await SignupPage());
 
     expect(screen.getByLabelText(/nome de exibicao/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
@@ -34,16 +34,16 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByText(/pelo menos 8 caracteres/i)).toBeInTheDocument();
   });
 
-  it("renders verification actions for resend, correction and logout", () => {
-    render(createElement(VerifyEmailPage));
+  it("renders verification actions for resend, correction and logout", async () => {
+    render(await VerifyEmailPage());
 
     expect(screen.getByRole("button", { name: /reenviar email/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/corrigir email/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /sair desta conta/i })).toBeInTheDocument();
   });
 
-  it("renders password recovery with neutral reset copy", () => {
-    render(createElement(RecoverPasswordPage));
+  it("renders password recovery with neutral reset copy", async () => {
+    render(await RecoverPasswordPage());
 
     expect(screen.getByRole("heading", { name: /recuperar senha/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email da conta/i)).toBeInTheDocument();
