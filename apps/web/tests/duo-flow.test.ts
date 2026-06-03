@@ -230,7 +230,7 @@ describe("duo route-state wiring", () => {
   it("does not request push permission in Phase 1 preferences", () => {
     expect(duoPageSource).not.toContain("Notification.requestPermission");
     expect(duoPageSource).not.toContain("PushManager");
-    expect(duoPageSource).toContain("Push so sera pedido depois");
+    expect(duoPageSource).toContain("A permissao de push so aparece");
   });
 });
 

@@ -30,7 +30,7 @@ const statusMessages: Record<DuoStatusState, string> = {
   "dupla-atualizada": "Identidade e preferencias da dupla atualizadas.",
   "perfil-atualizado": "Nome de exibicao atualizado.",
   "nome-invalido": "Use um nome curto em texto simples, sem HTML ou formatacao.",
-  "timezone-invalido": "Confirme um timezone valido para a dupla."
+  "timezone-invalido": "Confirme um fuso valido para a dupla."
 };
 
 export function getDuoStatusMessage(

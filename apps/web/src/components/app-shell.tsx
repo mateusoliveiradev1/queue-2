@@ -4,7 +4,7 @@ import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
 type AppShellPage = "dashboard" | "perfil" | "dupla";
 
 const navigation = [
-  { href: "/app", label: "Dashboard", page: "dashboard" },
+  { href: "/app", label: "Fila", page: "dashboard" },
   { href: "/app/dupla", label: "Dupla", page: "dupla" },
   { href: "/app/perfil", label: "Perfil", page: "perfil" }
 ] as const;
@@ -20,10 +20,10 @@ export function AppShell({
     <div className="app-shell">
       <aside className="app-sidebar queue2-grain" aria-label="Navegacao principal">
         <div>
-          <a className="queue2-focusable" href="/app" aria-label="Ir para o dashboard QUEUE dois">
+          <a className="queue2-focusable" href="/app" aria-label="Ir para a fila QUEUE dois">
             <QueueWordmark compact />
           </a>
-          <nav className="app-nav" aria-label="Paginas autenticadas da Fase 1">
+          <nav className="app-nav" aria-label="Area autenticada QUEUE dois">
             {navigation.map((item) => (
               <a
                 aria-current={currentPage === item.page ? "page" : undefined}
@@ -39,7 +39,7 @@ export function AppShell({
         </div>
         <div className="neutral-state">
           <QueueMark size={40} />
-          <span>/2: uma fila, dois jogadores, progresso compartilhado.</span>
+          <span>A fila pertence aos dois. Tudo que importa aqui e compartilhado.</span>
         </div>
       </aside>
       <main className="app-main">{children}</main>

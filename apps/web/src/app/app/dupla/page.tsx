@@ -40,11 +40,11 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
     <AppShell currentPage="dupla">
       <header className="app-header">
         <div>
-          <p className="eyebrow">Identidade compartilhada</p>
+          <p className="eyebrow">Contrato /2</p>
           <h1 className="page-title">{duo.name ?? "A fila e nossa"}</h1>
           <p className="lede">
-            Os dois membros podem cuidar do nome, do fuso e das preferencias.
-            Nao existe dono da dupla.
+            Nome, fuso e preferencias pertencem aos dois. A dupla nao tem dono
+            unico.
           </p>
         </div>
       </header>
@@ -64,9 +64,12 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
 
       <form action={updateDuoSettingsAction} className="surface-band app-section">
         <section aria-labelledby="duo-name-section" className="form-stack">
-          <h2 className="eyebrow" id="duo-name-section">
-            Nome da dupla
-          </h2>
+          <div className="section-heading">
+            <h2 className="eyebrow" id="duo-name-section">
+              Nome da dupla
+            </h2>
+            <p className="support-copy">Esse nome aparece no painel e nas futuras celebracoes.</p>
+          </div>
           <div className="field">
             <label htmlFor="duo-name">Nome da dupla</label>
             <input
@@ -80,24 +83,30 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
             />
           </div>
           <p className="support-copy">
-            Nome curto, em texto simples e sem HTML ou formatacao.
+            Use texto simples. Curto o bastante para caber nos placares da dupla.
           </p>
         </section>
 
         <section aria-labelledby="timezone-section" className="form-stack">
-          <h2 className="eyebrow" id="timezone-section">
-            Timezone
-          </h2>
+          <div className="section-heading">
+            <h2 className="eyebrow" id="timezone-section">
+              Fuso da dupla
+            </h2>
+            <p className="support-copy">Uma referencia unica para horarios combinados.</p>
+          </div>
           <TimezoneInput defaultValue={duo.timezone} />
           <p className="support-copy">
-            Confirme o fuso usado por resets, streaks e sessoes futuras.
+            Resets, streaks e sessoes futuras seguem este horario.
           </p>
         </section>
 
         <section aria-labelledby="preferences-section" className="form-stack">
-          <h2 className="eyebrow" id="preferences-section">
-            Preferencias compartilhadas
-          </h2>
+          <div className="section-heading">
+            <h2 className="eyebrow" id="preferences-section">
+              Preferencias da dupla
+            </h2>
+            <p className="support-copy">Ajustes que mudam a experiencia dos dois.</p>
+          </div>
           <div className="settings-grid">
             <label className="neutral-state preference-control" htmlFor="pref-notifications">
               <input
@@ -115,11 +124,11 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
                 name="audio"
                 type="checkbox"
               />
-              Audio de celebracao
+              Som nas celebracoes
             </label>
           </div>
           <p className="support-copy">
-            Push so sera pedido depois de uma acao que explique valor concreto.
+            A permissao de push so aparece quando houver um lembrete real.
           </p>
         </section>
 
@@ -131,9 +140,12 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
       </form>
 
       <section className="surface-band app-section" aria-labelledby="members-section">
-        <h2 className="eyebrow" id="members-section">
-          Membros
-        </h2>
+        <div className="section-heading">
+          <h2 className="eyebrow" id="members-section">
+            Membros fixos
+          </h2>
+          <p className="support-copy">/2 significa que a fila fecha aqui.</p>
+        </div>
         <div className="settings-grid">
           {duo.members.map((member) => (
             <div className="metric" key={member.userId}>
@@ -146,9 +158,12 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
       </section>
 
       <section className="surface-band app-section" aria-labelledby="pairing-date-section">
-        <h2 className="eyebrow" id="pairing-date-section">
-          Data de pareamento
-        </h2>
+        <div className="section-heading">
+          <h2 className="eyebrow" id="pairing-date-section">
+            Desde quando
+          </h2>
+          <p className="support-copy">O marco inicial da fila compartilhada.</p>
+        </div>
         <p className="lede">
           {duo.pairedAt
             ? formatPairingDate(duo.pairedAt, duo.timezone)

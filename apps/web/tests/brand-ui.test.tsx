@@ -250,19 +250,19 @@ describe("authenticated Phase 1 surfaces", () => {
     duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     render(await DashboardPage());
 
-    expect(screen.getByRole("heading", { name: /a fila ainda esta vazia/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /a fila comeca vazia/i })).toBeInTheDocument();
     expect(screen.getByText("descobrir")).toBeInTheDocument();
-    expect(screen.getByText("sortear")).toBeInTheDocument();
+    expect(screen.getByText("decidir")).toBeInTheDocument();
     expect(screen.getByText("zerar")).toBeInTheDocument();
-    expect(screen.getByText(/sem catalogo falso nesta fase/i)).toBeInTheDocument();
+    expect(screen.getByText(/nada inventado/i)).toBeInTheDocument();
   });
 
   it("renders profile display name, active sessions and logout sections", async () => {
     duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     const { container } = render(await ProfilePage());
 
-    expect(screen.getAllByText(/nome de exibicao/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /sessoes ativas/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/nome visivel|nome de exibicao/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /acessos ativos/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /encerrar sessao/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^sair$/i })).toBeInTheDocument();
     expectEveryVisibleFormControlHasName(container);
@@ -273,10 +273,10 @@ describe("authenticated Phase 1 surfaces", () => {
     const { container } = render(await DuoPage());
 
     expect(screen.getAllByText(/nome da dupla/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /membros/i })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /data de pareamento/i })).toBeInTheDocument();
-    expect(screen.getAllByText(/timezone/i).length).toBeGreaterThan(0);
-    expect(screen.getByRole("heading", { name: /preferencias compartilhadas/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /membros fixos/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /desde quando/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/fuso da dupla/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /preferencias da dupla/i })).toBeInTheDocument();
     expectEveryVisibleFormControlHasName(container);
   });
 });

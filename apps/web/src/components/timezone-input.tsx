@@ -6,7 +6,7 @@ export function TimezoneInput({
   defaultValue,
   detectOnMount = false,
   id = "duo-timezone",
-  label = "Timezone da dupla",
+  label = "Fuso da dupla",
   name = "timezone"
 }: {
   defaultValue: string;

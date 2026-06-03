@@ -54,8 +54,8 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
           <p className="eyebrow">Perfil individual</p>
           <h1 className="page-title">Seu lugar na dupla</h1>
           <p className="lede">
-            O perfil guarda a identidade de exibicao e os acessos ativos. O
-            progresso continua sendo da dupla.
+            Ajuste como voce aparece para a outra pessoa e revise os acessos da
+            conta. O progresso continua sendo dos dois.
           </p>
         </div>
       </header>
@@ -70,9 +70,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
       ) : null}
 
       <section className="surface-band app-section" aria-labelledby="display-name-section">
-        <h2 className="eyebrow" id="display-name-section">
-          Nome de exibicao
-        </h2>
+        <div className="section-heading">
+          <h2 className="eyebrow" id="display-name-section">
+            Nome visivel
+          </h2>
+          <p className="support-copy">O nome que aparece para sua dupla.</p>
+        </div>
         <form action={updateProfileDisplayNameAction} className="form-stack">
           <div className="field">
             <label htmlFor="profile-display-name">Nome de exibicao</label>
@@ -87,7 +90,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
             />
           </div>
           <p className="support-copy">
-            Nomes ficam curtos, em texto simples e sem formatacao.
+            Use texto simples e curto. A fila nao precisa de apelido gigante.
           </p>
           <div className="form-actions">
             <button className="queue2-button" data-tone="primary" type="submit">
@@ -98,16 +101,19 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
       </section>
 
       <section className="surface-band app-section" aria-labelledby="sessions-section">
-        <h2 className="eyebrow" id="sessions-section">
-          Sessoes ativas
-        </h2>
+        <div className="section-heading">
+          <h2 className="eyebrow" id="sessions-section">
+            Acessos ativos
+          </h2>
+          <p className="support-copy">Revogue navegadores que voce nao usa mais.</p>
+        </div>
         <ul className="session-list">
           {activeSessions.map((session) => {
             const isCurrentSession = session.id === currentSessionId;
 
             return (
               <li key={session.id}>
-                <span>{isCurrentSession ? "Navegador atual" : "Sessao ativa"}</span>
+                <span>{isCurrentSession ? "Navegador atual" : "Outro acesso"}</span>
                 <span className="muted">
                   {isCurrentSession
                     ? "Ativo agora"
@@ -138,11 +144,14 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
       </section>
 
       <section className="surface-band app-section" aria-labelledby="logout-section">
-        <h2 className="eyebrow" id="logout-section">
-          Sair
-        </h2>
+        <div className="section-heading">
+          <h2 className="eyebrow" id="logout-section">
+            Sair
+          </h2>
+          <p className="support-copy">Encerre apenas este navegador.</p>
+        </div>
         <p className="support-copy">
-          Encerre o acesso atual e volte para a tela de entrada.
+          Voce volta para a tela de entrada. A dupla e a fila continuam guardadas.
         </p>
         <form action={logoutCurrentSessionAction}>
           <button className="queue2-button" data-tone="quiet" type="submit">

@@ -509,7 +509,7 @@ input {
 
 .app-nav {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-2);
   margin-top: var(--space-7);
 }
 
@@ -523,10 +523,18 @@ input {
   min-height: 44px;
   padding: 0 var(--space-4);
   text-decoration: none;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.app-nav a:hover {
+  background: color-mix(in oklch, var(--primary) 7%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 24%, transparent);
+  color: var(--ink);
 }
 
 .app-nav a[aria-current="page"] {
-  border-color: color-mix(in oklch, var(--primary) 42%, transparent);
+  background: color-mix(in oklch, var(--primary) 9%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 46%, transparent);
   color: var(--ink);
 }
 
@@ -538,15 +546,26 @@ input {
 
 .app-header {
   align-items: end;
+  border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-5);
   justify-content: space-between;
+  padding-bottom: var(--space-7);
 }
 
 .app-section {
   display: grid;
   gap: var(--space-5);
+}
+
+.section-heading {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.section-heading .eyebrow {
+  margin-bottom: 0;
 }
 
 .surface-band {
@@ -573,6 +592,15 @@ input {
   gap: var(--space-3);
   min-height: 118px;
   padding: var(--space-5);
+}
+
+.metric {
+  background: color-mix(in oklch, var(--bg) 22%, transparent);
+}
+
+.ritual-step,
+.locked-step {
+  align-content: start;
 }
 
 .metric strong,
@@ -624,8 +652,9 @@ input {
   align-items: center;
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   border-radius: var(--radius-sharp);
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(120px, 1fr) minmax(160px, 1fr) auto;
   list-style: none;
   min-height: 52px;
   padding: var(--space-3) var(--space-4);
@@ -671,6 +700,10 @@ input {
   .metric-grid,
   .ritual-grid,
   .settings-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-list li {
     grid-template-columns: 1fr;
   }
 }
