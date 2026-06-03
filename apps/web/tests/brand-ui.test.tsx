@@ -1,6 +1,50 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createElement } from "react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const authSessionMock = vi.hoisted(() => {
+  const currentSession = {
+    session: {
+      id: "session-current",
+      token: "session-token-current",
+      userId: "user-1",
+      createdAt: new Date("2026-06-03T09:00:00.000Z"),
+      updatedAt: new Date("2026-06-03T10:00:00.000Z"),
+      expiresAt: new Date("2026-06-17T09:00:00.000Z")
+    },
+    user: {
+      id: "user-1",
+      email: "jogador@example.com",
+      emailVerified: true,
+      name: "Jogador da fila",
+      image: null,
+      createdAt: new Date("2026-06-03T09:00:00.000Z"),
+      updatedAt: new Date("2026-06-03T09:00:00.000Z")
+    }
+  };
+
+  return {
+    currentSession,
+    activeSessions: [
+      currentSession.session,
+      {
+        id: "session-secondary",
+        token: "session-token-secondary",
+        userId: "user-1",
+        createdAt: new Date("2026-06-02T09:00:00.000Z"),
+        updatedAt: new Date("2026-06-03T09:30:00.000Z"),
+        expiresAt: new Date("2026-06-16T09:00:00.000Z")
+      }
+    ]
+  };
+});
+
+vi.mock("../src/platform/auth/session", () => ({
+  getVerifiedProfileAuthContext: vi.fn(async () => authSessionMock),
+  logoutCurrentSessionAction: vi.fn(async () => undefined),
+  requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession),
+  revokeSessionAction: vi.fn(async () => undefined)
+}));
 
 import SignupPage from "../src/app/(public)/cadastro/page";
 import LoginPage from "../src/app/(public)/login/page";
@@ -65,8 +109,8 @@ describe("public QUEUE/2 route surfaces", () => {
 });
 
 describe("authenticated Phase 1 surfaces", () => {
-  it("renders the empty dashboard with the exact three-step ritual", () => {
-    render(createElement(DashboardPage));
+  it("renders the empty dashboard with the exact three-step ritual", async () => {
+    render(await DashboardPage());
 
     expect(screen.getByRole("heading", { name: /fila ainda vazia/i })).toBeInTheDocument();
     expect(screen.getByText("descobrir")).toBeInTheDocument();
@@ -75,17 +119,18 @@ describe("authenticated Phase 1 surfaces", () => {
     expect(screen.getByText(/sem catalogo falso nesta fase/i)).toBeInTheDocument();
   });
 
-  it("renders profile display name, active sessions and logout sections", () => {
-    const { container } = render(createElement(ProfilePage));
+  it("renders profile display name, active sessions and logout sections", async () => {
+    const { container } = render(await ProfilePage());
 
     expect(screen.getAllByText(/nome de exibicao/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /sessoes ativas/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /revogar/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^sair$/i })).toBeInTheDocument();
     expectEveryVisibleFormControlHasName(container);
   });
 
-  it("renders duo identity, members, paired date, timezone and preferences", () => {
-    const { container } = render(createElement(DuoPage));
+  it("renders duo identity, members, paired date, timezone and preferences", async () => {
+    const { container } = render(await DuoPage());
 
     expect(screen.getAllByText(/nome da dupla/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /membros/i })).toBeInTheDocument();

@@ -1,12 +1,28 @@
 import type { Metadata } from "next";
 
 import { AppShell } from "../../../components/app-shell";
+import {
+  getVerifiedProfileAuthContext,
+  logoutCurrentSessionAction,
+  revokeSessionAction
+} from "../../../platform/auth/session";
 
 export const metadata: Metadata = {
   title: "Perfil - QUEUE/2"
 };
 
-export default function ProfilePage() {
+type ProfilePageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function ProfilePage({ searchParams }: ProfilePageProps = {}) {
+  const [{ activeSessions, currentSession }, params] = await Promise.all([
+    getVerifiedProfileAuthContext(),
+    searchParams
+  ]);
+  const state = getSearchParam(params?.estado);
+  const currentSessionId = currentSession.session.id;
+
   return (
     <AppShell currentPage="perfil">
       <header className="app-header">
@@ -34,7 +50,7 @@ export default function ProfilePage() {
             name="displayName"
             readOnly
             type="text"
-            value="Jogador da fila"
+            value={currentSession.user.name}
           />
         </div>
         <p className="support-copy">
@@ -46,15 +62,32 @@ export default function ProfilePage() {
         <h2 className="eyebrow" id="sessions-section">
           Sessoes ativas
         </h2>
+        {state === "sessao-revogada" ? (
+          <p className="neutral-state" role="status">
+            Sessao revogada quando ainda estava ativa.
+          </p>
+        ) : null}
         <ul className="session-list">
-          <li>
-            <span>Navegador atual</span>
-            <span className="muted">Ativo agora</span>
-          </li>
-          <li>
-            <span>Outros acessos</span>
-            <span className="muted">Revogacao entra com auth</span>
-          </li>
+          {activeSessions.map((session) => {
+            const isCurrentSession = session.id === currentSessionId;
+
+            return (
+              <li key={session.id}>
+                <span>{isCurrentSession ? "Navegador atual" : "Sessao ativa"}</span>
+                <span className="muted">
+                  {isCurrentSession ? "Ativo agora" : `Atualizada em ${formatSessionDate(session.updatedAt)}`}
+                </span>
+                {isCurrentSession ? null : (
+                  <form action={revokeSessionAction}>
+                    <input name="sessionId" type="hidden" value={session.id} />
+                    <button className="queue2-button" data-tone="quiet" type="submit">
+                      Revogar
+                    </button>
+                  </form>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </section>
 
@@ -63,12 +96,30 @@ export default function ProfilePage() {
           Sair
         </h2>
         <p className="support-copy">
-          O botao fica reservado para a revogacao segura de sessao.
+          Encerre o acesso atual e volte para a tela de entrada.
         </p>
-        <button className="queue2-button" data-tone="quiet" disabled type="button">
-          Sair da conta
-        </button>
+        <form action={logoutCurrentSessionAction}>
+          <button className="queue2-button" data-tone="quiet" type="submit">
+            Sair da conta
+          </button>
+        </form>
       </section>
     </AppShell>
   );
+}
+
+function getSearchParam(value: string | string[] | undefined): string | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+
+  return value ?? null;
+}
+
+function formatSessionDate(value: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "America/Sao_Paulo"
+  }).format(value);
 }

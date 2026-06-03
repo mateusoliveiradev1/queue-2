@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { RoulettePointer } from "@queue/ui";
 
 import { AppShell } from "../../components/app-shell";
+import { requireVerifiedSession } from "../../platform/auth/session";
 
 export const metadata: Metadata = {
   title: "Dashboard - QUEUE/2"
@@ -37,7 +38,9 @@ const lockedSteps = [
   }
 ] as const;
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  await requireVerifiedSession();
+
   return (
     <AppShell currentPage="dashboard">
       <header className="app-header">

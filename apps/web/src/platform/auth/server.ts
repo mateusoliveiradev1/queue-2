@@ -58,6 +58,14 @@ export const authRuntimePolicy = {
     }
   },
   rateLimit: authRateLimitAudit,
+  session: {
+    expiresInDays: 14,
+    updateAgeHours: 24,
+    cookieCache: {
+      enabled: true,
+      strategy: "jwe"
+    }
+  },
   cookies: {
     prefix: "queue2",
     sameSite: "lax",

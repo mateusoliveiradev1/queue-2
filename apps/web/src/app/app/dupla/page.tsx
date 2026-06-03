@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 
 import { AppShell } from "../../../components/app-shell";
+import { requireVerifiedSession } from "../../../platform/auth/session";
 
 export const metadata: Metadata = {
   title: "Dupla - QUEUE/2"
 };
 
-export default function DuoPage() {
+export default async function DuoPage() {
+  await requireVerifiedSession();
+
   return (
     <AppShell currentPage="dupla">
       <header className="app-header">
