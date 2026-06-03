@@ -41,6 +41,7 @@ key-files:
     - apps/web/src/modules/duo/presentation/view-models.ts
     - apps/web/src/platform/rate-limit/persistent.ts
     - packages/db/src/migrations/0002_pairing_runtime.sql
+    - packages/db/src/migrations/0003_review_hardening.sql
     - apps/web/tests/duo-domain.test.ts
     - apps/web/tests/duo-flow.test.ts
     - apps/web/tests/duo-isolation.test.ts
@@ -99,6 +100,8 @@ completed: 2026-06-03
 
 **Plan metadata:** pending final docs commit
 
+**Post-plan review fixes:** `b279c0a`, `a287d8d`
+
 ## Files Created/Modified
 
 - `apps/web/src/modules/duo/domain/*` - Pure pairing-code and duo policy rules.
@@ -120,6 +123,8 @@ completed: 2026-06-03
 - Pairing actions use the verified session user's server-resolved name. Client-provided display-name fields are not an identity authority.
 - Atomic claim and safe revoke behavior belongs in restricted Postgres functions because application-only checks cannot guarantee race safety.
 - Pairing attempt limits persist in `auth.rate_limit`, namespaced by user and operation, so serverless process restarts do not reset abuse controls.
+- Better Auth and pairing attempt limits use the same bigint epoch-millisecond rate-limit timestamp contract.
+- Concurrent race-lost classification is tied to the exact active pairing-code row observed by the claimant; later historical attempts remain neutral inactive failures.
 - Kysely remains pinned to `0.28.17` until Better Auth's adapter is verified against a newer compatible release.
 
 ## Deviations from Plan
@@ -150,9 +155,17 @@ completed: 2026-06-03
 - **Verification:** `pnpm --filter @queue/web test -- duo`, `pnpm --filter @queue/web typecheck`
 - **Committed in:** `7e378b4`
 
+**4. [Code Review - Security] Aligned persistent rate limits and pairing trust-boundary validation**
+- **Found during:** Mandatory phase code review
+- **Issue:** Better Auth expected bigint rate-limit timestamps, while pairing used `timestamptz`; pairing creation and revoke also accepted unvalidated client-controlled values.
+- **Fix:** Added immutable migration `0003_review_hardening.sql`, switched the pairing limiter to epoch milliseconds, validated timezone and UUID inputs before repository access, and tied race-lost classification to the selected code row.
+- **Files modified:** `packages/db/src/migrations/0003_review_hardening.sql`, `packages/db/src/schema/auth.ts`, `apps/web/src/platform/rate-limit/persistent.ts`, `apps/web/src/modules/duo/application/create-pairing-code.ts`, `packages/db/src/rls/membership.sql`
+- **Verification:** `pnpm --filter @queue/web test`, `pnpm typecheck`, `pnpm lint`, `pnpm verify`, `pnpm phase:1:gate`
+- **Committed in:** `b279c0a`, `a287d8d`
+
 ---
 
-**Total deviations:** 3 auto-fixed (1 Rule 1, 1 Rule 2, 1 Rule 3)
+**Total deviations:** 4 auto-fixed (1 Rule 1, 1 Rule 2, 1 Rule 3, 1 code review)
 **Impact on plan:** The fixes preserve the planned duo scope while making pairing concurrency, authorization and production builds reliable.
 
 ## Issues Encountered
@@ -185,6 +198,7 @@ None in the Phase 1 duo pairing, identity, profile or shared-settings scope.
 - `pnpm --filter @queue/db test:integration` - exited 0; skipped without `TEST_DATABASE_URL`
 - `pnpm verify` - passed; database integration tests skipped without `TEST_DATABASE_URL`
 - `pnpm --filter @queue/web build` - passed with non-production build-time auth/database values
+- `pnpm phase:1:gate` - passed local checks and production build; database and Playwright gates explicitly skipped
 
 ## Auth Gates
 

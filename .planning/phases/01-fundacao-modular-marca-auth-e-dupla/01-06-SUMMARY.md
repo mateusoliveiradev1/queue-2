@@ -99,6 +99,8 @@ completed: 2026-06-03
 
 **Plan metadata:** pending final docs commit
 
+**Post-plan review fix:** `b279c0a`
+
 ## Files Created/Modified
 
 - `apps/web/src/security/headers.ts` - Testable security header and CSP policy.
@@ -121,6 +123,7 @@ completed: 2026-06-03
 - Browser tests depend on verified isolated fixture accounts. No test-only verification bypass or product route was added.
 - The Phase 1 gate allows explicit missing-environment skips because local development may not have Neon or a deployed browser fixture, but the output states that those skips remain release blockers.
 - `pnpm audit --prod --audit-level high` is the blocking dependency threshold. The current audit has no high or critical findings and reports two moderate advisories.
+- Runtime and worker duo updates are restricted to Phase 1 settings columns, with progression and pairing-state columns denied by column privilege tests.
 
 ## Deviations from Plan
 
@@ -166,9 +169,17 @@ completed: 2026-06-03
 - **Verification:** `pnpm phase:1:gate` missing-environment diagnostics
 - **Committed in:** `c96c334`
 
+**6. [Code Review - Security] Tightened runtime privileges and deterministic verification**
+- **Found during:** Mandatory phase code review
+- **Issue:** Runtime roles had table-wide `UPDATE` on `app.duos`, the DDL denial test reused an aborted transaction, and session-revocation E2E could target a stale session.
+- **Fix:** Added immutable privilege hardening, column-level assertions, independent DDL probes, deterministic non-current session revocation, and exact concurrency outcome coverage.
+- **Files modified:** `packages/db/src/migrations/0003_review_hardening.sql`, `packages/db/src/roles.sql`, `packages/db/tests/role-privileges.test.ts`, `packages/db/tests/pairing-concurrency.test.ts`, `apps/web/tests/phase-1-e2e.spec.ts`
+- **Verification:** `pnpm --filter @queue/web test:e2e`, `pnpm --filter @queue/db test:integration`, `pnpm lint`, `pnpm verify`, `pnpm phase:1:gate`
+- **Committed in:** `b279c0a`
+
 ---
 
-**Total deviations:** 5 auto-fixed (3 Rule 2, 2 Rule 3)
+**Total deviations:** 6 auto-fixed (3 Rule 2, 2 Rule 3, 1 code review)
 **Impact on plan:** The fixes make the planned checks executable and prevent false-positive verification without adding product scope.
 
 ## Issues Encountered
@@ -201,9 +212,9 @@ None in the Phase 1 security header, scanner, test or gate implementation.
 
 - `pnpm --filter @queue/web test -- security-headers` - passed
 - `pnpm check:secrets` - passed against source and generated client bundle
-- `pnpm --filter @queue/web test` - passed, 54 tests
+- `pnpm --filter @queue/web test` - passed, 55 tests
 - `pnpm --filter @queue/web test:e2e` - exited 0, 14 tests explicitly skipped without E2E fixture env
-- `pnpm --filter @queue/db test:integration` - exited 0, 9 tests explicitly skipped without `TEST_DATABASE_URL`
+- `pnpm --filter @queue/db test:integration` - exited 0, 11 tests explicitly skipped without `TEST_DATABASE_URL`
 - `pnpm lint` - passed
 - `pnpm verify` - passed; database integration tests skipped without `TEST_DATABASE_URL`
 - `pnpm --filter @queue/web build` - passed with non-production build-time auth/database values

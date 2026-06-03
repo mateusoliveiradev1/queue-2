@@ -1,6 +1,6 @@
 ---
 phase: 01-fundacao-modular-marca-auth-e-dupla
-reviewed: 2026-06-03T12:20:00Z
+reviewed: 2026-06-03T09:34:51-03:00
 depth: standard
 files_reviewed: 96
 files_reviewed_list:
@@ -101,25 +101,37 @@ files_reviewed_list:
   - tsconfig.base.json
   - turbo.json
 findings:
+  critical: 0
+  warning: 0
+  info: 0
+  total: 0
+resolved_findings:
   critical: 2
   warning: 5
-  info: 0
   total: 7
-status: issues_found
+status: clean
 ---
 
 # Phase 01: Code Review Report
 
-**Reviewed:** 2026-06-03T12:20:00Z
+**Reviewed:** 2026-06-03T09:34:51-03:00
 **Depth:** standard
 **Files Reviewed:** 96
-**Status:** issues_found
+**Status:** clean
 
 ## Summary
 
-The modular boundaries, server-session authorization and RLS direction are generally coherent, but the review found two release-blocking data/security defects and five correctness or test-reliability issues. The most urgent defect is that the shared `auth.rate_limit` table does not match Better Auth's numeric `lastRequest` contract, which can break the persistent auth limits that Phase 1 claims as a security control.
+The initial review found two release-blocking data/security defects and five correctness or test-reliability issues. All seven were fixed in `b279c0a` and `a287d8d`; the follow-up review is clean.
 
-## Critical Issues
+## Resolution
+
+- Better Auth and the custom pairing limiter now share a bigint epoch-millisecond `auth.rate_limit.last_request` contract through immutable migration `0003_review_hardening.sql`.
+- Runtime and worker roles can update only `app.duos.name`, `timezone` and `updated_at`; progression and pairing-state columns are no longer directly writable.
+- Pairing creation validates timezone, revoke rejects forged non-UUID IDs before repository access, and race-lost classification references the exact active code row observed by the claimant.
+- Session-revocation E2E coverage revokes all non-current sessions, and role DDL probes run in independent transactions.
+- Local unit, typecheck, lint, production build and Phase 1 gate checks pass. Live database and Playwright checks remain explicit external-environment skips.
+
+## Resolved Critical Issues
 
 ### CR-01: Better Auth rate-limit storage uses the wrong database type
 
@@ -137,7 +149,7 @@ The modular boundaries, server-session authorization and RLS direction are gener
 
 **Fix:** Revoke table-wide `UPDATE` and grant only the columns needed in Phase 1, such as `name`, `timezone` and `updated_at`. Keep `paired_at` changes inside the restricted security-definer pairing function, and add future progression grants only through reviewed functions.
 
-## Warnings
+## Resolved Warnings
 
 ### WR-01: Pairing creation accepts an invalid timezone and can crash its own page
 
@@ -181,6 +193,6 @@ The modular boundaries, server-session authorization and RLS direction are gener
 
 ---
 
-_Reviewed: 2026-06-03T12:20:00Z_
+_Reviewed: 2026-06-03T09:34:51-03:00_
 _Reviewer: Codex (inline gsd-code-reviewer fallback)_
 _Depth: standard_
