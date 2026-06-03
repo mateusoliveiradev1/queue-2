@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: ready_to_plan
-stopped_at: Completed quick task 260603-rk9
-last_updated: "2026-06-03T22:50:43.132Z"
-last_activity: 2026-06-03
+status: planning
+stopped_at: Phase 02.1 context gathered
+last_updated: "2026-06-03T23:27:40.427Z"
+last_activity: "2026-06-03 - Completed quick task 260603-rk9: Fechar UAT humano da Fase 2"
 progress:
-  total_phases: 8
-  completed_phases: 4
+  total_phases: 9
+  completed_phases: 3
   total_plans: 10
   completed_plans: 10
-  percent: 50
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 03 - descoberta-e-matches
+**Current focus:** Phase 02.1 - Localizacao e Qualidade do Catalogo
 
 ## Current Position
 
-Phase: 3
+Phase: 02.1
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-06-03 - Completed quick task 260603-rk9: Fechar UAT humano da Fase 2
 
-Progress: [#####-----] 50%
+Progress: [####------] 44%
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Progress: [#####-----] 50%
 ### Roadmap Evolution
 
 - Phase 01.1 inserted after Phase 1: Polimento Auth e Landing Intermediaria (URGENT)
+- Phase 02.1 inserted after Phase 2: Localizacao e Qualidade do Catalogo (URGENT)
 
 ### Decisions
 
@@ -109,7 +110,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Phase 2.1 planning decision: Localizacao e qualidade do catalogo antes da Fase 3.
+- Phase 2.1 planning: Localizacao e qualidade do catalogo antes da Fase 3.
 - Phase 3 planning: Descoberta e Matches.
 - Production launch follow-ups: real transactional email delivery check and Neon restore rehearsal evidence.
 
@@ -131,6 +132,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-03T22:10:26.463Z
-Stopped at: Completed 02-03-PLAN.md
-Resume file: None
+Last session: 2026-06-03T23:27:40.421Z
+Stopped at: Phase 02.1 context gathered
+Resume file: .planning/phases/02.1-localizacao-e-qualidade-do-catalogo/02.1-CONTEXT.md
