@@ -20,7 +20,8 @@ const tokenSchema = z.string().trim().min(8).max(512);
 const signupSchema = z.object({
   displayName: displayNameSchema,
   email: emailSchema,
-  password: passwordSchema
+  password: passwordSchema,
+  confirmPassword: passwordSchema
 });
 
 const loginSchema = z.object({
@@ -47,7 +48,8 @@ export async function signupAction(formData: FormData) {
   const parsed = signupSchema.safeParse({
     displayName: formData.get("displayName"),
     email: formData.get("email"),
-    password: formData.get("password")
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword")
   });
 
   if (!parsed.success) {
@@ -57,6 +59,11 @@ export async function signupAction(formData: FormData) {
   const email = normalizeAuthEmail(parsed.data.email);
   const password = parsed.data.password;
   const displayName = parsed.data.displayName.trim();
+
+  if (password !== parsed.data.confirmPassword) {
+    return redirectTo(buildAuthPath("/cadastro", { estado: "senhas-diferentes" }));
+  }
+
   const passwordValidation = validateQueuePassword(password, { displayName, email });
 
   if (!passwordValidation.ok) {

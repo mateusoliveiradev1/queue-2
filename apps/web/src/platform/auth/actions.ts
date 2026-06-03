@@ -20,6 +20,7 @@ export const authStatusMessages = {
   signup: {
     "dados-invalidos": "Revise os campos antes de criar a conta.",
     "senha-invalida": "A senha ainda nao cumpre todos os requisitos.",
+    "senhas-diferentes": "As senhas informadas nao conferem.",
     "erro-cadastro": "Nao foi possivel criar a conta com esses dados agora."
   },
   verify: {

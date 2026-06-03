@@ -12,6 +12,7 @@ export function SignupFields() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const failedRules = useMemo(
     () =>
       new Set(
@@ -23,6 +24,8 @@ export function SignupFields() {
     [displayName, email, password]
   );
   const hasPassword = password.length > 0;
+  const passwordMatchState =
+    confirmPassword.length === 0 ? "pending" : confirmPassword === password ? "met" : "unmet";
 
   return (
     <>
@@ -65,6 +68,19 @@ export function SignupFields() {
             type="password"
           />
         </div>
+        <div className="field">
+          <label htmlFor="signup-confirm-password">Confirmar senha</label>
+          <input
+            aria-describedby="password-rules"
+            autoComplete="new-password"
+            className="queue2-input"
+            id="signup-confirm-password"
+            name="confirmPassword"
+            onChange={(event) => setConfirmPassword(event.currentTarget.value)}
+            required
+            type="password"
+          />
+        </div>
       </div>
       <ul
         aria-label="Checklist da senha"
@@ -72,6 +88,16 @@ export function SignupFields() {
         className="password-checklist"
         id="password-rules"
       >
+        <li data-rule-state={passwordMatchState}>
+          <RoulettePointer
+            aria-hidden="true"
+            label=""
+            tone={passwordMatchState === "met" ? "primary" : "accent"}
+          />
+          <span>
+            {passwordMatchState === "met" ? "As senhas conferem" : "As senhas precisam conferir"}
+          </span>
+        </li>
         {queuePasswordRules.map((rule) => {
           const state = hasPassword
             ? failedRules.has(rule.id)

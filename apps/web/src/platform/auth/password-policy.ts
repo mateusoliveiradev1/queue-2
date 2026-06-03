@@ -13,7 +13,7 @@ export const queuePasswordRules = [
   },
   {
     id: "not-obvious",
-    label: "Nada de senha reutilizada"
+    label: "Sem nome, email ou senha comum"
   }
 ] as const;
 

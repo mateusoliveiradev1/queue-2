@@ -50,7 +50,7 @@ describe("auth flow server actions", () => {
       "Pelo menos 8 caracteres",
       "Uma letra e um numero",
       "Um simbolo ou caractere especial",
-      "Nada de senha reutilizada"
+      "Sem nome, email ou senha comum"
     ]);
 
     expect(validateQueuePassword("abc").failedRules).toContain("length");
@@ -77,6 +77,8 @@ describe("auth flow server actions", () => {
   });
 
   it("delegates to Better Auth endpoints for real auth operations", () => {
+    expect(serverActionsSource).toContain("confirmPassword");
+    expect(serverActionsSource).toContain("senhas-diferentes");
     expect(serverActionsSource).toContain("auth.api.signUpEmail");
     expect(serverActionsSource).toContain("auth.api.signInEmail");
     expect(serverActionsSource).toContain("auth.api.sendVerificationEmail");
@@ -131,11 +133,11 @@ describe("auth pages wired to flow states", () => {
   it("renders signup status and server-backed password checklist", async () => {
     render(
       await SignupPage({
-        searchParams: Promise.resolve({ estado: "senha-invalida" })
+        searchParams: Promise.resolve({ estado: "senhas-diferentes" })
       })
     );
 
-    expect(screen.getByRole("status")).toHaveTextContent(/senha ainda nao cumpre/i);
+    expect(screen.getByRole("status")).toHaveTextContent(/senhas informadas nao conferem/i);
     expect(screen.getByRole("list", { name: /checklist da senha/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /criar conta/i })).toBeInTheDocument();
   });
@@ -144,16 +146,26 @@ describe("auth pages wired to flow states", () => {
     render(await SignupPage());
 
     const password = screen.getByLabelText(/^senha$/i);
+    const confirmPassword = screen.getByLabelText(/confirmar senha/i);
     const lengthRule = screen.getByText(/pelo menos 8 caracteres/i).closest("li");
     const symbolRule = screen.getByText(/simbolo ou caractere especial/i).closest("li");
+    const matchRule = screen.getByText(/senhas precisam conferir/i).closest("li");
 
     expect(lengthRule).toHaveAttribute("data-rule-state", "pending");
+    expect(matchRule).toHaveAttribute("data-rule-state", "pending");
     fireEvent.change(password, { target: { value: "Fila2026" } });
     expect(lengthRule).toHaveAttribute("data-rule-state", "met");
     expect(symbolRule).toHaveAttribute("data-rule-state", "unmet");
+    fireEvent.change(confirmPassword, { target: { value: "Fila2025" } });
+    expect(matchRule).toHaveAttribute("data-rule-state", "unmet");
 
     fireEvent.change(password, { target: { value: "Fila!2026" } });
     expect(symbolRule).toHaveAttribute("data-rule-state", "met");
+    fireEvent.change(confirmPassword, { target: { value: "Fila!2026" } });
+    expect(screen.getByText(/senhas conferem/i).closest("li")).toHaveAttribute(
+      "data-rule-state",
+      "met"
+    );
   });
 
   it("renders login verification state instead of sending users into the app", async () => {

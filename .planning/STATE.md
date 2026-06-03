@@ -59,6 +59,12 @@ Progress: [██████████] 100%
 | Phase 01 P05 | 1h 13m | 3 tasks | 28 files |
 | Phase 01 P06 | 15m | 3 tasks | 19 files |
 
+## Quick Tasks Completed
+
+| Date | Task | Summary |
+|------|------|---------|
+| 2026-06-03 | auth-signup-confirmacao-senha | Cadastro exige confirmacao de senha no cliente e no Server Action, com copy da politica alinhada a validacao real. |
+
 ## Accumulated Context
 
 ### Decisions

@@ -162,8 +162,10 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByLabelText(/nome de exibicao/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/confirmar senha/i)).toBeInTheDocument();
     expect(screen.getByRole("list", { name: /checklist da senha/i })).toBeInTheDocument();
     expect(screen.getByText(/pelo menos 8 caracteres/i)).toBeInTheDocument();
+    expect(screen.getByText(/senhas precisam conferir/i)).toBeInTheDocument();
   });
 
   it("renders the /2 route loader and favicon placeholder", () => {
