@@ -2,6 +2,7 @@ import type {
   CatalogAvailabilityRecord,
   CatalogGameDetailRecord,
   CatalogGameRecord,
+  CatalogLocalizationRecord,
   CatalogTimeEstimateRecord
 } from "../application/ports";
 
@@ -53,6 +54,20 @@ export type AvailabilityState =
   | {
       kind: "missing";
       label: "Nao verificado";
+    };
+
+export type CatalogDescriptionState =
+  | {
+      kind: "published";
+      description: string;
+      sourceLabel: "Descricao revisada: QUEUE/2";
+      sourceUrl: string | null;
+      freshnessLabel: string;
+    }
+  | {
+      kind: "missing";
+      description: "Descricao em portugues ainda nao revisada.";
+      sourceLabel: "Descricao em portugues ainda nao revisada";
     };
 
 export function evaluateMainFlowEligibility(
@@ -177,13 +192,35 @@ export function getAvailabilityState(
   };
 }
 
+export function getCatalogDescriptionState(
+  localization: CatalogLocalizationRecord | null,
+  now: Date = new Date()
+): CatalogDescriptionState {
+  if (!localization?.description.trim()) {
+    return {
+      kind: "missing",
+      description: "Descricao em portugues ainda nao revisada.",
+      sourceLabel: "Descricao em portugues ainda nao revisada"
+    };
+  }
+
+  return {
+    kind: "published",
+    description: localization.description,
+    sourceLabel: "Descricao revisada: QUEUE/2",
+    sourceUrl: localization.sourceUrl,
+    freshnessLabel: getFreshnessState(localization.publishedAt, localization.reviewedAt, now)
+      .label
+  };
+}
+
 export function getCatalogDetailReadiness(game: CatalogGameDetailRecord): {
   hasCoreDetails: boolean;
   missing: string[];
 } {
   const missing = [
     game.backgroundImageUrl ? null : "capa",
-    game.description ? null : "descricao",
+    game.localization ? null : "descricao",
     game.releasedAt ? null : "lancamento",
     game.platforms.length > 0 ? null : "plataformas",
     game.genres.length > 0 ? null : "generos"

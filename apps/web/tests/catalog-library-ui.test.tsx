@@ -278,7 +278,7 @@ function catalogDetail() {
   return {
     ...catalogCard(),
     description: "Uma aventura coop sobre reconciliacao.",
-    descriptionSourceLabel: "Descricao curada: QUEUE/2",
+    descriptionSourceLabel: "Descricao revisada: QUEUE/2",
     rawgUrl: "https://rawg.io/games/it-takes-two",
     coopLabel: "Confirmado para campanha ou historia coop em dupla.",
     timeEstimate: {

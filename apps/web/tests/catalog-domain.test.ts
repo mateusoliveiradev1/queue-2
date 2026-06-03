@@ -109,7 +109,7 @@ describe("catalog use cases", () => {
     ).resolves.toMatchObject({
       slug: "it-takes-two",
       description: "Uma aventura coop sobre reconciliacao.",
-      descriptionSourceLabel: "Descricao da fonte: RAWG",
+      descriptionSourceLabel: "Descricao revisada: QUEUE/2",
       coopLabel: "Confirmado para campanha ou historia coop em dupla.",
       detailReadiness: {
         hasCoreDetails: true,
@@ -118,13 +118,17 @@ describe("catalog use cases", () => {
     });
   });
 
-  it("prefers QUEUE/2 Portuguese descriptions for curated seeded games", async () => {
+  it("prefers published QUEUE/2 Portuguese localization over RAWG descriptions", async () => {
     const repository = createRepository([
       catalogGame({
         slug: "it-takes-two-2",
         rawgUrl: "https://rawg.io/games/it-takes-two-2",
         sourceUrl: "https://rawg.io/games/it-takes-two-2",
-        description: "Bring your favorite co-op partner."
+        description: "Bring your favorite co-op partner.",
+        localization: catalogLocalization({
+          description:
+            "May e Cody sao transformados em bonecos e precisam cooperar juntos."
+        })
       })
     ]);
 
@@ -132,7 +136,27 @@ describe("catalog use cases", () => {
       getCatalogGameDetailUseCase("it-takes-two-2", repository, now)
     ).resolves.toMatchObject({
       description: expect.stringContaining("May e Cody"),
-      descriptionSourceLabel: "Descricao curada: QUEUE/2"
+      descriptionSourceLabel: "Descricao revisada: QUEUE/2"
+    });
+  });
+
+  it("does not fall back to raw English RAWG descriptions without reviewed localization", async () => {
+    const repository = createRepository([
+      catalogGame({
+        description: "Bring your favorite co-op partner.",
+        localization: null
+      })
+    ]);
+
+    await expect(
+      getCatalogGameDetailUseCase("it-takes-two", repository, now)
+    ).resolves.toMatchObject({
+      description: "Descricao em portugues ainda nao revisada.",
+      descriptionSourceLabel: "Descricao em portugues ainda nao revisada",
+      detailReadiness: {
+        hasCoreDetails: false,
+        missingLabels: ["descricao"]
+      }
     });
   });
 });
@@ -183,7 +207,7 @@ function catalogGame(
         rawgGenreId: 3
       }
     ],
-    localization: null,
+    localization: catalogLocalization(),
     timeEstimate: {
       minutes: 840,
       source: "Curadoria QUEUE/2",
@@ -192,6 +216,21 @@ function catalogGame(
       confidence: "estimated"
     },
     availability: [],
+    ...overrides
+  };
+}
+
+function catalogLocalization(
+  overrides: Partial<NonNullable<CatalogGameDetailRecord["localization"]>> = {}
+): NonNullable<CatalogGameDetailRecord["localization"]> {
+  return {
+    locale: "pt-BR",
+    version: 1,
+    description: "Uma aventura coop sobre reconciliacao.",
+    source: "queue2-curation",
+    sourceUrl: null,
+    publishedAt: new Date("2026-06-03T12:00:00.000Z"),
+    reviewedAt: new Date("2026-06-03T12:00:00.000Z"),
     ...overrides
   };
 }
