@@ -9,4 +9,5 @@ export const databaseRuntime = {
   boundary: "server-only"
 } as const;
 
+export * from "./client";
 export * from "./schema";
