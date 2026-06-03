@@ -92,13 +92,13 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CAT-03**: User can view a game detail page with cover, description, genres, release information and platforms
 - [x] **CAT-04**: User can view a neutral estimated completion time with its source and freshness when available
 - [x] **CAT-05**: User can view free or Game Pass availability with its source and last verification date when available
-- [ ] **CAT-06**: User can record the platforms they can use
-- [ ] **CAT-07**: Duo can see which platforms both members have in common
-- [ ] **LIB-01**: User can add a game to the duo Wishlist
-- [ ] **LIB-02**: Duo can organize games as Wishlist, Jogando, Zerado, Dropado or Pausado
-- [ ] **LIB-03**: User can view the duo library grouped or filtered by status
-- [ ] **LIB-04**: User can view the duo match score for games in the library
-- [ ] **LIB-05**: User can open a game from the library to view its sessions, checkpoints, progress and milestones
+- [x] **CAT-06**: User can record the platforms they can use
+- [x] **CAT-07**: Duo can see which platforms both members have in common
+- [x] **LIB-01**: User can add a game to the duo Wishlist
+- [x] **LIB-02**: Duo can organize games as Wishlist, Jogando, Zerado, Dropado or Pausado
+- [x] **LIB-03**: User can view the duo library grouped or filtered by status
+- [x] **LIB-04**: User can view the duo match score for games in the library
+- [x] **LIB-05**: User can open a game from the library to view its sessions, checkpoints, progress and milestones
 
 ### Discovery
 
@@ -310,13 +310,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAT-03 | Phase 2 | Complete |
 | CAT-04 | Phase 2 | Complete |
 | CAT-05 | Phase 2 | Complete |
-| CAT-06 | Phase 2 | Pending |
-| CAT-07 | Phase 2 | Pending |
-| LIB-01 | Phase 2 | Pending |
-| LIB-02 | Phase 2 | Pending |
-| LIB-03 | Phase 2 | Pending |
-| LIB-04 | Phase 2 | Pending |
-| LIB-05 | Phase 2 | Pending |
+| CAT-06 | Phase 2 | Complete |
+| CAT-07 | Phase 2 | Complete |
+| LIB-01 | Phase 2 | Complete |
+| LIB-02 | Phase 2 | Complete |
+| LIB-03 | Phase 2 | Complete |
+| LIB-04 | Phase 2 | Complete |
+| LIB-05 | Phase 2 | Complete |
 | DISC-01 | Phase 3 | Pending |
 | DISC-02 | Phase 3 | Pending |
 | DISC-03 | Phase 3 | Pending |
