@@ -1,0 +1,276 @@
+import "server-only";
+
+import {
+  createRuntimePool,
+  type QueueDbPool
+} from "@queue/db";
+
+import type {
+  CatalogCurationPatch,
+  CatalogGameUpsertInput,
+  CatalogRepository
+} from "../application/ports";
+import { catalogRepository } from "./catalog-repository";
+import {
+  catalogSyncAllowlist,
+  type CatalogSyncAllowlistEntry
+} from "./catalog-sync-allowlist";
+import {
+  createRawgClient,
+  type RawgClient
+} from "./rawg-client";
+
+export type CatalogSyncMode = "dry-run" | "apply";
+
+export type CatalogSyncItemOutcome = {
+  slug: string;
+  rawgRef: number | string;
+  status: "planned" | "updated" | "failed";
+  gameId: string | null;
+  changes: Record<string, unknown>;
+  errorCode: string | null;
+  errorMessage: string | null;
+};
+
+export type CatalogSyncResult = {
+  mode: CatalogSyncMode;
+  dryRun: boolean;
+  source: "RAWG";
+  inputCount: number;
+  createdCount: number;
+  updatedCount: number;
+  skippedCount: number;
+  failedCount: number;
+  items: CatalogSyncItemOutcome[];
+};
+
+export type CatalogSyncAudit = {
+  startRun(input: {
+    mode: CatalogSyncMode;
+    inputCount: number;
+    metadata: Record<string, unknown>;
+  }): Promise<string>;
+  recordItem(runId: string, item: CatalogSyncItemOutcome): Promise<void>;
+  finishRun(runId: string, result: CatalogSyncResult): Promise<void>;
+};
+
+export async function runCatalogSync({
+  mode,
+  allowlist = catalogSyncAllowlist,
+  rawgClient = createRawgClient(),
+  repository = catalogRepository,
+  audit
+}: {
+  mode: CatalogSyncMode;
+  allowlist?: CatalogSyncAllowlistEntry[];
+  rawgClient?: RawgClient;
+  repository?: CatalogRepository;
+  audit?: CatalogSyncAudit;
+}): Promise<CatalogSyncResult> {
+  const items: CatalogSyncItemOutcome[] = [];
+  const auditWriter = mode === "apply" ? (audit ?? createCatalogSyncAudit()) : null;
+  const runId =
+    auditWriter
+      ? await auditWriter.startRun({
+          mode,
+          inputCount: allowlist.length,
+          metadata: {
+            allowlist: "catalogSyncAllowlist",
+            version: 1
+          }
+        })
+      : null;
+
+  for (const entry of allowlist) {
+    const item = await syncAllowlistEntry({ entry, mode, rawgClient, repository });
+    items.push(item);
+
+    if (runId) {
+      await auditWriter!.recordItem(runId, item);
+    }
+  }
+
+  const result = summarizeSync(mode, items);
+
+  if (runId) {
+    await auditWriter!.finishRun(runId, result);
+  }
+
+  return result;
+}
+
+export function createCatalogSyncAudit(pool: QueueDbPool = createRuntimePool()): CatalogSyncAudit {
+  return {
+    async startRun(input) {
+      const result = await pool.query<{ id: string }>(
+        `
+          INSERT INTO ops.catalog_sync_runs (
+            source,
+            mode,
+            dry_run,
+            status,
+            input_count,
+            metadata
+          )
+          VALUES ('RAWG', $1, $2, 'running', $3, $4::jsonb)
+          RETURNING id
+        `,
+        [
+          input.mode,
+          input.mode === "dry-run",
+          input.inputCount,
+          JSON.stringify(input.metadata)
+        ]
+      );
+
+      return result.rows[0]!.id;
+    },
+    async recordItem(runId, item) {
+      await pool.query(
+        `
+          INSERT INTO ops.catalog_sync_run_items (
+            run_id,
+            rawg_id,
+            slug,
+            status,
+            game_id,
+            changes,
+            error_code,
+            error_message,
+            finished_at
+          )
+          VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8, now())
+        `,
+        [
+          runId,
+          typeof item.rawgRef === "number" ? item.rawgRef : null,
+          item.slug,
+          item.status,
+          item.gameId,
+          JSON.stringify(item.changes),
+          item.errorCode,
+          item.errorMessage
+        ]
+      );
+    },
+    async finishRun(runId, result) {
+      await pool.query(
+        `
+          UPDATE ops.catalog_sync_runs
+          SET status = $2,
+              created_count = $3,
+              updated_count = $4,
+              skipped_count = $5,
+              failed_count = $6,
+              finished_at = now()
+          WHERE id = $1
+        `,
+        [
+          runId,
+          result.failedCount > 0 ? "failed" : "completed",
+          result.createdCount,
+          result.updatedCount,
+          result.skippedCount,
+          result.failedCount
+        ]
+      );
+    }
+  };
+}
+
+async function syncAllowlistEntry({
+  entry,
+  mode,
+  rawgClient,
+  repository
+}: {
+  entry: CatalogSyncAllowlistEntry;
+  mode: CatalogSyncMode;
+  rawgClient: RawgClient;
+  repository: CatalogRepository;
+}): Promise<CatalogSyncItemOutcome> {
+  try {
+    const rawgGame = await rawgClient.getGame(entry.rawgRef);
+    const changes = plannedChanges(rawgGame, entry.curation);
+
+    if (mode === "dry-run") {
+      return {
+        slug: entry.slug,
+        rawgRef: entry.rawgRef,
+        status: "planned",
+        gameId: null,
+        changes,
+        errorCode: null,
+        errorMessage: null
+      };
+    }
+
+    const gameId = await repository.syncRawgGame(rawgGame, entry.curation);
+
+    return {
+      slug: entry.slug,
+      rawgRef: entry.rawgRef,
+      status: "updated",
+      gameId,
+      changes,
+      errorCode: null,
+      errorMessage: null
+    };
+  } catch (error) {
+    return {
+      slug: entry.slug,
+      rawgRef: entry.rawgRef,
+      status: "failed",
+      gameId: null,
+      changes: {},
+      errorCode: error instanceof Error ? error.name : "CatalogSyncError",
+      errorMessage: redactErrorMessage(error)
+    };
+  }
+}
+
+function plannedChanges(
+  input: CatalogGameUpsertInput,
+  curation: CatalogCurationPatch
+): Record<string, unknown> {
+  return {
+    rawgFacts: [
+      "name",
+      "slug",
+      "description",
+      "releasedAt",
+      "backgroundImageUrl",
+      "rawgUrl",
+      "sourceUpdatedAt",
+      "platforms",
+      "genres"
+    ],
+    rawgId: input.rawgId,
+    slug: input.slug,
+    curation,
+    preserves: ["publishedLocalizations", "timeEstimate", "availability"]
+  };
+}
+
+function summarizeSync(mode: CatalogSyncMode, items: CatalogSyncItemOutcome[]): CatalogSyncResult {
+  return {
+    mode,
+    dryRun: mode === "dry-run",
+    source: "RAWG",
+    inputCount: items.length,
+    createdCount: 0,
+    updatedCount: items.filter((item) => item.status === "updated").length,
+    skippedCount: items.filter((item) => item.status === "planned").length,
+    failedCount: items.filter((item) => item.status === "failed").length,
+    items
+  };
+}
+
+function redactErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error ?? "Unknown error");
+
+  return message
+    .replace(/key=[^&\s]+/gi, "key=[redacted]")
+    .replace(/RAWG_API_KEY=[^&\s]+/gi, "RAWG_API_KEY=[redacted]")
+    .slice(0, 500);
+}

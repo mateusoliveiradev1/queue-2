@@ -2,8 +2,16 @@ import type { QueueDbClient, QueueDbPool } from "@queue/db";
 import { describe, expect, it, vi } from "vitest";
 
 import type { CatalogGameUpsertInput } from "../src/modules/catalog/application/ports";
+import {
+  runCatalogSync,
+  type CatalogSyncAudit
+} from "../src/modules/catalog/infrastructure/catalog-sync";
 import { createCatalogRepository } from "../src/modules/catalog/infrastructure/catalog-repository";
-import { normalizeRawgGame } from "../src/modules/catalog/infrastructure/rawg-client";
+import {
+  createRawgClient,
+  normalizeRawgGame,
+  type RawgClient
+} from "../src/modules/catalog/infrastructure/rawg-client";
 
 type QueryCall = {
   sql: string;
@@ -97,6 +105,80 @@ describe("catalog RAWG sync repository", () => {
   });
 });
 
+describe("catalog sync orchestration", () => {
+  it("dry-runs curated allowlist items without repository or audit writes", async () => {
+    const repository = {
+      searchGames: vi.fn(),
+      getGameBySlug: vi.fn(),
+      upsertGame: vi.fn(),
+      upsertGames: vi.fn(),
+      syncRawgGame: vi.fn()
+    };
+    const audit = fakeAudit();
+
+    const result = await runCatalogSync({
+      mode: "dry-run",
+      allowlist: [allowlistEntry()],
+      rawgClient: fakeRawgClient(),
+      repository,
+      audit
+    });
+
+    expect(result).toMatchObject({
+      mode: "dry-run",
+      dryRun: true,
+      inputCount: 1,
+      skippedCount: 1,
+      failedCount: 0
+    });
+    expect(repository.syncRawgGame).not.toHaveBeenCalled();
+    expect(audit.startRun).not.toHaveBeenCalled();
+  });
+
+  it("apply mode writes RAWG facts through repository and records sync audit rows", async () => {
+    const repository = {
+      searchGames: vi.fn(),
+      getGameBySlug: vi.fn(),
+      upsertGame: vi.fn(),
+      upsertGames: vi.fn(),
+      syncRawgGame: vi.fn(async () => "game-1")
+    };
+    const audit = fakeAudit();
+
+    const result = await runCatalogSync({
+      mode: "apply",
+      allowlist: [allowlistEntry()],
+      rawgClient: fakeRawgClient(),
+      repository,
+      audit
+    });
+
+    expect(result).toMatchObject({
+      mode: "apply",
+      dryRun: false,
+      inputCount: 1,
+      updatedCount: 1,
+      failedCount: 0
+    });
+    expect(repository.syncRawgGame).toHaveBeenCalledWith(
+      expect.objectContaining({ rawgId: 3498 }),
+      expect.objectContaining({ mainFlowEligible: true })
+    );
+    expect(audit.startRun).toHaveBeenCalledOnce();
+    expect(audit.recordItem).toHaveBeenCalledWith(
+      "run-1",
+      expect.objectContaining({ status: "updated", gameId: "game-1" })
+    );
+    expect(audit.finishRun).toHaveBeenCalledOnce();
+  });
+
+  it("reports missing RAWG keys as server configuration errors", () => {
+    expect(() => createRawgClient({ apiKey: "" })).toThrow(
+      /RAWG_API_KEY is required/
+    );
+  });
+});
+
 function rawgInput(overrides: Partial<CatalogGameUpsertInput> = {}): CatalogGameUpsertInput {
   return {
     rawgId: 3498,
@@ -134,6 +216,37 @@ function rawgInput(overrides: Partial<CatalogGameUpsertInput> = {}): CatalogGame
     timeEstimate: null,
     availability: [],
     ...overrides
+  };
+}
+
+function allowlistEntry() {
+  return {
+    rawgRef: "it-takes-two",
+    slug: "it-takes-two-2",
+    expectedName: "It Takes Two",
+    curation: {
+      coopCampaignConfirmed: true,
+      coopPlayerCountMin: 2,
+      coopPlayerCountMax: 2,
+      coopConfirmationSource: "Curadoria QUEUE/2 allowlist",
+      coopConfirmationCheckedAt: new Date("2026-06-03T12:00:00.000Z"),
+      mainFlowEligible: true
+    }
+  };
+}
+
+function fakeRawgClient(): RawgClient {
+  return {
+    searchGames: vi.fn(),
+    getGame: vi.fn(async () => rawgInput())
+  };
+}
+
+function fakeAudit(): CatalogSyncAudit {
+  return {
+    startRun: vi.fn(async () => "run-1"),
+    recordItem: vi.fn(),
+    finishRun: vi.fn()
   };
 }
 

@@ -14,6 +14,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
+    "catalog:sync": "node --conditions react-server --experimental-strip-types scripts/catalog-sync.ts",
     "check:architecture": "turbo run check:architecture",
     "check:secrets": "node scripts/check-secrets.mjs",
     "audit:dependencies": "pnpm audit --prod --audit-level high",
