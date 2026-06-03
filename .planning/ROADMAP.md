@@ -12,7 +12,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 
 - [x] **Phase 1: Fundacao Modular, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura sobre arquitetura e dados verificaveis.
 - [x] **Phase 01.1: Polimento Auth e Landing Intermediaria (INSERTED)** - A experiencia publica inicial ganha acabamento visual e navegacao de marca sem antecipar a landing final.
-- [ ] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
+- [x] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
 - [ ] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
@@ -31,11 +31,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Duas duplas distintas nao conseguem acessar dados uma da outra, e constraints, RLS forcado, roles separadas, transacoes e testes concorrentes preservam os invariantes centrais.
   4. Migrations de banco passam em base vazia e upgrade, queries criticas possuem indices revisados e existe uma estrategia de restore testavel antes do lancamento.
   5. Auth, rate limits, headers, validacao, logs e scans atendem ao contrato de seguranca, enquanto a experiencia base exibe a marca e feedback QUEUE/2 coerentes.
-**Plans**: 02-01, 02-02, 02-03
-**Plan Waves**:
-  - **Wave 1**: `02-01` - Catalog source, RAWG adapter and `catalog` schema.
-  - **Wave 2 *(blocked on Wave 1 completion)*:** `02-02` - Duo platforms, library state, RLS and match-score rules.
-  - **Wave 3 *(blocked on Wave 2 completion)*:** `02-03` - Authenticated catalog, library and game-detail UI.
+**Plans**: 01-01, 01-02, 01-03, 01-04, 01-05, 01-06
 **UI hint**: yes
 
 ### Phase 01.1: Polimento Auth e Landing Intermediaria (INSERTED)
@@ -62,7 +58,11 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Cada membro pode registrar suas plataformas e a dupla consegue ver automaticamente as plataformas em comum.
   4. Usuario pode adicionar jogos a Wishlist e organizar a biblioteca por Wishlist, Jogando, Zerado, Dropado ou Pausado.
   5. A biblioteca mostra match score e abre um detalhe preparado para sessoes, checkpoints, progresso e milestones.
-**Plans**: TBD
+**Plans**: 02-01, 02-02, 02-03
+**Plan Waves**:
+  - **Wave 1**: `02-01` - Catalog source, RAWG adapter and `catalog` schema.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `02-02` - Duo platforms, library state, RLS and match-score rules.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `02-03` - Authenticated catalog, library and game-detail UI.
 **UI hint**: yes
 
 ### Phase 3: Descoberta E Matches
@@ -149,8 +149,9 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundacao Modular, Marca, Auth E Dupla | 4/6 | In Progress |  |
-| 2. Catalogo E Biblioteca | 0/3 | Ready to execute | - |
+| 1. Fundacao Modular, Marca, Auth E Dupla | 6/6 | Complete | 2026-06-03 |
+| 01.1. Polimento Auth e Landing Intermediaria | 1/1 | Complete | 2026-06-03 |
+| 2. Catalogo E Biblioteca | 3/3 | Complete | 2026-06-03 |
 | 3. Descoberta E Matches | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
