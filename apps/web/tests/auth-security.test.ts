@@ -13,6 +13,11 @@ const sessionSource = readFileSync("src/platform/auth/session.ts", "utf8");
 const proxySource = readFileSync("proxy.ts", "utf8");
 const actionsSource = readFileSync("src/platform/auth/actions.ts", "utf8");
 const serverSource = readFileSync("src/platform/auth/server.ts", "utf8");
+const persistentRateLimitSource = readFileSync(
+  "src/platform/rate-limit/persistent.ts",
+  "utf8"
+);
+const authSchemaSource = readFileSync("../../packages/db/src/schema/auth.ts", "utf8");
 const dashboardSource = readFileSync("src/app/app/page.tsx", "utf8");
 const duoSource = readFileSync("src/app/app/dupla/page.tsx", "utf8");
 const profileSource = readFileSync("src/app/app/perfil/page.tsx", "utf8");
@@ -78,6 +83,11 @@ describe("auth runtime security policy", () => {
     expect(authRateLimitAudit.serverlessSafe).toBe(true);
     expect(authRateLimitAudit.storage).not.toMatch(/memory|process/i);
     expect(authRuntimePolicy.rateLimit.storage).toBe("database");
+    expect(authSchemaSource).toContain('bigint("last_request", { mode: "number" })');
+    expect(authSchemaSource).not.toContain('timestamp("last_request"');
+    expect(persistentRateLimitSource).toContain("requested_at_ms");
+    expect(persistentRateLimitSource).toContain("last_request::text");
+    expect(persistentRateLimitSource).not.toContain("last_request: Date");
   });
 
   it("keeps trusted origins allowlisted and cookies secure in deployed environments", () => {

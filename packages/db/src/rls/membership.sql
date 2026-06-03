@@ -76,7 +76,8 @@ SECURITY DEFINER
 SET search_path = app, auth, ops, pg_catalog
 AS $$
 DECLARE
-  target_duo_id uuid;
+  target_pairing_code_id uuid;
+  claimed_duo_id uuid;
 BEGIN
   IF app.current_user_id() IS DISTINCT FROM claimant_user_id THEN
     RAISE EXCEPTION 'database identity does not match claimant_user_id' USING ERRCODE = '28000';
@@ -86,20 +87,33 @@ BEGIN
     RAISE EXCEPTION 'user_already_in_duo' USING ERRCODE = '23505';
   END IF;
 
-  UPDATE app.pairing_codes AS code
-  SET claimed_by_user_id = claimant_user_id,
-      claimed_at = now()
+  SELECT code.id
+  INTO target_pairing_code_id
+  FROM app.pairing_codes AS code
   WHERE code.code = upper(pairing_code)
     AND code.revoked_at IS NULL
     AND code.claimed_at IS NULL
     AND code.expires_at > now()
-  RETURNING code.duo_id INTO target_duo_id;
+  LIMIT 1;
 
-  IF target_duo_id IS NULL THEN
+  IF target_pairing_code_id IS NULL THEN
+    RAISE EXCEPTION 'pairing_code_inactive' USING ERRCODE = 'P0001';
+  END IF;
+
+  UPDATE app.pairing_codes AS code
+  SET claimed_by_user_id = claimant_user_id,
+      claimed_at = now()
+  WHERE code.id = target_pairing_code_id
+    AND code.revoked_at IS NULL
+    AND code.claimed_at IS NULL
+    AND code.expires_at > now()
+  RETURNING code.duo_id INTO claimed_duo_id;
+
+  IF claimed_duo_id IS NULL THEN
     IF EXISTS (
       SELECT 1
       FROM app.pairing_codes AS code
-      WHERE code.code = upper(pairing_code)
+      WHERE code.id = target_pairing_code_id
         AND code.claimed_at IS NOT NULL
     ) THEN
       RAISE EXCEPTION 'pairing_code_formed' USING ERRCODE = 'P0001';
@@ -109,14 +123,14 @@ BEGIN
   END IF;
 
   INSERT INTO app.duo_members (duo_id, user_id, member_slot)
-  VALUES (target_duo_id, claimant_user_id, 2);
+  VALUES (claimed_duo_id, claimant_user_id, 2);
 
   UPDATE app.duos
   SET paired_at = coalesce(paired_at, now()),
       updated_at = now()
-  WHERE id = target_duo_id;
+  WHERE id = claimed_duo_id;
 
-  RETURN target_duo_id;
+  RETURN claimed_duo_id;
 END;
 $$;
 

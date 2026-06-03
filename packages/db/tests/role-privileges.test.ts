@@ -73,33 +73,69 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
   });
 
   test("runtime role cannot create or alter application schema objects", async () => {
-    const client = await pool.connect();
     const probeTable = `runtime_migration_probe_${randomUUID().replaceAll("-", "")}`;
-    let createError: unknown;
-    let alterError: unknown;
 
-    try {
-      await client.query("BEGIN");
-      await client.query("SET LOCAL ROLE queue2_app_runtime");
+    await expectRoleStatementDenied(
+      pool,
+      `CREATE TABLE app.${probeTable} (id integer)`
+    );
+    await expectRoleStatementDenied(
+      pool,
+      "ALTER TABLE app.duos ADD COLUMN runtime_probe integer"
+    );
+  });
 
-      try {
-        await client.query(`CREATE TABLE app.${probeTable} (id integer)`);
-      } catch (error) {
-        createError = error;
-      }
+  test("runtime and worker roles can update only Phase 1 duo settings columns", async () => {
+    const privileges = await pool.query<{
+      role_name: string;
+      column_name: string;
+      can_update: boolean;
+      can_update_table: boolean;
+    }>(`
+      SELECT
+        role.role_name,
+        column_name,
+        has_column_privilege(role.role_name, 'app.duos', column_name, 'UPDATE') AS can_update,
+        has_table_privilege(role.role_name, 'app.duos', 'UPDATE') AS can_update_table
+      FROM (VALUES ('queue2_app_runtime'), ('queue2_worker')) AS role(role_name)
+      CROSS JOIN (VALUES
+        ('id'),
+        ('name'),
+        ('paired_at'),
+        ('xp'),
+        ('level'),
+        ('streak'),
+        ('timezone'),
+        ('created_at'),
+        ('updated_at')
+      ) AS duo_column(column_name)
+      ORDER BY role.role_name, column_name
+    `);
 
-      try {
-        await client.query("ALTER TABLE app.duos ADD COLUMN runtime_probe integer");
-      } catch (error) {
-        alterError = error;
-      }
-    } finally {
-      await client.query("ROLLBACK");
-      client.release();
+    for (const roleName of ["queue2_app_runtime", "queue2_worker"]) {
+      const rolePrivileges = Object.fromEntries(
+        privileges.rows
+          .filter((row) => row.role_name === roleName)
+          .map((row) => [row.column_name, row.can_update])
+      );
+
+      expect(rolePrivileges).toEqual({
+        created_at: false,
+        id: false,
+        level: false,
+        name: true,
+        paired_at: false,
+        streak: false,
+        timezone: true,
+        updated_at: true,
+        xp: false
+      });
+      expect(
+        privileges.rows
+          .filter((row) => row.role_name === roleName)
+          .every((row) => !row.can_update_table)
+      ).toBe(true);
     }
-
-    expect(errorMessage(createError)).toMatch(/permission denied|must be owner/i);
-    expect(errorMessage(alterError)).toMatch(/permission denied|must be owner|transaction is aborted/i);
   });
 
   test("duo-scoped tables are forced through RLS for the runtime role", async () => {
@@ -183,6 +219,27 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error ?? "");
+}
+
+async function expectRoleStatementDenied(pool: pg.Pool, statement: string): Promise<void> {
+  const client = await pool.connect();
+  let statementError: unknown;
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE queue2_app_runtime");
+
+    try {
+      await client.query(statement);
+    } catch (error) {
+      statementError = error;
+    }
+  } finally {
+    await client.query("ROLLBACK");
+    client.release();
+  }
+
+  expect(errorMessage(statementError)).toMatch(/permission denied|must be owner/i);
 }
 
 function planText(rows: Array<{ "QUERY PLAN": string }>): string {

@@ -106,7 +106,7 @@ test.describe("Phase 1 auth and duo flow", () => {
       await third.page.getByLabel(/codigo da dupla/i).fill(code);
       await third.page.getByRole("button", { name: /entrar com codigo/i }).click();
       await expect(third.page).toHaveURL(/\/parear/);
-      await expect(third.page.getByRole("status")).toContainText(/dupla acabou de ser formada/i);
+      await expect(third.page.getByRole("status")).toContainText(/codigo nao esta mais ativo/i);
 
       await third.page.goto("/app");
       await expect(third.page).toHaveURL(/\/parear/);
@@ -122,10 +122,13 @@ test.describe("Phase 1 auth and duo flow", () => {
 
     try {
       await current.page.goto("/app/perfil");
-      const revokeButton = current.page.getByRole("button", { name: /encerrar sessao/i }).first();
-      await expect(revokeButton).toBeVisible();
-      await revokeButton.click();
-      await expect(current.page.getByRole("status")).toContainText(/sessao revogada/i);
+      const revokeButtons = current.page.getByRole("button", { name: /encerrar sessao/i });
+      await expect(revokeButtons.first()).toBeVisible();
+
+      while ((await revokeButtons.count()) > 0) {
+        await revokeButtons.first().click();
+        await expect(current.page.getByRole("status")).toContainText(/sessao revogada/i);
+      }
 
       await secondary.page.goto("/app");
       await expect(secondary.page).toHaveURL(/\/login/);

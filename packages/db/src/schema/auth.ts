@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -88,7 +89,7 @@ export const authRateLimits = authSchema.table(
     id: text("id").primaryKey(),
     key: text("key").notNull(),
     count: integer("count").notNull().default(0),
-    lastRequest: timestamp("last_request", { withTimezone: true }).notNull().defaultNow()
+    lastRequest: bigint("last_request", { mode: "number" }).notNull()
   },
   (table) => [uniqueIndex("auth_rate_limit_key_uidx").on(table.key)]
 );

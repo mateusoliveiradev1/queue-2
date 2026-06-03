@@ -34,25 +34,32 @@ export async function consumePairingAttempt(
   const key = `duo:pairing-attempt:${userId}`;
 
   return withAppUserTransaction(pool, userId, async (client) => {
-    const result = await client.query<{ count: number; last_request: Date }>(
+    const result = await client.query<{ count: number; last_request: string }>(
       `
+        WITH request_clock AS (
+          SELECT floor(extract(epoch FROM clock_timestamp()) * 1000)::bigint AS requested_at_ms
+        )
         INSERT INTO auth.rate_limit (id, key, count, last_request)
-        VALUES ($1, $2, 1, now())
+        SELECT $1, $2, 1, request_clock.requested_at_ms
+        FROM request_clock
         ON CONFLICT (key) DO UPDATE
         SET count = CASE
-              WHEN auth.rate_limit.last_request < now() - make_interval(secs => $3::integer)
+              WHEN auth.rate_limit.last_request < excluded.last_request - ($3::bigint * 1000)
                 THEN 1
               ELSE auth.rate_limit.count + 1
             END,
-            last_request = now()
-        RETURNING count, last_request
+            last_request = excluded.last_request
+        RETURNING count, last_request::text
       `,
       [randomUUID(), key, PAIRING_RATE_LIMIT_POLICY.windowSeconds]
     );
     const row = result.rows[0];
     const count = row?.count ?? 1;
+    const lastRequestMs = row
+      ? Number.parseInt(row.last_request, 10)
+      : Date.now();
     const elapsedSeconds = row
-      ? Math.floor((Date.now() - row.last_request.getTime()) / 1000)
+      ? Math.max(0, Math.floor((Date.now() - lastRequestMs) / 1000))
       : 0;
 
     return {
