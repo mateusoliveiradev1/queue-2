@@ -19,14 +19,14 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Duo And Profile
 
-- [ ] **DUO-01**: Authenticated user without a duo can create a six-character pairing code
-- [ ] **DUO-02**: Authenticated user can join a duo by entering a valid six-character pairing code
-- [ ] **DUO-03**: A pairing code expires or can be revoked before it is used
+- [x] **DUO-01**: Authenticated user without a duo can create a six-character pairing code
+- [x] **DUO-02**: Authenticated user can join a duo by entering a valid six-character pairing code
+- [x] **DUO-03**: A pairing code expires or can be revoked before it is used
 - [x] **DUO-04**: A duo can never contain more than two members, including under concurrent pairing attempts
-- [ ] **DUO-05**: User can view the shared identity and pairing date of their duo
-- [ ] **DUO-06**: User can edit their own display name and profile settings
-- [ ] **DUO-07**: Duo can set a timezone used by resets, streaks and scheduled sessions
-- [ ] **DUO-08**: Duo can configure shared notification and audio preferences
+- [x] **DUO-05**: User can view the shared identity and pairing date of their duo
+- [x] **DUO-06**: User can edit their own display name and profile settings
+- [x] **DUO-07**: Duo can set a timezone used by resets, streaks and scheduled sessions
+- [x] **DUO-08**: Duo can configure shared notification and audio preferences
 - [x] **DUO-09**: User can only access data that belongs to their own duo
 - [x] **DUO-10**: User cannot create solo play sessions or solo progress
 
@@ -78,7 +78,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SEC-03**: Proxy or middleware is never the sole authorization gate for protected data or mutations
 - [x] **SEC-04**: Pairing, search, external integration and economy-sensitive endpoints use persistent abuse rate limits
 - [x] **SEC-05**: Production responses use an explicit Content Security Policy, HSTS, frame protection, content-type protection and restrictive referrer policy
-- [ ] **SEC-06**: User-generated text is treated as untrusted and cannot execute as HTML or script
+- [x] **SEC-06**: User-generated text is treated as untrusted and cannot execute as HTML or script
 - [x] **SEC-07**: Logs and error responses redact sensitive values while preserving security-relevant audit events
 - [ ] **SEC-08**: Dependency, secret and static analysis checks run before deployment
 - [ ] **SEC-09**: Production launch includes a recorded review of applicable OWASP ASVS 5.0 Level 2 controls
@@ -252,14 +252,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-05 | Phase 1 | Complete |
 | AUTH-06 | Phase 1 | Complete |
 | AUTH-07 | Phase 1 | Complete |
-| DUO-01 | Phase 1 | Pending |
-| DUO-02 | Phase 1 | Pending |
-| DUO-03 | Phase 1 | Pending |
+| DUO-01 | Phase 1 | Complete |
+| DUO-02 | Phase 1 | Complete |
+| DUO-03 | Phase 1 | Complete |
 | DUO-04 | Phase 1 | Complete |
-| DUO-05 | Phase 1 | Pending |
-| DUO-06 | Phase 1 | Pending |
-| DUO-07 | Phase 1 | Pending |
-| DUO-08 | Phase 1 | Pending |
+| DUO-05 | Phase 1 | Complete |
+| DUO-06 | Phase 1 | Complete |
+| DUO-07 | Phase 1 | Complete |
+| DUO-08 | Phase 1 | Complete |
 | DUO-09 | Phase 1 | Complete |
 | DUO-10 | Phase 1 | Complete |
 | BRND-01 | Phase 1 | Complete |
@@ -299,7 +299,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-03 | Phase 1 | Complete |
 | SEC-04 | Phase 1 | Complete |
 | SEC-05 | Phase 1 | Complete |
-| SEC-06 | Phase 1 | Pending |
+| SEC-06 | Phase 1 | Complete |
 | SEC-07 | Phase 1 | Complete |
 | SEC-08 | Phase 1 | Pending |
 | SEC-09 | Phase 7 | Pending |
