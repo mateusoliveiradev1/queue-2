@@ -1,0 +1,10 @@
+{
+  "name": "@queue/config",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    "./eslint": "./eslint/index.js",
+    "./typescript/base": "./typescript/base.json"
+  }
+}

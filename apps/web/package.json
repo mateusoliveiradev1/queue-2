@@ -1,0 +1,26 @@
+{
+  "name": "@queue/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check:architecture": "node ../../scripts/check-architecture.mjs"
+  },
+  "dependencies": {
+    "@queue/db": "workspace:*",
+    "@queue/ui": "workspace:*",
+    "next": "16.2.7",
+    "react": "19.2.7",
+    "react-dom": "19.2.7"
+  },
+  "devDependencies": {
+    "@queue/config": "workspace:*",
+    "@types/node": "24.12.4",
+    "@types/react": "19.2.16",
+    "@types/react-dom": "19.2.3",
+    "typescript": "5.9.3"
+  }
+}
