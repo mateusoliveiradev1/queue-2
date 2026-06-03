@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.E2E_BASE_URL ?? "http://127.0.0.1:3000";
 const startLocalServer = process.env.E2E_START_SERVER === "1";
+const localServerUrl = new URL(baseURL);
+const localServerPort = localServerUrl.port || "3000";
 
 export default defineConfig({
   testDir: "./tests",
@@ -28,7 +30,7 @@ export default defineConfig({
   ],
   webServer: startLocalServer
     ? {
-        command: "pnpm dev",
+        command: `pnpm dev --hostname ${localServerUrl.hostname} --port ${localServerPort}`,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000

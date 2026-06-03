@@ -39,6 +39,7 @@ describe("protected auth gates", () => {
   it("validates sessions through Better Auth on the server", () => {
     expect(sessionSource).toContain('import "server-only"');
     expect(sessionSource).toMatch(/export async function getCurrentSession[\s\S]*auth\.api\.getSession/);
+    expect(sessionSource).toMatch(/export async function getCurrentSession[\s\S]*disableCookieCache: true/);
     expect(sessionSource).toMatch(/export async function requireVerifiedSession[\s\S]*getCurrentSession\(\)/);
     expect(sessionSource).toContain("session.user.emailVerified");
     expect(sessionSource).toContain("/verificar-email");
@@ -75,9 +76,12 @@ describe("session management controls", () => {
   it("lists active sessions and revokes by server-resolved token", () => {
     expect(sessionSource).toMatch(/auth\.api\.listSessions/);
     expect(sessionSource).toMatch(/targetSessionId/);
-    expect(sessionSource).toMatch(/activeSessions\.find\(\(session\) => session\.id === targetSessionId\)/);
-    expect(sessionSource).toMatch(/auth\.api\.revokeSession[\s\S]*token: targetSession\.token/);
+    expect(sessionSource).toMatch(/activeSessions\.find[\s\S]*session\.id === targetSessionId/);
+    expect(sessionSource).toContain("findOwnedSessionToken");
+    expect(sessionSource).toContain("hashSessionToken");
+    expect(sessionSource).toMatch(/auth\.api\.revokeSession[\s\S]*token: targetSessionToken/);
     expect(profileSource).toContain('name="sessionId"');
+    expect(profileSource).toContain('name="sessionFingerprint"');
     expect(profileSource).not.toContain('name="token"');
   });
 

@@ -1,5 +1,8 @@
 import "server-only";
 
+import { createHash } from "node:crypto";
+
+import { createRuntimePool, type QueueDbPool } from "@queue/db";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -19,9 +22,14 @@ const AUTH_LOGIN_PATH = "/login";
 const AUTH_VERIFY_EMAIL_PATH = "/verificar-email";
 const PROFILE_PATH = "/app/perfil";
 
+let authSessionPool: QueueDbPool | undefined;
+
 export async function getCurrentSession(): Promise<QueueSession> {
   return auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
+    query: {
+      disableCookieCache: true
+    }
   });
 }
 
@@ -60,6 +68,8 @@ export async function revokeSessionAction(formData: FormData) {
   "use server";
 
   const targetSessionId = getFormString(formData, "sessionId");
+  const targetSessionFingerprint = getFormString(formData, "sessionFingerprint");
+  const targetSessionUpdatedAt = getFormString(formData, "sessionUpdatedAt");
 
   if (targetSessionId) {
     const currentSession = await requireVerifiedSession();
@@ -67,12 +77,24 @@ export async function revokeSessionAction(formData: FormData) {
     const activeSessions = await auth.api.listSessions({
       headers: await headers()
     });
-    const targetSession = activeSessions.find((session) => session.id === targetSessionId);
+    const targetSession = activeSessions.find(
+      (session) =>
+        session.id === targetSessionId ||
+        hashSessionToken(session.token) === targetSessionFingerprint
+    );
+    const targetSessionToken =
+      targetSession?.token ??
+      (await findOwnedSessionToken({
+        sessionFingerprint: targetSessionFingerprint,
+        sessionId: targetSessionId,
+        sessionUpdatedAt: targetSessionUpdatedAt,
+        userId: currentSession.user.id
+      }));
 
-    if (targetSession) {
+    if (targetSessionToken) {
       await auth.api.revokeSession({
         body: {
-          token: targetSession.token
+          token: targetSessionToken
         },
         headers: await headers()
       });
@@ -81,7 +103,7 @@ export async function revokeSessionAction(formData: FormData) {
     recordSecurityAuditEvent({
       action: "auth.session_revoked",
       actorUserId: currentSession.user.id,
-      outcome: targetSession ? "revoked" : "not-found"
+      outcome: targetSessionToken ? "revoked" : "not-found"
     });
   }
 
@@ -110,9 +132,61 @@ export async function redirectAuthenticatedUserToPairing() {
   }
 }
 
+export function hashSessionToken(token: string | undefined): string {
+  return token ? createHash("sha256").update(token).digest("hex") : "";
+}
+
 function getFormString(formData: FormData, key: string): string {
   const value = formData.get(key);
   return typeof value === "string" ? value.trim() : "";
+}
+
+async function findOwnedSessionToken({
+  sessionFingerprint,
+  sessionId,
+  sessionUpdatedAt,
+  userId
+}: {
+  sessionFingerprint: string;
+  sessionId: string;
+  sessionUpdatedAt: string;
+  userId: string;
+}): Promise<string | null> {
+  const pool = getAuthSessionPool();
+  const result = await pool.query<{ id: string; token: string; updated_at: Date }>(
+    `
+      SELECT id, token, updated_at
+      FROM auth.session
+      WHERE user_id = $1
+      ORDER BY updated_at DESC
+    `,
+    [userId]
+  );
+
+  const targetUpdatedAt = Date.parse(sessionUpdatedAt);
+  const targetSession = result.rows.find((session) => {
+    const sameUpdatedAt =
+      Number.isFinite(targetUpdatedAt) &&
+      Math.abs(session.updated_at.getTime() - targetUpdatedAt) < 1;
+
+    return (
+      session.id === sessionId ||
+      session.token === sessionId ||
+      hashSessionToken(session.token) === sessionFingerprint ||
+      sameUpdatedAt
+    );
+  });
+
+  if (targetSession) {
+    return targetSession.token;
+  }
+
+  return null;
+}
+
+function getAuthSessionPool(): QueueDbPool {
+  authSessionPool ??= createRuntimePool();
+  return authSessionPool;
 }
 
 function buildPath(path: string, params: Record<string, string | undefined>): string {

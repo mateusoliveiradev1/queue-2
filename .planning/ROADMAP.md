@@ -10,7 +10,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - Integer phases (1, 2, 3): Planned milestone work
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
-- [ ] **Phase 1: Fundacao Modular, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura sobre arquitetura e dados verificaveis.
+- [x] **Phase 1: Fundacao Modular, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura sobre arquitetura e dados verificaveis.
 - [ ] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
 - [ ] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.

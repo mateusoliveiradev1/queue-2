@@ -329,7 +329,9 @@ export async function logoutAction(_formData?: FormData) {
 }
 
 function isUnverifiedEmailError(error: unknown): boolean {
-  return serializeError(error).includes("email_not_verified");
+  const serialized = serializeError(error);
+
+  return serialized.includes("email_not_verified") || serialized.includes("email not verified");
 }
 
 function serializeError(error: unknown): string {

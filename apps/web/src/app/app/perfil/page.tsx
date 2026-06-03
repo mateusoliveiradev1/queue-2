@@ -12,6 +12,7 @@ import {
 } from "../../../modules/duo";
 import {
   getVerifiedProfileAuthContext,
+  hashSessionToken,
   logoutCurrentSessionAction,
   revokeSessionAction
 } from "../../../platform/auth/session";
@@ -115,6 +116,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
                 {isCurrentSession ? null : (
                   <form action={revokeSessionAction}>
                     <input name="sessionId" type="hidden" value={session.id} />
+                    <input
+                      name="sessionFingerprint"
+                      type="hidden"
+                      value={hashSessionToken(session.token)}
+                    />
+                    <input
+                      name="sessionUpdatedAt"
+                      type="hidden"
+                      value={session.updatedAt.toISOString()}
+                    />
                     <button className="queue2-button" data-tone="quiet" type="submit">
                       Encerrar sessao
                     </button>

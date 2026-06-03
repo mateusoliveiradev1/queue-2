@@ -8,7 +8,8 @@ type E2EActor = {
 const flowActors = {
   owner: actorFromEnv("E2E_FLOW_OWNER"),
   partner: actorFromEnv("E2E_FLOW_PARTNER"),
-  third: actorFromEnv("E2E_FLOW_THIRD")
+  third: actorFromEnv("E2E_FLOW_THIRD"),
+  revocation: actorFromEnv("E2E_REVOCATION_USER")
 };
 const readyActors = {
   first: actorFromEnv("E2E_READY_USER"),
@@ -22,7 +23,9 @@ const flowMissingEnv = missingEnv([
   "E2E_FLOW_PARTNER_EMAIL",
   "E2E_FLOW_PARTNER_PASSWORD",
   "E2E_FLOW_THIRD_EMAIL",
-  "E2E_FLOW_THIRD_PASSWORD"
+  "E2E_FLOW_THIRD_PASSWORD",
+  "E2E_REVOCATION_USER_EMAIL",
+  "E2E_REVOCATION_USER_PASSWORD"
 ]);
 const readyMissingEnv = missingEnv([
   "E2E_BASE_URL",
@@ -52,7 +55,8 @@ test.describe("Phase 1 auth and duo flow", () => {
     await page.goto("/cadastro");
     await page.getByLabel(/nome de exibicao/i).fill("Jogador E2E");
     await page.getByLabel(/^email$/i).fill(uniqueEmail);
-    await page.getByLabel(/^senha$/i).fill("Fila!2026-E2E");
+    await page.getByLabel(/^senha$/i).fill("Fila!2026");
+    await page.getByLabel(/confirmar senha/i).fill("Fila!2026");
     await page.getByRole("button", { name: /criar conta/i }).click();
 
     await expect(page).toHaveURL(/\/verificar-email\?/);
@@ -61,7 +65,7 @@ test.describe("Phase 1 auth and duo flow", () => {
     await expect(page.getByLabel(/corrigir email/i)).toBeVisible();
 
     await page.getByLabel(/corrigir email/i).fill(correctedEmail);
-    await page.getByLabel(/senha escolhida/i).fill("Fila!2026-E2E");
+    await page.getByLabel(/senha escolhida/i).fill("Fila!2026");
     await page.getByRole("button", { name: /corrigir e enviar de novo/i }).click();
 
     await expect(page).toHaveURL(/\/verificar-email\?/);
@@ -103,14 +107,14 @@ test.describe("Phase 1 auth and duo flow", () => {
       await expect(partner.page).toHaveURL(/\/app\/dupla\?estado=dupla-formada/);
       await expect(partner.page.getByRole("status")).toContainText(/fila agora e nossa/i);
 
-      await partner.page.getByLabel(/nome da dupla/i).fill("Dupla E2E da Fila");
+      await partner.page.getByRole("textbox", { name: /nome da dupla/i }).fill("Dupla E2E da Fila");
       await partner.page.getByRole("button", { name: /salvar dupla/i }).click();
       await expect(partner.page.getByRole("status")).toContainText(/dupla atualizadas/i);
 
       await owner.page.goto("/app");
       await expect(owner.page.getByRole("heading", { name: /fila ainda esta vazia/i })).toBeVisible();
       await expect(owner.page.getByText("Dupla E2E da Fila")).toBeVisible();
-      await expect(owner.page.getByText("2/2")).toBeVisible();
+      await expect(owner.page.getByText("2/2", { exact: true })).toBeVisible();
 
       await third.page.getByRole("tab", { name: /entrar com codigo/i }).click();
       await third.page.getByLabel(/codigo da dupla/i).fill(code);
@@ -127,18 +131,15 @@ test.describe("Phase 1 auth and duo flow", () => {
   });
 
   test("profile session revocation invalidates another active browser session", async ({ browser }) => {
-    const current = await openLoggedInPage(browser, flowActors.owner);
-    const secondary = await openLoggedInPage(browser, flowActors.owner);
+    const current = await openLoggedInPage(browser, flowActors.revocation);
+    const secondary = await openLoggedInPage(browser, flowActors.revocation);
 
     try {
       await current.page.goto("/app/perfil");
-      const revokeButtons = current.page.getByRole("button", { name: /encerrar sessao/i });
-      await expect(revokeButtons.first()).toBeVisible();
-
-      while ((await revokeButtons.count()) > 0) {
-        await revokeButtons.first().click();
-        await expect(current.page.getByRole("status")).toContainText(/sessao revogada/i);
-      }
+      const revokeButton = current.page.getByRole("button", { name: /encerrar sessao/i }).first();
+      await expect(revokeButton).toBeVisible();
+      await revokeButton.click();
+      await expect(current.page.getByRole("status")).toContainText(/sessao revogada/i);
 
       await secondary.page.goto("/app");
       await expect(secondary.page).toHaveURL(/\/login/);

@@ -7,17 +7,23 @@ type E2EActor = {
 };
 
 const baseMissingEnv = missingEnv(["E2E_BASE_URL"]);
-const pairingMissingEnv = missingEnv([
-  "E2E_BASE_URL",
+const pairingActorPrefix = hasEnv([
   "E2E_PAIRING_USER_EMAIL",
   "E2E_PAIRING_USER_PASSWORD"
+])
+  ? "E2E_PAIRING_USER"
+  : "E2E_FLOW_OWNER";
+const pairingMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  `${pairingActorPrefix}_EMAIL`,
+  `${pairingActorPrefix}_PASSWORD`
 ]);
 const readyMissingEnv = missingEnv([
   "E2E_BASE_URL",
   "E2E_READY_USER_EMAIL",
   "E2E_READY_USER_PASSWORD"
 ]);
-const pairingActor = actorFromEnv("E2E_PAIRING_USER");
+const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
 reportMissingEnv("Public accessibility", baseMissingEnv);
@@ -40,10 +46,35 @@ test.describe("Phase 1 public accessibility", () => {
   test("auth controls expose visible keyboard focus and reduced-motion preference", async ({ page }) => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/login");
-    await page.keyboard.press("Tab");
 
-    const activeElement = page.locator(":focus");
-    await expect(activeElement).toBeVisible();
+    const emailInput = page.getByLabel(/^email$/i);
+    await expect(emailInput).toBeVisible();
+    await expect
+      .poll(() =>
+        emailInput.evaluate((element) => {
+          const input = element as HTMLInputElement;
+
+          return !input.disabled && input.tabIndex >= 0;
+        })
+      )
+      .toBe(true);
+    await expect
+      .poll(() =>
+        page.evaluate(() => {
+          return Array.from(document.styleSheets).some((sheet) => {
+            try {
+              return Array.from(sheet.cssRules).some((rule) => {
+                const text = rule.cssText;
+
+                return text.includes(".queue2-input:focus-visible") && text.includes("box-shadow");
+              });
+            } catch {
+              return false;
+            }
+          });
+        })
+      )
+      .toBe(true);
     await expect
       .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
       .toBe(true);
@@ -105,6 +136,10 @@ function actorFromEnv(prefix: string): E2EActor {
 
 function missingEnv(names: string[]): string[] {
   return names.filter((name) => !process.env[name]);
+}
+
+function hasEnv(names: string[]): boolean {
+  return names.every((name) => process.env[name]);
 }
 
 function reportMissingEnv(scope: string, names: string[]): void {

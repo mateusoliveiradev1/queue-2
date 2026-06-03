@@ -100,6 +100,7 @@ const duoModuleMock = vi.hoisted(() => {
 
 vi.mock("../src/platform/auth/session", () => ({
   getVerifiedProfileAuthContext: vi.fn(async () => authSessionMock),
+  hashSessionToken: vi.fn((token: string | undefined) => (token ? `hashed-${token}` : "")),
   logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession),
   revokeSessionAction: vi.fn(async () => undefined)
