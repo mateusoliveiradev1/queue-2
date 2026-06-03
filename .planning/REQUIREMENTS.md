@@ -32,19 +32,19 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Brand And App Experience
 
-- [ ] **BRND-01**: User sees the QUEUE/2 wordmark with Archivo Black `QUEUE` and acid lime JetBrains Mono `/2`
-- [ ] **BRND-02**: User sees the `/2` brand mark in app icon, favicon and loading contexts
-- [ ] **BRND-03**: User sees the graphite, off-white, acid lime, violet shock and rarity color tokens consistently across the product
-- [ ] **BRND-04**: User sees Archivo Black for display, Inter Tight for body and JetBrains Mono for numerals and `/2`
-- [ ] **BRND-05**: User sees the roulette pointer motif as a recurring divider, current-game indicator or list marker
-- [ ] **BRND-06**: User sees a `/2` SVG stroke loading state instead of a generic spinner
+- [x] **BRND-01**: User sees the QUEUE/2 wordmark with Archivo Black `QUEUE` and acid lime JetBrains Mono `/2`
+- [x] **BRND-02**: User sees the `/2` brand mark in app icon, favicon and loading contexts
+- [x] **BRND-03**: User sees the graphite, off-white, acid lime, violet shock and rarity color tokens consistently across the product
+- [x] **BRND-04**: User sees Archivo Black for display, Inter Tight for body and JetBrains Mono for numerals and `/2`
+- [x] **BRND-05**: User sees the roulette pointer motif as a recurring divider, current-game indicator or list marker
+- [x] **BRND-06**: User sees a `/2` SVG stroke loading state instead of a generic spinner
 - [ ] **BRND-07**: User experiences calm utility screens and heightened spectacle only for meaningful moments
 - [ ] **BRND-08**: User gets the same product capabilities on mobile and desktop with an adaptive composition
 - [ ] **BRND-09**: User can navigate core flows with keyboard, visible focus, readable contrast and adequate touch targets
 - [ ] **BRND-10**: User with reduced-motion preference receives an equivalent low-motion experience
-- [ ] **BRND-11**: User sees appropriate single-line and stacked QUEUE/2 logo variants on dark and light backgrounds
+- [x] **BRND-11**: User sees appropriate single-line and stacked QUEUE/2 logo variants on dark and light backgrounds
 - [ ] **BRND-12**: User sees global grain, sharp 4px or pill radii, and scanlines only inside the roulette experience
-- [ ] **BRND-13**: User receives accessible QUEUE/2-styled toast feedback for important actions, with high-impact variants reserved for matches, achievements and level-ups
+- [x] **BRND-13**: User receives accessible QUEUE/2-styled toast feedback for important actions, with high-impact variants reserved for matches, achievements and level-ups
 
 ### Modular Architecture
 
@@ -208,7 +208,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Landing, Metadata And PWA
 
 - [ ] **META-01**: Visitor sees a short scrollytelling landing with monumental `/2` hero, mini-roulette, three-step ritual, dashboard preview, Hall teaser and CTA
-- [ ] **META-02**: Visitor can reach custom QUEUE/2 login, signup and pairing pages
+- [x] **META-02**: Visitor can reach custom QUEUE/2 login, signup and pairing pages
 - [ ] **META-03**: Public pages use the default description `A fila e nossa. Descubram, sorteiem e zerem coops juntos.`
 - [ ] **META-04**: Page titles follow the `[Page] - QUEUE/2` pattern
 - [ ] **META-05**: Public metadata includes `og:site_name`, `og:type` and WebSite JSON-LD
@@ -262,19 +262,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DUO-08 | Phase 1 | Pending |
 | DUO-09 | Phase 1 | Complete |
 | DUO-10 | Phase 1 | Complete |
-| BRND-01 | Phase 1 | Pending |
-| BRND-02 | Phase 1 | Pending |
-| BRND-03 | Phase 1 | Pending |
-| BRND-04 | Phase 1 | Pending |
-| BRND-05 | Phase 1 | Pending |
-| BRND-06 | Phase 1 | Pending |
+| BRND-01 | Phase 1 | Complete |
+| BRND-02 | Phase 1 | Complete |
+| BRND-03 | Phase 1 | Complete |
+| BRND-04 | Phase 1 | Complete |
+| BRND-05 | Phase 1 | Complete |
+| BRND-06 | Phase 1 | Complete |
 | BRND-07 | Phase 7 | Pending |
 | BRND-08 | Phase 7 | Pending |
 | BRND-09 | Phase 7 | Pending |
 | BRND-10 | Phase 7 | Pending |
-| BRND-11 | Phase 1 | Pending |
+| BRND-11 | Phase 1 | Complete |
 | BRND-12 | Phase 7 | Pending |
-| BRND-13 | Phase 1 | Pending |
+| BRND-13 | Phase 1 | Complete |
 | ARCH-01 | Phase 1 | Complete |
 | ARCH-02 | Phase 1 | Complete |
 | ARCH-03 | Phase 1 | Complete |
@@ -402,7 +402,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-08 | Phase 1 | Pending |
 | SAFE-09 | Phase 1 | Complete |
 | META-01 | Phase 7 | Pending |
-| META-02 | Phase 1 | Pending |
+| META-02 | Phase 1 | Complete |
 | META-03 | Phase 7 | Pending |
 | META-04 | Phase 7 | Pending |
 | META-05 | Phase 7 | Pending |

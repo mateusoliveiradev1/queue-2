@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 01-02-PLAN.md
-last_updated: "2026-06-03T04:24:15.592Z"
+stopped_at: Completed 01-03-PLAN.md
+last_updated: "2026-06-03T10:32:44.602Z"
 last_activity: 2026-06-03
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 2
-  percent: 33
+  completed_plans: 3
+  percent: 50
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 01 (fundacao-modular-marca-auth-e-dupla) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-06-03
 
-Progress: [███░░░░░░░] 33%
+Progress: [█████░░░░░] 50%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [███░░░░░░░] 33%
 *Updated after each plan completion*
 | Phase 01 P01 | 8 min | 3 tasks | 21 files |
 | Phase 01 P02 | 16 min | 3 tasks | 24 files |
+| Phase 01 P03 | 17 min | 3 tasks | 25 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,9 @@ Recent decisions affecting current work:
 - [Phase 01]: Runtime database identity uses transaction-local queue2.user_id. — This prevents pooled Neon connections from leaking authorization context between requests.
 - [Phase 01]: Database integration tests are gated on TEST_DATABASE_URL with explicit skip output. — Local execution remains honest while Neon branch-backed tests stay executable when configured.
 - [Phase 01]: Neon restore rehearsal is a branch-based pre-launch gate. — Restore proof is tracked separately from implementation and must run before production launch.
+- [Phase 01]: Brand primitives live in @queue/ui with no app-domain imports, while app globals import the token CSS contract. — Keeps brand reusable and preserves the architecture rule that shared UI cannot depend on app domains.
+- [Phase 01]: Pairing and auth pages expose stable form names and labels now, but future side effects stay disabled or no-op until auth/duo behavior plans wire validation. — Allows Plan 04/05 to bind behavior without redesigning the Phase 1 surfaces.
+- [Phase 01]: Phase 1 app surfaces use locked, non-interactive next-step rows instead of enabled buttons for future catalog, roulette and Hall capabilities. — Keeps the UI honest while later phase capabilities remain unwired.
 
 ### Pending Todos
 
@@ -99,6 +103,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-03T04:23:03.847Z
-Stopped at: Completed 01-02-PLAN.md
+Last session: 2026-06-03T10:32:44.596Z
+Stopped at: Completed 01-03-PLAN.md
 Resume file: None
