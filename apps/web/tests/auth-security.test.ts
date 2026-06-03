@@ -8,6 +8,8 @@ import {
   shouldUseSecureCookies
 } from "../src/platform/auth/server";
 import { authStatusMessages } from "../src/platform/auth/actions";
+import { serializeAuthLogRecord } from "../src/platform/auth/logger";
+import { serializeSecurityAuditEvent } from "../src/platform/security/audit";
 
 const sessionSource = readFileSync("src/platform/auth/session.ts", "utf8");
 const proxySource = readFileSync("proxy.ts", "utf8");
@@ -21,6 +23,11 @@ const authSchemaSource = readFileSync("../../packages/db/src/schema/auth.ts", "u
 const dashboardSource = readFileSync("src/app/app/page.tsx", "utf8");
 const duoSource = readFileSync("src/app/app/dupla/page.tsx", "utf8");
 const profileSource = readFileSync("src/app/app/perfil/page.tsx", "utf8");
+const pairingSource = readFileSync("src/app/(public)/parear/page.tsx", "utf8");
+const duoRepositorySource = readFileSync(
+  "src/modules/duo/infrastructure/duo-repository.ts",
+  "utf8"
+);
 
 describe("protected auth gates", () => {
   it("validates sessions through Better Auth on the server", () => {
@@ -147,5 +154,39 @@ describe("auth runtime security policy", () => {
 
     expect(actionsSource).not.toContain("console.error");
     expect(actionsSource).not.toMatch(/redirectTo\([^)]*error\.message/);
+  });
+
+  it("emits structured auth logs without sensitive Better Auth arguments", () => {
+    const record = serializeAuthLogRecord(
+      "error",
+      "Verification failed for jogador@example.com token super-secret-token"
+    );
+
+    expect(record).toContain('"scope":"better-auth"');
+    expect(record).toContain('"event":"auth.email_verification_event"');
+    expect(record).not.toContain("jogador@example.com");
+    expect(record).not.toContain("super-secret-token");
+    expect(authRuntimePolicy.logging).toEqual({
+      structured: true,
+      redactsArguments: true,
+      level: "warn"
+    });
+    expect(serverSource).toContain("logger: authLogger");
+  });
+
+  it("retains security audit events without logging pairing codes or session tokens", () => {
+    const record = serializeSecurityAuditEvent({
+      action: "duo.pairing_attempt",
+      actorUserId: "user-1",
+      outcome: "inactive",
+      attemptsRemaining: 2
+    });
+
+    expect(record).toContain('"scope":"security.audit"');
+    expect(record).toContain('"action":"duo.pairing_attempt"');
+    expect(record).not.toMatch(/token|password|email|pairingCode/i);
+    expect(sessionSource).toContain('action: "auth.session_revoked"');
+    expect(pairingSource).toContain('action: "duo.pairing_attempt"');
+    expect(duoRepositorySource).toContain("'duo.pairing_completed'");
   });
 });

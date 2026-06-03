@@ -1,29 +1,17 @@
 import { z } from "zod";
 
+import { validateQueuePassword } from "./password-policy";
+
+export {
+  queuePasswordRules,
+  validateQueuePassword,
+  type QueuePasswordRuleId
+} from "./password-policy";
+
 export const AUTH_PAIRING_CALLBACK_URL = "/parear";
 export const AUTH_RESET_CALLBACK_URL = "/recuperar-senha";
 export const AUTH_RESEND_COOLDOWN_SECONDS = 60;
 
-export const queuePasswordRules = [
-  {
-    id: "length",
-    label: "Pelo menos 8 caracteres"
-  },
-  {
-    id: "letter-and-number",
-    label: "Uma letra e um numero"
-  },
-  {
-    id: "symbol",
-    label: "Um simbolo ou caractere especial"
-  },
-  {
-    id: "not-obvious",
-    label: "Nada de senha reutilizada"
-  }
-] as const;
-
-export type QueuePasswordRuleId = (typeof queuePasswordRules)[number]["id"];
 export type AuthSurface = "login" | "signup" | "verify" | "recover";
 
 export const authStatusMessages = {
@@ -60,7 +48,6 @@ const displayNameSchema = z.string().trim().min(2).max(40);
 const emailSchema = z.string().trim().email().max(320);
 const passwordSchema = z.string().min(1).max(128);
 const tokenSchema = z.string().trim().min(8).max(512);
-const commonPasswordFragments = ["senha", "password", "queue2", "12345678", "qwerty", "abcdef"];
 
 const signupSchema = z.object({
   displayName: displayNameSchema,
@@ -101,48 +88,6 @@ export function normalizeAuthEmail(value: FormDataEntryValue | string | null): s
   return typeof value === "string" ? value.trim().toLowerCase() : "";
 }
 
-export function validateQueuePassword(
-  password: string,
-  context: { email?: string; displayName?: string } = {}
-): { ok: boolean; failedRules: QueuePasswordRuleId[] } {
-  const normalizedPassword = password.toLowerCase();
-  const emailLocalPart = context.email?.split("@")[0]?.toLowerCase() ?? "";
-  const displayNameParts = (context.displayName ?? "")
-    .toLowerCase()
-    .split(/\s+/)
-    .filter((part) => part.length >= 3);
-
-  const failedRules: QueuePasswordRuleId[] = [];
-
-  if (password.length < 8) {
-    failedRules.push("length");
-  }
-
-  if (!/[a-z]/i.test(password) || !/[0-9]/.test(password)) {
-    failedRules.push("letter-and-number");
-  }
-
-  if (!/[^a-z0-9]/i.test(password)) {
-    failedRules.push("symbol");
-  }
-
-  const containsIdentity =
-    Boolean(emailLocalPart && normalizedPassword.includes(emailLocalPart)) ||
-    displayNameParts.some((part) => normalizedPassword.includes(part));
-  const containsCommonFragment = commonPasswordFragments.some((fragment) =>
-    normalizedPassword.includes(fragment)
-  );
-
-  if (containsIdentity || containsCommonFragment) {
-    failedRules.push("not-obvious");
-  }
-
-  return {
-    ok: failedRules.length === 0,
-    failedRules
-  };
-}
-
 export function buildAuthPath(path: string, params: Record<string, string | undefined> = {}): string {
   const searchParams = new URLSearchParams();
 
@@ -161,6 +106,10 @@ export function buildVerificationPath(email: string, state: string): string {
     email,
     estado: state
   });
+}
+
+export function buildVerificationCallbackPath(email: string): string {
+  return buildVerificationPath(email, "verificado");
 }
 
 export async function signupAction(formData: FormData) {
@@ -194,7 +143,7 @@ export async function signupAction(formData: FormData) {
         name: displayName,
         email,
         password,
-        callbackURL: AUTH_PAIRING_CALLBACK_URL,
+        callbackURL: buildVerificationCallbackPath(email),
         rememberMe: true
       },
       headers: requestHeaders
@@ -227,7 +176,7 @@ export async function loginAction(formData: FormData) {
       body: {
         email,
         password: parsed.data.password,
-        callbackURL: AUTH_PAIRING_CALLBACK_URL,
+        callbackURL: buildVerificationCallbackPath(email),
         rememberMe: true
       },
       headers: requestHeaders
@@ -259,7 +208,7 @@ export async function resendVerificationAction(formData: FormData) {
     await auth.api.sendVerificationEmail({
       body: {
         email,
-        callbackURL: AUTH_PAIRING_CALLBACK_URL
+        callbackURL: buildVerificationCallbackPath(email)
       },
       headers: requestHeaders
     });
@@ -296,7 +245,7 @@ export async function correctEmailAction(formData: FormData) {
         body: {
           email: currentEmail,
           password,
-          callbackURL: AUTH_PAIRING_CALLBACK_URL,
+          callbackURL: buildVerificationCallbackPath(currentEmail),
           rememberMe: true
         },
         headers: requestHeaders
@@ -334,7 +283,7 @@ export async function correctEmailAction(formData: FormData) {
     await auth.api.sendVerificationEmail({
       body: {
         email,
-        callbackURL: AUTH_PAIRING_CALLBACK_URL
+        callbackURL: buildVerificationCallbackPath(email)
       },
       headers: requestHeaders
     });

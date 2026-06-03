@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { QueueMark, QueueWordmark, RouletteDivider } from "@queue/ui";
 
+import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage, loginAction } from "../../../platform/auth/actions";
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
 
         <form action={loginAction} className="auth-panel" aria-describedby="login-copy">
           <QueueMark size={52} />
+          <StatusToast message={statusMessage} state={state} />
           <p className="support-copy" id="login-copy">
             Entre com email verificado e senha para voltar ao ritual da dupla.
           </p>

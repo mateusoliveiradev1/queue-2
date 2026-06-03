@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { QueueMark, QueueWordmark } from "@queue/ui";
 
+import { StatusToast } from "../../../components/status-toast";
 import {
   completePasswordResetAction,
   getAuthStatusMessage,
@@ -40,6 +41,7 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
 
         <form action={token ? completePasswordResetAction : requestPasswordResetAction} className="auth-panel">
           <QueueMark size={52} />
+          <StatusToast message={statusMessage} state={state} />
           {statusMessage ? (
             <p className="neutral-state" role="status">
               {statusMessage}

@@ -1,11 +1,9 @@
 import type { Metadata } from "next";
-import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
+import { QueueMark, QueueWordmark } from "@queue/ui";
 
-import {
-  getAuthStatusMessage,
-  queuePasswordRules,
-  signupAction
-} from "../../../platform/auth/actions";
+import { SignupFields } from "../../../components/signup-fields";
+import { StatusToast } from "../../../components/status-toast";
+import { getAuthStatusMessage, signupAction } from "../../../platform/auth/actions";
 
 export const metadata: Metadata = {
   title: "Cadastro - QUEUE/2"
@@ -39,56 +37,13 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
 
         <form action={signupAction} className="auth-panel">
           <QueueMark size={52} />
+          <StatusToast message={statusMessage} state={state} />
           {statusMessage ? (
             <p className="neutral-state" role="status">
               {statusMessage}
             </p>
           ) : null}
-          <div className="form-stack">
-            <div className="field">
-              <label htmlFor="signup-display-name">Nome de exibicao</label>
-              <input
-                autoComplete="name"
-                className="queue2-input"
-                id="signup-display-name"
-                maxLength={40}
-                name="displayName"
-                required
-                type="text"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="signup-email">Email</label>
-              <input
-                autoComplete="email"
-                className="queue2-input"
-                id="signup-email"
-                name="email"
-                required
-                type="email"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="signup-password">Senha</label>
-              <input
-                aria-describedby="password-rules"
-                autoComplete="new-password"
-                className="queue2-input"
-                id="signup-password"
-                name="password"
-                required
-                type="password"
-              />
-            </div>
-          </div>
-          <ul className="password-checklist" id="password-rules" aria-label="Checklist da senha">
-            {queuePasswordRules.map((rule) => (
-              <li data-rule-state="pending" key={rule.id}>
-                <RoulettePointer aria-hidden="true" label="" />
-                <span>{rule.label}</span>
-              </li>
-            ))}
-          </ul>
+          <SignupFields />
           <div className="form-actions">
             <button className="queue2-button" data-tone="primary" type="submit">
               Criar conta

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "../../../components/app-shell";
+import { StatusToast } from "../../../components/status-toast";
 import { TimezoneInput } from "../../../components/timezone-input";
 import {
   buildDuoPath,
@@ -49,9 +50,16 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
       </header>
 
       {statusMessage ? (
-        <p className="status-banner" role="status">
-          {statusMessage}
-        </p>
+        <>
+          <StatusToast
+            message={statusMessage}
+            state={getSearchParam(params?.estado)}
+            variant={getSearchParam(params?.estado) === "dupla-formada" ? "special" : "calm"}
+          />
+          <p className="status-banner" role="status">
+            {statusMessage}
+          </p>
+        </>
       ) : null}
 
       <form action={updateDuoSettingsAction} className="surface-band app-section">

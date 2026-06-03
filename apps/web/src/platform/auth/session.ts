@@ -3,6 +3,7 @@ import "server-only";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
+import { recordSecurityAuditEvent } from "../security/audit";
 import { auth } from "./server";
 
 export type QueueSession = Awaited<ReturnType<typeof auth.api.getSession>>;
@@ -61,7 +62,7 @@ export async function revokeSessionAction(formData: FormData) {
   const targetSessionId = getFormString(formData, "sessionId");
 
   if (targetSessionId) {
-    await requireVerifiedSession();
+    const currentSession = await requireVerifiedSession();
 
     const activeSessions = await auth.api.listSessions({
       headers: await headers()
@@ -76,6 +77,12 @@ export async function revokeSessionAction(formData: FormData) {
         headers: await headers()
       });
     }
+
+    recordSecurityAuditEvent({
+      action: "auth.session_revoked",
+      actorUserId: currentSession.user.id,
+      outcome: targetSession ? "revoked" : "not-found"
+    });
   }
 
   redirect(buildPath(PROFILE_PATH, { estado: "sessao-revogada" }));

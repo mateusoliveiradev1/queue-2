@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
 
 import { CopyPairingCode } from "../../../components/copy-pairing-code";
+import { StatusToast } from "../../../components/status-toast";
 import { TimezoneInput } from "../../../components/timezone-input";
 import {
   buildDuoPath,
@@ -15,6 +16,7 @@ import {
   revokePairingCode
 } from "../../../modules/duo";
 import { requireVerifiedSession } from "../../../platform/auth/session";
+import { recordSecurityAuditEvent } from "../../../platform/security/audit";
 
 export const metadata: Metadata = {
   title: "Parear - QUEUE/2"
@@ -72,6 +74,7 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
 
         <section className="auth-panel" aria-label="Pareamento por codigo">
           <QueueMark size={52} />
+          <StatusToast message={statusMessage} state={getSearchParam(params?.estado)} />
           <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
             <a
               aria-selected={mode === "criar"}
@@ -254,6 +257,13 @@ async function joinDuoAction(formData: FormData) {
     code: getFormString(formData, "pairingCode")
   });
   const status = joinResultToStatus(result);
+
+  recordSecurityAuditEvent({
+    action: "duo.pairing_attempt",
+    actorUserId: session.user.id,
+    outcome: result.ok ? "paired" : result.state,
+    attemptsRemaining: result.ok ? undefined : result.attemptsRemaining
+  });
 
   if (result.ok) {
     redirect(buildDuoPath("/app/dupla", { estado: status }));

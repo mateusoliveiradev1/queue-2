@@ -7,6 +7,10 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "QUEUE/2",
   description: "A fila e nossa. Descubram, sorteiem e zerem coops juntos.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg"
+  },
   openGraph: {
     siteName: "QUEUE/2",
     type: "website",

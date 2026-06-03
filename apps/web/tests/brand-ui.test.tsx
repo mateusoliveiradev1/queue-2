@@ -1,5 +1,7 @@
 import { cleanup, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { QueueToaster } from "@queue/ui";
 
 const authSessionMock = vi.hoisted(() => {
   const currentSession = {
@@ -132,6 +134,10 @@ import VerifyEmailPage from "../src/app/(public)/verificar-email/page";
 import DashboardPage from "../src/app/app/page";
 import DuoPage from "../src/app/app/dupla/page";
 import ProfilePage from "../src/app/app/perfil/page";
+import Loading from "../src/app/loading";
+import { StatusToast } from "../src/components/status-toast";
+
+const iconSource = readFileSync("src/app/icon.svg", "utf8");
 
 afterEach(() => {
   cleanup();
@@ -158,6 +164,30 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
     expect(screen.getByRole("list", { name: /checklist da senha/i })).toBeInTheDocument();
     expect(screen.getByText(/pelo menos 8 caracteres/i)).toBeInTheDocument();
+  });
+
+  it("renders the /2 route loader and favicon placeholder", () => {
+    render(<Loading />);
+
+    expect(screen.getByRole("status", { name: /carregando a fila/i })).toBeInTheDocument();
+    expect(iconSource).toContain("<svg");
+    expect(iconSource).toContain("#c9f72b");
+  });
+
+  it("renders a restrained special toast for pairing success", async () => {
+    render(
+      <>
+        <QueueToaster />
+        <StatusToast
+          message="A fila agora e nossa."
+          state="dupla-formada"
+          variant="special"
+        />
+      </>
+    );
+
+    expect(await screen.findByText(/a fila agora e nossa/i)).toBeInTheDocument();
+    expect(screen.getByText(/dupla formada/i)).toBeInTheDocument();
   });
 
   it("renders verification actions for resend, correction and logout", async () => {

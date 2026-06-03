@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
 
+import { StatusToast } from "../../../components/status-toast";
+import { VerificationResendForm } from "../../../components/verification-resend-form";
 import {
-  AUTH_PAIRING_CALLBACK_URL,
   AUTH_RESEND_COOLDOWN_SECONDS,
+  buildVerificationCallbackPath,
   correctEmailAction,
   getAuthStatusMessage,
   logoutAction,
@@ -23,17 +25,26 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
   const params = (await searchParams) ?? {};
   const token = getSearchParam(params.token);
   const email = getSearchParam(params.email);
-  const state = getSearchParam(params.estado) ?? (getSearchParam(params.error) ? "link-invalido" : null);
+  const error = getSearchParam(params.error);
+  const state = error ? "link-invalido" : getSearchParam(params.estado);
   const statusMessage = getAuthStatusMessage("verify", state);
 
   if (token) {
     const verifySearchParams = new URLSearchParams({
       token,
-      callbackURL: AUTH_PAIRING_CALLBACK_URL
+      callbackURL: email ? buildVerificationCallbackPath(email) : "/verificar-email?estado=verificado"
     });
 
     redirect(`/api/auth/verify-email?${verifySearchParams.toString()}`);
   }
+
+  if (state === "verificado") {
+    redirect("/parear");
+  }
+
+  const startsCooldown = ["cadastro", "verifique-email", "reenviado", "email-corrigido"].includes(
+    state ?? ""
+  );
 
   return (
     <main className="public-shell">
@@ -58,6 +69,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
 
         <div className="auth-panel">
           <QueueMark size={52} />
+          <StatusToast message={statusMessage} state={state} />
           <p className="support-copy">
             Enviamos a verificacao para o email cadastrado. O reenvio usa uma espera
             curta para proteger a fila.
@@ -72,16 +84,11 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
               {statusMessage}
             </p>
           ) : null}
-          <form action={resendVerificationAction} className="form-stack">
-            <input name="intent" type="hidden" value="resend-verification" />
-            <input name="email" type="hidden" value={email ?? ""} />
-            <button className="queue2-button" data-tone="primary" type="submit">
-              Reenviar email
-            </button>
-            <p className="support-copy" aria-live="polite">
-              Novo reenvio disponivel em {AUTH_RESEND_COOLDOWN_SECONDS} segundos.
-            </p>
-          </form>
+          <VerificationResendForm
+            action={resendVerificationAction}
+            email={email}
+            initialSeconds={startsCooldown ? AUTH_RESEND_COOLDOWN_SECONDS : 0}
+          />
           <form action={correctEmailAction} className="form-stack">
             <input name="currentEmail" type="hidden" value={email ?? ""} />
             <div className="field">

@@ -14,6 +14,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 
 import { sendPasswordResetEmail, sendVerificationEmail } from "./email";
+import { authLogger } from "./logger";
 import { authRateLimitAudit, authRateLimitOptions } from "./rate-limit";
 
 type Queue2AuthDatabase = ReturnType<typeof createDrizzleClient>;
@@ -70,6 +71,11 @@ export const authRuntimePolicy = {
     prefix: "queue2",
     sameSite: "lax",
     httpOnly: true
+  },
+  logging: {
+    structured: true,
+    redactsArguments: true,
+    level: "warn"
   }
 } as const;
 
@@ -92,6 +98,7 @@ export function createBetterAuthOptions(
       transaction: true
     }),
     trustedOrigins: resolveTrustedOrigins(env, baseURL),
+    logger: authLogger,
     emailAndPassword: {
       enabled: true,
       requireEmailVerification: true,

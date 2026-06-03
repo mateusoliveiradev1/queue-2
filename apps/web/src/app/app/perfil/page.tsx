@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "../../../components/app-shell";
+import { StatusToast } from "../../../components/status-toast";
 import {
   buildDuoPath,
   getDuoDashboard,
@@ -59,9 +60,12 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
       </header>
 
       {statusMessage ? (
-        <p className="status-banner" role="status">
-          {statusMessage}
-        </p>
+        <>
+          <StatusToast message={statusMessage} state={state} />
+          <p className="status-banner" role="status">
+            {statusMessage}
+          </p>
+        </>
       ) : null}
 
       <section className="surface-band app-section" aria-labelledby="display-name-section">

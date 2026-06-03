@@ -222,6 +222,14 @@ async function claimPairingCode(input: {
         return { state: "inactive" } as const;
       }
 
+      await client.query(
+        `
+          INSERT INTO ops.audit_events (duo_id, actor_user_id, action, metadata)
+          VALUES ($1, $2, 'duo.pairing_completed', '{"source":"pairing-code"}'::jsonb)
+        `,
+        [duoId, input.userId]
+      );
+
       return { state: "claimed", duoId } as const;
     });
   } catch (error) {
