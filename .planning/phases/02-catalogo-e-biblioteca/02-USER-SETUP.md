@@ -2,7 +2,7 @@
 
 **Generated:** 2026-06-03
 **Phase:** 02-catalogo-e-biblioteca
-**Status:** Incomplete
+**Status:** Complete for local UAT
 
 Complete these items for RAWG catalog synchronization to function. The code, schema and server-only adapter are in place; the actual API key must come from the RAWG account.
 
@@ -10,17 +10,18 @@ Complete these items for RAWG catalog synchronization to function. The code, sch
 
 | Status | Variable | Source | Add to |
 |--------|----------|--------|--------|
-| [ ] | `RAWG_API_KEY` | RAWG account API key from https://rawg.io/apidocs | `.env.local` and server environment |
+| [x] | `RAWG_API_KEY` | RAWG account API key from https://rawg.io/apidocs | Local `.env.local` for UAT |
 
 ## Account Setup
 
-- [ ] **Confirm RAWG API access**
+- [x] **Confirm RAWG API access**
   - URL: https://rawg.io/apidocs
   - Skip if: A valid RAWG API key is already available for QUEUE/2.
+  - UAT result: Key was added locally and RAWG-backed seed sync populated the catalog for Phase 2 review.
 
 ## Dashboard Configuration
 
-None.
+Production server environment still needs the same secret before deploy. This is a deployment configuration task, not a blocker for local Phase 2 UAT.
 
 ## Verification
 
@@ -37,4 +38,4 @@ Expected results:
 
 ---
 
-**Once all items complete:** Mark status as "Complete" at top of file.
+**Phase 2 UAT result:** Complete for local UAT on 2026-06-03.

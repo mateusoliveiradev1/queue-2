@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_to_plan
-stopped_at: Completed quick task 260603-r9i
-last_updated: "2026-06-03T22:44:05.624Z"
+stopped_at: Completed quick task 260603-rk9
+last_updated: "2026-06-03T22:50:43.132Z"
 last_activity: 2026-06-03
 progress:
   total_phases: 8
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 3
 Plan: Not started
 Status: Ready to plan
-Last activity: 2026-06-03 - Completed quick task 260603-r9i: Polir catalogo da Fase 2
+Last activity: 2026-06-03 - Completed quick task 260603-rk9: Fechar UAT humano da Fase 2
 
 Progress: [#####-----] 50%
 
@@ -72,6 +72,7 @@ Progress: [#####-----] 50%
 | 2026-06-03 | refinar-copy-layout-e-ui-ux-publica-da-h | Home e telas publicas de auth receberam copy publica, hierarquia de produto e polish visual guiado por Impeccable. |
 | 2026-06-03 | refinar-copy-visual-e-ui-ux-das-telas-au | Telas autenticadas de fila, dupla e perfil receberam copy de produto, refinamento visual e navegacao guiados por Impeccable. |
 | 2026-06-03 | polir-catalogo-da-fase-2 | Cards do catalogo foram contidos visualmente e detalhes de jogos conhecidos receberam descricoes PT-BR curadas com fonte explicita. |
+| 2026-06-03 | fechar-uat-humano-da-fase-2 | Fase 2 foi aceita em UAT humano apos revisao visual autenticada do catalogo e detalhe de jogo. |
 
 ## Accumulated Context
 
@@ -108,6 +109,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
+- Phase 2.1 planning decision: Localizacao e qualidade do catalogo antes da Fase 3.
 - Phase 3 planning: Descoberta e Matches.
 - Production launch follow-ups: real transactional email delivery check and Neon restore rehearsal evidence.
 

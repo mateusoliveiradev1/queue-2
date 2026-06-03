@@ -1,11 +1,14 @@
 ---
 phase: 02-catalogo-e-biblioteca
 verified: 2026-06-03T22:11:00Z
-status: verified
+status: verified_accepted
 score: 5/5 implementation must-haves verified
-gaps:
-  - "Authenticated browser screenshot review is fixture-dependent; local dev server redirects `/app/catalogo` to `/login` without a ready-user session."
-fixture_followups:
+human_uat:
+  status: accepted
+  accepted_at: 2026-06-03T22:50:43.132Z
+  evidence: "User approved authenticated catalog/detail visuals after quick patch 260603-r9i."
+gaps: []
+release_followups:
   - test: "Phase 2 seeded browser flow"
     expected: "A verified named-duo user opens Catalogo, adds a synchronized RAWG game to Wishlist, sees it in Biblioteca, and opens detail without visual overlap."
     required_env: "E2E_BASE_URL, E2E_READY_USER_EMAIL, E2E_READY_USER_PASSWORD, E2E_PHASE2_CATALOG_SLUG"
@@ -22,7 +25,7 @@ decision_coverage:
 
 **Phase Goal:** A dupla pode construir, entender e organizar uma fila real de jogos usando catalogo com fonte visivel.
 **Verified:** 2026-06-03T22:11:00Z
-**Status:** verified
+**Status:** verified + human UAT accepted
 
 ## Gate Result
 
@@ -64,15 +67,25 @@ Implementation evidence:
 - Plan 02-02 delivered duo-scoped library/platform state, RLS policies, status rules and match-score use cases.
 - Plan 02-03 delivered authenticated catalog, library and game-detail routes wired to those public APIs.
 
+## Human UAT Closure
+
+Phase 2 authenticated visual UAT was accepted by the user on 2026-06-03 after the catalog polish patch `c78b2bf`.
+
+Accepted UAT evidence:
+
+- User reviewed the local authenticated catalog/game-detail UI visually.
+- User confirmed the result was visually approved.
+- `02-HUMAN-UAT.md` records the explicit acceptance and remaining non-blocking follow-ups.
+
 ## Closure Decision
 
-Phase 2 is complete for implementation and ready for Phase 3 planning/execution.
+Phase 2 is complete for implementation, accepted for UAT, and ready for Phase 2.1 localization planning or Phase 3 planning/execution.
 
-The remaining items are fixture-dependent verification follow-ups, not missing Phase 2 product behavior:
+The remaining items are release verification follow-ups, not missing Phase 2 product behavior:
 
 - Run the seeded Phase 2 Playwright flow after ready-user credentials and a catalog slug are available in the process environment.
 - Run database integration tests against an isolated Neon/Postgres branch via `TEST_DATABASE_URL`.
-- Capture authenticated desktop/mobile screenshots once the same seeded user fixture is available.
+- Complete Phase 2.1 planning if the team chooses to improve Portuguese localization and RAWG sync quality before Phase 3.
 
 ---
 *Verified: 2026-06-03T22:11:00Z*
