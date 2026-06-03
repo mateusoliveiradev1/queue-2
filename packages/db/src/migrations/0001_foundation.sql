@@ -247,7 +247,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO queue2_work
 GRANT SELECT ON ALL TABLES IN SCHEMA auth TO queue2_readonly;
 
 GRANT SELECT, INSERT, UPDATE ON app.profiles TO queue2_app_runtime, queue2_worker;
-GRANT SELECT, INSERT, UPDATE ON app.duos TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, UPDATE ON app.duos TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON app.duo_members TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON app.pairing_codes TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT, UPDATE ON app.duo_preferences TO queue2_app_runtime, queue2_worker;
@@ -257,6 +257,10 @@ GRANT SELECT, INSERT ON ops.domain_events TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON ops.audit_events TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON ops.idempotency_keys TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA ops TO queue2_readonly;
+
+GRANT queue2_app_runtime TO queue2_migrator;
+GRANT queue2_worker TO queue2_migrator;
+GRANT queue2_readonly TO queue2_migrator;
 
 CREATE OR REPLACE FUNCTION app.current_user_id()
 RETURNS text
@@ -416,7 +420,12 @@ DROP POLICY IF EXISTS app_duo_members_select_own ON app.duo_members;
 DROP POLICY IF EXISTS app_duo_members_insert_pairing_flow ON app.duo_members;
 CREATE POLICY app_duo_members_select_own ON app.duo_members
   FOR SELECT TO PUBLIC
-  USING (user_id = app.current_user_id());
+  USING (
+    CASE
+      WHEN user_id = app.current_user_id() THEN true
+      ELSE app.has_duo_membership(app.current_user_id(), duo_id)
+    END
+  );
 CREATE POLICY app_duo_members_insert_pairing_flow ON app.duo_members
   FOR INSERT TO PUBLIC
   WITH CHECK (

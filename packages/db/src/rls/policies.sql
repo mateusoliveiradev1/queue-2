@@ -39,7 +39,12 @@ DROP POLICY IF EXISTS app_duo_members_select_own ON app.duo_members;
 DROP POLICY IF EXISTS app_duo_members_insert_pairing_flow ON app.duo_members;
 CREATE POLICY app_duo_members_select_own ON app.duo_members
   FOR SELECT TO PUBLIC
-  USING (user_id = app.current_user_id());
+  USING (
+    CASE
+      WHEN user_id = app.current_user_id() THEN true
+      ELSE app.has_duo_membership(app.current_user_id(), duo_id)
+    END
+  );
 CREATE POLICY app_duo_members_insert_pairing_flow ON app.duo_members
   FOR INSERT TO PUBLIC
   WITH CHECK (
