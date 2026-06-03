@@ -12,6 +12,7 @@ import type {
   CatalogGameRecord,
   CatalogGameUpsertInput,
   CatalogGenreRecord,
+  CatalogLocalizationRecord,
   CatalogPlatformKey,
   CatalogPlatformRecord,
   CatalogRepository,
@@ -68,6 +69,16 @@ type AvailabilityRow = {
   source_url: string | null;
   checked_at: Date | string;
   status: "available" | "unavailable" | "unverified";
+};
+
+type LocalizationRow = {
+  locale: "pt-BR";
+  version: number;
+  description: string;
+  source: string;
+  source_url: string | null;
+  published_at: Date | string;
+  reviewed_at: Date | string;
 };
 
 let runtimePool: QueueDbPool | undefined;
@@ -207,9 +218,10 @@ async function hydrateGame(
   pool: QueueDbPool,
   row: GameRow
 ): Promise<CatalogGameDetailRecord> {
-  const [platforms, genres, timeEstimate, availability] = await Promise.all([
+  const [platforms, genres, localization, timeEstimate, availability] = await Promise.all([
     loadPlatforms(pool, row.id),
     loadGenres(pool, row.id),
+    loadPublishedLocalization(pool, row.id),
     loadTimeEstimate(pool, row.id),
     loadAvailability(pool, row.id)
   ]);
@@ -218,6 +230,7 @@ async function hydrateGame(
     ...mapGame(row),
     platforms,
     genres,
+    localization,
     timeEstimate,
     availability
   };
@@ -310,6 +323,49 @@ async function loadAvailability(
     checkedAt: coerceDate(row.checked_at),
     status: row.status
   }));
+}
+
+async function loadPublishedLocalization(
+  pool: QueueDbPool,
+  gameId: string
+): Promise<CatalogLocalizationRecord | null> {
+  const result = await pool.query<LocalizationRow>(
+    `
+      SELECT
+        locale,
+        version,
+        description,
+        source,
+        source_url,
+        published_at,
+        reviewed_at
+      FROM catalog.game_localizations
+      WHERE game_id = $1
+        AND locale = 'pt-BR'
+        AND status = 'published'
+        AND description IS NOT NULL
+        AND published_at IS NOT NULL
+        AND reviewed_at IS NOT NULL
+      ORDER BY published_at DESC NULLS LAST, version DESC
+      LIMIT 1
+    `,
+    [gameId]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    locale: row.locale,
+    version: row.version,
+    description: row.description,
+    source: row.source,
+    sourceUrl: row.source_url,
+    publishedAt: coerceDate(row.published_at),
+    reviewedAt: coerceDate(row.reviewed_at)
+  };
 }
 
 async function upsertCatalogGame(

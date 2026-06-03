@@ -38,6 +38,7 @@ export type {
   CatalogGameRecord,
   CatalogGameUpsertInput,
   CatalogGenreRecord,
+  CatalogLocalizationRecord,
   CatalogPlatformKey,
   CatalogPlatformRecord,
   CatalogRepository,

@@ -183,6 +183,7 @@ function catalogGame(
         rawgGenreId: 3
       }
     ],
+    localization: null,
     timeEstimate: {
       minutes: 840,
       source: "Curadoria QUEUE/2",

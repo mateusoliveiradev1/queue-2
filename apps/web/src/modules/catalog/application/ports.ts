@@ -34,6 +34,16 @@ export type CatalogAvailabilityRecord = {
   status: "available" | "unavailable" | "unverified";
 };
 
+export type CatalogLocalizationRecord = {
+  locale: "pt-BR";
+  version: number;
+  description: string;
+  source: string;
+  sourceUrl: string | null;
+  publishedAt: Date;
+  reviewedAt: Date;
+};
+
 export type CatalogGameRecord = {
   id: string;
   rawgId: number;
@@ -59,6 +69,7 @@ export type CatalogGameRecord = {
 export type CatalogGameDetailRecord = CatalogGameRecord & {
   platforms: CatalogPlatformRecord[];
   genres: CatalogGenreRecord[];
+  localization: CatalogLocalizationRecord | null;
   timeEstimate: CatalogTimeEstimateRecord | null;
   availability: CatalogAvailabilityRecord[];
 };
