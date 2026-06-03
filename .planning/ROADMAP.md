@@ -130,7 +130,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Fundacao Modular, Marca, Auth E Dupla | 0/TBD | Not started | - |
+| 1. Fundacao Modular, Marca, Auth E Dupla | 1/6 | In Progress|  |
 | 2. Catalogo E Biblioteca | 0/TBD | Not started | - |
 | 3. Descoberta E Matches | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |

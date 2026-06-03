@@ -48,13 +48,13 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Modular Architecture
 
-- [ ] **ARCH-01**: Codebase is organized as a modular monolith with explicit modules for duo, catalog, library, discovery, play, gamification, roulette and hall
-- [ ] **ARCH-02**: Each domain module exposes a narrow public entrypoint and other modules cannot deep-import its internals
-- [ ] **ARCH-03**: Domain rules can be tested without importing Next.js, React, Drizzle, Better Auth, browser APIs or external SDKs
-- [ ] **ARCH-04**: Routes, Server Actions, Route Handlers and React components delegate business decisions to application use cases
-- [ ] **ARCH-05**: Cross-domain mutations and derived effects use the owning module's public contract or versioned domain events
-- [ ] **ARCH-06**: Shared packages contain reusable database, UI or configuration concerns and cannot depend on application domain modules
-- [ ] **ARCH-07**: Automated architecture checks fail on forbidden imports, undeclared workspace dependencies and client/server boundary leaks
+- [x] **ARCH-01**: Codebase is organized as a modular monolith with explicit modules for duo, catalog, library, discovery, play, gamification, roulette and hall
+- [x] **ARCH-02**: Each domain module exposes a narrow public entrypoint and other modules cannot deep-import its internals
+- [x] **ARCH-03**: Domain rules can be tested without importing Next.js, React, Drizzle, Better Auth, browser APIs or external SDKs
+- [x] **ARCH-04**: Routes, Server Actions, Route Handlers and React components delegate business decisions to application use cases
+- [x] **ARCH-05**: Cross-domain mutations and derived effects use the owning module's public contract or versioned domain events
+- [x] **ARCH-06**: Shared packages contain reusable database, UI or configuration concerns and cannot depend on application domain modules
+- [x] **ARCH-07**: Automated architecture checks fail on forbidden imports, undeclared workspace dependencies and client/server boundary leaks
 
 ### Database Integrity
 
@@ -199,7 +199,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **SAFE-02**: User can disable product push notifications
 - [ ] **SAFE-03**: Catalog synchronization, streak checks, quest rotation and reminders continue through scheduled server jobs
 - [ ] **SAFE-04**: Failed scheduled work can be retried without duplicating user-visible effects
-- [ ] **SAFE-05**: Secrets such as RAWG, email, auth and privileged database credentials never reach the browser
+- [x] **SAFE-05**: Secrets such as RAWG, email, auth and privileged database credentials never reach the browser
 - [ ] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
 - [ ] **SAFE-07**: Authentication attempts are protected by persistent rate limiting suitable for a serverless runtime
 - [ ] **SAFE-08**: Authentication uses secure trusted origins, cookies and secrets in every deployed environment
@@ -275,13 +275,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRND-11 | Phase 1 | Pending |
 | BRND-12 | Phase 7 | Pending |
 | BRND-13 | Phase 1 | Pending |
-| ARCH-01 | Phase 1 | Pending |
-| ARCH-02 | Phase 1 | Pending |
-| ARCH-03 | Phase 1 | Pending |
-| ARCH-04 | Phase 1 | Pending |
-| ARCH-05 | Phase 1 | Pending |
-| ARCH-06 | Phase 1 | Pending |
-| ARCH-07 | Phase 1 | Pending |
+| ARCH-01 | Phase 1 | Complete |
+| ARCH-02 | Phase 1 | Complete |
+| ARCH-03 | Phase 1 | Complete |
+| ARCH-04 | Phase 1 | Complete |
+| ARCH-05 | Phase 1 | Complete |
+| ARCH-06 | Phase 1 | Complete |
+| ARCH-07 | Phase 1 | Complete |
 | DATA-01 | Phase 1 | Pending |
 | DATA-02 | Phase 1 | Pending |
 | DATA-03 | Phase 1 | Pending |
@@ -396,7 +396,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-02 | Phase 4 | Pending |
 | SAFE-03 | Phase 5 | Pending |
 | SAFE-04 | Phase 4 | Pending |
-| SAFE-05 | Phase 1 | Pending |
+| SAFE-05 | Phase 1 | Complete |
 | SAFE-06 | Phase 6 | Pending |
 | SAFE-07 | Phase 1 | Pending |
 | SAFE-08 | Phase 1 | Pending |

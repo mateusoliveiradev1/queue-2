@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: Ready to execute
-stopped_at: Phase 1 planning complete
-last_updated: "2026-06-03T03:45:26.593Z"
-last_activity: 2026-06-03 -- Phase 1 planning complete
+status: executing
+stopped_at: Completed 01-01-PLAN.md
+last_updated: "2026-06-03T04:02:09.169Z"
+last_activity: 2026-06-03
 progress:
   total_phases: 7
   completed_phases: 0
   total_plans: 6
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 17
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 1 - Fundacao Modular, Marca, Auth E Dupla
+**Current focus:** Phase 01 — fundacao-modular-marca-auth-e-dupla
 
 ## Current Position
 
-Phase: 1 of 7 (Fundacao Modular, Marca, Auth E Dupla)
-Plan: 0 of 6 in current phase
+Phase: 01 (fundacao-modular-marca-auth-e-dupla) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-03 -- Phase 1 planning complete
+Last activity: 2026-06-03
 
-Progress: [----------] 0%
+Progress: [██░░░░░░░░] 17%
 
 ## Performance Metrics
 
@@ -52,6 +52,7 @@ Progress: [----------] 0%
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01 P01 | 8 min | 3 tasks | 21 files |
 
 ## Accumulated Context
 
@@ -67,6 +68,9 @@ Recent decisions affecting current work:
 - Neon Postgres replaces Lovable Cloud, with Better Auth self-hosted and server-mediated domain access.
 - The complete Plano Final v7 is v1 scope and will be delivered across seven phases.
 - External completion time is presented as sourced `tempo estimado`, not mandatory HLTB data.
+- [Phase 01]: Architecture checks run through the root pnpm script via Turborepo and the @queue/web package. — Keeps the plan-level gate graph-aware while executing one deterministic root checker.
+- [Phase 01]: The initial db package is explicitly server-only before any database schema is introduced. — Prevents future Client Components from normalizing database imports.
+- [Phase 01]: pnpm build approval for sharp is recorded in pnpm-workspace.yaml. — Keeps Next.js dependency installation non-interactive under pnpm 11.
 
 ### Pending Todos
 
@@ -90,6 +94,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-03T03:34:13.928Z
-Stopped at: Phase 1 UI-SPEC approved
-Resume file: .planning/phases/01-fundacao-modular-marca-auth-e-dupla/01-UI-SPEC.md
+Last session: 2026-06-03T04:02:09.164Z
+Stopped at: Completed 01-01-PLAN.md
+Resume file: None
