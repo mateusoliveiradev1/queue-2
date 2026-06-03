@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
+import { RoulettePointer } from "@queue/ui";
 
 import { CopyPairingCode } from "../../../components/copy-pairing-code";
+import { PublicBrandLink } from "../../../components/public-brand-link";
+import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
 import { TimezoneInput } from "../../../components/timezone-input";
 import {
@@ -55,7 +57,7 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="pair-title">
         <div className="public-intro queue2-grain">
-          <QueueWordmark variant="stacked" />
+          <PublicBrandLink variant="stacked" />
           <div>
             <p className="eyebrow">/2 e regra de produto</p>
             <h1 className="page-title" id="pair-title">
@@ -66,6 +68,7 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
               deixa de ser minha e vira nossa.
             </p>
           </div>
+          <PublicRitualStrip steps={["convite", "2/2", "fila"]} />
           <div className="neutral-state">
             <RoulettePointer aria-hidden="true" label="" tone="accent" />
             <span>A dupla fica fixa nesta fase: exatamente dois jogadores.</span>
@@ -73,7 +76,7 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
         </div>
 
         <section className="auth-panel" aria-label="Pareamento por codigo">
-          <QueueMark size={52} />
+          <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={getSearchParam(params?.estado)} />
           <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
             <a

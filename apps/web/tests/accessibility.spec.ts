@@ -36,7 +36,7 @@ test.describe("Phase 1 public accessibility", () => {
     `Missing public accessibility environment: ${baseMissingEnv.join(", ")}`
   );
 
-  for (const route of ["/login", "/cadastro", "/verificar-email", "/recuperar-senha"]) {
+  for (const route of ["/", "/login", "/cadastro", "/verificar-email", "/recuperar-senha"]) {
     test(`${route} has no WCAG A/AA axe violations`, async ({ page }) => {
       await page.goto(route);
       await expectNoAxeViolations(page);

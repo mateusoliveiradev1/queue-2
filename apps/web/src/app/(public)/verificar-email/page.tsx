@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
+import { RoulettePointer } from "@queue/ui";
 
+import { PublicBrandLink } from "../../../components/public-brand-link";
+import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
 import { VerificationResendForm } from "../../../components/verification-resend-form";
 import {
@@ -52,7 +54,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="verify-title">
         <div className="public-intro queue2-grain">
-          <QueueWordmark variant="stacked" compact />
+          <PublicBrandLink compact variant="stacked" />
           <div>
             <p className="eyebrow">Email antes da fila</p>
             <h1 className="page-title" id="verify-title">
@@ -63,6 +65,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
               Depois disso, o caminho segue para parear a dupla.
             </p>
           </div>
+          <PublicRitualStrip steps={["email", "parear", "fila"]} />
           <div className="neutral-state">
             <RoulettePointer aria-hidden="true" label="" tone="accent" />
             <span>Link expirado ou usado? Peca um novo envio sem detalhes tecnicos.</span>
@@ -70,7 +73,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
         </div>
 
         <div className="auth-panel">
-          <QueueMark size={52} />
+          <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
           <p className="support-copy">
             Enviamos a verificacao para o email cadastrado. O reenvio usa uma espera

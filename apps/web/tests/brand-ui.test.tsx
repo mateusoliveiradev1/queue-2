@@ -135,6 +135,7 @@ import VerifyEmailPage from "../src/app/(public)/verificar-email/page";
 import DashboardPage from "../src/app/app/page";
 import DuoPage from "../src/app/app/dupla/page";
 import ProfilePage from "../src/app/app/perfil/page";
+import HomePage from "../src/app/page";
 import Loading from "../src/app/loading";
 import { StatusToast } from "../src/components/status-toast";
 
@@ -149,12 +150,34 @@ beforeEach(() => {
 });
 
 describe("public QUEUE/2 route surfaces", () => {
+  it("renders the interim home with brand, product promise and entry actions", () => {
+    render(<HomePage />);
+
+    expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
+    expect(screen.getByText(/fila real de jogos coop/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^entrar$/i })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /criar conta/i })).toHaveAttribute("href", "/cadastro");
+    expect(screen.getByRole("link", { name: /parear dupla/i })).toHaveAttribute("href", "/parear");
+    expect(screen.getByText(/base publica pronta para a dupla/i)).toBeInTheDocument();
+  });
+
   it("renders login with accessible email and password fields", async () => {
     render(await LoginPage());
 
     expect(screen.getByRole("heading", { name: /entrar na fila da dupla/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
+  });
+
+  it("lets the public brand mark navigate back to the interim home", async () => {
+    render(await LoginPage());
+
+    const homeLinks = screen.getAllByRole("link", { name: /ir para a home queue dois/i });
+
+    expect(homeLinks.length).toBeGreaterThanOrEqual(2);
+    for (const link of homeLinks) {
+      expect(link).toHaveAttribute("href", "/");
+    }
   });
 
   it("renders signup with progressive password checklist hooks", async () => {

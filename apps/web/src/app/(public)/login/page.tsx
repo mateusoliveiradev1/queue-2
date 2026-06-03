@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
-import { QueueMark, QueueWordmark, RouletteDivider } from "@queue/ui";
+import { RouletteDivider } from "@queue/ui";
 
+import { PublicBrandLink } from "../../../components/public-brand-link";
+import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import { loginAction } from "../../../platform/auth/server-actions";
@@ -22,7 +24,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="login-title">
         <div className="public-intro queue2-grain">
-          <QueueWordmark variant="stacked" />
+          <PublicBrandLink variant="stacked" />
           <div>
             <p className="eyebrow">A fila e nossa.</p>
             <h1 className="page-title" id="login-title">
@@ -33,11 +35,12 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
               individual, sem modo solo.
             </p>
           </div>
+          <PublicRitualStrip steps={["entrar", "parear", "jogar"]} />
           <RouletteDivider />
         </div>
 
         <form action={loginAction} className="auth-panel" aria-describedby="login-copy">
-          <QueueMark size={52} />
+          <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
           <p className="support-copy" id="login-copy">
             Entre com email verificado e senha para voltar ao ritual da dupla.

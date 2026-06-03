@@ -1,80 +1,65 @@
-import { queue2Brand } from "@queue/ui";
-
-const linkStyle = {
-  border: "1px solid oklch(0.86 0.22 128)",
-  borderRadius: "4px",
-  color: "oklch(0.96 0.015 95)",
-  display: "inline-flex",
-  minHeight: "44px",
-  alignItems: "center",
-  padding: "0 16px",
-  textDecoration: "none"
-} as const;
+import { queue2Brand, RoulettePointer } from "@queue/ui";
 
 export default function Home() {
   return (
-    <main
-      style={{
-        minHeight: "100svh",
-        display: "grid",
-        alignItems: "center",
-        padding: "48px 24px"
-      }}
-    >
-      <section style={{ width: "min(720px, 100%)" }}>
-        <p
-          style={{
-            margin: "0 0 12px",
-            color: "oklch(0.86 0.22 128)",
-            fontFamily: '"JetBrains Mono", ui-monospace, monospace',
-            fontWeight: 700,
-            textTransform: "uppercase"
-          }}
-        >
-          /2
-        </p>
-        <h1
-          style={{
-            margin: 0,
-            fontSize: "clamp(3rem, 12vw, 8rem)",
-            lineHeight: 0.88,
-            letterSpacing: 0,
-            textTransform: "uppercase"
-          }}
-        >
-          {queue2Brand.name}
-        </h1>
-        <p
-          style={{
-            maxWidth: "34rem",
-            margin: "24px 0 0",
-            color: "oklch(0.72 0.02 95)",
-            fontSize: "1.125rem",
-            lineHeight: 1.55
-          }}
-        >
-          {queue2Brand.tagline} A base publica esta pronta para receber login,
-          cadastro e pareamento da dupla na Fase 1.
-        </p>
-        <nav
-          aria-label="Superficies futuras da Fase 1"
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "12px",
-            marginTop: "32px"
-          }}
-        >
-          <a href="/login" style={linkStyle}>
-            Entrar
-          </a>
-          <a href="/cadastro" style={linkStyle}>
-            Criar conta
-          </a>
-          <a href="/parear" style={linkStyle}>
-            Parear dupla
-          </a>
-        </nav>
+    <main className="home-shell">
+      <section className="home-hero queue2-grain" aria-labelledby="home-title">
+        <div className="home-copy">
+          <p className="eyebrow">A fila e nossa.</p>
+          <h1 className="home-title" id="home-title">
+            <span>QUEUE</span>
+            <span>/2</span>
+          </h1>
+          <p className="lede">
+            Um produto para duas pessoas manterem a fila real de jogos coop que
+            querem zerar juntas.
+          </p>
+          <nav aria-label="Entrar no QUEUE dois" className="home-actions">
+            <a className="queue2-button" data-tone="primary" href="/login">
+              Entrar
+            </a>
+            <a className="queue2-button" data-tone="quiet" href="/cadastro">
+              Criar conta
+            </a>
+            <a className="queue2-button" data-tone="quiet" href="/parear">
+              Parear dupla
+            </a>
+          </nav>
+        </div>
+
+        <div className="home-ritual-board" aria-label="Estado publico do QUEUE dois">
+          <div className="home-board-header">
+            <span>{queue2Brand.tagline}</span>
+            <strong>2/2</strong>
+          </div>
+          <ol className="home-queue-preview">
+            <li>
+              <span>01</span>
+              <div>
+                <strong>Conta verificada</strong>
+                <p>Entrada segura para cada membro.</p>
+              </div>
+            </li>
+            <li>
+              <span>02</span>
+              <div>
+                <strong>Dupla fixa</strong>
+                <p>A fila pertence exatamente aos dois.</p>
+              </div>
+            </li>
+            <li>
+              <span>03</span>
+              <div>
+                <strong>Catalogo preparado</strong>
+                <p>A biblioteca real entra no proximo ciclo.</p>
+              </div>
+            </li>
+          </ol>
+          <div className="home-board-footer">
+            <RoulettePointer aria-hidden="true" label="" />
+            <span>Base publica pronta para a dupla.</span>
+          </div>
+        </div>
       </section>
     </main>
   );

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { QueueMark, QueueWordmark } from "@queue/ui";
 
+import { PublicBrandLink } from "../../../components/public-brand-link";
+import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import {
@@ -26,7 +27,7 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="recover-title">
         <div className="public-intro queue2-grain">
-          <QueueWordmark />
+          <PublicBrandLink />
           <div>
             <p className="eyebrow">Voltar para a dupla</p>
             <h1 className="page-title" id="recover-title">
@@ -37,10 +38,11 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
               proteger contas e evitar enumeracao.
             </p>
           </div>
+          <PublicRitualStrip steps={["senha", "entrar", "dupla"]} />
         </div>
 
         <form action={token ? completePasswordResetAction : requestPasswordResetAction} className="auth-panel">
-          <QueueMark size={52} />
+          <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
           {statusMessage ? (
             <p className="neutral-state" role="status">

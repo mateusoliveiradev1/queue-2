@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { QueueMark, QueueWordmark } from "@queue/ui";
 
+import { PublicBrandLink } from "../../../components/public-brand-link";
+import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { SignupFields } from "../../../components/signup-fields";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
@@ -23,7 +24,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
     <main className="public-shell">
       <section className="public-grid" aria-labelledby="signup-title">
         <div className="public-intro queue2-grain">
-          <QueueWordmark />
+          <PublicBrandLink />
           <div>
             <p className="eyebrow">Cadastro da dupla fixa</p>
             <h1 className="page-title" id="signup-title">
@@ -34,10 +35,11 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
               Depois da verificacao, o proximo passo e parear.
             </p>
           </div>
+          <PublicRitualStrip steps={["conta", "email", "dupla"]} />
         </div>
 
         <form action={signupAction} className="auth-panel">
-          <QueueMark size={52} />
+          <PublicBrandLink display="mark" />
           <StatusToast message={statusMessage} state={state} />
           {statusMessage ? (
             <p className="neutral-state" role="status">

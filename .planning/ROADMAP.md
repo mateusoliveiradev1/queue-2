@@ -11,6 +11,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
 
 - [x] **Phase 1: Fundacao Modular, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura sobre arquitetura e dados verificaveis.
+- [x] **Phase 01.1: Polimento Auth e Landing Intermediaria (INSERTED)** - A experiencia publica inicial ganha acabamento visual e navegacao de marca sem antecipar a landing final.
 - [ ] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
 - [ ] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
@@ -33,9 +34,23 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 **Plans**: TBD
 **UI hint**: yes
 
+### Phase 01.1: Polimento Auth e Landing Intermediaria (INSERTED)
+
+**Goal**: A home provisoria e as telas publicas de auth/pareamento ficam visualmente intencionais, navegaveis pela marca e prontas para sustentar a Fase 2 sem prometer a landing final.
+**Depends on**: Phase 1
+**Requirements**: BRND-01, BRND-02, BRND-03, BRND-04, BRND-05, BRND-06, BRND-11, BRND-13, META-02
+**Success Criteria** (what must be TRUE):
+  1. A home provisoria apresenta QUEUE/2 como primeiro sinal de viewport, com CTAs claros para entrar, criar conta e parear, e deixa evidente que a landing final continua reservada para a Fase 7.
+  2. O logo/wordmark nas telas publicas retorna para `/` com nome acessivel, sem quebrar os fluxos de login, cadastro, verificacao, recuperacao ou pareamento.
+  3. Login, cadastro, verificacao, recuperacao e pareamento compartilham composicao visual mais refinada, com painel esquerdo menos vazio, marca consistente e controles sem texto estourado em mobile.
+  4. O polimento nao altera schema, RLS, regras de auth, rotas protegidas ou o contrato de seguranca fechado na Fase 1.
+  5. Testes de marca, typecheck e acessibilidade publica cobrem a navegacao de marca e a home provisoria.
+**Plans**: 01.1-01
+**UI hint**: yes
+
 ### Phase 2: Catalogo E Biblioteca
 **Goal**: A dupla pode construir, entender e organizar uma fila real de jogos usando catalogo com fonte visivel.
-**Depends on**: Phase 1
+**Depends on**: Phase 01.1
 **Requirements**: CAT-01, CAT-02, CAT-03, CAT-04, CAT-05, CAT-06, CAT-07, LIB-01, LIB-02, LIB-03, LIB-04, LIB-05
 **Success Criteria** (what must be TRUE):
   1. Usuario pode navegar pelo catalogo RAWG e abrir um detalhe de jogo com capa, descricao, generos, lancamento e plataformas.

@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: complete
-stopped_at: Phase 01 gate passed with no skipped checks
-last_updated: "2026-06-03T17:40:22Z"
+status: active
+stopped_at: Phase 01.1 complete; ready for Phase 2
+last_updated: "2026-06-03T18:28:00Z"
 last_activity: 2026-06-03
 progress:
-  total_phases: 7
-  completed_phases: 1
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_phases: 8
+  completed_phases: 2
+  total_plans: 7
+  completed_plans: 7
+  percent: 25
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 01 — fundacao-modular-marca-auth-e-dupla
+**Current focus:** Phase 2 - catalogo-e-biblioteca
 
 ## Current Position
 
-Phase: 01 (fundacao-modular-marca-auth-e-dupla) - COMPLETE
-Plan: 6 of 6
-Status: Phase closed by `pnpm phase:1:gate` with no skipped checks on 2026-06-03.
+Phase: 01.1 (polimento-auth-e-landing-intermediaria) - COMPLETE
+Plan: 1 of 1
+Status: Auth and interim landing polish complete. Next recommended run: gsd-plan-phase 2 or gsd-execute-phase 2 after planning exists.
 Last activity: 2026-06-03
 
-Progress: [██████████] 100%
+Progress: [##........] 25%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 0
+- Total plans completed: 7
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 01-fundacao-modular-marca-auth-e-dupla P01-04 | 24m | 3 tasks | 25 files |
 | Phase 01 P05 | 1h 13m | 3 tasks | 28 files |
 | Phase 01 P06 | 15m | 3 tasks | 19 files |
+| Phase 01.1 P01 | 32m | 6 tasks | 15 files |
 
 ## Quick Tasks Completed
 
@@ -67,6 +68,10 @@ Progress: [██████████] 100%
 | 2026-06-03 | auth-signup-confirmacao-senha | Cadastro exige confirmacao de senha no cliente e no Server Action, com copy da politica alinhada a validacao real. |
 
 ## Accumulated Context
+
+### Roadmap Evolution
+
+- Phase 01.1 inserted after Phase 1: Polimento Auth e Landing Intermediaria (URGENT)
 
 ### Decisions
 
@@ -97,7 +102,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Optional Phase 1.1 candidate: auth/landing visual polish before Phase 2.
+- Phase 2 planning/execution: Catalogo e Biblioteca.
 - Production launch follow-ups: real transactional email delivery check and Neon restore rehearsal evidence.
 
 ### Blockers/Concerns
@@ -118,6 +123,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-03T17:40:22Z
-Stopped at: Phase 01 verification complete
+Last session: 2026-06-03T18:28:00Z
+Stopped at: Phase 01.1 complete; ready for Phase 2
 Resume file: None
