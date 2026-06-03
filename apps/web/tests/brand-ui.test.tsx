@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueueToaster } from "@queue/ui";
@@ -98,6 +98,10 @@ const duoModuleMock = vi.hoisted(() => {
   };
 });
 
+const libraryModuleMock = vi.hoisted(() => ({
+  getLibraryOverview: vi.fn()
+}));
+
 vi.mock("../src/platform/auth/session", () => ({
   getVerifiedProfileAuthContext: vi.fn(async () => authSessionMock),
   hashSessionToken: vi.fn((token: string | undefined) => (token ? `hashed-${token}` : "")),
@@ -127,6 +131,17 @@ vi.mock("../src/modules/duo", async (importOriginal) => {
   };
 });
 
+vi.mock("../src/modules/library", async () => {
+  const viewModels = await vi.importActual<
+    typeof import("../src/modules/library/presentation/view-models")
+  >("../src/modules/library/presentation/view-models");
+
+  return {
+    ...viewModels,
+    getLibraryOverview: libraryModuleMock.getLibraryOverview
+  };
+});
+
 import SignupPage from "../src/app/(public)/cadastro/page";
 import LoginPage from "../src/app/(public)/login/page";
 import PairingPage from "../src/app/(public)/parear/page";
@@ -147,6 +162,22 @@ afterEach(() => {
 
 beforeEach(() => {
   duoModuleMock.getDuoDashboard.mockResolvedValue(duoModuleMock.noDuo);
+  libraryModuleMock.getLibraryOverview.mockResolvedValue({
+    ok: true,
+    overview: {
+      memberPlatforms: [
+        { userId: "user-1", platforms: [] },
+        { userId: "user-2", platforms: [] }
+      ],
+      commonPlatforms: [],
+      groups: {
+        wishlist: [],
+        jogando: [],
+        pausado: []
+      },
+      lockedStatuses: ["zerado", "dropado"]
+    }
+  });
 });
 
 describe("public QUEUE/2 route surfaces", () => {
@@ -246,11 +277,16 @@ describe("public QUEUE/2 route surfaces", () => {
 });
 
 describe("authenticated Phase 1 surfaces", () => {
-  it("renders the empty dashboard with the exact three-step ritual", async () => {
+  it("renders the Phase 2 dashboard with catalog and library entry points", async () => {
     duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     render(await DashboardPage());
+    const navigation = within(
+      screen.getByRole("navigation", { name: /area autenticada queue dois/i })
+    );
 
-    expect(screen.getByRole("heading", { name: /a fila comeca vazia/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /a fila ja pode crescer/i })).toBeInTheDocument();
+    expect(navigation.getByRole("link", { name: /catalogo/i })).toHaveAttribute("href", "/app/catalogo");
+    expect(navigation.getByRole("link", { name: /biblioteca/i })).toHaveAttribute("href", "/app/biblioteca");
     expect(screen.getByText("descobrir")).toBeInTheDocument();
     expect(screen.getByText("decidir")).toBeInTheDocument();
     expect(screen.getByText("zerar")).toBeInTheDocument();

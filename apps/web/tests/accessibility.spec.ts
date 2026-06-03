@@ -23,12 +23,19 @@ const readyMissingEnv = missingEnv([
   "E2E_READY_USER_EMAIL",
   "E2E_READY_USER_PASSWORD"
 ]);
+const phase2DetailMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD",
+  "E2E_PHASE2_CATALOG_SLUG"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
 reportMissingEnv("Public accessibility", baseMissingEnv);
 reportMissingEnv("Pairing accessibility", pairingMissingEnv);
 reportMissingEnv("Authenticated accessibility", readyMissingEnv);
+reportMissingEnv("Phase 2 detail accessibility", phase2DetailMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -96,19 +103,32 @@ test.describe("Phase 1 pairing accessibility", () => {
   });
 });
 
-test.describe("Phase 1 authenticated accessibility", () => {
+test.describe("Authenticated accessibility", () => {
   test.skip(
     readyMissingEnv.length > 0,
     `Missing verified named-duo accessibility fixture: ${readyMissingEnv.join(", ")}`
   );
 
-  for (const route of ["/app", "/app/perfil", "/app/dupla"]) {
+  for (const route of ["/app", "/app/perfil", "/app/dupla", "/app/catalogo", "/app/biblioteca"]) {
     test(`${route} has no WCAG A/AA axe violations`, async ({ page }) => {
       await login(page, readyActor);
       await page.goto(route);
       await expectNoAxeViolations(page);
     });
   }
+});
+
+test.describe("Phase 2 detail accessibility", () => {
+  test.skip(
+    phase2DetailMissingEnv.length > 0,
+    `Missing Phase 2 detail accessibility fixture: ${phase2DetailMissingEnv.join(", ")}`
+  );
+
+  test("game detail has no WCAG A/AA axe violations", async ({ page }) => {
+    await login(page, readyActor);
+    await page.goto(`/app/jogo/${process.env.E2E_PHASE2_CATALOG_SLUG!}`);
+    await expectNoAxeViolations(page);
+  });
 });
 
 async function expectNoAxeViolations(page: Page): Promise<void> {
