@@ -12,6 +12,11 @@ import {
   normalizeRawgGame,
   type RawgClient
 } from "../src/modules/catalog/infrastructure/rawg-client";
+import { createUnavailableLocalizationDraftProvider } from "../src/modules/catalog/infrastructure/localization-draft-provider";
+import {
+  assertLocalizationPublishable,
+  evaluateLocalizationPublishability
+} from "../src/modules/catalog/infrastructure/localization-review-checklist";
 
 type QueryCall = {
   sql: string;
@@ -176,6 +181,46 @@ describe("catalog sync orchestration", () => {
     expect(() => createRawgClient({ apiKey: "" })).toThrow(
       /RAWG_API_KEY is required/
     );
+  });
+});
+
+describe("localization draft provider boundary", () => {
+  it("ships without translation provider credentials configured", async () => {
+    await expect(
+      createUnavailableLocalizationDraftProvider().createDraft({
+        rawText: "English source",
+        sourceLocale: "en",
+        targetLocale: "pt-BR",
+        gameName: "It Takes Two",
+        rawSourceHash: null
+      })
+    ).rejects.toThrow(/provider is not configured/);
+  });
+
+  it("blocks publication until every review checklist field is satisfied", () => {
+    expect(
+      evaluateLocalizationPublishability({
+        coop_facts_checked: true,
+        spoilers_avoided: true
+      })
+    ).toEqual({
+      publishable: false,
+      missing: ["facts_not_invented", "natural_pt_br", "queue2_tone_controlled"]
+    });
+
+    const complete = {
+      coop_facts_checked: true,
+      spoilers_avoided: true,
+      facts_not_invented: true,
+      natural_pt_br: true,
+      queue2_tone_controlled: true
+    };
+
+    expect(evaluateLocalizationPublishability(complete)).toEqual({
+      publishable: true,
+      missing: []
+    });
+    expect(() => assertLocalizationPublishable(complete)).not.toThrow();
   });
 });
 

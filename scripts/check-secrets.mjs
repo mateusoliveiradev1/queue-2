@@ -13,7 +13,11 @@ const knownSecretNames = [
   "BETTER_AUTH_SECRET",
   "AUTH_SECRET",
   "RESEND_API_KEY",
-  "EMAIL_FROM"
+  "EMAIL_FROM",
+  "DEEPL_API_KEY",
+  "OPENAI_API_KEY",
+  "GOOGLE_TRANSLATE_API_KEY",
+  "AZURE_TRANSLATOR_KEY"
 ];
 
 const sourceRoots = [
