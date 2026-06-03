@@ -205,13 +205,145 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TBD | TBD | Pending |
+| AUTH-01 | Phase 1 | Pending |
+| AUTH-02 | Phase 1 | Pending |
+| AUTH-03 | Phase 1 | Pending |
+| AUTH-04 | Phase 1 | Pending |
+| AUTH-05 | Phase 1 | Pending |
+| AUTH-06 | Phase 1 | Pending |
+| AUTH-07 | Phase 1 | Pending |
+| DUO-01 | Phase 1 | Pending |
+| DUO-02 | Phase 1 | Pending |
+| DUO-03 | Phase 1 | Pending |
+| DUO-04 | Phase 1 | Pending |
+| DUO-05 | Phase 1 | Pending |
+| DUO-06 | Phase 1 | Pending |
+| DUO-07 | Phase 1 | Pending |
+| DUO-08 | Phase 1 | Pending |
+| DUO-09 | Phase 1 | Pending |
+| DUO-10 | Phase 1 | Pending |
+| BRND-01 | Phase 1 | Pending |
+| BRND-02 | Phase 1 | Pending |
+| BRND-03 | Phase 1 | Pending |
+| BRND-04 | Phase 1 | Pending |
+| BRND-05 | Phase 1 | Pending |
+| BRND-06 | Phase 1 | Pending |
+| BRND-07 | Phase 7 | Pending |
+| BRND-08 | Phase 7 | Pending |
+| BRND-09 | Phase 7 | Pending |
+| BRND-10 | Phase 7 | Pending |
+| BRND-11 | Phase 1 | Pending |
+| BRND-12 | Phase 7 | Pending |
+| CAT-01 | Phase 2 | Pending |
+| CAT-02 | Phase 2 | Pending |
+| CAT-03 | Phase 2 | Pending |
+| CAT-04 | Phase 2 | Pending |
+| CAT-05 | Phase 2 | Pending |
+| CAT-06 | Phase 2 | Pending |
+| CAT-07 | Phase 2 | Pending |
+| LIB-01 | Phase 2 | Pending |
+| LIB-02 | Phase 2 | Pending |
+| LIB-03 | Phase 2 | Pending |
+| LIB-04 | Phase 2 | Pending |
+| LIB-05 | Phase 2 | Pending |
+| DISC-01 | Phase 3 | Pending |
+| DISC-02 | Phase 3 | Pending |
+| DISC-03 | Phase 3 | Pending |
+| DISC-04 | Phase 3 | Pending |
+| DISC-05 | Phase 3 | Pending |
+| DISC-06 | Phase 3 | Pending |
+| DISC-07 | Phase 3 | Pending |
+| DISC-08 | Phase 3 | Pending |
+| DISC-09 | Phase 3 | Pending |
+| DISC-10 | Phase 3 | Pending |
+| DISC-11 | Phase 3 | Pending |
+| DISC-12 | Phase 3 | Pending |
+| PLAY-01 | Phase 4 | Pending |
+| PLAY-02 | Phase 4 | Pending |
+| PLAY-03 | Phase 4 | Pending |
+| PLAY-04 | Phase 4 | Pending |
+| PLAY-05 | Phase 5 | Pending |
+| PLAY-06 | Phase 4 | Pending |
+| PLAY-07 | Phase 4 | Pending |
+| PLAY-08 | Phase 4 | Pending |
+| PLAY-09 | Phase 4 | Pending |
+| PLAY-10 | Phase 4 | Pending |
+| PLAY-11 | Phase 4 | Pending |
+| PLAY-12 | Phase 4 | Pending |
+| PLAY-13 | Phase 4 | Pending |
+| SESS-01 | Phase 4 | Pending |
+| SESS-02 | Phase 4 | Pending |
+| SESS-03 | Phase 4 | Pending |
+| SESS-04 | Phase 4 | Pending |
+| SESS-05 | Phase 4 | Pending |
+| SESS-06 | Phase 4 | Pending |
+| SESS-07 | Phase 4 | Pending |
+| SESS-08 | Phase 4 | Pending |
+| SESS-09 | Phase 4 | Pending |
+| SESS-10 | Phase 4 | Pending |
+| SESS-11 | Phase 4 | Pending |
+| SESS-12 | Phase 4 | Pending |
+| SESS-13 | Phase 4 | Pending |
+| SESS-14 | Phase 4 | Pending |
+| GAME-01 | Phase 5 | Pending |
+| GAME-02 | Phase 5 | Pending |
+| GAME-03 | Phase 5 | Pending |
+| GAME-04 | Phase 5 | Pending |
+| GAME-05 | Phase 5 | Pending |
+| GAME-06 | Phase 5 | Pending |
+| GAME-07 | Phase 5 | Pending |
+| GAME-08 | Phase 5 | Pending |
+| GAME-09 | Phase 5 | Pending |
+| GAME-10 | Phase 5 | Pending |
+| GAME-11 | Phase 5 | Pending |
+| GAME-12 | Phase 5 | Pending |
+| GAME-13 | Phase 5 | Pending |
+| GAME-14 | Phase 5 | Pending |
+| GAME-15 | Phase 5 | Pending |
+| GAME-16 | Phase 5 | Pending |
+| GAME-17 | Phase 5 | Pending |
+| ROUL-01 | Phase 6 | Pending |
+| ROUL-02 | Phase 6 | Pending |
+| ROUL-03 | Phase 6 | Pending |
+| ROUL-04 | Phase 6 | Pending |
+| ROUL-05 | Phase 6 | Pending |
+| ROUL-06 | Phase 6 | Pending |
+| ROUL-07 | Phase 6 | Pending |
+| ROUL-08 | Phase 6 | Pending |
+| ROUL-09 | Phase 6 | Pending |
+| ROUL-10 | Phase 6 | Pending |
+| HALL-01 | Phase 7 | Pending |
+| HALL-02 | Phase 7 | Pending |
+| HALL-03 | Phase 7 | Pending |
+| HALL-04 | Phase 7 | Pending |
+| HALL-05 | Phase 7 | Pending |
+| HALL-06 | Phase 7 | Pending |
+| HALL-07 | Phase 7 | Pending |
+| HALL-08 | Phase 7 | Pending |
+| HALL-09 | Phase 7 | Pending |
+| SAFE-01 | Phase 4 | Pending |
+| SAFE-02 | Phase 4 | Pending |
+| SAFE-03 | Phase 5 | Pending |
+| SAFE-04 | Phase 4 | Pending |
+| SAFE-05 | Phase 1 | Pending |
+| SAFE-06 | Phase 6 | Pending |
+| SAFE-07 | Phase 1 | Pending |
+| SAFE-08 | Phase 1 | Pending |
+| SAFE-09 | Phase 1 | Pending |
+| META-01 | Phase 7 | Pending |
+| META-02 | Phase 1 | Pending |
+| META-03 | Phase 7 | Pending |
+| META-04 | Phase 7 | Pending |
+| META-05 | Phase 7 | Pending |
+| META-06 | Phase 7 | Pending |
+| META-07 | Phase 7 | Pending |
+| META-08 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 133 total
-- Mapped to phases: 0
-- Unmapped: 133
+- Mapped to phases: 133
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-03 after initial definition*
+*Last updated: 2026-06-03 after roadmap creation*

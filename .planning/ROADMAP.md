@@ -1,0 +1,127 @@
+# Roadmap: QUEUE/2
+
+## Overview
+
+QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeiro formar uma identidade segura, depois criar a fila, descobrir jogos, jogar e registrar, ganhar progresso coletivo, sortear o proximo jogo e finalmente revisitar a historia em uma experiencia pronta para lancamento. Cada fase entrega uma capacidade completa e preserva a regra estrutural de exatamente dois jogadores.
+
+## Phases
+
+**Phase Numbering:**
+- Integer phases (1, 2, 3): Planned milestone work
+- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
+
+- [ ] **Phase 1: Fundacao, Marca, Auth E Dupla** - Usuarios acessam uma experiencia QUEUE/2 segura e formam uma dupla fixa.
+- [ ] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
+- [ ] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches.
+- [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
+- [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
+- [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
+- [ ] **Phase 7: Hall, Stats E Lancamento** - A dupla revisita sua historia e o produto recebe acabamento publico completo.
+
+## Phase Details
+
+### Phase 1: Fundacao, Marca, Auth E Dupla
+**Goal**: Usuarios podem acessar uma experiencia QUEUE/2 segura, customizada e limitada a uma dupla fixa de exatamente dois membros.
+**Depends on**: Nothing (first phase)
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05, AUTH-06, AUTH-07, DUO-01, DUO-02, DUO-03, DUO-04, DUO-05, DUO-06, DUO-07, DUO-08, DUO-09, DUO-10, BRND-01, BRND-02, BRND-03, BRND-04, BRND-05, BRND-06, BRND-11, SAFE-05, SAFE-07, SAFE-08, SAFE-09, META-02
+**Success Criteria** (what must be TRUE):
+  1. Usuario pode criar conta, verificar email, entrar, permanecer autenticado, recuperar senha, gerenciar sessoes e sair pelas telas customizadas QUEUE/2.
+  2. Dois usuarios podem formar uma dupla por codigo expiravel ou revogavel, mas uma terceira pessoa nunca consegue entrar, inclusive com tentativas concorrentes.
+  3. Membros podem ver a identidade compartilhada, editar perfil, definir timezone e preferencias, sem criar progresso ou sessoes solo.
+  4. Duas duplas distintas nao conseguem acessar dados uma da outra, e secrets de servidor nunca aparecem no navegador.
+  5. A experiencia base ja exibe wordmark, brand mark, tokens, tipografia, ponteiro recorrente, loading `/2` e variantes de logo coerentes.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 2: Catalogo E Biblioteca
+**Goal**: A dupla pode construir, entender e organizar uma fila real de jogos usando catalogo com fonte visivel.
+**Depends on**: Phase 1
+**Requirements**: CAT-01, CAT-02, CAT-03, CAT-04, CAT-05, CAT-06, CAT-07, LIB-01, LIB-02, LIB-03, LIB-04, LIB-05
+**Success Criteria** (what must be TRUE):
+  1. Usuario pode navegar pelo catalogo RAWG e abrir um detalhe de jogo com capa, descricao, generos, lancamento e plataformas.
+  2. Paginas que usam dados ou imagens RAWG exibem atribuicao ativa, e estimativas ou disponibilidades mostram fonte e frescor quando existem.
+  3. Cada membro pode registrar suas plataformas e a dupla consegue ver automaticamente as plataformas em comum.
+  4. Usuario pode adicionar jogos a Wishlist e organizar a biblioteca por Wishlist, Jogando, Zerado, Dropado ou Pausado.
+  5. A biblioteca mostra match score e abre um detalhe preparado para sessoes, checkpoints, progresso e milestones.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 3: Descoberta E Matches
+**Goal**: A dupla pode reduzir indecisao, descobrir coops compativeis e transformar preferencias individuais em uma fila compartilhada.
+**Depends on**: Phase 2
+**Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05, DISC-06, DISC-07, DISC-08, DISC-09, DISC-10, DISC-11, DISC-12
+**Success Criteria** (what must be TRUE):
+  1. Membros podem usar swipe duplo e match live para descobrir quando ambos aprovam o mesmo jogo.
+  2. A dupla pode receber uma surpresa de jogos ainda nao vistos e responder um quiz de mood com tres perguntas.
+  3. Usuario pode buscar com autocomplete e filtrar por tempo estimado, plataforma comum, coop type, mood, ano, genero, raridade e disponibilidade.
+  4. Recomendacoes funcionam por similaridade de tags no cold start e passam a incorporar filtragem colaborativa quando houver dados suficientes.
+  5. Um jogo descoberto pode entrar imediatamente na Wishlist ou em outro status valido da biblioteca.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 4: Jogando Agora, Sessoes E Agendamento
+**Goal**: A dupla pode transformar uma escolha em jogo real, registrar progresso coop e coordenar a proxima sessao.
+**Depends on**: Phase 3
+**Requirements**: PLAY-01, PLAY-02, PLAY-03, PLAY-04, PLAY-06, PLAY-07, PLAY-08, PLAY-09, PLAY-10, PLAY-11, PLAY-12, PLAY-13, SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08, SESS-09, SESS-10, SESS-11, SESS-12, SESS-13, SESS-14, SAFE-01, SAFE-02, SAFE-04
+**Success Criteria** (what must be TRUE):
+  1. Dashboard mostra um Principal e ate dois jogos secundarios, e a dupla pode reordenar os tres sem quebrar os limites de Jogando.
+  2. A dupla pode acompanhar tempo coop, capitulos, percentual subjetivo e milestones, enquanto Zerado e Dropado exigem confirmacao dos dois membros.
+  3. A dupla pode iniciar uma sessao live com timer resiliente a refresh, confirmar em conjunto e registrar "Jogamos Hoje" rapidamente sem duplicar bonus.
+  4. Cada jogo exibe timeline com marcadores, Momentos inline e spoilers ocultos ate revelacao explicita.
+  5. A dupla pode agendar uma sessao, confirmar presenca, receber lembrete push 30 minutos antes e desativar push quando desejar.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 5: Gamificacao Coletiva
+**Goal**: O progresso real da dupla se torna uma economia coletiva auditavel que celebra consistencia sem criar competicao interna.
+**Depends on**: Phase 4
+**Requirements**: PLAY-05, GAME-01, GAME-02, GAME-03, GAME-04, GAME-05, GAME-06, GAME-07, GAME-08, GAME-09, GAME-10, GAME-11, GAME-12, GAME-13, GAME-14, GAME-15, GAME-16, GAME-17, SAFE-03
+**Success Criteria** (what must be TRUE):
+  1. Dashboard mostra XP, nivel, streak, quests ativas e conquistas recentes como progresso unico da dupla.
+  2. XP auditavel conduz a dupla por 50 niveis tematicos com curva versionada, sem totais individuais.
+  3. A dupla pode desbloquear e filtrar aproximadamente 50 conquistas customizadas por grupo e raridade.
+  4. Desafios semanais, mensais e sazonais rotacionam no horario correto e mostram progresso atual.
+  5. Streaks exibem chama, freezing, backup ate 04:00 e Streak Freeze a cada dez niveis, enquanto raridade aparece de forma consistente.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 6: Roleta E Economia
+**Goal**: A dupla pode transformar a escolha do proximo jogo em uma roleta justa, autoritativa e visualmente memoravel.
+**Depends on**: Phase 5
+**Requirements**: ROUL-01, ROUL-02, ROUL-03, ROUL-04, ROUL-05, ROUL-06, ROUL-07, ROUL-08, ROUL-09, ROUL-10, SAFE-06
+**Success Criteria** (what must be TRUE):
+  1. A dupla pode abrir uma esteira de 60 capas com ponteiro central e revelar um resultado em aproximadamente 5.5 segundos.
+  2. A revelacao usa audio opcional, bordas por raridade e particulas Legendary sem prejudicar usuarios que preferem menos movimento.
+  3. Pity, boost de 100 XP e multiplicador de fim de semana afetam o resultado exatamente uma vez.
+  4. O resultado e persistido antes da animacao, permanece consistente entre os dois membros e nao pode duplicar custos ou historico.
+  5. A dupla pode travar o resultado como Jogando Principal.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 7: Hall, Stats E Lancamento
+**Goal**: A dupla pode celebrar sua historia em um produto publico, responsivo, acessivel e pronto para ser compartilhado.
+**Depends on**: Phase 6
+**Requirements**: HALL-01, HALL-02, HALL-03, HALL-04, HALL-05, HALL-06, HALL-07, HALL-08, HALL-09, BRND-07, BRND-08, BRND-09, BRND-10, BRND-12, META-01, META-03, META-04, META-05, META-06, META-07, META-08
+**Success Criteria** (what must be TRUE):
+  1. Cada membro pode revisar um jogo concluido, ver as duas reviews lado a lado e consultar a media da dupla.
+  2. A dupla pode revisitar jogos no Hall da Moral, usar uma alternativa plana acessivel e reproduzir sua historia por timeline.
+  3. A dupla pode consultar horas coop, vibe match, jogo favorito e dias pareados sem qualquer ranking interno.
+  4. Visitantes entendem o ritual pela landing curta, e links compartilhados exibem titulos, descricao, metadata, JSON-LD e OG image corretos.
+  5. O produto final e instalavel como PWA, possui icon set completo e preserva capacidades, acessibilidade, reduced motion e disciplina visual em mobile e desktop.
+**Plans**: TBD
+**UI hint**: yes
+
+## Progress
+
+**Execution Order:**
+Phases execute in numeric order: 1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 1. Fundacao, Marca, Auth E Dupla | 0/TBD | Not started | - |
+| 2. Catalogo E Biblioteca | 0/TBD | Not started | - |
+| 3. Descoberta E Matches | 0/TBD | Not started | - |
+| 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
+| 5. Gamificacao Coletiva | 0/TBD | Not started | - |
+| 6. Roleta E Economia | 0/TBD | Not started | - |
+| 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |
