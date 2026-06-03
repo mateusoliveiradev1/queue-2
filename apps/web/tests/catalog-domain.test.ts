@@ -109,11 +109,30 @@ describe("catalog use cases", () => {
     ).resolves.toMatchObject({
       slug: "it-takes-two",
       description: "Uma aventura coop sobre reconciliacao.",
+      descriptionSourceLabel: "Descricao da fonte: RAWG",
       coopLabel: "Confirmado para campanha ou historia coop em dupla.",
       detailReadiness: {
         hasCoreDetails: true,
         missingLabels: []
       }
+    });
+  });
+
+  it("prefers QUEUE/2 Portuguese descriptions for curated seeded games", async () => {
+    const repository = createRepository([
+      catalogGame({
+        slug: "it-takes-two-2",
+        rawgUrl: "https://rawg.io/games/it-takes-two-2",
+        sourceUrl: "https://rawg.io/games/it-takes-two-2",
+        description: "Bring your favorite co-op partner."
+      })
+    ]);
+
+    await expect(
+      getCatalogGameDetailUseCase("it-takes-two-2", repository, now)
+    ).resolves.toMatchObject({
+      description: expect.stringContaining("May e Cody"),
+      descriptionSourceLabel: "Descricao curada: QUEUE/2"
     });
   });
 });

@@ -10,6 +10,7 @@ import type {
   CatalogGameDetailRecord,
   CatalogPlatformRecord
 } from "../application/ports";
+import { getPortugueseCatalogDescription } from "./localized-descriptions";
 
 export type CatalogSourceMetaView = {
   attributionLabel: string;
@@ -37,6 +38,7 @@ export type CatalogGameCardView = {
 
 export type CatalogGameDetailView = CatalogGameCardView & {
   description: string;
+  descriptionSourceLabel: string;
   rawgUrl: string;
   coopLabel: string;
   timeEstimate: CatalogDetailFactView;
@@ -101,10 +103,17 @@ export function toCatalogGameDetailView(
   const card = toCatalogGameCardView(game, now);
   const timeEstimate = getEstimatedTimeState(game.timeEstimate, now);
   const availability = getAvailabilityState(game.availability, now);
+  const localizedDescription = getPortugueseCatalogDescription(game.slug);
 
   return {
     ...card,
-    description: game.description ?? "Descricao ainda indisponivel na fonte.",
+    description:
+      localizedDescription ?? game.description ?? "Descricao ainda indisponivel na fonte.",
+    descriptionSourceLabel: localizedDescription
+      ? "Descricao curada: QUEUE/2"
+      : game.description
+        ? "Descricao da fonte: RAWG"
+        : "Descricao indisponivel",
     rawgUrl: game.rawgUrl,
     coopLabel: card.mainFlow.eligible
       ? "Confirmado para campanha ou historia coop em dupla."
@@ -151,5 +160,13 @@ function formatRelease(releasedAt: Date | null): string {
 }
 
 function formatPlatforms(platforms: CatalogPlatformRecord[]): string[] {
-  return platforms.map((platform) => platform.name);
+  const labels: Record<CatalogPlatformRecord["key"], string> = {
+    pc: "PC",
+    playstation: "PlayStation",
+    xbox: "Xbox",
+    switch: "Switch",
+    "steam-deck": "Steam Deck"
+  };
+
+  return platforms.map((platform) => labels[platform.key]);
 }

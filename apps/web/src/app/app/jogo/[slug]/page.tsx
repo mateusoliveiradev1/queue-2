@@ -142,7 +142,10 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
           <DetailFactBlock fact={catalog.timeEstimate} label="Tempo estimado" />
           <DetailFactBlock fact={catalog.availability} label="Disponibilidade" />
         </div>
-        <p className="game-description">{catalog.description}</p>
+        <div className="game-description-block">
+          <span>{catalog.descriptionSourceLabel}</span>
+          <p className="game-description">{catalog.description}</p>
+        </div>
       </section>
 
       <section className="surface-band app-section" aria-labelledby="duo-context">
