@@ -71,6 +71,8 @@ export {
   type LibraryGameDetailView,
   type LibraryOverviewView
 } from "./presentation/view-models";
+export { LibraryStatusControls } from "./presentation/library-status-controls";
+export { PlatformPicker } from "./presentation/platform-picker";
 
 export function getLibraryOverview(userId: string) {
   return getLibraryOverviewUseCase(userId, libraryRepository);

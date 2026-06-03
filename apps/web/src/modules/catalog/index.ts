@@ -24,10 +24,13 @@ export {
 export {
   toCatalogGameCardView,
   toCatalogGameDetailView,
+  type CatalogDetailFactView,
   type CatalogGameCardView,
   type CatalogGameDetailView,
   type CatalogSourceMetaView
 } from "./presentation/view-models";
+export { CatalogCard } from "./presentation/catalog-card";
+export { SourceMetadata } from "./presentation/source-metadata";
 
 export type {
   CatalogAvailabilityRecord,

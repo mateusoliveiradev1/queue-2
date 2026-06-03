@@ -4,6 +4,7 @@ import { RoulettePointer } from "@queue/ui";
 
 import { AppShell } from "../../components/app-shell";
 import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
+import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library";
 import { requireVerifiedSession } from "../../platform/auth/session";
 
 export const metadata: Metadata = {
@@ -25,18 +26,20 @@ const ritual = [
   }
 ] as const;
 
-const upcomingStates = [
+const nextActions = [
+  {
+    title: "Catalogo",
+    text: "Comece por jogos com fonte visivel e coop campanha confirmado.",
+    href: "/app/catalogo"
+  },
   {
     title: "Biblioteca",
-    text: "A lista vai separar vontade, jogando, pausado, dropado e zerado."
+    text: "Organize Wishlist, Jogando e Pausado sem fingir sessoes futuras.",
+    href: "/app/biblioteca"
   },
   {
-    title: "Roleta",
-    text: "O sorteio so faz sentido quando houver jogos reais na fila."
-  },
-  {
-    title: "Hall da Moral",
-    text: "As zeradas viram memoria da dupla, nao placar individual."
+    title: "Roleta depois",
+    text: "O sorteio so entra quando a fila ja tiver jogos reais."
   }
 ] as const;
 
@@ -58,15 +61,22 @@ export default async function DashboardPage() {
     redirect("/parear");
   }
 
+  const libraryResult = await getLibraryOverview(session.user.id);
+  const library = libraryResult.ok ? toLibraryOverviewView(libraryResult.overview) : null;
+  const totalGames = library
+    ? library.counts.wishlist + library.counts.jogando + library.counts.pausado
+    : 0;
+
   return (
     <AppShell currentPage="dashboard">
       <header className="app-header">
         <div>
           <p className="eyebrow">Dupla formada</p>
-          <h1 className="page-title">A fila comeca vazia</h1>
+          <h1 className="page-title">A fila ja pode crescer</h1>
           <p className="lede">
-            Agora existe um lugar para decidir o proximo coop sem improviso. O
-            primeiro jogo ainda nao entrou, e isso e honesto.
+            O catalogo e a biblioteca estao prontos para transformar vontade em
+            fila compartilhada. Match, roleta e sessoes continuam reservados para
+            fases futuras.
           </p>
         </div>
       </header>
@@ -95,9 +105,41 @@ export default async function DashboardPage() {
           </div>
           <div className="metric">
             <span className="muted">Jogos</span>
-            <strong>0 jogos</strong>
-            <span className="muted">Nada inventado. A lista nasce de jogos reais.</span>
+            <strong>{totalGames} jogos</strong>
+            <span className="muted">
+              {totalGames === 0
+                ? "Nada inventado. Busquem o primeiro coop no catalogo."
+                : `${library?.counts.wishlist ?? 0} na Wishlist, ${library?.counts.jogando ?? 0} em Jogando.`}
+            </span>
           </div>
+          <div className="metric">
+            <span className="muted">Plataformas comuns</span>
+            <strong>{library?.commonPlatformLabels.length ? library.commonPlatformLabels.join(", ") : "A definir"}</strong>
+            <span className="muted">Cada membro registra as suas na Biblioteca.</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="surface-band app-section" aria-labelledby="actions-title">
+        <div className="section-heading">
+          <h2 className="eyebrow" id="actions-title">
+            Proximas acoes
+          </h2>
+          <p className="support-copy">Phase 2 libera organizacao real, sem antecipar match ou sessao.</p>
+        </div>
+        <div className="ritual-grid">
+          {nextActions.map((step) => (
+            <article className="ritual-step" key={step.title}>
+              <RoulettePointer aria-hidden="true" label="" />
+              <strong>{step.title}</strong>
+              <span className="muted">{step.text}</span>
+              {"href" in step ? (
+                <a className="text-link" href={step.href}>
+                  Abrir {step.title.toLowerCase()}
+                </a>
+              ) : null}
+            </article>
+          ))}
         </div>
       </section>
 
@@ -117,23 +159,6 @@ export default async function DashboardPage() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="surface-band app-section" aria-labelledby="locked-title">
-        <div className="section-heading">
-          <h2 className="eyebrow" id="locked-title">
-            Depois dos primeiros jogos
-          </h2>
-          <p className="support-copy">O produto nao precisa fingir conteudo antes da fila existir.</p>
-        </div>
-        <ul className="locked-list">
-          {upcomingStates.map((step) => (
-            <li aria-disabled="true" className="locked-step" key={step.title}>
-              <strong>{step.title}</strong>
-              <span>{step.text}</span>
-            </li>
-          ))}
-        </ul>
       </section>
     </AppShell>
   );

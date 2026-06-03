@@ -39,11 +39,26 @@ export type CatalogGameDetailView = CatalogGameCardView & {
   description: string;
   rawgUrl: string;
   coopLabel: string;
+  timeEstimate: CatalogDetailFactView;
+  availability: CatalogDetailFactView;
   detailReadiness: {
     hasCoreDetails: boolean;
     missingLabels: string[];
   };
 };
+
+export type CatalogDetailFactView =
+  | {
+      kind: "available";
+      label: string;
+      sourceLabel: string;
+      sourceHref: string | null;
+      freshnessLabel: string;
+    }
+  | {
+      kind: "missing";
+      label: string;
+    };
 
 export function toCatalogGameCardView(
   game: CatalogGameDetailRecord,
@@ -84,6 +99,8 @@ export function toCatalogGameDetailView(
 ): CatalogGameDetailView {
   const readiness = getCatalogDetailReadiness(game);
   const card = toCatalogGameCardView(game, now);
+  const timeEstimate = getEstimatedTimeState(game.timeEstimate, now);
+  const availability = getAvailabilityState(game.availability, now);
 
   return {
     ...card,
@@ -92,10 +109,31 @@ export function toCatalogGameDetailView(
     coopLabel: card.mainFlow.eligible
       ? "Confirmado para campanha ou historia coop em dupla."
       : "Ainda sem confirmacao segura para a fila principal.",
+    timeEstimate: toDetailFact(timeEstimate),
+    availability: toDetailFact(availability),
     detailReadiness: {
       hasCoreDetails: readiness.hasCoreDetails,
       missingLabels: readiness.missing
     }
+  };
+}
+
+function toDetailFact(
+  state: ReturnType<typeof getEstimatedTimeState> | ReturnType<typeof getAvailabilityState>
+): CatalogDetailFactView {
+  if (state.kind === "missing") {
+    return {
+      kind: "missing",
+      label: state.label
+    };
+  }
+
+  return {
+    kind: "available",
+    label: state.label,
+    sourceLabel: state.sourceLabel,
+    sourceHref: state.sourceUrl,
+    freshnessLabel: state.freshnessLabel
   };
 }
 

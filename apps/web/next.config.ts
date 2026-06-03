@@ -7,6 +7,18 @@ import { getSecurityHeaders } from "./src/security/headers";
 const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        hostname: "media.rawg.io",
+        protocol: "https"
+      },
+      {
+        hostname: "rawg.io",
+        protocol: "https"
+      }
+    ]
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ["@queue/db", "@queue/ui"],
