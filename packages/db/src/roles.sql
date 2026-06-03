@@ -26,12 +26,16 @@ ALTER ROLE queue2_worker NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
 ALTER ROLE queue2_readonly NOBYPASSRLS NOCREATEDB NOCREATEROLE NOREPLICATION;
 
 GRANT USAGE ON SCHEMA auth TO queue2_app_runtime, queue2_worker, queue2_readonly;
+GRANT USAGE ON SCHEMA catalog TO queue2_app_runtime, queue2_worker, queue2_readonly;
 GRANT USAGE ON SCHEMA app TO queue2_app_runtime, queue2_worker, queue2_readonly;
 GRANT USAGE ON SCHEMA ops TO queue2_app_runtime, queue2_worker, queue2_readonly;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO queue2_app_runtime;
 GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA auth TO queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA auth TO queue2_readonly;
+
+GRANT SELECT ON ALL TABLES IN SCHEMA catalog TO queue2_app_runtime, queue2_worker, queue2_readonly;
+GRANT INSERT, UPDATE ON ALL TABLES IN SCHEMA catalog TO queue2_worker;
 
 GRANT SELECT, INSERT, UPDATE ON app.profiles TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON app.duos TO queue2_app_runtime, queue2_worker;
