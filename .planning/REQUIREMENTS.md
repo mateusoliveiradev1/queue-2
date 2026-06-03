@@ -87,11 +87,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Catalog And Library
 
-- [ ] **CAT-01**: Duo can browse a catalog of games synchronized from RAWG
-- [ ] **CAT-02**: User sees an active RAWG attribution link on pages that use RAWG data or images
-- [ ] **CAT-03**: User can view a game detail page with cover, description, genres, release information and platforms
-- [ ] **CAT-04**: User can view a neutral estimated completion time with its source and freshness when available
-- [ ] **CAT-05**: User can view free or Game Pass availability with its source and last verification date when available
+- [x] **CAT-01**: Duo can browse a catalog of games synchronized from RAWG
+- [x] **CAT-02**: User sees an active RAWG attribution link on pages that use RAWG data or images
+- [x] **CAT-03**: User can view a game detail page with cover, description, genres, release information and platforms
+- [x] **CAT-04**: User can view a neutral estimated completion time with its source and freshness when available
+- [x] **CAT-05**: User can view free or Game Pass availability with its source and last verification date when available
 - [ ] **CAT-06**: User can record the platforms they can use
 - [ ] **CAT-07**: Duo can see which platforms both members have in common
 - [ ] **LIB-01**: User can add a game to the duo Wishlist
@@ -305,11 +305,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-09 | Phase 7 | Pending |
 | SEC-10 | Phase 7 | Pending |
 | SEC-11 | Phase 7 | Pending |
-| CAT-01 | Phase 2 | Pending |
-| CAT-02 | Phase 2 | Pending |
-| CAT-03 | Phase 2 | Pending |
-| CAT-04 | Phase 2 | Pending |
-| CAT-05 | Phase 2 | Pending |
+| CAT-01 | Phase 2 | Complete |
+| CAT-02 | Phase 2 | Complete |
+| CAT-03 | Phase 2 | Complete |
+| CAT-04 | Phase 2 | Complete |
+| CAT-05 | Phase 2 | Complete |
 | CAT-06 | Phase 2 | Pending |
 | CAT-07 | Phase 2 | Pending |
 | LIB-01 | Phase 2 | Pending |
