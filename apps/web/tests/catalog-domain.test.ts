@@ -201,7 +201,8 @@ function createRepository(games: CatalogGameDetailRecord[]): CatalogRepository {
     searchGames: async () => games,
     getGameBySlug: async (slug) => games.find((game) => game.slug === slug) ?? null,
     upsertGame: async () => "game-1",
-    upsertGames: async () => games.map((game) => game.id)
+    upsertGames: async () => games.map((game) => game.id),
+    syncRawgGame: async () => "game-1"
   };
 }
 

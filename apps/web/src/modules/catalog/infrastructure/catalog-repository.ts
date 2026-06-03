@@ -8,6 +8,7 @@ import {
 
 import type {
   CatalogAvailabilityRecord,
+  CatalogCurationPatch,
   CatalogGameDetailRecord,
   CatalogGameRecord,
   CatalogGameUpsertInput,
@@ -83,14 +84,21 @@ type LocalizationRow = {
 
 let runtimePool: QueueDbPool | undefined;
 
-export const catalogRepository: CatalogRepository = createCatalogRepository();
+export const catalogRepository: CatalogRepository = {
+  searchGames: (input) => searchGames(getRuntimePool(), input),
+  getGameBySlug: (slug) => getGameBySlug(getRuntimePool(), slug),
+  upsertGame: (input) => upsertGame(getRuntimePool(), input),
+  upsertGames: (inputs) => upsertGames(getRuntimePool(), inputs),
+  syncRawgGame: (input, curation) => syncRawgGame(getRuntimePool(), input, curation)
+};
 
-export function createCatalogRepository(pool: QueueDbPool = getRuntimePool()): CatalogRepository {
+export function createCatalogRepository(pool: QueueDbPool): CatalogRepository {
   return {
     searchGames: (input) => searchGames(pool, input),
     getGameBySlug: (slug) => getGameBySlug(pool, slug),
     upsertGame: (input) => upsertGame(pool, input),
-    upsertGames: (inputs) => upsertGames(pool, inputs)
+    upsertGames: (inputs) => upsertGames(pool, inputs),
+    syncRawgGame: (input, curation) => syncRawgGame(pool, input, curation)
   };
 }
 
@@ -204,6 +212,28 @@ async function upsertGame(pool: QueueDbPool, input: CatalogGameUpsertInput): Pro
     await replaceGenres(client, gameId, input.genres);
     await replaceTimeEstimate(client, gameId, input.timeEstimate ?? null);
     await replaceAvailability(client, gameId, input.availability ?? []);
+    await client.query("COMMIT");
+    return gameId;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function syncRawgGame(
+  pool: QueueDbPool,
+  input: CatalogGameUpsertInput,
+  curation: CatalogCurationPatch = {}
+): Promise<string> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const gameId = await upsertCatalogRawgFacts(client, input, curation);
+    await replacePlatforms(client, gameId, input.platforms);
+    await replaceGenres(client, gameId, input.genres);
     await client.query("COMMIT");
     return gameId;
   } catch (error) {
@@ -450,6 +480,105 @@ async function upsertCatalogGame(
   return row.id;
 }
 
+async function upsertCatalogRawgFacts(
+  client: QueueDbClient,
+  input: CatalogGameUpsertInput,
+  curation: CatalogCurationPatch
+): Promise<string> {
+  const hasCoopCampaignConfirmed = hasPatch(curation, "coopCampaignConfirmed");
+  const hasCoopPlayerCountMin = hasPatch(curation, "coopPlayerCountMin");
+  const hasCoopPlayerCountMax = hasPatch(curation, "coopPlayerCountMax");
+  const hasCoopConfirmationSource = hasPatch(curation, "coopConfirmationSource");
+  const hasCoopConfirmationCheckedAt = hasPatch(curation, "coopConfirmationCheckedAt");
+  const hasMainFlowEligible = hasPatch(curation, "mainFlowEligible");
+  const result = await client.query<{ id: string }>(
+    `
+      INSERT INTO catalog.games (
+        rawg_id,
+        slug,
+        name,
+        description,
+        released_at,
+        background_image_url,
+        rawg_url,
+        rawg_updated_at,
+        source,
+        source_url,
+        source_updated_at,
+        synced_at,
+        coop_campaign_confirmed,
+        coop_player_count_min,
+        coop_player_count_max,
+        coop_confirmation_source,
+        coop_confirmation_checked_at,
+        main_flow_eligible,
+        updated_at
+      )
+      VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $15, $17, $19, $21, $23, now()
+      )
+      ON CONFLICT (rawg_id) DO UPDATE
+      SET slug = excluded.slug,
+          name = excluded.name,
+          description = excluded.description,
+          released_at = excluded.released_at,
+          background_image_url = excluded.background_image_url,
+          rawg_url = excluded.rawg_url,
+          rawg_updated_at = excluded.rawg_updated_at,
+          source = excluded.source,
+          source_url = excluded.source_url,
+          source_updated_at = excluded.source_updated_at,
+          synced_at = excluded.synced_at,
+          coop_campaign_confirmed = CASE WHEN $14::boolean THEN $13::boolean ELSE catalog.games.coop_campaign_confirmed END,
+          coop_player_count_min = CASE WHEN $16::boolean THEN $15::smallint ELSE catalog.games.coop_player_count_min END,
+          coop_player_count_max = CASE WHEN $18::boolean THEN $17::smallint ELSE catalog.games.coop_player_count_max END,
+          coop_confirmation_source = CASE WHEN $20::boolean THEN $19::text ELSE catalog.games.coop_confirmation_source END,
+          coop_confirmation_checked_at = CASE WHEN $22::boolean THEN $21::timestamptz ELSE catalog.games.coop_confirmation_checked_at END,
+          main_flow_eligible = CASE WHEN $24::boolean THEN $23::boolean ELSE catalog.games.main_flow_eligible END,
+          updated_at = now()
+      RETURNING id
+    `,
+    [
+      input.rawgId,
+      input.slug,
+      input.name,
+      input.description,
+      input.releasedAt,
+      input.backgroundImageUrl,
+      input.rawgUrl,
+      input.rawgUpdatedAt,
+      input.source,
+      input.sourceUrl,
+      input.sourceUpdatedAt,
+      input.syncedAt,
+      hasCoopCampaignConfirmed ? curation.coopCampaignConfirmed : input.coopCampaignConfirmed,
+      hasCoopCampaignConfirmed,
+      hasCoopPlayerCountMin ? curation.coopPlayerCountMin : input.coopPlayerCountMin,
+      hasCoopPlayerCountMin,
+      hasCoopPlayerCountMax ? curation.coopPlayerCountMax : input.coopPlayerCountMax,
+      hasCoopPlayerCountMax,
+      hasCoopConfirmationSource
+        ? curation.coopConfirmationSource
+        : input.coopConfirmationSource,
+      hasCoopConfirmationSource,
+      hasCoopConfirmationCheckedAt
+        ? curation.coopConfirmationCheckedAt
+        : input.coopConfirmationCheckedAt,
+      hasCoopConfirmationCheckedAt,
+      hasMainFlowEligible ? curation.mainFlowEligible : input.mainFlowEligible,
+      hasMainFlowEligible
+    ]
+  );
+
+  const row = result.rows[0];
+  if (!row) {
+    throw new Error("catalog_game_rawg_sync_failed");
+  }
+
+  return row.id;
+}
+
 async function replacePlatforms(
   client: QueueDbClient,
   gameId: string,
@@ -618,6 +747,13 @@ function dedupeBy<T>(values: T[], getKey: (value: T) => string): T[] {
   }
 
   return result;
+}
+
+function hasPatch<T extends object, K extends PropertyKey>(
+  value: T,
+  key: K
+): value is T & Record<K, unknown> {
+  return Object.prototype.hasOwnProperty.call(value, key);
 }
 
 function getRuntimePool(): QueueDbPool {
