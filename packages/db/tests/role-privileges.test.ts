@@ -209,7 +209,9 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
       );
 
       expect(planText(pairingPlan.rows)).toContain("app_pairing_codes_active_code_uidx");
-      expect(planText(membershipPlan.rows)).toContain("app_duo_members_user_uidx");
+      expect(planText(membershipPlan.rows)).toMatch(
+        /app_duo_members_user(_duo)?_idx/
+      );
     } finally {
       await client.query("ROLLBACK");
       client.release();

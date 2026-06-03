@@ -67,6 +67,11 @@ export async function sendPasswordResetEmail({
 }
 
 export async function sendAuthEmail(input: AuthEmailInput, env: AuthEmailEnv = process.env) {
+  if (shouldUseDevelopmentEmailLog(env)) {
+    logDevelopmentAuthEmail(input);
+    return;
+  }
+
   const apiKey = requireEmailEnv(env, "RESEND_API_KEY");
   const from = requireEmailEnv(env, "EMAIL_FROM");
   const resend = new Resend(apiKey);
@@ -78,6 +83,21 @@ export async function sendAuthEmail(input: AuthEmailInput, env: AuthEmailEnv = p
     text: input.text,
     html: input.html
   });
+}
+
+export function shouldUseDevelopmentEmailLog(env: AuthEmailEnv = process.env): boolean {
+  return env.NODE_ENV !== "production" && (!env.RESEND_API_KEY || !env.EMAIL_FROM);
+}
+
+function logDevelopmentAuthEmail(input: AuthEmailInput) {
+  console.info(
+    JSON.stringify({
+      scope: "queue2.dev-email",
+      to: input.to,
+      subject: input.subject,
+      text: input.text
+    })
+  );
 }
 
 function requireEmailEnv(env: AuthEmailEnv, name: "RESEND_API_KEY" | "EMAIL_FROM"): string {

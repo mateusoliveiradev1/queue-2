@@ -3,20 +3,21 @@ status: partial
 phase: 01-fundacao-modular-marca-auth-e-dupla
 source: [01-VERIFICATION.md]
 started: 2026-06-03T13:00:54Z
-updated: 2026-06-03T13:00:54Z
+updated: 2026-06-03T15:35:00Z
 ---
 
 # Phase 1 Human UAT
 
 ## Current Test
 
-[awaiting human testing]
+Deployed Playwright Phase 1 Gate
 
 ## Tests
 
 ### 1. Live Database Phase 1 Gate
 expected: All 11 migration, RLS, role, isolation, concurrency and query-plan integration tests pass without skips on an isolated test database.
-result: [pending]
+result: passed
+evidence: Neon project `super-paper-33008114`, branch `br-sparkling-sea-acolroj6`; `pnpm --filter @queue/db test:integration` passed 11/11 and `pnpm phase:1:gate` passed its database section.
 
 ### 2. Deployed Playwright Phase 1 Gate
 expected: All 14 auth, pairing, route-isolation and accessibility tests pass without skips against an isolated configured deployment.
@@ -37,9 +38,9 @@ result: [pending]
 ## Summary
 
 total: 5
-passed: 0
+passed: 1
 issues: 0
-pending: 5
+pending: 4
 skipped: 0
 blocked: 0
 

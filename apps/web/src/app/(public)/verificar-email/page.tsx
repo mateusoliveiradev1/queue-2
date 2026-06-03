@@ -7,11 +7,13 @@ import { VerificationResendForm } from "../../../components/verification-resend-
 import {
   AUTH_RESEND_COOLDOWN_SECONDS,
   buildVerificationCallbackPath,
+  getAuthStatusMessage
+} from "../../../platform/auth/actions";
+import {
   correctEmailAction,
-  getAuthStatusMessage,
   logoutAction,
   resendVerificationAction
-} from "../../../platform/auth/actions";
+} from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
   title: "Verificar email - QUEUE/2"

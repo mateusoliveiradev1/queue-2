@@ -3,7 +3,8 @@ import { QueueMark, QueueWordmark } from "@queue/ui";
 
 import { SignupFields } from "../../../components/signup-fields";
 import { StatusToast } from "../../../components/status-toast";
-import { getAuthStatusMessage, signupAction } from "../../../platform/auth/actions";
+import { getAuthStatusMessage } from "../../../platform/auth/actions";
+import { signupAction } from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
   title: "Cadastro - QUEUE/2"

@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { authRateLimitAudit, AUTH_RATE_LIMIT_STORAGE } from "../src/platform/auth/rate-limit";
 import {
@@ -8,12 +8,13 @@ import {
   shouldUseSecureCookies
 } from "../src/platform/auth/server";
 import { authStatusMessages } from "../src/platform/auth/actions";
+import { sendAuthEmail, shouldUseDevelopmentEmailLog } from "../src/platform/auth/email";
 import { serializeAuthLogRecord } from "../src/platform/auth/logger";
 import { serializeSecurityAuditEvent } from "../src/platform/security/audit";
 
 const sessionSource = readFileSync("src/platform/auth/session.ts", "utf8");
 const proxySource = readFileSync("proxy.ts", "utf8");
-const actionsSource = readFileSync("src/platform/auth/actions.ts", "utf8");
+const serverActionsSource = readFileSync("src/platform/auth/server-actions.ts", "utf8");
 const serverSource = readFileSync("src/platform/auth/server.ts", "utf8");
 const persistentRateLimitSource = readFileSync(
   "src/platform/rate-limit/persistent.ts",
@@ -77,9 +78,9 @@ describe("session management controls", () => {
 
   it("logs out through Better Auth signOut", () => {
     expect(sessionSource).toMatch(/auth\.api\.signOut/);
-    expect(actionsSource).toMatch(/auth\.api\.signOut/);
+    expect(serverActionsSource).toMatch(/auth\.api\.signOut/);
     expect(sessionSource).toContain("logoutCurrentSessionAction");
-    expect(actionsSource).toContain("logoutAction");
+    expect(serverActionsSource).toContain("logoutAction");
   });
 });
 
@@ -124,9 +125,39 @@ describe("auth runtime security policy", () => {
   it("keeps reset flow, verification and password policies explicit", () => {
     expect(authRuntimePolicy.emailAndPassword.requireEmailVerification).toBe(true);
     expect(serverSource).toContain("revokeSessionsOnPasswordReset: true");
-    expect(actionsSource).toContain("auth.api.requestPasswordReset");
-    expect(actionsSource).toContain("auth.api.resetPassword");
-    expect(actionsSource).toContain("validateQueuePassword");
+    expect(serverActionsSource).toContain("auth.api.requestPasswordReset");
+    expect(serverActionsSource).toContain("auth.api.resetPassword");
+    expect(serverActionsSource).toContain("validateQueuePassword");
+  });
+
+  it("allows local auth email logging only outside production", async () => {
+    expect(
+      shouldUseDevelopmentEmailLog({
+        NODE_ENV: "development"
+      } as NodeJS.ProcessEnv)
+    ).toBe(true);
+    expect(
+      shouldUseDevelopmentEmailLog({
+        NODE_ENV: "production"
+      } as NodeJS.ProcessEnv)
+    ).toBe(false);
+
+    const infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+
+    try {
+      await sendAuthEmail(
+        {
+          to: "dev@example.com",
+          subject: "Verifique seu email - QUEUE/2",
+          text: "Link de verificacao: http://localhost:3000/verificar-email?token=dev",
+          html: "<a>dev</a>"
+        },
+        { NODE_ENV: "development" } as NodeJS.ProcessEnv
+      );
+      expect(infoSpy).toHaveBeenCalledWith(expect.stringContaining("queue2.dev-email"));
+    } finally {
+      infoSpy.mockRestore();
+    }
   });
 
   it("redacts user-facing auth errors", () => {
@@ -152,8 +183,8 @@ describe("auth runtime security policy", () => {
       }
     }
 
-    expect(actionsSource).not.toContain("console.error");
-    expect(actionsSource).not.toMatch(/redirectTo\([^)]*error\.message/);
+    expect(serverActionsSource).not.toContain("console.error");
+    expect(serverActionsSource).not.toMatch(/redirectTo\([^)]*error\.message/);
   });
 
   it("emits structured auth logs without sensitive Better Auth arguments", () => {

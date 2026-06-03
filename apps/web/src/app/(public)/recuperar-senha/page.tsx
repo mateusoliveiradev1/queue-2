@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { QueueMark, QueueWordmark } from "@queue/ui";
 
 import { StatusToast } from "../../../components/status-toast";
+import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import {
   completePasswordResetAction,
-  getAuthStatusMessage,
   requestPasswordResetAction
-} from "../../../platform/auth/actions";
+} from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
   title: "Recuperar senha - QUEUE/2"

@@ -48,9 +48,9 @@ describe.skipIf(!testDatabaseUrl)("duo RLS isolation", () => {
         client.query(
           `
             INSERT INTO ops.domain_events (duo_id, event_type, aggregate_type, aggregate_id, payload)
-            VALUES ($1, 'duo.cross_write_attempted', 'duo', $1, '{}'::jsonb)
+            VALUES ($1, 'duo.cross_write_attempted', 'duo', $2, '{}'::jsonb)
           `,
-          [second.duoId]
+          [second.duoId, second.duoId]
         )
       )
     ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);

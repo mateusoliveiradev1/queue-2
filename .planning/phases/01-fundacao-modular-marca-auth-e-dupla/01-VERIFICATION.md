@@ -1,13 +1,10 @@
 ---
 phase: 01-fundacao-modular-marca-auth-e-dupla
-verified: 2026-06-03T13:00:54Z
+verified: 2026-06-03T15:35:00Z
 status: human_needed
-score: 1/5 must-haves verified
+score: 2/5 must-haves verified
 gaps: []
 human_verification:
-  - test: "Live database Phase 1 gate"
-    expected: "All 11 migration, RLS, role, isolation, concurrency and query-plan integration tests pass without skips on an isolated test database."
-    why_human: "TEST_DATABASE_URL is not configured in this workspace."
   - test: "Deployed Playwright Phase 1 gate"
     expected: "All 14 auth, pairing, route-isolation and accessibility tests pass without skips against an isolated configured deployment."
     why_human: "E2E_BASE_URL and verified fixture accounts are not configured."
@@ -29,7 +26,7 @@ decision_coverage:
 # Phase 1: Fundacao Modular, Marca, Auth E Dupla Verification Report
 
 **Phase Goal:** Usuarios podem acessar uma experiencia QUEUE/2 segura, customizada e limitada a uma dupla fixa, sobre fronteiras modulares e dados verificaveis.
-**Verified:** 2026-06-03T13:00:54Z
+**Verified:** 2026-06-03T15:35:00Z
 **Status:** human_needed
 
 ## Goal Achievement
@@ -38,13 +35,13 @@ decision_coverage:
 
 | # | Truth | Status | Evidence |
 |---|-------|--------|----------|
-| 1 | User can complete account, verification, login, reset, session management and two-person pairing flows. | UNCERTAIN | Better Auth actions, duo use cases and 62 active unit/component tests are present, but deployed E2E and real email delivery remain unexecuted. |
+| 1 | User can complete account, verification, login, reset, session management and two-person pairing flows. | UNCERTAIN | Better Auth actions, duo use cases and 63 active unit/component tests are present. Local signup/login Server Actions were exercised on `localhost:3000`, but deployed E2E and real email delivery remain unexecuted. |
 | 2 | Domain public APIs and dependency direction are automatically enforced without client/server boundary leaks. | VERIFIED | `pnpm check:architecture`, typecheck and production build pass; all architecture plan artifacts and links verify. |
-| 3 | Cross-duo isolation, forced RLS, roles, transactions and concurrency preserve central invariants. | UNCERTAIN | Schema, policies, functions and test suites are substantive, but all 11 database integration tests skipped without `TEST_DATABASE_URL`. |
-| 4 | Migrations, critical indexes and a testable restore strategy are proven before launch. | UNCERTAIN | Three numbered migrations, index checks and `packages/db/RESTORE.md` exist, but migration/query-plan execution and restore rehearsal evidence are pending. |
+| 3 | Cross-duo isolation, forced RLS, roles, transactions and concurrency preserve central invariants. | VERIFIED | `pnpm --filter @queue/db test:integration` passed 11/11 tests on Neon branch `br-sparkling-sea-acolroj6`; `pnpm phase:1:gate` also passed its database section without skips. |
+| 4 | Migrations, critical indexes and a testable restore strategy are proven before launch. | UNCERTAIN | Three numbered migrations and query-plan checks passed on the Neon test branch; restore rehearsal evidence is still pending. |
 | 5 | Security controls and the base QUEUE/2 brand/feedback experience satisfy the contract. | UNCERTAIN | Headers, validation, redacted logs, scans, icon, loader and toast wiring pass local tests/build; deployed headers, visual quality and interaction feel need external/human review. |
 
-**Score:** 1/5 truths verified
+**Score:** 2/5 truths verified
 
 ### Required Artifacts
 
@@ -76,13 +73,13 @@ decision_coverage:
 
 | Requirements | Status | Evidence / Remaining Confirmation |
 |--------------|--------|-----------------------------------|
-| AUTH-01..07 | NEEDS HUMAN | Auth implementation and active tests exist; deployed email/session flow remains pending. |
+| AUTH-01..07 | NEEDS HUMAN | Auth implementation and active tests exist; local signup/login Server Actions execute; deployed email/session flow remains pending. |
 | DUO-01..03, DUO-05..08, DUO-10 | NEEDS HUMAN | Duo implementation and unit tests exist; live user flow remains pending. |
-| DUO-04, DUO-09 | NEEDS HUMAN | Database and E2E adversarial suites exist but skipped without external environments. |
+| DUO-04, DUO-09 | PARTIAL | Database adversarial suites pass on the Neon test branch; deployed E2E route/user-flow proof remains pending. |
 | BRND-01..06, BRND-11, BRND-13 | NEEDS HUMAN | Components and wiring exist; visual/interaction quality needs human review. |
 | ARCH-01..07 | SATISFIED | Architecture checker, package exports and build/type checks pass. |
 | DATA-01, DATA-02, DATA-08, DATA-10 | SATISFIED | Schema ownership, constraints, append-only grants and immutable/direct migration contract are present. |
-| DATA-03..07, DATA-09, DATA-11 | NEEDS HUMAN | Live Postgres integration execution is pending. |
+| DATA-03..07, DATA-09, DATA-11 | SATISFIED | Live Neon branch integration execution passed 11/11 migration, RLS, role, isolation, concurrency and query-plan tests. |
 | DATA-12 | NEEDS HUMAN | Restore runbook exists; successful rehearsal evidence is pending. |
 | SEC-01..04, SEC-06..08 | SATISFIED | Threat model, server authorization, persistent limiter config, redacted logging and scan gates are implemented and locally tested. |
 | SEC-05 | NEEDS HUMAN | Header policy tests pass; deployed production response observation is pending. |
@@ -96,10 +93,10 @@ decision_coverage:
 
 | Check | Result | Detail |
 |-------|--------|--------|
-| `pnpm verify` | PASS | Architecture, typecheck, lint, secret scan and 62 web tests pass; database tests explicitly skip. |
-| `pnpm --filter @queue/web build` | PASS | Production build succeeds and emits `/icon.svg` plus all Phase 1 routes. |
-| `pnpm phase:1:gate` | PASS WITH SKIPS | Local documentation, architecture, type, lint, unit, build, secret and dependency checks pass. Database and Playwright gates remain release-blocking skips. |
-| `pnpm --filter @queue/db test:integration` | SKIPPED | 11/11 tests skipped because `TEST_DATABASE_URL` is absent. |
+| `pnpm --filter @queue/web test` | PASS | 63 active web unit/component tests pass. |
+| `pnpm --filter @queue/web build` | PASS | Production build succeeds with `apps/web/.env.local` and emits `/icon.svg` plus all Phase 1 routes. |
+| `pnpm phase:1:gate` | PASS WITH SKIPS | Documentation, architecture, type, lint, unit, database, secret and dependency checks pass. Production build is covered separately; Playwright remains a release-blocking external skip. |
+| `pnpm --filter @queue/db test:integration` | PASS | 11/11 tests pass against Neon branch `br-sparkling-sea-acolroj6`. |
 | `pnpm --filter @queue/web test:e2e` | SKIPPED | 14/14 tests skipped because deployment and fixture variables are absent. |
 | Schema drift gate | PASS | No schema drift detected. |
 | Codebase drift gate | SKIPPED | Non-blocking: no structure map exists. |
@@ -108,11 +105,11 @@ decision_coverage:
 
 | Test Suite | Active | Skipped | Circular | Assertion Level | Verdict |
 |------------|--------|---------|----------|-----------------|---------|
-| Web Vitest unit/component tests | 62 | 0 | No | Value and behavioral | PASS |
-| Database integration tests | 0 | 11 | No | Behavioral when configured | NEEDS LIVE ENV |
+| Web Vitest unit/component tests | 63 | 0 | No | Value and behavioral | PASS |
+| Database integration tests | 11 | 0 | No | Behavioral on Neon test branch | PASS |
 | Playwright E2E/accessibility tests | 0 | 14 | No | End-to-end when configured | NEEDS DEPLOYED ENV |
 
-Conditional skips are explicit environment gates, not hidden disabled tests. They remain verification debt because they are the only live proof for several database and user-flow requirements.
+Conditional Playwright skips are explicit environment gates, not hidden disabled tests. They remain verification debt because they are the only deployed proof for several user-flow requirements.
 
 ## Anti-Patterns Found
 
@@ -124,27 +121,22 @@ All 35 trackable `CONTEXT.md` decisions are honored by shipped artifacts.
 
 ## Human Verification Required
 
-### 1. Live Database Phase 1 Gate
-**Test:** Configure `TEST_DATABASE_URL` for an isolated Neon test branch or local Postgres database, then run `pnpm --filter @queue/db test:integration` and `pnpm phase:1:gate`.
-**Expected:** All 11 database tests pass without skips, covering migrations, RLS, roles, isolation, concurrency and query plans.
-**Why human:** This workspace has no test database credential.
-
-### 2. Deployed Playwright Phase 1 Gate
+### 1. Deployed Playwright Phase 1 Gate
 **Test:** Configure the isolated deployment and E2E fixtures from `.env.example`, then run `pnpm --filter @queue/web test:e2e`.
 **Expected:** All 14 tests pass without skips.
 **Why human:** No deployed app URL or verified fixture accounts are configured.
 
-### 3. Real Verification And Reset Email Lifecycle
+### 2. Real Verification And Reset Email Lifecycle
 **Test:** Use a real transactional email environment to sign up, correct an unverified email, try the old link, use the new link, and complete a password reset.
 **Expected:** Emails arrive; the old link fails neutrally; the new link verifies and signs in; reset completes without account enumeration.
 **Why human:** Inbox delivery and provider behavior are external.
 
-### 4. Restore Rehearsal
+### 3. Restore Rehearsal
 **Test:** Execute `packages/db/RESTORE.md` and fill its evidence table.
 **Expected:** The restore probe is absent after restore, the app reconnects, and the integration suite passes on the restored branch.
 **Why human:** Neon project and operator evidence are external.
 
-### 5. Visual Brand And Feedback Review
+### 4. Visual Brand And Feedback Review
 **Test:** Review public auth, pairing, dashboard, profile and duo screens on mobile and desktop, including keyboard focus and reduced motion.
 **Expected:** `/2` icon/loading, wordmarks, colors, calm feedback and the special pairing toast feel coherent and accessible.
 **Why human:** Visual quality and interaction feel require judgment.
@@ -157,10 +149,10 @@ All 35 trackable `CONTEXT.md` decisions are honored by shipped artifacts.
 
 **Verification approach:** Goal-backward from ROADMAP success criteria, PLAN must-haves and Phase 1 requirements.
 **Must-haves source:** ROADMAP success criteria plus all six PLAN frontmatter contracts.
-**Automated checks:** 14 key links, 24 artifacts, 62 active web tests and all local gate sections verified.
-**Human checks required:** 5
-**Known external skips:** 11 database tests, 14 Playwright tests.
+**Automated checks:** 14 key links, 24 artifacts, 63 active web tests and all local/database gate sections verified.
+**Human checks required:** 4
+**Known external skips:** 14 Playwright tests.
 
 ---
-*Verified: 2026-06-03T13:00:54Z*
+*Verified: 2026-06-03T15:35:00Z*
 *Verifier: Codex (inline gsd-verifier fallback)*

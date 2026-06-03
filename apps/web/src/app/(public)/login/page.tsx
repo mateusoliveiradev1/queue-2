@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { QueueMark, QueueWordmark, RouletteDivider } from "@queue/ui";
 
 import { StatusToast } from "../../../components/status-toast";
-import { getAuthStatusMessage, loginAction } from "../../../platform/auth/actions";
+import { getAuthStatusMessage } from "../../../platform/auth/actions";
+import { loginAction } from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
   title: "Entrar - QUEUE/2"

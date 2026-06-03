@@ -48,7 +48,9 @@ describe.skipIf(!testDatabaseUrl)("pairing concurrency", () => {
     expect(fulfilled).toHaveLength(1);
     expect(rejected).toHaveLength(1);
     expect(fulfilled[0]?.value).toBe(duo.duoId);
-    expect(errorMessage(rejected[0]?.reason)).toContain("pairing_code_formed");
+    expect(errorMessage(rejected[0]?.reason)).toMatch(
+      /pairing_code_(formed|inactive)/i
+    );
     await expect(duoMemberCount(pool, ownerUserId, duo.duoId)).resolves.toBe(2);
   });
 

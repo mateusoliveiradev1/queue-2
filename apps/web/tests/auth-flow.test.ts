@@ -12,20 +12,22 @@ import {
   buildAuthPath,
   buildVerificationCallbackPath,
   buildVerificationPath,
-  completePasswordResetAction,
-  correctEmailAction,
   getAuthStatusMessage,
-  loginAction,
-  logoutAction,
   normalizeAuthEmail,
   queuePasswordRules,
-  requestPasswordResetAction,
-  resendVerificationAction,
-  signupAction,
   validateQueuePassword
 } from "../src/platform/auth/actions";
+import {
+  completePasswordResetAction,
+  correctEmailAction,
+  loginAction,
+  logoutAction,
+  requestPasswordResetAction,
+  resendVerificationAction,
+  signupAction
+} from "../src/platform/auth/server-actions";
 
-const actionsSource = readFileSync("src/platform/auth/actions.ts", "utf8");
+const serverActionsSource = readFileSync("src/platform/auth/server-actions.ts", "utf8");
 
 afterEach(() => {
   cleanup();
@@ -75,28 +77,28 @@ describe("auth flow server actions", () => {
   });
 
   it("delegates to Better Auth endpoints for real auth operations", () => {
-    expect(actionsSource).toContain("auth.api.signUpEmail");
-    expect(actionsSource).toContain("auth.api.signInEmail");
-    expect(actionsSource).toContain("auth.api.sendVerificationEmail");
-    expect(actionsSource).toContain("auth.api.requestPasswordReset");
-    expect(actionsSource).toContain("auth.api.resetPassword");
-    expect(actionsSource).toContain("auth.api.signOut");
+    expect(serverActionsSource).toContain("auth.api.signUpEmail");
+    expect(serverActionsSource).toContain("auth.api.signInEmail");
+    expect(serverActionsSource).toContain("auth.api.sendVerificationEmail");
+    expect(serverActionsSource).toContain("auth.api.requestPasswordReset");
+    expect(serverActionsSource).toContain("auth.api.resetPassword");
+    expect(serverActionsSource).toContain("auth.api.signOut");
   });
 
   it("routes unverified login away from authenticated app routes", () => {
-    expect(actionsSource).toContain("emailVerified");
-    expect(actionsSource).toContain("verifique-email");
-    expect(actionsSource).toContain("/verificar-email");
-    expect(actionsSource).not.toContain('target = "/app"');
+    expect(serverActionsSource).toContain("emailVerified");
+    expect(serverActionsSource).toContain("verifique-email");
+    expect(serverActionsSource).toContain("/verificar-email");
+    expect(serverActionsSource).not.toContain('target = "/app"');
   });
 
   it("preserves a pending account when correcting email and invalidates the old lookup", () => {
-    expect(actionsSource).toMatch(
+    expect(serverActionsSource).toMatch(
       /currentEmail[\s\S]*signInEmail[\s\S]*internalAdapter\.updateUserByEmail[\s\S]*sendVerificationEmail/
     );
-    expect(actionsSource).toContain("emailVerified: false");
-    expect(actionsSource).not.toMatch(/correctEmailAction[\s\S]*auth\.api\.signUpEmail/);
-    expect(actionsSource).toContain("buildVerificationCallbackPath");
+    expect(serverActionsSource).toContain("emailVerified: false");
+    expect(serverActionsSource).not.toMatch(/correctEmailAction[\s\S]*auth\.api\.signUpEmail/);
+    expect(serverActionsSource).toContain("buildVerificationCallbackPath");
     expect(getAuthStatusMessage("verify", "email-corrigido")).toMatch(/nova verificacao/i);
   });
 
