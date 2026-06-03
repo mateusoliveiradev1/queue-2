@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -7,7 +7,7 @@ import pg from "pg";
 const { Pool } = pg;
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const migrationPath = resolve(currentDir, "../migrations/0001_foundation.sql");
+const migrationsDir = resolve(currentDir, "../migrations");
 
 export const missingTestDatabaseMessage =
   "TEST_DATABASE_URL is not configured; skipping database integration tests. Use an isolated Neon test branch or local Postgres database.";
@@ -26,8 +26,14 @@ export function createIntegrationPool(connectionString: string): pg.Pool {
 }
 
 export async function applyFoundationMigration(pool: pg.Pool): Promise<void> {
-  const sql = await readFile(migrationPath, "utf8");
-  await pool.query(sql);
+  const migrationFiles = (await readdir(migrationsDir))
+    .filter((file) => /^\d+_.+\.sql$/.test(file))
+    .sort();
+
+  for (const migrationFile of migrationFiles) {
+    const sql = await readFile(resolve(migrationsDir, migrationFile), "utf8");
+    await pool.query(sql);
+  }
 }
 
 export async function createMigratedIntegrationPool(): Promise<pg.Pool | undefined> {
