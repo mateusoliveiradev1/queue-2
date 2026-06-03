@@ -10,17 +10,20 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "eslint --config packages/config/eslint/index.js apps/web packages/db packages/ui scripts",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "check:architecture": "turbo run check:architecture",
     "check:secrets": "node scripts/check-secrets.mjs",
     "audit:dependencies": "pnpm audit --prod --audit-level high",
-    "verify": "pnpm check:secrets && turbo run check:architecture typecheck lint test test:integration"
+    "phase:1:gate": "node scripts/phase-1-gate.mjs",
+    "verify": "pnpm check:secrets && pnpm lint && turbo run check:architecture typecheck test test:integration"
   },
   "devDependencies": {
+    "eslint": "10.4.1",
     "turbo": "2.9.16",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.60.1"
   }
 }

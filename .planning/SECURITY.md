@@ -107,6 +107,23 @@ Phase 1 cannot complete until:
 - Auth, reset, session revocation, pairing rate limits and secure cookie configuration are tested.
 - Empty-database and upgrade migration tests pass.
 
+### Phase 1 Verification Procedure
+
+Run `pnpm phase:1:gate` from the repository root. The command orchestrates:
+
+- Architecture boundaries, TypeScript analysis, lint/static analysis and unit/component tests.
+- Database migration, forced-RLS, runtime-role privilege, cross-duo isolation and pairing concurrency tests through `TEST_DATABASE_URL`.
+- A production Next.js build followed by source and built-client secret scanning.
+- Production dependency audit for unresolved high or critical findings.
+- Playwright auth, pairing, route-isolation, session-revocation and accessibility checks against an isolated test deployment.
+- Static validation that the security contract, numbered migrations and restore rehearsal runbook remain present.
+
+The command exits nonzero on a real failure. Missing external test environments are reported as explicit skips and remain release blockers until the skipped checks are executed. A skip is not evidence that a control passed.
+
+### Known Critical Or High Findings
+
+None recorded as of the Phase 1 gate implementation on 2026-06-03. This statement does not replace the live database, browser, dependency and deployed-environment checks required by the gate.
+
 ### Every Phase Gate
 
 Every phase that adds a table, endpoint, mutation or integration must:
@@ -148,4 +165,4 @@ Production launch is blocked until:
 - https://turborepo.dev/docs/reference/boundaries - Turborepo boundary checks.
 
 ---
-*Last updated: 2026-06-03 after security hardening*
+*Last updated: 2026-06-03 after Phase 1 gate implementation*

@@ -141,8 +141,50 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
       })
     ).rejects.toThrow(/row-level security|query would be affected/i);
   });
+
+  test("reviewed hot queries retain pairing and membership indexes", async () => {
+    const duo = await createDuoWithPairingCode(pool, makeTestUserId("plan-review"));
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+      await client.query("SET LOCAL enable_seqscan = off");
+      const pairingPlan = await client.query<{ "QUERY PLAN": string }>(
+        `
+          EXPLAIN (COSTS OFF)
+          SELECT id
+          FROM app.pairing_codes
+          WHERE code = $1
+            AND revoked_at IS NULL
+            AND claimed_at IS NULL
+          LIMIT 1
+        `,
+        [duo.pairingCode]
+      );
+      const membershipPlan = await client.query<{ "QUERY PLAN": string }>(
+        `
+          EXPLAIN (COSTS OFF)
+          SELECT duo_id
+          FROM app.duo_members
+          WHERE user_id = $1
+          LIMIT 1
+        `,
+        [duo.ownerUserId]
+      );
+
+      expect(planText(pairingPlan.rows)).toContain("app_pairing_codes_active_code_uidx");
+      expect(planText(membershipPlan.rows)).toContain("app_duo_members_user_uidx");
+    } finally {
+      await client.query("ROLLBACK");
+      client.release();
+    }
+  });
 });
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error ?? "");
+}
+
+function planText(rows: Array<{ "QUERY PLAN": string }>): string {
+  return rows.map((row) => row["QUERY PLAN"]).join("\n");
 }

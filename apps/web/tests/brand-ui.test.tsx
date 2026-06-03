@@ -1,5 +1,4 @@
 import { cleanup, render, screen } from "@testing-library/react";
-import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const authSessionMock = vi.hoisted(() => {
