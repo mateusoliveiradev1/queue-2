@@ -13,6 +13,7 @@ import type {
 import {
   evaluateMainFlowEligibility,
   getAvailabilityState,
+  getCatalogDescriptionState,
   getEstimatedTimeState,
   getFreshnessState,
   getSourceAttribution
@@ -66,6 +67,24 @@ describe("catalog policy", () => {
     expect(getAvailabilityState([], now)).toEqual({
       kind: "missing",
       label: "Nao verificado"
+    });
+  });
+
+  it("returns reviewed QUEUE/2 description state for published localization records", () => {
+    expect(getCatalogDescriptionState(catalogLocalization(), now)).toEqual({
+      kind: "published",
+      description: "Uma aventura coop sobre reconciliacao.",
+      sourceLabel: "Descricao revisada: QUEUE/2",
+      sourceUrl: null,
+      freshnessLabel: "Atualizado hoje"
+    });
+  });
+
+  it("returns honest unavailable PT-BR copy when no published localization is visible", () => {
+    expect(getCatalogDescriptionState(null, now)).toEqual({
+      kind: "missing",
+      description: "Descricao em portugues ainda nao revisada.",
+      sourceLabel: "Descricao em portugues ainda nao revisada"
     });
   });
 });
@@ -157,6 +176,22 @@ describe("catalog use cases", () => {
         hasCoreDetails: false,
         missingLabels: ["descricao"]
       }
+    });
+  });
+
+  it("treats draft or review localizations as invisible to normal read records", async () => {
+    const repository = createRepository([
+      catalogGame({
+        description: "Draft text should not be shown.",
+        localization: null
+      })
+    ]);
+
+    await expect(
+      getCatalogGameDetailUseCase("it-takes-two", repository, now)
+    ).resolves.toMatchObject({
+      description: "Descricao em portugues ainda nao revisada.",
+      descriptionSourceLabel: "Descricao em portugues ainda nao revisada"
     });
   });
 });
