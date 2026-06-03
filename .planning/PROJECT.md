@@ -122,8 +122,8 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - Sessao Live possui cronometro, confirmacao dos dois jogadores e bonus de 30 XP.
 - "Jogamos Hoje" registra uma sessao offline rapidamente, em aproximadamente dois cliques.
 - Cada jogo possui timeline de sessoes com marcadores especiais, incluindo primeira sessao, sessao noturna e maratona.
-- Milestones automaticos incluem 50% e 100% do HLTB, "Voces tao viciados" e lembrete de Pausar.
-- O progresso possui tres camadas: tempo coop comparado ao HLTB, capitulos manuais com 25 XP por capitulo e percentual subjetivo.
+- Milestones automaticos incluem 50% e 100% do tempo estimado, "Voces tao viciados" e lembrete de Pausar.
+- O progresso possui tres camadas: tempo coop comparado a um tempo estimado com fonte identificada, capitulos manuais com 25 XP por capitulo e percentual subjetivo.
 - A dupla pode agendar sessao com push 30 minutos antes e recebe 100 XP se ambos confirmarem.
 - A dupla pode anotar Momentos inline e marcar spoilers.
 - Zerado e Dropado exigem confirmacao dupla.
@@ -150,7 +150,7 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
   3. Surpresa a partir de pool ainda nao visto.
   4. Quiz de mood com tres perguntas.
   5. Busca com autocomplete.
-- Filtros incluem tempo HLTB, plataforma comum detectada automaticamente, tipo de coop, mood, ano, genero, raridade e disponibilidade free/Game Pass.
+- Filtros incluem tempo estimado, plataforma comum detectada automaticamente, tipo de coop, mood, ano, genero, raridade e disponibilidade free/Game Pass.
 - Recomendacoes combinam similaridade de tags e filtragem colaborativa.
 - Estados de biblioteca: Wishlist, Jogando, Zerado, Dropado e Pausado.
 
@@ -191,8 +191,10 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 ### Backend And Data Architecture
 
 - Lovable Cloud foi removido da arquitetura.
+- Next.js App Router e a base full-stack da aplicacao, com deploy e funcoes de servidor na Vercel.
 - Neon Postgres e o banco principal.
 - Better Auth self-hosted e o sistema de autenticacao, executado no runtime da aplicacao e usando o mesmo Neon Postgres.
+- Drizzle ORM e a camada tipada de schema, queries e migrations, com SQL explicito para RLS, funcoes e constraints avancadas.
 - Better Auth deve ter suas tabelas em schema dedicado, como `auth`, separado das tabelas de dominio.
 - A UI de autenticacao e customizada para QUEUE/2; nao usar UI generica de provedor.
 - A primeira versao suporta email e senha, verificacao de email, recuperacao de senha e gerenciamento de sessoes.
@@ -204,6 +206,9 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - Funcoes transacionais aplicam XP, level, quests e achievements de forma atomica.
 - Jobs agendados e integracoes externas rodam em runtime de servidor, nao no cliente.
 - RAWG e a fonte inicial do catalogo de jogos; `RAWG_API_KEY` ja foi recebida e deve permanecer somente no servidor.
+- Paginas que usam dados ou imagens RAWG devem manter atribuicao e hyperlink ativo conforme os termos do provedor.
+- Tempo de conclusao e tratado como `tempo estimado`, com fonte, frescor e override manual; a marca HLTB nao e usada sem integracao oficial ou permissao.
+- Disponibilidade free/Game Pass e tratada como dado curado e potencialmente desatualizado, sempre com fonte e data de verificacao.
 - Branches Neon devem separar desenvolvimento, previews/testes e producao.
 
 ### Initial Domain Tables
@@ -226,6 +231,12 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - `quests_catalog`
 - `quest_progress`
 - `notifications`
+- `duo_xp_ledger` para auditoria e idempotencia de XP
+- `domain_events` para efeitos derivados, replay e outbox
+- `scheduled_jobs` para jobs vencidos, tentativas, locks e erros
+- `push_subscriptions` por usuario e dispositivo
+- `game_availability` com fonte e data de verificacao
+- `game_time_estimates` com fonte e override
 
 ### Scheduled And External Work
 
@@ -243,8 +254,10 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 - **Platform**: Web responsiva primeiro - aplicativo nativo esta fora de escopo.
 - **Database**: Neon Postgres substitui Lovable Cloud - dados, migrations e isolamento devem ser projetados para PostgreSQL.
 - **Authentication**: Better Auth self-hosted substitui Neon Auth e Clerk - a equipe assume operacao e configuracao segura do sistema de auth.
+- **Framework**: Next.js App Router e Vercel formam a base de producao - o prototipo Lovable permanece apenas como referencia visual.
 - **Security**: Dados de uma dupla nunca podem vazar para outra - autorizacao de servidor e RLS devem ser verificadas.
 - **Secrets**: `RAWG_API_KEY`, credenciais de email, secrets de auth e conexoes privilegiadas permanecem no servidor.
+- **External data**: RAWG exige atribuicao; tempo estimado e disponibilidade precisam expor fonte e frescor.
 - **Visual quality**: UI deve parecer produto intencional e proprio, nao template SaaS ou arcade neon generico.
 - **Accessibility**: Contraste, foco, touch targets e reduced motion nao podem ser sacrificados pela estetica.
 - **Language**: A experiencia principal e escrita em portugues brasileiro.
@@ -266,6 +279,10 @@ A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e ce
 | Better Auth self-hosted no lugar de Neon Auth e Clerk | Evita depender de Neon Auth Beta e preserva controle sobre UX e extensibilidade | - Pending |
 | Acesso de dominio mediado pelo servidor por padrao | Evita tornar Neon Data API Beta uma dependencia critica da v1 | - Pending |
 | RLS por dupla como defesa em profundidade | Isolamento de dados e requisito estrutural do produto | - Pending |
+| Next.js App Router e Vercel como base de producao | O repositorio e greenfield e TanStack Start ainda esta em Release Candidate; a base escolhida reduz risco operacional | - Pending |
+| Drizzle ORM com SQL explicito para recursos avancados | Mantem queries tipadas sem esconder transacoes, RLS e constraints de Postgres | - Pending |
+| `tempo estimado` no lugar de HLTB obrigatorio | Nao foi identificada API publica oficial de HLTB; a UI deve representar apenas dados com fonte permitida | - Pending |
+| Dados de disponibilidade com fonte e frescor | Game Pass e ofertas mudam e nao devem parecer verdade em tempo real sem verificacao | - Pending |
 
 ## Evolution
 
@@ -285,4 +302,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-06-03 after initialization*
+*Last updated: 2026-06-03 after project research*
