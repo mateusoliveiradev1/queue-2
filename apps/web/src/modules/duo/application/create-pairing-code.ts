@@ -1,7 +1,8 @@
 import {
   canCreatePairingCode,
   classifyMembershipState,
-  DEFAULT_DUO_TIMEZONE
+  DEFAULT_DUO_TIMEZONE,
+  validatePlainText
 } from "../domain/duo-policy";
 import {
   createPairingCodeFromRandomIndex,
@@ -25,7 +26,11 @@ export async function createPairingCodeUseCase(
     now: () => Date;
   }
 ): Promise<CreatePairingCodeResult> {
-  await dependencies.repository.ensureProfile(input.userId, input.displayName);
+  const displayName = validatePlainText(input.displayName, "display-name");
+  await dependencies.repository.ensureProfile(
+    input.userId,
+    displayName.ok ? displayName.value : "Jogador da fila"
+  );
 
   const context = await dependencies.repository.getUserContext(input.userId);
   const membershipState = classifyMembershipState({

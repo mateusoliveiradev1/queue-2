@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 
 import { AppShell } from "../../../components/app-shell";
+import {
+  buildDuoPath,
+  getDuoDashboard,
+  getDuoStatusMessage,
+  profileUpdateResultToStatus,
+  updateProfileDisplayName
+} from "../../../modules/duo";
 import {
   getVerifiedProfileAuthContext,
   logoutCurrentSessionAction,
@@ -20,7 +28,21 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
     getVerifiedProfileAuthContext(),
     searchParams
   ]);
+  const dashboard = await getDuoDashboard(currentSession.user.id);
+
+  if (dashboard.routeState === "pairing") {
+    redirect("/parear");
+  }
+
+  if (dashboard.routeState === "naming") {
+    redirect("/app/dupla?estado=dupla-formada");
+  }
+
   const state = getSearchParam(params?.estado);
+  const statusMessage =
+    state === "sessao-revogada"
+      ? "Sessao revogada quando ainda estava ativa."
+      : getDuoStatusMessage(state);
   const currentSessionId = currentSession.session.id;
 
   return (
@@ -36,37 +58,44 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
         </div>
       </header>
 
+      {statusMessage ? (
+        <p className="status-banner" role="status">
+          {statusMessage}
+        </p>
+      ) : null}
+
       <section className="surface-band app-section" aria-labelledby="display-name-section">
         <h2 className="eyebrow" id="display-name-section">
           Nome de exibicao
         </h2>
-        <div className="field">
-          <label htmlFor="profile-display-name">Nome de exibicao</label>
-          <input
-            className="queue2-input"
-            disabled
-            id="profile-display-name"
-            maxLength={40}
-            name="displayName"
-            readOnly
-            type="text"
-            value={currentSession.user.name}
-          />
-        </div>
-        <p className="support-copy">
-          Nomes ficam curtos, em texto simples e sem formatacao.
-        </p>
+        <form action={updateProfileDisplayNameAction} className="form-stack">
+          <div className="field">
+            <label htmlFor="profile-display-name">Nome de exibicao</label>
+            <input
+              className="queue2-input"
+              defaultValue={dashboard.profileDisplayName || currentSession.user.name}
+              id="profile-display-name"
+              maxLength={40}
+              name="displayName"
+              required
+              type="text"
+            />
+          </div>
+          <p className="support-copy">
+            Nomes ficam curtos, em texto simples e sem formatacao.
+          </p>
+          <div className="form-actions">
+            <button className="queue2-button" data-tone="primary" type="submit">
+              Salvar nome
+            </button>
+          </div>
+        </form>
       </section>
 
       <section className="surface-band app-section" aria-labelledby="sessions-section">
         <h2 className="eyebrow" id="sessions-section">
           Sessoes ativas
         </h2>
-        {state === "sessao-revogada" ? (
-          <p className="neutral-state" role="status">
-            Sessao revogada quando ainda estava ativa.
-          </p>
-        ) : null}
         <ul className="session-list">
           {activeSessions.map((session) => {
             const isCurrentSession = session.id === currentSessionId;
@@ -75,13 +104,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
               <li key={session.id}>
                 <span>{isCurrentSession ? "Navegador atual" : "Sessao ativa"}</span>
                 <span className="muted">
-                  {isCurrentSession ? "Ativo agora" : `Atualizada em ${formatSessionDate(session.updatedAt)}`}
+                  {isCurrentSession
+                    ? "Ativo agora"
+                    : `Atualizada em ${formatSessionDate(session.updatedAt)}`}
                 </span>
                 {isCurrentSession ? null : (
                   <form action={revokeSessionAction}>
                     <input name="sessionId" type="hidden" value={session.id} />
                     <button className="queue2-button" data-tone="quiet" type="submit">
-                      Revogar
+                      Encerrar sessao
                     </button>
                   </form>
                 )}
@@ -108,12 +139,29 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
   );
 }
 
-function getSearchParam(value: string | string[] | undefined): string | null {
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
+async function updateProfileDisplayNameAction(formData: FormData) {
+  "use server";
 
-  return value ?? null;
+  const { currentSession } = await getVerifiedProfileAuthContext();
+  const result = await updateProfileDisplayName({
+    userId: currentSession.user.id,
+    displayName: getFormString(formData, "displayName")
+  });
+
+  redirect(
+    buildDuoPath("/app/perfil", {
+      estado: profileUpdateResultToStatus(result)
+    })
+  );
+}
+
+function getFormString(formData: FormData, key: string): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getSearchParam(value: string | string[] | undefined): string | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
 }
 
 function formatSessionDate(value: Date): string {

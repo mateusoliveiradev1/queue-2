@@ -21,6 +21,17 @@ import {
 import { duoRepository } from "./infrastructure/duo-repository";
 import { persistentPairingAttemptLimiter } from "../../platform/rate-limit/persistent";
 
+export {
+  buildDuoPath,
+  duoUpdateResultToStatus,
+  formatPairingCodeExpiry,
+  formatPairingDate,
+  getDuoStatusMessage,
+  joinResultToStatus,
+  profileUpdateResultToStatus,
+  type DuoStatusState
+} from "./presentation/view-models";
+
 export const DUO_MEMBER_LIMIT = 2 as const;
 
 export type {

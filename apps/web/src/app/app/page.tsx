@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { RoulettePointer } from "@queue/ui";
 
 import { AppShell } from "../../components/app-shell";
+import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
 import { requireVerifiedSession } from "../../platform/auth/session";
 
 export const metadata: Metadata = {
@@ -26,7 +28,7 @@ const ritual = [
 const lockedSteps = [
   {
     title: "Descoberta",
-    text: "Entra depois que auth e catalogo estiverem ligados."
+    text: "Esse passo vem depois. Por agora, sua dupla ja esta pronta para comecar."
   },
   {
     title: "Roleta",
@@ -39,17 +41,32 @@ const lockedSteps = [
 ] as const;
 
 export default async function DashboardPage() {
-  await requireVerifiedSession();
+  const session = await requireVerifiedSession();
+  const dashboard = await getDuoDashboard(session.user.id);
+
+  if (dashboard.routeState === "pairing") {
+    redirect("/parear");
+  }
+
+  if (dashboard.routeState === "naming") {
+    redirect("/app/dupla?estado=dupla-formada");
+  }
+
+  const duo = dashboard.duo;
+
+  if (!duo?.name || !duo.pairedAt) {
+    redirect("/parear");
+  }
 
   return (
     <AppShell currentPage="dashboard">
       <header className="app-header">
         <div>
           <p className="eyebrow">Primeiro momento autenticado</p>
-          <h1 className="page-title">Fila ainda vazia</h1>
+          <h1 className="page-title">A fila ainda esta vazia.</h1>
           <p className="lede">
-            A dupla ja tem um lugar para comecar. O proximo passo real e
-            descobrir jogos para formar a fila.
+            Agora que a dupla existe, o proximo passo e descobrir jogos para
+            colocar na fila.
           </p>
         </div>
       </header>
@@ -61,13 +78,17 @@ export default async function DashboardPage() {
         <div className="metric-grid">
           <div className="metric">
             <span className="muted">Dupla</span>
-            <strong>Fila sem nome</strong>
-            <span className="muted">Nomear vem depois do pareamento real.</span>
+            <strong>{duo.name}</strong>
+            <span className="muted">
+              Pareados em {formatPairingDate(duo.pairedAt, duo.timezone)}.
+            </span>
           </div>
           <div className="metric">
             <span className="muted">Membros</span>
-            <strong>2 vagas</strong>
-            <span className="muted">Nenhum progresso solo sera criado.</span>
+            <strong>{duo.members.length}/2</strong>
+            <span className="muted">
+              {duo.members.map((member) => member.displayName).join(" + ")}
+            </span>
           </div>
           <div className="metric">
             <span className="muted">Fila</span>

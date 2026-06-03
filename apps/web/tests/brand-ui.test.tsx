@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { createElement } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const authSessionMock = vi.hoisted(() => {
   const currentSession = {
@@ -39,12 +39,91 @@ const authSessionMock = vi.hoisted(() => {
   };
 });
 
+const duoModuleMock = vi.hoisted(() => {
+  const memberOne = {
+    userId: "user-1",
+    displayName: "Jogador da fila",
+    memberSlot: 1 as const,
+    joinedAt: new Date("2026-06-03T09:00:00.000Z")
+  };
+  const memberTwo = {
+    userId: "user-2",
+    displayName: "Parceiro da fila",
+    memberSlot: 2 as const,
+    joinedAt: new Date("2026-06-03T10:00:00.000Z")
+  };
+  const duo = {
+    id: "duo-1",
+    name: "Dupla do sofa",
+    pairedAt: new Date("2026-06-03T10:00:00.000Z"),
+    timezone: "America/Sao_Paulo",
+    notificationsEnabled: true,
+    audioEnabled: true,
+    members: [memberOne, memberTwo]
+  };
+
+  return {
+    noDuo: {
+      routeState: "pairing" as const,
+      profileDisplayName: "Jogador da fila",
+      duo: null,
+      activePairingCode: null
+    },
+    awaiting: {
+      routeState: "pairing" as const,
+      profileDisplayName: "Jogador da fila",
+      duo: {
+        ...duo,
+        name: null,
+        pairedAt: null,
+        members: [memberOne]
+      },
+      activePairingCode: {
+        id: "code-1",
+        duoId: "duo-1",
+        code: "Q2K7M9",
+        expiresAt: new Date("2026-06-04T10:00:00.000Z"),
+        revokedAt: null,
+        claimedAt: null
+      }
+    },
+    ready: {
+      routeState: "ready" as const,
+      profileDisplayName: "Jogador da fila",
+      duo,
+      activePairingCode: null
+    },
+    getDuoDashboard: vi.fn()
+  };
+});
+
 vi.mock("../src/platform/auth/session", () => ({
   getVerifiedProfileAuthContext: vi.fn(async () => authSessionMock),
   logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession),
   revokeSessionAction: vi.fn(async () => undefined)
 }));
+
+vi.mock("../src/modules/duo", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/modules/duo")>();
+
+  return {
+    ...actual,
+    createPairingCode: vi.fn(async () => ({
+      ok: true,
+      state: "code-created",
+      code: duoModuleMock.awaiting.activePairingCode
+    })),
+    getDuoDashboard: duoModuleMock.getDuoDashboard,
+    joinDuo: vi.fn(async () => ({ ok: true, state: "paired", duoId: "duo-1" })),
+    revokePairingCode: vi.fn(async () => ({ ok: true, state: "code-revoked" })),
+    updateDuoSettings: vi.fn(async () => ({ ok: true, state: "duo-updated" })),
+    updateProfileDisplayName: vi.fn(async () => ({
+      ok: true,
+      state: "profile-updated"
+    }))
+  };
+});
 
 import SignupPage from "../src/app/(public)/cadastro/page";
 import LoginPage from "../src/app/(public)/login/page";
@@ -57,6 +136,10 @@ import ProfilePage from "../src/app/app/perfil/page";
 
 afterEach(() => {
   cleanup();
+});
+
+beforeEach(() => {
+  duoModuleMock.getDuoDashboard.mockResolvedValue(duoModuleMock.noDuo);
 });
 
 describe("public QUEUE/2 route surfaces", () => {
@@ -94,25 +177,25 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByText(/mensagem e neutra/i)).toBeInTheDocument();
   });
 
-  it("renders pairing create-code mode with copy, validity and neutral errors", () => {
-    render(createElement(PairingPage));
+  it("renders pairing create-code mode with copy and validity", async () => {
+    duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.awaiting);
+    render(await PairingPage());
 
-    expect(screen.getByRole("button", { name: /criar dupla/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /entrar com codigo/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /criar dupla/i })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: /entrar com codigo/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/codigo de pareamento q2k7m9/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copiar codigo/i })).toBeInTheDocument();
-    expect(screen.getByText(/validade: ate amanha/i)).toBeInTheDocument();
-    expect(screen.getByText(/codigo invalido/i)).toBeInTheDocument();
-    expect(screen.getByText(/codigo nao ativo/i)).toBeInTheDocument();
-    expect(screen.getByText(/muitas tentativas/i)).toBeInTheDocument();
+    expect(screen.getByText(/validade:/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /revogar convite/i })).toBeInTheDocument();
   });
 });
 
 describe("authenticated Phase 1 surfaces", () => {
   it("renders the empty dashboard with the exact three-step ritual", async () => {
+    duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     render(await DashboardPage());
 
-    expect(screen.getByRole("heading", { name: /fila ainda vazia/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /a fila ainda esta vazia/i })).toBeInTheDocument();
     expect(screen.getByText("descobrir")).toBeInTheDocument();
     expect(screen.getByText("sortear")).toBeInTheDocument();
     expect(screen.getByText("zerar")).toBeInTheDocument();
@@ -120,16 +203,18 @@ describe("authenticated Phase 1 surfaces", () => {
   });
 
   it("renders profile display name, active sessions and logout sections", async () => {
+    duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     const { container } = render(await ProfilePage());
 
     expect(screen.getAllByText(/nome de exibicao/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /sessoes ativas/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /revogar/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /encerrar sessao/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^sair$/i })).toBeInTheDocument();
     expectEveryVisibleFormControlHasName(container);
   });
 
   it("renders duo identity, members, paired date, timezone and preferences", async () => {
+    duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     const { container } = render(await DuoPage());
 
     expect(screen.getAllByText(/nome da dupla/i).length).toBeGreaterThan(0);

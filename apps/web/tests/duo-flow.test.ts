@@ -25,6 +25,10 @@ const pairingMigrationSource = readFileSync(
   "../../packages/db/src/migrations/0002_pairing_runtime.sql",
   "utf8"
 );
+const pairingPageSource = readFileSync("src/app/(public)/parear/page.tsx", "utf8");
+const dashboardPageSource = readFileSync("src/app/app/page.tsx", "utf8");
+const duoPageSource = readFileSync("src/app/app/dupla/page.tsx", "utf8");
+const profilePageSource = readFileSync("src/app/app/perfil/page.tsx", "utf8");
 
 describe("duo pairing flow", () => {
   it("creates and revokes a 24-hour pairing code for a user without a duo", async () => {
@@ -171,6 +175,30 @@ describe("duo persistence contract", () => {
     expect(pairingMigrationSource).toContain("pairing_code_formed");
     expect(pairingMigrationSource).toContain("revoke_pairing_code");
     expect(pairingMigrationSource).toContain("REVOKE ALL ON FUNCTION");
+  });
+});
+
+describe("duo route-state wiring", () => {
+  it("routes pairing actions through the duo public entrypoint", () => {
+    expect(pairingPageSource).toContain('from "../../../modules/duo"');
+    expect(pairingPageSource).toContain("createPairingCode");
+    expect(pairingPageSource).toContain("joinDuo");
+    expect(pairingPageSource).not.toContain("modules/duo/application");
+    expect(pairingPageSource).not.toContain("modules/duo/infrastructure");
+  });
+
+  it("redirects verified users without a duo away from authenticated app routes", () => {
+    expect(dashboardPageSource).toContain('redirect("/parear")');
+    expect(duoPageSource).toContain('redirect("/parear")');
+    expect(profilePageSource).toContain('redirect("/parear")');
+    expect(dashboardPageSource).toContain("getDuoDashboard");
+    expect(profilePageSource).toContain("getDuoDashboard");
+  });
+
+  it("does not request push permission in Phase 1 preferences", () => {
+    expect(duoPageSource).not.toContain("Notification.requestPermission");
+    expect(duoPageSource).not.toContain("PushManager");
+    expect(duoPageSource).toContain("Push so sera pedido depois");
   });
 });
 

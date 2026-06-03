@@ -1,6 +1,7 @@
 import {
   canJoinPairingCode,
-  classifyMembershipState
+  classifyMembershipState,
+  validatePlainText
 } from "../domain/duo-policy";
 import {
   isPairingCodeFormat,
@@ -43,7 +44,11 @@ export async function joinDuoUseCase(
     return { ok: false, state: "invalid" };
   }
 
-  await dependencies.repository.ensureProfile(input.userId, input.displayName);
+  const displayName = validatePlainText(input.displayName, "display-name");
+  await dependencies.repository.ensureProfile(
+    input.userId,
+    displayName.ok ? displayName.value : "Jogador da fila"
+  );
   const context = await dependencies.repository.getUserContext(input.userId);
   const membershipState = classifyMembershipState({
     memberCount: context.membership?.members.length ?? 0,
