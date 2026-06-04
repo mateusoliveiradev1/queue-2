@@ -246,7 +246,13 @@ function validateExpectedName(
 }
 
 function normalizeComparableName(value: string): string {
-  return value.trim().toLocaleLowerCase("en-US");
+  return value
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^\p{Letter}\p{Number}]+/gu, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("en-US");
 }
 
 function plannedChanges(

@@ -235,6 +235,42 @@ describe("catalog sync orchestration", () => {
     expect(repository.syncRawgGame).not.toHaveBeenCalled();
   });
 
+  it("allows expected RAWG names that differ only by punctuation", async () => {
+    const repository = {
+      searchGames: vi.fn(),
+      getGameBySlug: vi.fn(),
+      upsertGame: vi.fn(),
+      upsertGames: vi.fn(),
+      syncRawgGame: vi.fn(async () => "game-1")
+    };
+
+    const result = await runCatalogSync({
+      mode: "apply",
+      allowlist: [
+        {
+          ...allowlistEntry(),
+          expectedName: "Sackboy: A Big Adventure",
+          rawgRef: "sackboy-a-big-adventure",
+          slug: "sackboy-a-big-adventure"
+        }
+      ],
+      rawgClient: {
+        searchGames: vi.fn(),
+        getGame: vi.fn(async () =>
+          rawgInput({
+            name: "Sackboy A Big Adventure",
+            slug: "sackboy-a-big-adventure"
+          })
+        )
+      },
+      repository,
+      audit: fakeAudit()
+    });
+
+    expect(result.failedCount).toBe(0);
+    expect(repository.syncRawgGame).toHaveBeenCalledOnce();
+  });
+
   it("keeps It Takes Two on the official RAWG entry with the QUEUE/2 slug", () => {
     expect(catalogSyncAllowlist[0]).toMatchObject({
       expectedName: "It Takes Two",
