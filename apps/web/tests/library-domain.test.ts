@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  getLibraryMovePolicy
+  getLibraryMovePolicy,
+  getLibraryViewStatuses,
+  isActiveQueueStatus,
+  isArchiveStatus,
+  normalizeLibraryLimit,
+  normalizeLibraryPage,
+  normalizeLibrarySort,
+  normalizeLibraryView
 } from "../src/modules/library/domain/library-policy";
 import {
   calculateMatchScore
@@ -40,6 +47,47 @@ describe("library platform policy", () => {
 });
 
 describe("library status policy", () => {
+  it("separates the active operational queue from the archive contract", () => {
+    expect(isActiveQueueStatus("wishlist")).toBe(true);
+    expect(isActiveQueueStatus("jogando")).toBe(true);
+    expect(isActiveQueueStatus("pausado")).toBe(true);
+    expect(isActiveQueueStatus("zerado")).toBe(false);
+    expect(isActiveQueueStatus("dropado")).toBe(false);
+
+    expect(isArchiveStatus("zerado")).toBe(true);
+    expect(isArchiveStatus("dropado")).toBe(true);
+    expect(isArchiveStatus("wishlist")).toBe(false);
+
+    expect(getLibraryViewStatuses("todas")).toEqual([
+      "wishlist",
+      "jogando",
+      "pausado"
+    ]);
+    expect(getLibraryViewStatuses("arquivo")).toEqual(["zerado", "dropado"]);
+    expect(getLibraryViewStatuses("jogando")).toEqual(["jogando"]);
+  });
+
+  it("normalizes Biblioteca view, sort, page and page-size inputs", () => {
+    expect(normalizeLibraryView("wishlist")).toBe("wishlist");
+    expect(normalizeLibraryView("Arquivo")).toBe("arquivo");
+    expect(normalizeLibraryView("unknown")).toBe("todas");
+
+    expect(normalizeLibrarySort("recentes")).toBe("recentes");
+    expect(normalizeLibrarySort("match")).toBe("match");
+    expect(normalizeLibrarySort("nome")).toBe("nome");
+    expect(normalizeLibrarySort("raridade")).toBe("recentes");
+
+    expect(normalizeLibraryPage("3")).toBe(3);
+    expect(normalizeLibraryPage("0")).toBe(1);
+    expect(normalizeLibraryPage("abc")).toBe(1);
+
+    expect(normalizeLibraryLimit("12")).toBe(12);
+    expect(normalizeLibraryLimit("24")).toBe(24);
+    expect(normalizeLibraryLimit("99")).toBe(24);
+    expect(normalizeLibraryLimit("13")).toBe(12);
+    expect(normalizeLibraryLimit("abc")).toBe(12);
+  });
+
   it("blocks future confirmation statuses during Phase 2", () => {
     expect(
       getLibraryMovePolicy({
