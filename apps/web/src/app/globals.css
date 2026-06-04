@@ -1467,6 +1467,10 @@ input {
   padding: 0;
 }
 
+.discovery-tray:has([data-discovery-tray="matches"]) {
+  grid-column: 1 / -1;
+}
+
 .discovery-stage-trays[hidden],
 .discovery-tray[hidden] {
   display: none;
@@ -2132,12 +2136,20 @@ input {
   gap: var(--space-4);
 }
 
+.match-history {
+  gap: var(--space-5);
+}
+
+.match-history-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+}
+
 .match-history-card {
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   border-radius: var(--radius-sharp);
   display: grid;
   gap: var(--space-4);
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: minmax(128px, 168px) minmax(0, 1fr);
   min-height: 220px;
   padding: var(--space-4);
 }
@@ -2219,13 +2231,16 @@ input {
 }
 
 .match-history-card .status-controls {
+  display: grid;
   gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
 }
 
 .match-history-card .status-controls .queue2-button {
   min-height: 42px;
   padding-left: var(--space-3);
   padding-right: var(--space-3);
+  width: 100%;
 }
 
 .match-history-links {

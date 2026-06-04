@@ -440,6 +440,9 @@ describe("Phase 3 Discovery route shell", () => {
     expect(globalCssSource).toContain(".match-celebration-burst");
     expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
     expect(globalCssSource).toContain(".match-celebration-burst {\n    display: none;");
+    expect(matchHistorySource).toContain('data-discovery-tray="matches"');
+    expect(globalCssSource).toContain('.discovery-tray:has([data-discovery-tray="matches"])');
+    expect(globalCssSource).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr))");
     expect(matchHistorySource).toContain("Status atual");
     expect(matchHistorySource).toContain("Match sozinho nao vira");
   });

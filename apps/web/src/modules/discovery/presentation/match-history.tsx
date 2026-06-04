@@ -15,7 +15,11 @@ export function MatchHistory({
   returnTo: string;
 }) {
   return (
-    <section className="match-history discovery-orbit-tray" aria-labelledby="match-history-title">
+    <section
+      className="match-history discovery-orbit-tray"
+      data-discovery-tray="matches"
+      aria-labelledby="match-history-title"
+    >
       <div className="section-heading">
         <h2 className="eyebrow" id="match-history-title">
           Matches recentes
