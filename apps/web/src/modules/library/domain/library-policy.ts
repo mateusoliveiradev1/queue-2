@@ -63,6 +63,6 @@ export function getLibraryMovePolicy(input: {
 
 export function getLockedStatusLabel(status: FutureConfirmationStatus): string {
   return status === "zerado"
-    ? "Zerado exige confirmacao dupla na Fase 4"
-    : "Dropado exige confirmacao dupla na Fase 4";
+    ? "Zerado exige confirmacao dos dois"
+    : "Dropado exige confirmacao dos dois";
 }

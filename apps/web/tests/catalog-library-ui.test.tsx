@@ -189,7 +189,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "href",
       "/app/biblioteca"
     );
-    expect(screen.getByRole("heading", { name: /a fila ja pode crescer/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /a fila ja tem dono/i })).toBeInTheDocument();
     expect(screen.getByText(/1 na Wishlist/i)).toBeInTheDocument();
   });
 
@@ -200,7 +200,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       })
     );
 
-    expect(screen.getByRole("heading", { name: /descobrir sem chutar/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /garimpar coops com prova/i })).toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: /buscar no catalogo/i })).toHaveValue("take");
     expect(screen.getAllByRole("link", { name: /dados e imagens: rawg/i }).length).toBeGreaterThan(1);
     expect(screen.getByText(/coop campanha 2p confirmado/i)).toBeInTheDocument();
@@ -215,8 +215,8 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.getByLabelText("PC")).toBeChecked();
     expect(screen.getAllByText(/em comum/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText("PC").length).toBeGreaterThan(1);
-    expect(screen.getByRole("button", { name: /zerado na fase 4/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /dropado na fase 4/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /zerado bloqueado/i })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /dropado bloqueado/i })).toBeDisabled();
     expect(screen.getByText(/coop campanha 2p confirmado/i)).toBeInTheDocument();
     expectEveryVisibleFormControlHasName(container);
   });

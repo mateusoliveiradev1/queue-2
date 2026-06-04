@@ -23,7 +23,9 @@ import { requireVerifiedSession } from "../../../platform/auth/session";
 import { recordSecurityAuditEvent } from "../../../platform/security/audit";
 
 export const metadata: Metadata = {
-  title: "Parear - QUEUE/2"
+  description:
+    "Feche uma dupla fixa no QUEUE/2 com convite temporario e backlog compartilhado.",
+  title: "Fechar dupla"
 };
 
 type PairingPageProps = {
@@ -67,7 +69,7 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
             </h1>
             <p className="lede">
               Crie um codigo para a outra pessoa ou use o convite que ela mandou.
-              QUEUE/2 so comeca quando os dois estao dentro.
+              QUEUE/2 so comeca quando a fila fecha em 2/2.
             </p>
           </div>
           <PublicRitualStrip steps={["convite", "2/2", "fila"]} />
@@ -82,7 +84,7 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
           <StatusToast message={statusMessage} state={getSearchParam(params?.estado)} />
           <div className="auth-panel-header">
             <h2>{mode === "criar" ? "Criar convite" : "Usar convite"}</h2>
-            <p>Um codigo ativo fecha a dupla sem expor dados de outras contas.</p>
+            <p>Um codigo ativo forma a dupla; convites expirados nao revelam dados.</p>
           </div>
           <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
             <a
@@ -168,11 +170,11 @@ function CreateCodePanel({
   return (
     <form action={createPairingCodeAction} className="form-stack">
       <p className="support-copy">
-        Gere um codigo de seis caracteres para quem vai dividir a fila com voce.
+        Gere seis caracteres para a pessoa que vai dividir cada escolha com voce.
       </p>
       <TimezoneInput defaultValue={timezone} detectOnMount />
       <p className="support-copy">
-        Confirme o fuso da dupla. Sessoes e lembretes futuros usam esse horario.
+        Confirme o fuso da dupla. Combinados futuros usam esse horario.
       </p>
       <PendingSubmitButton
         label="Criar codigo da dupla"
@@ -216,7 +218,7 @@ function JoinCodePanel({ disabled }: { disabled: boolean }) {
         pendingLabel="Entrando..."
       />
       <p className="support-copy">
-        Um codigo ativo forma a dupla imediatamente.
+        Se o codigo estiver ativo, a dupla fecha na hora.
       </p>
     </form>
   );

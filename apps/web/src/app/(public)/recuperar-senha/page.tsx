@@ -11,7 +11,9 @@ import {
 } from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
-  title: "Recuperar senha - QUEUE/2"
+  description:
+    "Recupere a senha do QUEUE/2 sem expor quais contas existem.",
+  title: "Recuperar senha"
 };
 
 type RecoverPasswordPageProps = {
@@ -35,8 +37,8 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
               Recuperar senha
             </h1>
             <p className="lede">
-              Peca um link para voltar. Se o email existir, a gente envia sem
-              expor quais contas estao cadastradas.
+              Peca um link para voltar a fila. Se o email existir, a resposta
+              continua neutra e a conta nao fica exposta.
             </p>
           </div>
           <PublicRitualStrip steps={["senha", "entrar", "dupla"]} />
@@ -50,7 +52,7 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
             <p>
               {token
                 ? "Escolha uma senha forte para retomar a fila."
-                : "Informe o email da conta. O retorno fica neutro por seguranca."}
+                : "Informe o email da conta. A resposta fica neutra por seguranca."}
             </p>
           </div>
           {statusMessage ? (

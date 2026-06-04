@@ -15,7 +15,9 @@ import {
 import { requireVerifiedSession } from "../../../platform/auth/session";
 
 export const metadata: Metadata = {
-  title: "Dupla - QUEUE/2"
+  description:
+    "Configuracoes da dupla fixa no QUEUE/2: nome, fuso, membros e preferencias compartilhadas.",
+  title: "Dupla"
 };
 
 type DuoPageProps = {

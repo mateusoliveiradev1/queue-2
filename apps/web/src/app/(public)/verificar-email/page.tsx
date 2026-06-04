@@ -19,7 +19,9 @@ import {
 } from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
-  title: "Verificar email - QUEUE/2"
+  description:
+    "Confirme seu email no QUEUE/2 para liberar o convite da dupla.",
+  title: "Verificar email"
 };
 
 type VerifyEmailPageProps = {
@@ -62,8 +64,8 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
               Verifique seu email
             </h1>
             <p className="lede">
-              Abra o link para liberar o pareamento. Se digitou errado ou o link
-              expirou, resolva aqui sem recomecar o cadastro.
+              Abra o link antes de parear. Se digitou errado ou o link expirou,
+              corrija aqui sem recomecar a conta.
             </p>
           </div>
           <PublicRitualStrip steps={["email", "parear", "fila"]} />
@@ -78,7 +80,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
           <StatusToast message={statusMessage} state={state} />
           <div className="auth-panel-header">
             <h2>Confirmar email</h2>
-            <p>Use o link de verificacao ou peca um novo envio para o email pendente.</p>
+            <p>Use o link de verificacao ou envie outro para o email pendente.</p>
           </div>
           {email ? (
             <p className="support-copy">

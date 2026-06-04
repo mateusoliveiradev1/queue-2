@@ -18,7 +18,9 @@ import {
 } from "../../../platform/auth/session";
 
 export const metadata: Metadata = {
-  title: "Perfil - QUEUE/2"
+  description:
+    "Perfil individual no QUEUE/2 para revisar nome visivel e sessoes da conta.",
+  title: "Perfil"
 };
 
 type ProfilePageProps = {

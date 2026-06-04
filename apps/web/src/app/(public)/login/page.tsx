@@ -9,7 +9,9 @@ import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import { loginAction } from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
-  title: "Entrar - QUEUE/2"
+  description:
+    "Entre no QUEUE/2 para voltar ao backlog coop da sua dupla fixa.",
+  title: "Entrar na fila"
 };
 
 type LoginPageProps = {
@@ -32,8 +34,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
               Voltar para a fila
             </h1>
             <p className="lede">
-              Entre para continuar a dupla que voce ja formou. Progresso aqui e
-              acordo, nao ranking individual.
+              Entre para continuar a dupla que voce ja formou. Wishlist, Jogando
+              e Pausado ficam do lado dos dois, sem placar solo.
             </p>
           </div>
           <PublicRitualStrip steps={["entrar", "parear", "jogar"]} />
@@ -45,7 +47,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
           <StatusToast message={statusMessage} state={state} />
           <div className="auth-panel-header" id="login-copy">
             <h2>Entrar</h2>
-            <p>Use o email verificado e sua senha.</p>
+            <p>Use o email verificado que abriu seu lado da fila.</p>
           </div>
           {statusMessage ? (
             <p className="neutral-state" role="status">

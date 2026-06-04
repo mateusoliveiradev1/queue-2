@@ -8,7 +8,9 @@ import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library
 import { requireVerifiedSession } from "../../platform/auth/session";
 
 export const metadata: Metadata = {
-  title: "Fila - QUEUE/2"
+  description:
+    "Painel da fila coop da dupla: jogos no backlog, plataformas comuns e proximos passos.",
+  title: "Fila da dupla"
 };
 
 const ritual = [
@@ -29,12 +31,12 @@ const ritual = [
 const nextActions = [
   {
     title: "Catalogo",
-    text: "Comece por jogos com fonte visivel e coop campanha confirmado.",
+    text: "Busquem jogos com fonte visivel e coop campanha confirmado.",
     href: "/app/catalogo"
   },
   {
     title: "Biblioteca",
-    text: "Organize Wishlist, Jogando e Pausado sem fingir sessoes futuras.",
+    text: "Separem vontade, prioridade e pausa sem perder o combinado.",
     href: "/app/biblioteca"
   },
   {
@@ -72,11 +74,10 @@ export default async function DashboardPage() {
       <header className="app-header">
         <div>
           <p className="eyebrow">Dupla formada</p>
-          <h1 className="page-title">A fila ja pode crescer</h1>
+          <h1 className="page-title">A fila ja tem dono</h1>
           <p className="lede">
-            O catalogo e a biblioteca estao prontos para transformar vontade em
-            fila compartilhada. Match, roleta e sessoes continuam reservados para
-            fases futuras.
+            Catalogo e biblioteca transformam vontade em backlog compartilhado.
+            Match, roleta e sessoes entram depois que a fila tiver jogos reais.
           </p>
         </div>
       </header>
@@ -125,7 +126,7 @@ export default async function DashboardPage() {
           <h2 className="eyebrow" id="actions-title">
             Proximas acoes
           </h2>
-          <p className="support-copy">Phase 2 libera organizacao real, sem antecipar match ou sessao.</p>
+          <p className="support-copy">Organizacao real agora. Sorteio e sessoes so entram quando houver base.</p>
         </div>
         <div className="ritual-grid">
           {nextActions.map((step) => (

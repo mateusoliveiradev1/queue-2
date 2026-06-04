@@ -9,7 +9,9 @@ import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import { signupAction } from "../../../platform/auth/server-actions";
 
 export const metadata: Metadata = {
-  title: "Cadastro - QUEUE/2"
+  description:
+    "Crie uma conta no QUEUE/2 e prepare o convite para montar uma fila coop em dupla.",
+  title: "Criar conta"
 };
 
 type SignupPageProps = {
@@ -29,11 +31,11 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
           <div>
             <p className="eyebrow">Comece pelo seu lado</p>
             <h1 className="page-title" id="signup-title">
-              Criar sua entrada
+              Abrir seu lado da fila
             </h1>
             <p className="lede">
-              A conta e sua. A fila nasce quando outra pessoa entra pelo
-              convite.
+              A conta identifica voce. A fila so nasce quando a outra pessoa
+              entra pelo convite e fecha o 2/2.
             </p>
           </div>
           <PublicRitualStrip steps={["conta", "email", "dupla"]} />
@@ -44,7 +46,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
           <StatusToast message={statusMessage} state={state} />
           <div className="auth-panel-header">
             <h2>Cadastro</h2>
-            <p>Use um email real. A verificacao libera o pareamento.</p>
+            <p>Use um email real. A verificacao protege o convite da dupla.</p>
           </div>
           {statusMessage ? (
             <p className="neutral-state" role="status">

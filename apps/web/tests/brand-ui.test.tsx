@@ -204,11 +204,11 @@ describe("public QUEUE/2 route surfaces", () => {
     render(<HomePage />);
 
     expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
-    expect(screen.getByText(/nenhum jogo entra sozinho/i)).toBeInTheDocument();
+    expect(screen.getByText(/backlog compartilhado/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^entrar$/i })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: /criar conta/i })).toHaveAttribute("href", "/cadastro");
     expect(screen.getByRole("link", { name: /parear agora/i })).toHaveAttribute("href", "/parear");
-    expect(screen.getByText(/sem terceiro lugar/i)).toBeInTheDocument();
+    expect(screen.getByText(/fila com dono/i)).toBeInTheDocument();
   });
 
   it("renders login with accessible email and password fields", async () => {
@@ -279,7 +279,7 @@ describe("public QUEUE/2 route surfaces", () => {
 
     expect(screen.getByRole("heading", { name: /recuperar senha/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email da conta/i)).toBeInTheDocument();
-    expect(screen.getByText(/sem expor quais contas/i)).toBeInTheDocument();
+    expect(screen.getByText(/conta nao fica exposta/i)).toBeInTheDocument();
   });
 
   it("renders pairing create-code mode with copy and validity", async () => {
@@ -342,7 +342,7 @@ describe("authenticated Phase 1 surfaces", () => {
       screen.getByRole("navigation", { name: /area autenticada queue dois/i })
     );
 
-    expect(screen.getByRole("heading", { name: /a fila ja pode crescer/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /a fila ja tem dono/i })).toBeInTheDocument();
     expect(navigation.getByRole("link", { name: /catalogo/i })).toHaveAttribute("href", "/app/catalogo");
     expect(navigation.getByRole("link", { name: /biblioteca/i })).toHaveAttribute("href", "/app/biblioteca");
     expect(screen.getByText("descobrir")).toBeInTheDocument();

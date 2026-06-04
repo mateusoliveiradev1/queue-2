@@ -27,7 +27,9 @@ import {
 } from "../phase-2-status";
 
 export const metadata: Metadata = {
-  title: "Biblioteca - QUEUE/2"
+  description:
+    "Biblioteca compartilhada do QUEUE/2 para organizar Wishlist, Jogando e Pausado da dupla.",
+  title: "Biblioteca da dupla"
 };
 
 type LibraryPageProps = {
@@ -47,7 +49,7 @@ const statusSections: Array<{
   {
     status: "jogando",
     title: "Jogando",
-    empty: "Nenhum jogo em Jogando. A Fase 2 ja respeita o limite de tres."
+    empty: "Nenhum jogo em Jogando. A fila segura no maximo tres ativos por vez."
   },
   {
     status: "pausado",
@@ -96,8 +98,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           <p className="eyebrow">Biblioteca da dupla</p>
           <h1 className="page-title">A fila compartilhada</h1>
           <p className="lede">
-            Wishlist, Jogando e Pausado ja funcionam para os dois. Zerado e
-            Dropado aparecem como promessa bloqueada ate a confirmacao dupla.
+            Wishlist, Jogando e Pausado ja movem os dois. Zerado e Dropado ficam
+            bloqueados ate a dupla confirmar conclusao ou abandono em conjunto.
           </p>
         </div>
         <a className="queue2-button" data-tone="quiet" href="/app/catalogo">
@@ -210,8 +212,8 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
             Estados futuros
           </h2>
           <p className="support-copy">
-            Estes estados existem no contrato da fila, mas ficam travados ate a
-            Fase 4 implementar confirmacao dupla.
+            Estes estados ja aparecem no contrato da fila, mas so liberam com
+            confirmacao dos dois.
           </p>
         </div>
         <div className="locked-status-grid">

@@ -28,7 +28,9 @@ import {
 } from "../../phase-2-status";
 
 export const metadata: Metadata = {
-  title: "Jogo - QUEUE/2"
+  description:
+    "Detalhe de jogo no QUEUE/2 com fontes, frescor, plataformas e contexto da dupla.",
+  title: "Detalhe do jogo"
 };
 
 type GamePageProps = {
@@ -156,7 +158,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
             Contexto da dupla
           </h2>
           <p className="support-copy">
-            Compatibilidade pratica da Fase 2, sem porcentagens falsas.
+            Compatibilidade pratica para os dois, sem porcentagens falsas.
           </p>
         </div>
         {libraryView && libraryResult.ok ? (
@@ -199,8 +201,8 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
             Jornada da dupla
           </h2>
           <p className="support-copy">
-            Sessoes, checkpoints, progresso e marcos entram quando a Fase 4
-            ativar a rotina de jogo.
+            Sessoes, checkpoints, progresso e marcos entram quando a rotina de
+            jogo for ativada.
           </p>
         </div>
         <p className="lede">

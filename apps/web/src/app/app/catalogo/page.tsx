@@ -16,7 +16,9 @@ import {
 } from "../phase-2-status";
 
 export const metadata: Metadata = {
-  title: "Catalogo - QUEUE/2"
+  description:
+    "Catalogo coop do QUEUE/2 com fonte RAWG, curadoria e criterios visiveis para a fila da dupla.",
+  title: "Catalogo coop"
 };
 
 type CatalogPageProps = {
@@ -58,10 +60,10 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
       <header className="app-header">
         <div>
           <p className="eyebrow">Catalogo coop</p>
-          <h1 className="page-title">Descobrir sem chutar</h1>
+          <h1 className="page-title">Garimpar coops com prova</h1>
           <p className="lede">
-            A sugestao principal so usa jogos com coop campanha em dupla confirmado.
-            A busca ajuda a completar a fila sem esconder fonte, frescor ou limites.
+            A carta principal so usa jogos com coop campanha em dupla confirmado.
+            A busca mostra fonte, frescor e limites antes do jogo entrar na fila.
           </p>
         </div>
         <form action="/app/catalogo" className="search-form">
@@ -93,11 +95,10 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
       <section className="surface-band app-section" aria-labelledby="suggested-game">
         <div className="section-heading">
           <h2 className="eyebrow" id="suggested-game">
-            Proxima carta da fila
+            Carta para discutir
           </h2>
           <p className="support-copy">
-            Este espaco prepara o ritual de match da Fase 3 sem ativar curtidas
-            duplas ainda.
+            Ainda nao e match. E o primeiro jogo que merece conversa da dupla.
           </p>
         </div>
         {suggestedGame ? (
@@ -124,8 +125,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
             {query ? "Resultados da busca" : "Mais jogos para avaliar"}
           </h2>
           <p className="support-copy">
-            A grade pode mostrar jogos fora do fluxo principal, mas cada card
-            explica por que ele entra ou nao na fila automatica.
+            A grade tambem mostra jogos fora do fluxo principal. Cada card diz
+            por que entra ou fica de fora da fila automatica.
           </p>
         </div>
         {supportingGames.length > 0 ? (
@@ -144,7 +145,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
             <strong>{query ? "Busca sem resultado" : "Catalogo aguardando jogos"}</strong>
             <span>
               Tente outro nome ou volte quando a sincronizacao RAWG trouxer mais
-              opcoes verificadas.
+              opcoes com fonte.
             </span>
           </div>
         )}

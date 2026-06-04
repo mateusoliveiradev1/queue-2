@@ -26,7 +26,7 @@ test.describe("Phase 2 catalog to library flow", () => {
 
     await login(page, readyActor);
     await page.goto("/app/catalogo");
-    await expect(page.getByRole("heading", { name: /descobrir sem chutar/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /garimpar coops com prova/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /dados e imagens: rawg/i }).first()).toBeVisible();
 
     await page.goto(`/app/jogo/${slug}`);
@@ -51,8 +51,8 @@ test.describe("Phase 2 catalog to library flow", () => {
 
     await page.goto("/app/biblioteca");
     await expect(page.getByRole("heading", { name: /a fila compartilhada/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /zerado na fase 4/i }).first()).toBeDisabled();
-    await expect(page.getByRole("button", { name: /dropado na fase 4/i }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: /zerado bloqueado/i }).first()).toBeDisabled();
+    await expect(page.getByRole("button", { name: /dropado bloqueado/i }).first()).toBeDisabled();
 
     await page.goto(`/app/jogo/${slug}`);
     await expect(page.getByText(/jornada da dupla/i)).toBeVisible();

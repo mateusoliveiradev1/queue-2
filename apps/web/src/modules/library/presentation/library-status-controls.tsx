@@ -35,10 +35,10 @@ export function LibraryStatusControls({
         </form>
       ))}
       <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
-        Zerado na Fase 4
+        Zerado bloqueado
       </button>
       <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
-        Dropado na Fase 4
+        Dropado bloqueado
       </button>
     </div>
   );

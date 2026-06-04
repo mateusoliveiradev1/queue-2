@@ -102,7 +102,7 @@ function formatStatus(status: string): string {
 
 function getDuoJourneyText(status: string): string {
   if (status === "jogando") {
-    return "A jornada da dupla esta pronta para receber sessoes na Fase 4.";
+    return "A jornada da dupla esta pronta para receber sessoes compartilhadas.";
   }
 
   if (status === "pausado") {

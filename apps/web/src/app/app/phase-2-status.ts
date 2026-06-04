@@ -7,13 +7,13 @@ export function getPhase2StatusMessage(state: string | null): string | null {
     case "plataformas-atualizadas":
       return "Suas plataformas foram atualizadas para a dupla.";
     case "plataforma-invalida":
-      return "Uma das plataformas enviadas nao e aceita nesta fase.";
+      return "Uma das plataformas enviadas nao e aceita na biblioteca.";
     case "status-atualizado":
       return "Status atualizado na biblioteca da dupla.";
     case "limite-jogando":
       return "Jogando ja tem tres jogos. Pause um deles antes de puxar outro.";
     case "estado-futuro-bloqueado":
-      return "Zerado e Dropado exigem confirmacao dupla na Fase 4.";
+      return "Zerado e Dropado exigem confirmacao dos dois.";
     case "biblioteca-nao-encontrada":
       return "Esse jogo ainda nao esta na biblioteca da dupla.";
     case "acao-invalida":
