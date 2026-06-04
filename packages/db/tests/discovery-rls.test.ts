@@ -182,6 +182,58 @@ describe.skipIf(!testDatabaseUrl)("discovery RLS isolation", () => {
     expect(partnerPushUpdate.rowCount).toBe(0);
   });
 
+  test("push subscription endpoint and key material are readable only by the owning member", async () => {
+    const duo = await createReadyDuo(pool, "discovery-push-read");
+    const endpoint = `https://push.queue2.test/${randomUUID()}`;
+
+    await withRuntimeUser(pool, duo.partnerUserId, (client) =>
+      client.query(
+        `
+          INSERT INTO app.discovery_push_subscriptions (
+            duo_id,
+            user_id,
+            endpoint,
+            p256dh,
+            auth_secret,
+            user_agent
+          )
+          VALUES ($1, $2, $3, 'partner-p256dh', 'partner-auth', 'vitest')
+        `,
+        [duo.duoId, duo.partnerUserId, endpoint]
+      )
+    );
+
+    const ownerRead = await withRuntimeUser(pool, duo.ownerUserId, (client) =>
+      client.query(
+        `
+          SELECT endpoint, p256dh, auth_secret
+          FROM app.discovery_push_subscriptions
+          WHERE duo_id = $1
+        `,
+        [duo.duoId]
+      )
+    );
+    const partnerRead = await withRuntimeUser(pool, duo.partnerUserId, (client) =>
+      client.query(
+        `
+          SELECT endpoint, p256dh, auth_secret
+          FROM app.discovery_push_subscriptions
+          WHERE duo_id = $1
+        `,
+        [duo.duoId]
+      )
+    );
+
+    expect(ownerRead.rowCount).toBe(0);
+    expect(partnerRead.rows).toEqual([
+      {
+        endpoint,
+        p256dh: "partner-p256dh",
+        auth_secret: "partner-auth"
+      }
+    ]);
+  });
+
   test("match and live rows mutate only through authorized duo membership", async () => {
     const duo = await createReadyDuo(pool, "discovery-shared");
     const outsider = await createReadyDuo(pool, "discovery-outsider");

@@ -125,6 +125,42 @@ test.describe("Authenticated accessibility", () => {
   }
 });
 
+test.describe("Phase 3 discovery accessibility", () => {
+  test.skip(
+    readyMissingEnv.length > 0,
+    `Missing verified named-duo discovery accessibility fixture: ${readyMissingEnv.join(", ")}`
+  );
+
+  test("discovery preserves reduced-motion, keyboard decisions and source links", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/descobrir");
+
+    await expect(page.getByRole("heading", { name: /o deck da dupla/i })).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+
+    const deck = page.getByRole("group", { name: /deck de descoberta/i });
+    await expect(deck).toBeVisible();
+    for (const name of [/quero jogar/i, /agora nao/i, /^pular$/i]) {
+      const control = deck.getByRole("button", { name }).first();
+      await expect(control).toBeVisible();
+      await control.focus();
+      await expect(control).toBeFocused();
+    }
+
+    const sourceLinks = page.getByRole("link", { name: /dados e imagens: rawg/i });
+    await expect(sourceLinks.first()).toBeVisible();
+    await sourceLinks.first().focus();
+    await expect(sourceLinks.first()).toBeFocused();
+
+    await expect(page.getByRole("button", { name: /ativar alertas push/i })).toBeVisible();
+    await expect(page.getByText(/atualizando a live|sessao curta/i).first()).toBeVisible();
+    await expectNoAxeViolations(page);
+  });
+});
+
 test.describe("Phase 2 detail accessibility", () => {
   test.skip(
     phase2DetailMissingEnv.length > 0,
