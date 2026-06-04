@@ -59,7 +59,8 @@ const duoModuleMock = vi.hoisted(() => ({
 const discoveryModuleMock = vi.hoisted(() => ({
   getDiscoveryDeck: vi.fn(),
   getMatchHistory: vi.fn(),
-  getLiveSession: vi.fn()
+  getLiveSession: vi.fn(),
+  getMoodQuizStatus: vi.fn()
 }));
 
 const libraryModuleMock = vi.hoisted(() => ({
@@ -93,7 +94,8 @@ vi.mock("../src/modules/discovery", async () => {
     ...actual,
     getDiscoveryDeck: discoveryModuleMock.getDiscoveryDeck,
     getLiveSession: discoveryModuleMock.getLiveSession,
-    getMatchHistory: discoveryModuleMock.getMatchHistory
+    getMatchHistory: discoveryModuleMock.getMatchHistory,
+    getMoodQuizStatus: discoveryModuleMock.getMoodQuizStatus
   };
 });
 
@@ -164,6 +166,14 @@ const discoverySearchSource = readFileSync(
 );
 const liveRefreshSource = readFileSync(
   "src/modules/discovery/presentation/live-session-refresh.tsx",
+  "utf8"
+);
+const livePanelSource = readFileSync(
+  "src/modules/discovery/presentation/live-panel.tsx",
+  "utf8"
+);
+const pushOptInSource = readFileSync(
+  "src/modules/discovery/presentation/push-opt-in-button.tsx",
   "utf8"
 );
 const moodQuizSource = readFileSync(
@@ -243,6 +253,16 @@ beforeEach(() => {
     matches: [],
     expiresInSeconds: 600
   });
+  discoveryModuleMock.getMoodQuizStatus.mockResolvedValue({
+    ok: true,
+    currentUserAnswered: false,
+    answeredMembers: 0,
+    mood: {
+      kind: "empty",
+      answeredMembers: 0,
+      recommendationMode: "none"
+    }
+  });
   libraryModuleMock.getLibraryOverview.mockResolvedValue({
     ok: true,
     overview: {}
@@ -315,7 +335,10 @@ describe("Phase 3 Discovery route shell", () => {
     const orbitControls = within(
       screen.getByRole("group", { name: /controles orbitais de descoberta/i })
     );
-    expect(orbitControls.getByRole("button", { name: "Live" })).toBeInTheDocument();
+    expect(orbitControls.getByRole("link", { name: "Live ativa" })).toHaveAttribute(
+      "href",
+      `/app/descobrir?live=${LIVE_SESSION_ID}#discovery-live-panel`
+    );
     expect(orbitControls.getByRole("button", { name: "Surpresa" })).toBeInTheDocument();
     expect(orbitControls.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "#mood-quiz");
     expect(orbitControls.getByRole("link", { name: "Busca" })).toHaveAttribute("href", "#discovery-search");
@@ -329,7 +352,9 @@ describe("Phase 3 Discovery route shell", () => {
     expect(container.querySelector(".discovery-filter-sheet")).not.toBeNull();
     expect(screen.getByRole("dialog", { name: /busca no deck/i })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /buscar jogo/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /iniciar match live/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /iniciar match live/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /comecar live/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText(/live ativa/i).length).toBeGreaterThanOrEqual(2);
     expect(screen.getByText(/atualizando a live/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /salvar mood/i })).toBeInTheDocument();
     expect(screen.getAllByText(/qual energia voces tem/i)).toHaveLength(1);
@@ -387,6 +412,9 @@ describe("Phase 3 Discovery route shell", () => {
       userId: "user-1",
       sessionId: LIVE_SESSION_ID
     });
+    expect(discoveryModuleMock.getMoodQuizStatus).toHaveBeenCalledWith({
+      userId: "user-1"
+    });
     expect(screen.getByRole("heading", { name: /portal 2/i })).toBeInTheDocument();
     expect(screen.getByText(/status atual: jogando/i)).toBeInTheDocument();
     expect(screen.queryByText(/reviews/i)).not.toBeInTheDocument();
@@ -394,6 +422,38 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByRole("button", { name: /zerado bloqueado/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /dropado bloqueado/i }).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
+  });
+
+  it("hides the Quiz tray after the current member has answered the current round", async () => {
+    discoveryModuleMock.getMoodQuizStatus.mockResolvedValueOnce({
+      ok: true,
+      currentUserAnswered: true,
+      answeredMembers: 1,
+      mood: {
+        kind: "preview",
+        answeredMembers: 1,
+        recommendationMode: "preview-only",
+        mood: {
+          energy: "medium",
+          commitment: "steady",
+          vibe: "flexible",
+          conflictResolution: "none"
+        }
+      }
+    });
+
+    const { container } = render(
+      await DiscoveryPage({
+        searchParams: Promise.resolve({})
+      })
+    );
+    const orbitControls = within(
+      screen.getByRole("group", { name: /controles orbitais de descoberta/i })
+    );
+
+    expect(orbitControls.queryByRole("link", { name: "Quiz" })).not.toBeInTheDocument();
+    expect(container.querySelector('[data-discovery-tray-slot="quiz"]')).toBeNull();
+    expect(screen.queryByRole("button", { name: /salvar mood/i })).not.toBeInTheDocument();
   });
 
   it("keeps tactile card decision feedback server-action based", () => {
@@ -422,6 +482,14 @@ describe("Phase 3 Discovery route shell", () => {
     expect(discoverySearchSource).toContain("Nada entrou na fila.");
     expect(discoverySearchSource).toContain("Busca indisponivel agora.");
     expect(moodQuizSource).toContain("MOOD_QUIZ_QUESTIONS.map");
+    expect(discoveryPageSource).toContain("getMoodQuizStatus");
+    expect(discoveryPageSource).toContain("currentUserAnswered");
+    expect(discoveryPageSource).toContain("getLivePanelHref");
+    expect(livePanelSource).toContain("Comecar live de 10 min");
+    expect(livePanelSource).toContain("Live ativa");
+    expect(livePanelSource).toContain("isActive ? <PushOptInButton /> : null");
+    expect(pushOptInSource).toContain("setMounted(true)");
+    expect(pushOptInSource).toContain("Verificando suporte a alertas push");
     expect(matchHistorySource).not.toMatch(/\b(review|Hall|timeline)\b/i);
     expect(globalCssSource).toContain(".discovery-orbit-tray");
     expect(globalCssSource).toContain(".discovery-search-sheet");

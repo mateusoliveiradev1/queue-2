@@ -2037,6 +2037,7 @@ input {
 
 .discovery-search-empty,
 .discovery-orbit-status,
+.live-panel-active,
 .live-refresh-status {
   border: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
   border-radius: var(--radius-sharp);
@@ -2080,6 +2081,11 @@ input {
 
 .live-panel-action {
   display: flex;
+}
+
+.live-panel-active {
+  border-color: color-mix(in oklch, var(--primary) 36%, transparent);
+  color: var(--ink);
 }
 
 .live-panel-action .queue2-button {
@@ -2469,6 +2475,10 @@ input {
 }
 
 @media (max-width: 560px) {
+  html {
+    scroll-padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
   .home-actions,
   .form-actions {
     align-items: stretch;
@@ -2482,6 +2492,50 @@ input {
 
   .search-form {
     grid-template-columns: 1fr;
+  }
+
+  .match-history-grid {
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .match-history-card {
+    align-items: start;
+    gap: var(--space-3);
+    grid-template-columns: 88px minmax(0, 1fr);
+    min-height: 0;
+    padding: var(--space-3);
+    scroll-margin-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .match-history-cover {
+    align-self: start;
+    max-height: 132px;
+    width: 100%;
+  }
+
+  .match-history-body {
+    gap: var(--space-3);
+    min-width: 0;
+  }
+
+  .match-history-card h3 {
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
+  .match-history-card .tag-row span,
+  .match-history-status,
+  .match-history-limit-note {
+    font-size: 12px;
+  }
+
+  .match-history-card .status-controls {
+    display: grid;
+    gap: var(--space-2);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    scroll-margin-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
   .status-controls,
@@ -2499,6 +2553,12 @@ input {
   .discovery-decision-actions .queue2-button,
   .discovery-handoff-actions .queue2-button {
     width: 100%;
+  }
+
+  .match-history-card .status-controls .queue2-button {
+    min-height: 40px;
+    padding-left: var(--space-2);
+    padding-right: var(--space-2);
   }
 
   .source-freshness-row {

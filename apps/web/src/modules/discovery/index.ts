@@ -5,6 +5,7 @@ import type {
 import { answerMoodQuiz } from "./application/answer-mood-quiz";
 import { getDiscoveryDeck } from "./application/get-discovery-deck";
 import { getLiveSession } from "./application/get-live-session";
+import { getMoodQuizStatus } from "./application/get-mood-quiz-status";
 import { searchDiscoveryGames } from "./application/search-discovery-games";
 import { getMatchHistory } from "./application/get-match-history";
 import { getSurpriseRecommendation } from "./application/get-surprise-recommendation";
@@ -97,6 +98,7 @@ export type {
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
   DiscoveryMoodQuizState,
+  DiscoveryMoodQuizStatus,
   DiscoveryPushSubscription,
   DiscoveryPushSubscriptionInput,
   DiscoveryPushSubscriptionResult,
@@ -139,6 +141,7 @@ export {
   answerMoodQuiz,
   getDiscoveryDeck,
   getLiveSession,
+  getMoodQuizStatus,
   getMatchHistory,
   getSurpriseRecommendation,
   handoffDiscoveryMatchToLibrary,

@@ -274,6 +274,16 @@ export type DiscoveryMoodQuizState = {
   mood: DuoMoodMergeResult;
 };
 
+export type DiscoveryMoodQuizStatus = {
+  ok: true;
+  currentUserAnswered: boolean;
+  answeredMembers: number;
+  mood: DuoMoodMergeResult;
+} | {
+  ok: false;
+  reason: "membership-required";
+};
+
 export type AnswerMoodQuizResult = {
   mood: DuoMoodMergeResult;
   recommendations: DiscoveryRecommendation[];
@@ -363,6 +373,9 @@ export type DiscoveryRepository = DiscoveryDeckRepository & {
   startLiveSession(input: StartLiveSessionInput): Promise<StartLiveSessionResult>;
   getLiveSession(input: GetLiveSessionInput): Promise<DiscoveryLiveSessionPayload>;
   answerMoodQuiz(input: AnswerMoodQuizInput): Promise<DiscoveryMoodQuizState>;
+  getMoodQuizStatus(input: {
+    userId: DiscoveryUserId;
+  }): Promise<DiscoveryMoodQuizStatus>;
   registerPushSubscription(
     input: DiscoveryPushSubscriptionInput
   ): Promise<DiscoveryPushSubscriptionResult>;

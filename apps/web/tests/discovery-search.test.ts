@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { answerMoodQuizUseCase } from "../src/modules/discovery/application/answer-mood-quiz";
+import { getMoodQuizStatusUseCase } from "../src/modules/discovery/application/get-mood-quiz-status";
 import { getSurpriseRecommendationUseCase } from "../src/modules/discovery/application/get-surprise-recommendation";
 import { normalizeDiscoverySearchInput } from "../src/modules/discovery/application/search-discovery-games";
 import type {
@@ -126,11 +127,49 @@ describe("discovery autocomplete and mode services", () => {
     });
   });
 
+  it("reads whether the current member already answered the active mood quiz round", async () => {
+    const result = await getMoodQuizStatusUseCase(
+      {
+        userId: "member-1"
+      },
+      {
+        async getMoodQuizStatus(input) {
+          expect(input).toEqual({ userId: "member-1" });
+
+          return {
+            ok: true,
+            currentUserAnswered: true,
+            answeredMembers: 1,
+            mood: {
+              kind: "preview",
+              answeredMembers: 1,
+              recommendationMode: "preview-only",
+              mood: {
+                energy: "medium",
+                commitment: "steady",
+                vibe: "flexible",
+                conflictResolution: "none"
+              }
+            }
+          };
+        }
+      }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      currentUserAnswered: true,
+      answeredMembers: 1
+    });
+  });
+
   it("keeps live session reads scoped to the current user's duo", () => {
     expect(discoveryRepositorySource).toContain("FROM app.discovery_live_sessions");
     expect(discoveryRepositorySource).toContain("WHERE duo_id = $1");
     expect(discoveryRepositorySource).toContain("AND ($2::uuid IS NULL OR id = $2::uuid)");
     expect(discoveryRepositorySource).toContain("mergeDuoMoodAnswers");
+    expect(discoveryRepositorySource).toContain("hasCompleteMoodAnswerForRound");
+    expect(discoveryRepositorySource).toContain("getCurrentMoodQuizRound");
   });
 });
 

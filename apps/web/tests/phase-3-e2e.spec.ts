@@ -126,9 +126,8 @@ test.describe("Phase 3 discovery ritual", () => {
     await page.goto("/app/descobrir");
 
     await expect(page.getByRole("heading", { name: /os dois quiseram\?/i })).toBeVisible();
-    await expect(page.getByRole("button", { name: /^live$/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /^live(?: ativa)?$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /^surpresa$/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: /^quiz$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^busca$/i })).toBeVisible();
     await expect(page.getByRole("link", { name: /^filtros$/i })).toBeVisible();
     await expect(page.getByRole("radio", { name: /plataforma comum/i })).toBeChecked();
@@ -160,22 +159,27 @@ test.describe("Phase 3 discovery ritual", () => {
     await expect(page).toHaveURL(/\/app\/descobrir/);
     await expect(page.getByRole("status")).toContainText(/surpresa/i);
 
-    await page.getByRole("link", { name: /^quiz$/i }).click();
-    await page
-      .getByRole("group", { name: /qual energia voces tem/i })
-      .getByLabel(/media/i)
-      .check();
-    await page
-      .getByRole("group", { name: /qual tamanho de compromisso/i })
-      .getByLabel(/constante/i)
-      .check();
-    await page
-      .getByRole("group", { name: /que clima voces querem/i })
-      .getByLabel(/flexivel/i)
-      .check();
-    await page.getByRole("button", { name: /salvar mood/i }).click();
-    await expect(page).toHaveURL(/\/app\/descobrir/);
-    await expect(page.getByRole("status")).toContainText(/quiz/i);
+    const quizLink = page.getByRole("link", { name: /^quiz$/i });
+    if ((await quizLink.count()) > 0) {
+      await quizLink.click();
+      await page
+        .getByRole("group", { name: /qual energia voces tem/i })
+        .getByLabel(/media/i)
+        .check();
+      await page
+        .getByRole("group", { name: /qual tamanho de compromisso/i })
+        .getByLabel(/constante/i)
+        .check();
+      await page
+        .getByRole("group", { name: /que clima voces querem/i })
+        .getByLabel(/flexivel/i)
+        .check();
+      await page.getByRole("button", { name: /salvar mood/i }).click();
+      await expect(page).toHaveURL(/\/app\/descobrir/);
+      await expect(page.getByRole("status")).toContainText(/quiz/i);
+    } else {
+      await expect(page.locator('[data-discovery-tray-slot="quiz"]')).toHaveCount(0);
+    }
 
     const searchDialog = page.getByRole("dialog", { name: /busca no deck/i });
     await searchDialog.getByRole("combobox", { name: /buscar jogo/i }).fill(discoveryQuery);
@@ -221,9 +225,13 @@ test.describe("Phase 3 discovery ritual", () => {
   test("Match Live updates in-app and remains scoped to the current duo", async ({ page }) => {
     await login(page, readyActor);
     await page.goto("/app/descobrir");
-    await page.getByRole("button", { name: /^live$/i }).click();
+    await page.getByRole("link", { name: /^live(?: ativa)?$/i }).click();
+    const startLiveButton = page.getByRole("button", { name: /comecar live de 10 min/i });
+    if ((await startLiveButton.count()) > 0 && (await startLiveButton.first().isVisible())) {
+      await startLiveButton.click();
+    }
     await expect(page).toHaveURL(/live=/);
-    await expect(page.getByText(/atualizando a live/i)).toBeVisible();
+    await expect(page.getByText(/atualizando a live|live ativa/i).first()).toBeVisible();
 
     const liveId = new URL(page.url()).searchParams.get("live");
     expect(liveId).toBeTruthy();

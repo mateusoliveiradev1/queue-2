@@ -10,11 +10,11 @@ import {
   getDiscoveryDeck,
   getLiveSession,
   getMatchHistory,
+  getMoodQuizStatus,
   LivePanel,
   MatchCelebration,
   MatchHistory,
-  MoodQuiz,
-  type DiscoveryLiveSessionPayload
+  MoodQuiz
 } from "../../../modules/discovery";
 import { getDuoDashboard } from "../../../modules/duo";
 import { requireVerifiedSession } from "../../../platform/auth/session";
@@ -72,7 +72,7 @@ export default async function DiscoveryPage({
 
   const filters = getDiscoveryFilters(params);
   const returnTo = buildDiscoveryPath(params);
-  const [deck, matchHistory, liveSession] = await Promise.all([
+  const [deck, matchHistory, liveSession, moodQuizStatus] = await Promise.all([
     getDiscoveryDeck({
       userId: session.user.id,
       filters,
@@ -83,13 +83,18 @@ export default async function DiscoveryPage({
       userId: session.user.id,
       limit: 6
     }),
-    liveId
-      ? getLiveSession({
-          userId: session.user.id,
-          sessionId: liveId
-        })
-      : Promise.resolve<DiscoveryLiveSessionPayload | null>(null)
+    getLiveSession({
+      userId: session.user.id,
+      sessionId: liveId
+    }),
+    getMoodQuizStatus({
+      userId: session.user.id
+    })
   ]);
+  const hasActiveLive = liveSession.ok;
+  const livePanelHref = getLivePanelHref(returnTo, liveSession);
+  const shouldShowMoodQuiz =
+    !moodQuizStatus.ok || !moodQuizStatus.currentUserAnswered;
   const statusMessage = getDiscoveryStatusMessage(state);
   const celebrationMatch =
     state === "match-criado" || state === "match-ja-existe"
@@ -124,21 +129,24 @@ export default async function DiscoveryPage({
           role="group"
           aria-label="Controles orbitais de descoberta"
         >
-          <form action={startDiscoveryLiveSessionAction}>
-            <input name="returnTo" type="hidden" value={returnTo} />
-            <button className="queue2-button" data-tone="primary" type="submit">
-              Live
-            </button>
-          </form>
+          <a
+            className="queue2-button"
+            data-tone={hasActiveLive ? "primary" : "quiet"}
+            href={livePanelHref}
+          >
+            {hasActiveLive ? "Live ativa" : "Live"}
+          </a>
           <form action={getSurpriseRecommendationAction}>
             <input name="returnTo" type="hidden" value={returnTo} />
             <button className="queue2-button" data-tone="quiet" type="submit">
               Surpresa
             </button>
           </form>
-          <a className="queue2-button" data-tone="quiet" href="#mood-quiz">
-            Quiz
-          </a>
+          {shouldShowMoodQuiz ? (
+            <a className="queue2-button" data-tone="quiet" href="#mood-quiz">
+              Quiz
+            </a>
+          ) : null}
           <a className="queue2-button" data-tone="quiet" href="#discovery-search">
             Busca
           </a>
@@ -185,6 +193,7 @@ export default async function DiscoveryPage({
           <section
             className="surface-band app-section discovery-tray"
             data-discovery-tray-slot="live"
+            id="discovery-live-panel"
             aria-labelledby="live-summary-title"
           >
             <LivePanel
@@ -206,17 +215,19 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section
-            className="surface-band app-section discovery-tray"
-            data-discovery-tray-slot="quiz"
-            aria-labelledby="mood-quiz-title"
-          >
-            <MoodQuiz
-              action={answerMoodQuizAction}
-              resultState={state}
-              returnTo={returnTo}
-            />
-          </section>
+          {shouldShowMoodQuiz ? (
+            <section
+              className="surface-band app-section discovery-tray"
+              data-discovery-tray-slot="quiz"
+              aria-labelledby="mood-quiz-title"
+            >
+              <MoodQuiz
+                action={answerMoodQuizAction}
+                resultState={state}
+                returnTo={returnTo}
+              />
+            </section>
+          ) : null}
 
           <section
             className="surface-band app-section discovery-tray"
@@ -233,6 +244,19 @@ export default async function DiscoveryPage({
       </section>
     </AppShell>
   );
+}
+
+function getLivePanelHref(
+  returnTo: string,
+  liveSession: Awaited<ReturnType<typeof getLiveSession>>
+): string {
+  if (!liveSession.ok) {
+    return "#discovery-live-panel";
+  }
+
+  const url = new URL(returnTo, "https://queue.local");
+  url.searchParams.set("live", liveSession.session.id);
+  return `${url.pathname}${url.search}#discovery-live-panel`;
 }
 
 function getDiscoveryStatusMessage(state: string | null): string | null {

@@ -16,6 +16,7 @@ import type {
   DiscoveryLiveSessionRecord,
   DiscoveryMatchHistoryItem,
   DiscoveryMatchRecord,
+  DiscoveryMoodQuizStatus,
   DiscoveryMemberContext,
   DiscoveryPushSubscription,
   DiscoveryPushSubscriptionInput,
@@ -139,6 +140,7 @@ export function createDiscoveryRepository(
     startLiveSession: (input) => startLiveSession(pool, input),
     getLiveSession: (input) => getLiveSession(pool, input),
     answerMoodQuiz: (input) => answerMoodQuiz(pool, input),
+    getMoodQuizStatus: (input) => getMoodQuizStatus(pool, input),
     registerPushSubscription: (input) => registerPushSubscription(pool, input),
     disablePushSubscription: (input) => disablePushSubscription(pool, input),
     getEnabledPushSubscriptionsForMatch: (input) =>
@@ -428,6 +430,18 @@ async function startLiveSession(
 
     await expireOldLiveSessions(client, context.duoId);
 
+    const existingSession = await findLiveSession(client, {
+      duoId: context.duoId,
+      sessionId: null
+    });
+
+    if (existingSession) {
+      return {
+        ok: true as const,
+        session: existingSession
+      };
+    }
+
     const result = await client.query<LiveSessionRow>(
       `
         INSERT INTO app.discovery_live_sessions (
@@ -550,6 +564,42 @@ async function answerMoodQuiz(
         quizRound,
         memberUserIds: context.memberUserIds
       })
+    };
+  });
+}
+
+async function getMoodQuizStatus(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+  }
+): Promise<DiscoveryMoodQuizStatus> {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return { ok: false as const, reason: "membership-required" as const };
+    }
+
+    const quizRound = await getCurrentMoodQuizRound(client, context.duoId);
+    const [mood, currentUserAnswered] = await Promise.all([
+      getMergedMoodForRound(client, {
+        duoId: context.duoId,
+        quizRound,
+        memberUserIds: context.memberUserIds
+      }),
+      hasCompleteMoodAnswerForRound(client, {
+        duoId: context.duoId,
+        userId: input.userId,
+        quizRound
+      })
+    ]);
+
+    return {
+      ok: true as const,
+      currentUserAnswered,
+      answeredMembers: mood.answeredMembers,
+      mood
     };
   });
 }
@@ -842,6 +892,29 @@ async function getMergedMoodForRound(
     first: firstUserId ? completeMoodAnswers(answersByUser.get(firstUserId)) : null,
     second: secondUserId ? completeMoodAnswers(answersByUser.get(secondUserId)) : null
   });
+}
+
+async function hasCompleteMoodAnswerForRound(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    userId: string;
+    quizRound: string;
+  }
+): Promise<boolean> {
+  const result = await client.query<CountRow>(
+    `
+      SELECT count(DISTINCT question_key)::text AS count
+      FROM app.discovery_mood_quiz_answers
+      WHERE duo_id = $1
+        AND user_id = $2
+        AND quiz_round = $3
+        AND question_key IN ('energy', 'commitment', 'vibe')
+    `,
+    [input.duoId, input.userId, input.quizRound]
+  );
+
+  return Number.parseInt(result.rows[0]?.count ?? "0", 10) === 3;
 }
 
 function completeMoodAnswers(

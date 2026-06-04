@@ -16,9 +16,11 @@ type PushState =
 export function PushOptInButton() {
   const [state, setState] = useState<PushState>("idle");
   const [supported, setSupported] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setSupported(isPushSupported());
+    setMounted(true);
   }, []);
 
   async function handleEnablePush() {
@@ -121,7 +123,7 @@ export function PushOptInButton() {
       <button
         className="queue2-button"
         data-tone="quiet"
-        disabled={supported !== true || state === "enabling"}
+        disabled={!mounted || supported !== true || state === "enabling"}
         onClick={handleEnablePush}
         type="button"
       >
@@ -129,18 +131,26 @@ export function PushOptInButton() {
       </button>
       <button
         className="text-button"
-        disabled={supported !== true || state === "disabling"}
+        disabled={!mounted || supported !== true || state === "disabling"}
         onClick={handleDisablePush}
         type="button"
       >
         Desativar neste navegador
       </button>
-      <p className="support-copy">{formatPushState(state, supported)}</p>
+      <p className="support-copy">{formatPushState(state, supported, mounted)}</p>
     </div>
   );
 }
 
-function formatPushState(state: PushState, supported: boolean | null): string {
+function formatPushState(
+  state: PushState,
+  supported: boolean | null,
+  mounted: boolean
+): string {
+  if (!mounted) {
+    return "Verificando suporte a alertas push neste navegador.";
+  }
+
   if (supported === false || state === "unsupported") {
     return "Alertas push nao estao disponiveis neste navegador.";
   }
