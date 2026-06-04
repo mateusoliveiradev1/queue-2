@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Pairing creator auto-refresh implemented; ready for Phase 3 planning
-last_updated: "2026-06-04T02:23:47.000Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-pairing-auto-refresh: auto refresh do criador no pareamento
+last_updated: "2026-06-04T02:42:00.000Z"
+last_activity: 2026-06-04 -- Completed quick task 260603-wof: melhorar SEO e copy das fases 1 e 2
 progress:
   total_phases: 9
   completed_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
 Status: Phase 02.1 complete; pairing creator auto-refresh implemented; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-pairing-auto-refresh: auto refresh do criador no pareamento
+Last activity: 2026-06-04 -- Completed quick task 260603-wof: melhorar SEO e copy das fases 1 e 2
 
 Progress: [██████████] 100%
 
@@ -86,6 +86,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | refinar-template-email-gmail | Template de auth foi compactado apos captura real do Gmail: fundo externo branco, marca dentro do card, menor largura, nota de seguranca mais cedo e sinal `translate="no"`. |
 | 2026-06-03 | polir-feedback-pareamento | Submits de `/parear` agora usam o mesmo feedback pending de login/cadastro para criar codigo, entrar com codigo e revogar convite. |
 | 2026-06-03 | auto-refresh-pareamento | Criador do codigo agora revalida `/parear` automaticamente e segue para `/app/dupla` quando a segunda pessoa entra. |
+| 2026-06-04 | seo-copy-fases-1-2 | Home ganhou metadata/canonical/OG/sitemap/robots; rotas operacionais ficaram `noindex`; copy publica e autenticada removeu linguagem interna de fase e reforcou ritual da dupla. |
 
 ## Accumulated Context
 
