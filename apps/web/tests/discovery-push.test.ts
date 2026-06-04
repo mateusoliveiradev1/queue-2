@@ -166,6 +166,9 @@ describe("discovery push subscriptions", () => {
     expect(pushButtonSource).toContain("onClick={handleEnablePush}");
     expect(livePanelSource).not.toContain("Notification.requestPermission()");
     expect(pushButtonSource).toContain("/api/discovery/push");
+    expect(pushButtonSource).toContain("useState<boolean | null>(null)");
+    expect(pushButtonSource).toContain("setSupported(isPushSupported())");
+    expect(pushButtonSource).toContain('disabled={supported !== true || state === "enabling"}');
   });
 });
 

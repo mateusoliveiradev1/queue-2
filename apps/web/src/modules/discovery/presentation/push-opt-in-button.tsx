@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type PushState =
   | "idle"
@@ -15,11 +15,11 @@ type PushState =
 
 export function PushOptInButton() {
   const [state, setState] = useState<PushState>("idle");
-  const supported =
-    typeof window !== "undefined" &&
-    "Notification" in window &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window;
+  const [supported, setSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setSupported(isPushSupported());
+  }, []);
 
   async function handleEnablePush() {
     if (!supported) {
@@ -121,7 +121,7 @@ export function PushOptInButton() {
       <button
         className="queue2-button"
         data-tone="quiet"
-        disabled={!supported || state === "enabling"}
+        disabled={supported !== true || state === "enabling"}
         onClick={handleEnablePush}
         type="button"
       >
@@ -129,7 +129,7 @@ export function PushOptInButton() {
       </button>
       <button
         className="text-button"
-        disabled={!supported || state === "disabling"}
+        disabled={supported !== true || state === "disabling"}
         onClick={handleDisablePush}
         type="button"
       >
@@ -140,8 +140,8 @@ export function PushOptInButton() {
   );
 }
 
-function formatPushState(state: PushState, supported: boolean): string {
-  if (!supported || state === "unsupported") {
+function formatPushState(state: PushState, supported: boolean | null): string {
+  if (supported === false || state === "unsupported") {
     return "Alertas push nao estao disponiveis neste navegador.";
   }
 
@@ -159,6 +159,15 @@ function formatPushState(state: PushState, supported: boolean): string {
     default:
       return "Opcional: receba aviso quando a dupla formar um match live.";
   }
+}
+
+function isPushSupported(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    "Notification" in window &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window
+  );
 }
 
 function urlBase64ToUint8Array(value: string): Uint8Array<ArrayBuffer> {
