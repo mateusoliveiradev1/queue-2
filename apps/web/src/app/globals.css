@@ -1261,6 +1261,111 @@ input {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.72fr);
 }
 
+.discovery-mode-actions,
+.discovery-filters,
+.segmented-control,
+.discovery-filter-grid,
+.mood-quiz-form,
+.mood-question,
+.discovery-search,
+.live-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.discovery-mode-actions {
+  align-items: stretch;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.discovery-mode-actions form,
+.discovery-mode-actions .queue2-button {
+  display: flex;
+  min-width: 0;
+  width: 100%;
+}
+
+.discovery-mode-actions .queue2-button {
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+}
+
+.discovery-filters {
+  background: color-mix(in oklch, var(--surface) 70%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  padding: var(--space-4);
+}
+
+.discovery-filter-group,
+.discovery-filter-grid,
+.mood-question {
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.discovery-filter-group > legend,
+.discovery-filter-grid > legend,
+.mood-question > legend {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin-bottom: var(--space-3);
+  text-transform: uppercase;
+}
+
+.segmented-control {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.segmented-control label {
+  align-items: center;
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  cursor: pointer;
+  display: flex;
+  gap: var(--space-3);
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.segmented-control label:has(input:checked) {
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 54%, transparent);
+  color: var(--ink);
+}
+
+.segmented-control span {
+  color: inherit;
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.discovery-advanced-filters {
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  padding-top: var(--space-4);
+}
+
+.discovery-advanced-filters summary {
+  color: var(--primary);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-weight: 800;
+  min-height: 44px;
+  text-transform: uppercase;
+}
+
+.discovery-filter-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: var(--space-4);
+}
+
 .discovery-deck-shell {
   min-height: 520px;
 }
@@ -1463,6 +1568,48 @@ input {
   font-size: clamp(1.8rem, 4vw, 3.5rem);
 }
 
+.discovery-search-results {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.discovery-search-results .queue2-button {
+  justify-content: start;
+  width: 100%;
+}
+
+.discovery-search-selected .discovery-card {
+  grid-template-columns: 1fr;
+  min-height: auto;
+}
+
+.discovery-search-selected .discovery-card-cover {
+  max-height: 280px;
+}
+
+.mood-quiz-state {
+  border: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  text-transform: uppercase;
+}
+
+.live-panel-action {
+  display: flex;
+}
+
+.live-panel-action .queue2-button {
+  width: 100%;
+}
+
 .discovery-history-list {
   margin: 0;
   padding: 0;
@@ -1527,7 +1674,8 @@ input {
   .detail-library-panel,
   .locked-status-grid,
   .game-detail-hero,
-  .discovery-route-grid {
+  .discovery-route-grid,
+  .discovery-mode-actions {
     grid-template-columns: 1fr;
   }
 

@@ -11,10 +11,16 @@ import {
   type DiscoveryLiveSessionPayload
 } from "../../../modules/discovery";
 import { DiscoveryDeck } from "../../../modules/discovery/presentation/discovery-deck";
+import { DiscoveryFilters } from "../../../modules/discovery/presentation/discovery-filters";
+import { DiscoverySearch } from "../../../modules/discovery/presentation/discovery-search";
+import { LivePanel } from "../../../modules/discovery/presentation/live-panel";
 import { MatchCelebration } from "../../../modules/discovery/presentation/match-celebration";
+import { MoodQuiz } from "../../../modules/discovery/presentation/mood-quiz";
 import { getDuoDashboard } from "../../../modules/duo";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 import {
+  answerMoodQuizAction,
+  getSurpriseRecommendationAction,
   handoffDiscoveryMatchToLibraryAction,
   recordDiscoveryDecisionAction,
   startDiscoveryLiveSessionAction
@@ -85,13 +91,6 @@ export default async function DiscoveryPage({
             descobrir se os dois querem colocar aquele coop na fila.
           </p>
         </div>
-        <form action={startDiscoveryLiveSessionAction} className="discovery-live-entry">
-          <input name="returnTo" type="hidden" value={returnTo} />
-          <span>Match Live</span>
-          <button className="queue2-button" data-tone="primary" type="submit">
-            Entrar juntos
-          </button>
-        </form>
       </header>
 
       {statusMessage ? (
@@ -106,6 +105,29 @@ export default async function DiscoveryPage({
           </p>
         </>
       ) : null}
+
+      <nav className="discovery-mode-actions" aria-label="Modos de descoberta">
+        <form action={startDiscoveryLiveSessionAction}>
+          <input name="returnTo" type="hidden" value={returnTo} />
+          <button className="queue2-button" data-tone="primary" type="submit">
+            Live
+          </button>
+        </form>
+        <form action={getSurpriseRecommendationAction}>
+          <input name="returnTo" type="hidden" value={returnTo} />
+          <button className="queue2-button" data-tone="quiet" type="submit">
+            Surpresa
+          </button>
+        </form>
+        <a className="queue2-button" data-tone="quiet" href="#mood-quiz">
+          Quiz
+        </a>
+        <a className="queue2-button" data-tone="quiet" href="#discovery-search">
+          Busca
+        </a>
+      </nav>
+
+      <DiscoveryFilters params={getDiscoveryFilterParams(params)} />
 
       <section className="discovery-route-grid" aria-label="Experiencia de descoberta">
         <div className="surface-band app-section discovery-deck-shell">
@@ -134,14 +156,27 @@ export default async function DiscoveryPage({
 
         <aside className="discovery-side-rail" aria-label="Resumo da descoberta">
           <section className="surface-band app-section" aria-labelledby="live-summary-title">
-            <div className="section-heading">
-              <h2 className="eyebrow" id="live-summary-title">
-                Live
-              </h2>
-              <p className="support-copy">
-                {formatLiveSummary(liveSession)}
-              </p>
-            </div>
+            <LivePanel
+              action={startDiscoveryLiveSessionAction}
+              liveSession={liveSession}
+              returnTo={returnTo}
+            />
+          </section>
+
+          <section className="surface-band app-section" aria-labelledby="discovery-search-title">
+            <DiscoverySearch
+              decisionAction={recordDiscoveryDecisionAction}
+              handoffAction={handoffDiscoveryMatchToLibraryAction}
+              returnTo={returnTo}
+            />
+          </section>
+
+          <section className="surface-band app-section" aria-labelledby="mood-quiz-title">
+            <MoodQuiz
+              action={answerMoodQuizAction}
+              resultState={state}
+              returnTo={returnTo}
+            />
           </section>
 
           <section className="surface-band app-section" aria-labelledby="match-history-title">
@@ -191,6 +226,12 @@ function getDiscoveryFilters(
   const platform = getSearchParam(params?.plataforma);
   const availability = getSearchParam(params?.disponibilidade);
   const tempo = getSearchParam(params?.tempo);
+  const coop = getSearchParam(params?.coop);
+  const mood = getSearchParam(params?.mood);
+  const anoDe = parseYear(getSearchParam(params?.anoDe));
+  const anoAte = parseYear(getSearchParam(params?.anoAte));
+  const genero = getSearchParam(params?.genero)?.trim().toLowerCase();
+  const raridade = getSearchParam(params?.raridade);
 
   return {
     commonPlatformOnly: platform !== "livre",
@@ -201,21 +242,23 @@ function getDiscoveryFilters(
           : "game-pass"
         : undefined,
     maxEstimatedMinutes:
-      tempo === "curto" ? 480 : tempo === "medio" ? 1200 : undefined
+      tempo === "curto" ? 480 : tempo === "medio" ? 1200 : undefined,
+    recommendation: {
+      coopTypes: isCoopType(coop) ? [coop] : undefined,
+      genres: genero ? [genero] : undefined,
+      mood: isMoodVibe(mood)
+        ? {
+            commitment: "steady",
+            conflictResolution: mood === "flexible" ? "flexible" : "none",
+            energy: "medium",
+            vibe: mood
+          }
+        : undefined,
+      rarity: isRarity(raridade) ? [raridade] : undefined,
+      yearFrom: anoDe,
+      yearTo: anoAte
+    }
   };
-}
-
-function formatLiveSummary(liveSession: DiscoveryLiveSessionPayload | null): string {
-  if (!liveSession) {
-    return "Entre em uma sessao curta quando os dois quiserem descobrir ao mesmo tempo.";
-  }
-
-  if (!liveSession.ok) {
-    return "Nenhuma sessao live ativa foi encontrada para esta dupla.";
-  }
-
-  const minutes = Math.max(1, Math.ceil(liveSession.expiresInSeconds / 60));
-  return `${liveSession.matches.length} match(es) nesta live. Expira em cerca de ${minutes} min.`;
 }
 
 function getDiscoveryStatusMessage(state: string | null): string | null {
@@ -258,7 +301,19 @@ function buildDiscoveryPath(
 ): string {
   const urlParams = new URLSearchParams();
 
-  for (const key of ["plataforma", "disponibilidade", "tempo", "live", "surpresa"]) {
+  for (const key of [
+    "plataforma",
+    "disponibilidade",
+    "tempo",
+    "coop",
+    "mood",
+    "anoDe",
+    "anoAte",
+    "genero",
+    "raridade",
+    "live",
+    "surpresa"
+  ]) {
     const value = getSearchParam(params?.[key]);
 
     if (value) {
@@ -268,6 +323,43 @@ function buildDiscoveryPath(
 
   const query = urlParams.toString();
   return query ? `/app/descobrir?${query}` : "/app/descobrir";
+}
+
+function getDiscoveryFilterParams(
+  params: Record<string, string | string[] | undefined> | undefined
+) {
+  return {
+    anoAte: getSearchParam(params?.anoAte),
+    anoDe: getSearchParam(params?.anoDe),
+    coop: getSearchParam(params?.coop),
+    disponibilidade: getSearchParam(params?.disponibilidade),
+    genero: getSearchParam(params?.genero),
+    mood: getSearchParam(params?.mood),
+    plataforma: getSearchParam(params?.plataforma),
+    raridade: getSearchParam(params?.raridade),
+    tempo: getSearchParam(params?.tempo)
+  };
+}
+
+function parseYear(value: string | null): number | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  const year = Number.parseInt(value, 10);
+  return Number.isInteger(year) ? year : undefined;
+}
+
+function isCoopType(value: string | null): value is "campaign" | "online" | "local" | "shared-screen" {
+  return value === "campaign" || value === "online" || value === "local" || value === "shared-screen";
+}
+
+function isMoodVibe(value: string | null): value is "laugh" | "think" | "focus" | "flexible" {
+  return value === "laugh" || value === "think" || value === "focus" || value === "flexible";
+}
+
+function isRarity(value: string | null): value is "common" | "rare" | "epic" | "legendary" {
+  return value === "common" || value === "rare" || value === "epic" || value === "legendary";
 }
 
 function getSearchParam(value: string | string[] | undefined): string | null {

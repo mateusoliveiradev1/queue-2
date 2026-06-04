@@ -75,6 +75,8 @@ vi.mock("../src/modules/duo", () => ({
 }));
 
 vi.mock("../src/app/app/descobrir/actions", () => ({
+  answerMoodQuizAction: vi.fn(async () => undefined),
+  getSurpriseRecommendationAction: vi.fn(async () => undefined),
   handoffDiscoveryMatchToLibraryAction: vi.fn(async () => undefined),
   recordDiscoveryDecisionAction: vi.fn(async () => undefined),
   startDiscoveryLiveSessionAction: vi.fn(async () => undefined)
@@ -189,7 +191,19 @@ describe("Phase 3 Discovery route shell", () => {
     );
 
     expect(screen.getByRole("heading", { name: /o deck da dupla/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /entrar juntos/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Live" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Surpresa" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "#mood-quiz");
+    expect(screen.getByRole("link", { name: "Busca" })).toHaveAttribute("href", "#discovery-search");
+    expect(screen.getByRole("radio", { name: /plataforma comum/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /explorar fora/i })).not.toBeChecked();
+    expect(screen.getByText("Mais filtros")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /buscar jogo/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /iniciar match live/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /salvar mood/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/qual energia voces tem/i)).toHaveLength(1);
+    expect(screen.getAllByText(/qual tamanho de compromisso/i)).toHaveLength(1);
+    expect(screen.getAllByText(/que clima voces querem/i)).toHaveLength(1);
     expect(screen.getByText(/match da dupla criado/i)).toBeInTheDocument();
     expect(screen.getByRole("group", { name: /deck de descoberta/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Quero jogar" })).toBeInTheDocument();
