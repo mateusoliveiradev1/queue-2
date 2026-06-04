@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03.1-03-PLAN.md
-last_updated: "2026-06-04T20:17:22.493Z"
+status: verifying
+stopped_at: Completed 03.1-04-PLAN.md
+last_updated: "2026-06-04T20:56:39.016Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 10
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 21
-  completed_plans: 20
-  percent: 95
+  completed_plans: 21
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 ## Current Position
 
-Phase: 03.1 (refinos-visuais-e-ux-da-descoberta) — EXECUTING
+Phase: 03.1 (refinos-visuais-e-ux-da-descoberta) — COMPLETE
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-04
 
-Progress: [██████████] 95%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -74,6 +74,7 @@ Progress: [██████████] 95%
 | Phase 03.1 P01 | 10 min | 3 tasks | 14 files |
 | Phase 03.1 P02 | 10 min | 3 tasks | 5 files |
 | Phase 03.1 P03 | 12 min | 3 tasks | 13 files |
+| Phase 03.1 P04 | 18 min | 3 tasks | 8 files |
 
 ## Quick Tasks Completed
 
@@ -144,10 +145,13 @@ Recent decisions affecting current work:
 - [Phase 03.1]: Discovery decision feedback uses form-local pending state and deck reaction status while server actions remain authoritative. — Keeps tactile UI feedback from replacing server-authoritative decision, match and library state.
 - [Phase 03.1]: Search, filters, Live, Quiz and history now use sheet/orbit classes so support modes stay subordinate to the card. — Preserves the deck-first Discovery ritual while keeping search, filters and support modes accessible.
 - [Phase 03.1]: Match celebration uses QUEUE/2 editorial copy and explicit handoff labels, with no generic spectacle or future-selection implication. — Keeps matches memorable without implying automatic library movement or future draw eligibility.
+- [Phase 03.1-04]: Missing authenticated browser and database fixtures are blockers, not passing evidence. — `03.1-BROWSER-REVIEW.md` records `BLOCKED - missing fixture evidence` with exact variable names.
+- [Phase 03.1-04]: Discovery browser E2E must use product-authenticated ready duo, partner and other-duo users. — The suite does not introduce test-only session bypasses.
+- [Phase 03.1-04]: Discovery match history stays a recent-match surface. — Biblioteca remains the complete backlog/archive for accumulated matches and statuses.
 
 ### Pending Todos
 
-- Phase 03.1 planning: refine Discovery visual quality, authenticated browser review and architecture-warning cleanup before Phase 4.
+- Discovery evidence follow-up: provide `E2E_BASE_URL`, ready-duo/partner/other-duo credentials, `E2E_PHASE3_DISCOVERY_QUERY` and `TEST_DATABASE_URL`, then rerun the Phase 03.1 browser and database gates.
 - Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
@@ -157,7 +161,7 @@ Recent decisions affecting current work:
 - RAWG attribution and external data freshness must remain visible in implementation.
 - Economy balance for XP, pity, rarity and quests needs simulation during planning.
 - Restore capability and the applicable ASVS checklist must be validated before production launch.
-- Authenticated Discovery browser review and visual polish are now scoped to Phase 03.1 before Phase 4.
+- Phase 03.1 visual and architecture debt is closed locally; real authenticated Discovery browser/database evidence remains blocked by named fixtures in `03.1-BROWSER-REVIEW.md`.
 
 ## Deferred Items
 
@@ -170,6 +174,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T20:17:22.487Z
-Stopped at: Completed 03.1-03-PLAN.md
+Last session: 2026-06-04T20:56:38.768Z
+Stopped at: Completed 03.1-04-PLAN.md
 Resume file: None
