@@ -114,7 +114,11 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Os fluxos autenticados de Phase 3 possuem fixtures/documentacao suficientes para E2E real ou registram claramente qualquer gate de ambiente restante.
   4. A divida `application -> presentation/view-models` de discovery e resolvida, e `check:architecture` passa a bloquear regressao equivalente.
   5. Setup local de Discovery deixa claro migrations, VAPID, `TEST_DATABASE_URL`, `E2E_BASE_URL` e contas fixture antes de seguir para Phase 4.
-**Plans**: TBD
+**Plans**: 03.1-01, 03.1-02, 03.1-03, 03.1-04
+  - **Wave 1:** `03.1-01` - Resolve Discovery application-to-presentation architecture debt.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `03.1-02` - Deck-first Discovery route and mobile-ready app shell.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `03.1-03` - Interaction, motion, search, match celebration and handoff polish.
+  - **Wave 4 *(blocked on Wave 3 completion)*:** `03.1-04` - Browser validation, fixture setup and evidence capture.
 **UI hint**: yes
 
 ### Phase 4: Jogando Agora, Sessoes E Agendamento
@@ -193,7 +197,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 4 -> 5 -> 6 -> 7
 | 2. Catalogo E Biblioteca | 3/3 | Complete | 2026-06-03 |
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
-| 03.1. Refinos Visuais e UX da Descoberta | 0/TBD | Not started | - |
+| 03.1. Refinos Visuais e UX da Descoberta | 0/4 | Ready to execute | 2026-06-04 |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
