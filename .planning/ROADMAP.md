@@ -15,6 +15,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 2: Catalogo E Biblioteca** - A dupla constroi e organiza uma fila real de jogos com dados confiaveis.
 - [x] **Phase 02.1: Localizacao e Qualidade do Catalogo (INSERTED)** - O catalogo fica localizado em portugues brasileiro, sincronizavel e pronto para sustentar descoberta sem dados crus. (completed 2026-06-03)
 - [x] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches. (completed 2026-06-04)
+- [ ] **Phase 03.1: Refinos Visuais e UX da Descoberta (INSERTED)** - A experiencia de Descoberta ganha polimento visual, revisao browser real e limpeza de divida arquitetural antes de Jogando.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
 - [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
@@ -102,9 +103,23 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   - **Wave 4 *(blocked on Wave 3 completion)*:** `03-04` - Match Live push, E2E/accessibility/integration hardening and final verification.
 **UI hint**: yes
 
+### Phase 03.1: Refinos Visuais e UX da Descoberta (INSERTED)
+
+**Goal:** A experiencia de Descoberta fica visualmente refinada, validada em browser real e sem divida arquitetural conhecida antes de a dupla avancar para Jogando.
+**Requirements**: DISC-01, DISC-02, DISC-03, DISC-04, DISC-05, DISC-06, DISC-07, DISC-08, DISC-09, DISC-10, DISC-11, DISC-12, BRND-02, BRND-04, BRND-05, BRND-06, BRND-11, BRND-13, SAFE-05
+**Depends on:** Phase 3
+**Success Criteria** (what must be TRUE):
+  1. `/app/descobrir` passa por revisao browser autenticada em desktop, mobile e reduced motion sem hydration errors, texto sobreposto, foco invisivel ou controles quebrados.
+  2. Deck, filtros, Match Live, Surpresa, Quiz, busca, historico e handoff recebem acabamento visual consistente com QUEUE/2, sem parecer template SaaS ou arcade generico.
+  3. Os fluxos autenticados de Phase 3 possuem fixtures/documentacao suficientes para E2E real ou registram claramente qualquer gate de ambiente restante.
+  4. A divida `application -> presentation/view-models` de discovery e resolvida, e `check:architecture` passa a bloquear regressao equivalente.
+  5. Setup local de Discovery deixa claro migrations, VAPID, `TEST_DATABASE_URL`, `E2E_BASE_URL` e contas fixture antes de seguir para Phase 4.
+**Plans**: TBD
+**UI hint**: yes
+
 ### Phase 4: Jogando Agora, Sessoes E Agendamento
 **Goal**: A dupla pode transformar uma escolha em jogo real, registrar progresso coop e coordenar a proxima sessao.
-**Depends on**: Phase 3
+**Depends on**: Phase 03.1
 **Requirements**: PLAY-01, PLAY-02, PLAY-03, PLAY-04, PLAY-06, PLAY-07, PLAY-08, PLAY-09, PLAY-10, PLAY-11, PLAY-12, PLAY-13, SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08, SESS-09, SESS-10, SESS-11, SESS-12, SESS-13, SESS-14, SAFE-01, SAFE-02, SAFE-04
 **Success Criteria** (what must be TRUE):
   1. Dashboard mostra um Principal e ate dois jogos secundarios, e a dupla pode reordenar os tres sem quebrar os limites de Jogando.
@@ -169,7 +184,7 @@ These gates apply to every phase and cannot be deferred as polish:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -178,6 +193,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5 -> 6 -> 7
 | 2. Catalogo E Biblioteca | 3/3 | Complete | 2026-06-03 |
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
+| 03.1. Refinos Visuais e UX da Descoberta | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |

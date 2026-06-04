@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_to_plan
-stopped_at: Completed 03-04-PLAN.md
-last_updated: "2026-06-04T11:43:11.737Z"
+stopped_at: "Inserted Phase 03.1: Refinos Visuais e UX da Descoberta"
+last_updated: "2026-06-04T18:18:00.000Z"
 last_activity: 2026-06-04
 progress:
-  total_phases: 9
-  completed_phases: 7
+  total_phases: 10
+  completed_phases: 5
   total_plans: 17
   completed_plans: 17
-  percent: 78
+  percent: 50
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 03 — descoberta-e-matches
+**Current focus:** Phase 03.1 - refinos-visuais-e-ux-da-descoberta
 
 ## Current Position
 
-Phase: 4
+Phase: 03.1
 Plan: Not started
 Status: Ready to plan
 Last activity: 2026-06-04
 
-Progress: [██████████] 100%
+Progress: [#####-----] 50%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 21
+- Total plans completed: 17
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -86,6 +86,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 
 - Phase 01.1 inserted after Phase 1: Polimento Auth e Landing Intermediaria (URGENT)
 - Phase 02.1 inserted after Phase 2: Localizacao e Qualidade do Catalogo (URGENT)
+- Phase 03.1 inserted after Phase 3: Refinos Visuais e UX da Descoberta (URGENT)
 
 ### Decisions
 
@@ -133,7 +134,7 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Phase 3 execution: start with plan 03-01 for Discovery persistence, RLS and domain rules.
+- Phase 03.1 planning: refine Discovery visual quality, authenticated browser review and architecture-warning cleanup before Phase 4.
 - Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
@@ -143,7 +144,7 @@ Recent decisions affecting current work:
 - RAWG attribution and external data freshness must remain visible in implementation.
 - Economy balance for XP, pity, rarity and quests needs simulation during planning.
 - Restore capability and the applicable ASVS checklist must be validated before production launch.
-- Authenticated Discovery browser review is pending until DATABASE_URL, E2E_BASE_URL, E2E_READY_USER_EMAIL and E2E_READY_USER_PASSWORD are configured.
+- Authenticated Discovery browser review and visual polish are now scoped to Phase 03.1 before Phase 4.
 
 ## Deferred Items
 
@@ -156,6 +157,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T18:12:00Z
-Stopped at: Completed quick task 260604-l1p: Fix push opt-in hydration mismatch in Phase 3 discovery
+Last session: 2026-06-04T18:18:00Z
+Stopped at: Inserted Phase 03.1: Refinos Visuais e UX da Descoberta
 Resume file: None
