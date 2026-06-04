@@ -125,12 +125,16 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 ### Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)
 
 **Goal:** A Biblioteca deixa de ser uma lista crescente e vira uma superficie operacional escalavel para backlog, filtros, status, arquivo e retomada do fluxo da dupla.
-**Requirements**: TBD
+**Requirements**: LIB-02, LIB-03, LIB-04, DISC-12, BRND-08, BRND-09, BRND-10, DATA-11, SEC-02
 **Depends on:** Phase 03.1
-**Plans:** 0 plans
+**Plans:** 03.2-01, 03.2-02, 03.2-03, 03.2-04
 
-Plans:
-- [ ] TBD (run /gsd-plan-phase 03.2 to break down)
+**Plan Waves**:
+  - **Wave 1:** `03.2-01` - Scalable Biblioteca read contract, active/archive policy and bounded repository queries.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `03.2-02` - Operational Biblioteca route with Proximos, Jogando, URL filters and pagination.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `03.2-03` - Compact queue cards, filter bar and primary/secondary status actions.
+  - **Wave 4 *(blocked on Wave 3 completion)*:** `03.2-04` - Browser, accessibility, RLS and regression evidence.
+**UI hint**: yes
 
 ### Phase 4: Jogando Agora, Sessoes E Agendamento
 **Goal**: A dupla pode transformar uma escolha em jogo real, registrar progresso coop e coordenar a proxima sessao.
@@ -209,7 +213,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 4 -> 5 -
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
 | 03.1. Refinos Visuais e UX da Descoberta | 4/4 | Complete   | 2026-06-04 |
-| 03.2. Biblioteca Escalavel e Backlog Operacional | 0/TBD | Not planned | - |
+| 03.2. Biblioteca Escalavel e Backlog Operacional | 0/4 | Ready to execute | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
