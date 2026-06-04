@@ -6,7 +6,7 @@ export function SourceMetadata({
   source: CatalogSourceMetaView;
 }) {
   return (
-    <p className="source-meta" data-freshness={source.freshnessTone}>
+    <p className="source-meta" data-freshness={source.freshnessTone} aria-label="Fonte e frescor">
       <a className="queue2-focusable" href={source.attributionHref} rel="noreferrer" target="_blank">
         {source.attributionLabel}
       </a>

@@ -861,7 +861,12 @@ input {
   color: var(--primary);
   font-family: var(--font-mono);
   font-weight: 800;
+  overflow-wrap: anywhere;
   text-underline-offset: 0.18em;
+}
+
+.source-meta span {
+  overflow-wrap: anywhere;
 }
 
 .source-meta span::before {
