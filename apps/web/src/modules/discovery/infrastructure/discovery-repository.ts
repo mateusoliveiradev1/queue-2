@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
+
 import {
   createRuntimePool,
   withAppUserTransaction,
@@ -10,12 +12,15 @@ import {
 import type {
   DiscoveryDecisionRecord,
   DiscoveryGameReadState,
+  DiscoveryLiveSessionPayload,
+  DiscoveryLiveSessionRecord,
   DiscoveryMatchHistoryItem,
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
   DiscoveryRepository,
   DiscoveryReadState
 } from "../application/ports";
+import { mergeDuoMoodAnswers, type MoodQuizAnswers } from "../domain/mood-quiz";
 import {
   canCreateDiscoveryMatch,
   evaluateDiscoveryDecision,
@@ -91,7 +96,25 @@ type MatchHistoryRow = MatchRow & {
   library_status: LibraryStatus | null;
 };
 
+type LiveSessionRow = {
+  id: string;
+  duo_id: string;
+  started_by_user_id: string;
+  status: "active" | "ended" | "expired";
+  started_at: Date;
+  expires_at: Date;
+  ended_at: Date | null;
+};
+
+type MoodAnswerRow = {
+  user_id: string;
+  quiz_round: string;
+  question_key: "energy" | "commitment" | "vibe";
+  answer_key: string;
+};
+
 let runtimePool: QueueDbPool | undefined;
+const LIVE_SESSION_MINUTES = 10;
 
 export const discoveryRepository: DiscoveryRepository = createDiscoveryRepository();
 
@@ -103,27 +126,9 @@ export function createDiscoveryRepository(
     recordDecision: (input) => recordDecision(pool, input),
     markMatchLibraryHandoff: (input) => markMatchLibraryHandoff(pool, input),
     getMatchHistory: (input) => getMatchHistory(pool, input),
-    answerMoodQuiz: async () => ({
-      mood: {
-        kind: "empty",
-        answeredMembers: 0,
-        recommendationMode: "none"
-      },
-      recommendations: []
-    }),
-    getRecommendations: async () => ({
-      recommendations: [],
-      collaborativeInfluence: {
-        enabled: false,
-        weight: 0,
-        reason: "threshold-not-met",
-        minimums: {
-          currentDuoDecisionCount: 20,
-          crossDuoPositiveDecisionCount: 100
-        }
-      },
-      varietyBandSize: 0
-    })
+    startLiveSession: (input) => startLiveSession(pool, input),
+    getLiveSession: (input) => getLiveSession(pool, input),
+    answerMoodQuiz: (input) => answerMoodQuiz(pool, input)
   };
 }
 
@@ -387,6 +392,327 @@ async function getMatchHistory(
       reasons: row.reason_snapshot ?? []
     }));
   });
+}
+
+async function startLiveSession(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+  }
+) {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return { ok: false as const, reason: "membership-required" as const };
+    }
+
+    await expireOldLiveSessions(client, context.duoId);
+
+    const result = await client.query<LiveSessionRow>(
+      `
+        INSERT INTO app.discovery_live_sessions (
+          duo_id,
+          started_by_user_id,
+          status,
+          started_at,
+          expires_at,
+          updated_at
+        )
+        VALUES ($1, $2, 'active', now(), now() + ($3::text || ' minutes')::interval, now())
+        RETURNING
+          id,
+          duo_id,
+          started_by_user_id,
+          status,
+          started_at,
+          expires_at,
+          ended_at
+      `,
+      [context.duoId, input.userId, LIVE_SESSION_MINUTES]
+    );
+    const row = result.rows[0];
+
+    if (!row) {
+      throw new Error("discovery_live_session_create_failed");
+    }
+
+    return {
+      ok: true as const,
+      session: mapLiveSession(row)
+    };
+  });
+}
+
+async function getLiveSession(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    sessionId?: string | null;
+  }
+): Promise<DiscoveryLiveSessionPayload> {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return { ok: false, reason: "membership-required" };
+    }
+
+    await expireOldLiveSessions(client, context.duoId);
+
+    const session = await findLiveSession(client, {
+      duoId: context.duoId,
+      sessionId: input.sessionId ?? null
+    });
+
+    if (!session) {
+      return { ok: false, reason: "live-session-not-found" };
+    }
+
+    return {
+      ok: true,
+      session,
+      matches: await getLiveMatches(client, context.duoId, session.startedAt),
+      expiresInSeconds: Math.max(
+        0,
+        Math.floor((session.expiresAt.getTime() - Date.now()) / 1000)
+      )
+    };
+  });
+}
+
+async function answerMoodQuiz(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    answers: MoodQuizAnswers;
+  }
+) {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return {
+        mood: {
+          kind: "empty" as const,
+          answeredMembers: 0 as const,
+          recommendationMode: "none" as const
+        }
+      };
+    }
+
+    const quizRound = await getCurrentMoodQuizRound(client, context.duoId);
+
+    for (const [questionKey, answerKey] of Object.entries(input.answers)) {
+      await client.query(
+        `
+          INSERT INTO app.discovery_mood_quiz_answers (
+            duo_id,
+            user_id,
+            quiz_round,
+            question_key,
+            answer_key,
+            answered_at,
+            updated_at
+          )
+          VALUES ($1, $2, $3, $4, $5, now(), now())
+          ON CONFLICT (duo_id, user_id, quiz_round, question_key) DO UPDATE
+          SET answer_key = excluded.answer_key,
+              answered_at = excluded.answered_at,
+              updated_at = now()
+        `,
+        [context.duoId, input.userId, quizRound, questionKey, answerKey]
+      );
+    }
+
+    return {
+      mood: await getMergedMoodForRound(client, {
+        duoId: context.duoId,
+        quizRound,
+        memberUserIds: context.memberUserIds
+      })
+    };
+  });
+}
+
+async function expireOldLiveSessions(
+  client: QueueDbClient,
+  duoId: string
+): Promise<void> {
+  await client.query(
+    `
+      UPDATE app.discovery_live_sessions
+      SET status = 'expired',
+          updated_at = now()
+      WHERE duo_id = $1
+        AND status = 'active'
+        AND expires_at <= now()
+    `,
+    [duoId]
+  );
+}
+
+async function findLiveSession(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    sessionId: string | null;
+  }
+): Promise<DiscoveryLiveSessionRecord | null> {
+  const result = await client.query<LiveSessionRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        started_by_user_id,
+        status,
+        started_at,
+        expires_at,
+        ended_at
+      FROM app.discovery_live_sessions
+      WHERE duo_id = $1
+        AND ($2::uuid IS NULL OR id = $2::uuid)
+        AND status = 'active'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `,
+    [input.duoId, input.sessionId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapLiveSession(row) : null;
+}
+
+async function getLiveMatches(
+  client: QueueDbClient,
+  duoId: string,
+  startedAt: Date
+): Promise<DiscoveryMatchHistoryItem[]> {
+  const result = await client.query<MatchHistoryRow>(
+    `
+      SELECT
+        match.id,
+        match.duo_id,
+        match.catalog_game_id,
+        match.matched_at,
+        match.created_from,
+        match.first_user_id,
+        match.second_user_id,
+        match.reason_snapshot,
+        match.library_handoff_status,
+        game.slug,
+        game.name,
+        game.background_image_url,
+        library.status AS library_status
+      FROM app.discovery_matches AS match
+      INNER JOIN catalog.games AS game
+        ON game.id = match.catalog_game_id
+      LEFT JOIN app.duo_library_games AS library
+        ON library.duo_id = match.duo_id
+        AND library.catalog_game_id = match.catalog_game_id
+      WHERE match.duo_id = $1
+        AND match.matched_at >= $2
+      ORDER BY match.matched_at DESC
+      LIMIT 12
+    `,
+    [duoId, startedAt]
+  );
+
+  return result.rows.map((row) => ({
+    match: mapMatch(row),
+    slug: row.slug,
+    title: row.name,
+    coverUrl: row.background_image_url,
+    libraryStatus: row.library_status,
+    reasons: row.reason_snapshot ?? []
+  }));
+}
+
+async function getCurrentMoodQuizRound(
+  client: QueueDbClient,
+  duoId: string
+): Promise<string> {
+  const result = await client.query<{ quiz_round: string }>(
+    `
+      SELECT quiz_round
+      FROM app.discovery_mood_quiz_answers
+      WHERE duo_id = $1
+      ORDER BY answered_at DESC
+      LIMIT 1
+    `,
+    [duoId]
+  );
+
+  return result.rows[0]?.quiz_round ?? randomUUID();
+}
+
+async function getMergedMoodForRound(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    quizRound: string;
+    memberUserIds: string[];
+  }
+) {
+  const result = await client.query<MoodAnswerRow>(
+    `
+      SELECT user_id, quiz_round, question_key, answer_key
+      FROM app.discovery_mood_quiz_answers
+      WHERE duo_id = $1
+        AND quiz_round = $2
+      ORDER BY user_id, question_key
+    `,
+    [input.duoId, input.quizRound]
+  );
+  const answersByUser = new Map<string, Partial<MoodQuizAnswers>>();
+
+  for (const row of result.rows) {
+    const answers = answersByUser.get(row.user_id) ?? {};
+    if (row.question_key === "energy" && isMoodEnergyAnswer(row.answer_key)) {
+      answers.energy = row.answer_key;
+    }
+    if (row.question_key === "commitment" && isMoodCommitmentAnswer(row.answer_key)) {
+      answers.commitment = row.answer_key;
+    }
+    if (row.question_key === "vibe" && isMoodVibeAnswer(row.answer_key)) {
+      answers.vibe = row.answer_key;
+    }
+    answersByUser.set(row.user_id, answers);
+  }
+  const [firstUserId, secondUserId] = input.memberUserIds;
+
+  return mergeDuoMoodAnswers({
+    first: firstUserId ? completeMoodAnswers(answersByUser.get(firstUserId)) : null,
+    second: secondUserId ? completeMoodAnswers(answersByUser.get(secondUserId)) : null
+  });
+}
+
+function completeMoodAnswers(
+  answers: Partial<MoodQuizAnswers> | undefined
+): MoodQuizAnswers | null {
+  if (!answers?.energy || !answers.commitment || !answers.vibe) {
+    return null;
+  }
+
+  return {
+    energy: answers.energy,
+    commitment: answers.commitment,
+    vibe: answers.vibe
+  };
+}
+
+function isMoodEnergyAnswer(value: string): value is MoodQuizAnswers["energy"] {
+  return ["low", "medium", "high"].includes(value);
+}
+
+function isMoodCommitmentAnswer(
+  value: string
+): value is MoodQuizAnswers["commitment"] {
+  return ["short", "steady", "epic"].includes(value);
+}
+
+function isMoodVibeAnswer(value: string): value is MoodQuizAnswers["vibe"] {
+  return ["laugh", "think", "focus", "flexible"].includes(value);
 }
 
 async function getMemberContext(
@@ -905,6 +1231,18 @@ function mapMatch(row: MatchRow): DiscoveryMatchRecord {
     secondUserId: row.second_user_id,
     reasonSnapshot: row.reason_snapshot ?? [],
     libraryHandoffStatus: row.library_handoff_status
+  };
+}
+
+function mapLiveSession(row: LiveSessionRow): DiscoveryLiveSessionRecord {
+  return {
+    id: row.id,
+    duoId: row.duo_id,
+    startedByUserId: row.started_by_user_id,
+    status: row.status,
+    startedAt: row.started_at,
+    expiresAt: row.expires_at,
+    endedAt: row.ended_at
   };
 }
 

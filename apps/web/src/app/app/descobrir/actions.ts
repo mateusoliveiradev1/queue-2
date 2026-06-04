@@ -3,10 +3,13 @@
 import { redirect } from "next/navigation";
 
 import {
+  answerMoodQuiz,
+  getSurpriseRecommendation,
   handoffDiscoveryMatchToLibrary,
   isDiscoveryDecision,
   isDiscoverySourceMode,
-  recordDiscoveryDecision
+  recordDiscoveryDecision,
+  startLiveSession
 } from "../../../modules/discovery";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 
@@ -62,6 +65,70 @@ export async function handoffDiscoveryMatchToLibraryAction(
   }
 
   redirect(withState(returnTo, handoffResultToState(result)));
+}
+
+export async function startDiscoveryLiveSessionAction(
+  formData: FormData
+): Promise<void> {
+  const session = await requireVerifiedSession();
+  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
+  const result = await startLiveSession({
+    userId: session.user.id
+  });
+
+  if (!result.ok) {
+    redirect(result.reason === "membership-required" ? "/parear" : withState(returnTo, "acao-invalida"));
+  }
+
+  redirect(withState(`${returnTo}?live=${result.session.id}`, "live-iniciado"));
+}
+
+export async function answerMoodQuizAction(formData: FormData): Promise<void> {
+  const session = await requireVerifiedSession();
+  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
+  const energy = getFormString(formData, "energy");
+  const commitment = getFormString(formData, "commitment");
+  const vibe = getFormString(formData, "vibe");
+
+  if (!isMoodEnergyAnswer(energy) || !isMoodCommitmentAnswer(commitment) || !isMoodVibeAnswer(vibe)) {
+    redirect(withState(returnTo, "quiz-invalido"));
+  }
+
+  const result = await answerMoodQuiz({
+    userId: session.user.id,
+    answers: {
+      energy,
+      commitment,
+      vibe
+    }
+  });
+
+  redirect(
+    withState(
+      returnTo,
+      result.mood.kind === "duo" ? "quiz-completo" : "quiz-preview"
+    )
+  );
+}
+
+export async function getSurpriseRecommendationAction(
+  formData: FormData
+): Promise<void> {
+  const session = await requireVerifiedSession();
+  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
+  const result = await getSurpriseRecommendation({
+    userId: session.user.id
+  });
+
+  if (!result.ok && result.reason === "membership-required") {
+    redirect("/parear");
+  }
+
+  if (!result.ok) {
+    redirect(withState(returnTo, "surpresa-indisponivel"));
+  }
+
+  redirect(withState(`${returnTo}?surpresa=${result.card.catalogGameId}`, "surpresa-pronta"));
 }
 
 function decisionResultToState(
@@ -125,4 +192,16 @@ function withState(path: string, state: string): string {
   const url = new URL(path, "https://queue.local");
   url.searchParams.set("estado", state);
   return `${url.pathname}${url.search}`;
+}
+
+function isMoodEnergyAnswer(value: string): value is "low" | "medium" | "high" {
+  return ["low", "medium", "high"].includes(value);
+}
+
+function isMoodCommitmentAnswer(value: string): value is "short" | "steady" | "epic" {
+  return ["short", "steady", "epic"].includes(value);
+}
+
+function isMoodVibeAnswer(value: string): value is "laugh" | "think" | "focus" | "flexible" {
+  return ["laugh", "think", "focus", "flexible"].includes(value);
 }

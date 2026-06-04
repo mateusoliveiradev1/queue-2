@@ -242,15 +242,76 @@ export type AnswerMoodQuizInput = {
   answers: MoodQuizAnswers;
 };
 
+export type DiscoveryMoodQuizState = {
+  mood: DuoMoodMergeResult;
+};
+
 export type AnswerMoodQuizResult = {
   mood: DuoMoodMergeResult;
   recommendations: DiscoveryRecommendation[];
+  cards: DiscoveryDeckCard[];
 };
 
 export type GetDiscoveryRecommendationsInput = {
   userId: DiscoveryUserId;
   filters?: DiscoveryRecommendationFilterInput;
 };
+
+export type DiscoveryLiveSessionRecord = {
+  id: string;
+  duoId: DiscoveryDuoId;
+  startedByUserId: DiscoveryUserId;
+  status: "active" | "ended" | "expired";
+  startedAt: Date;
+  expiresAt: Date;
+  endedAt: Date | null;
+};
+
+export type StartLiveSessionInput = {
+  userId: DiscoveryUserId;
+};
+
+export type StartLiveSessionResult =
+  | {
+      ok: true;
+      session: DiscoveryLiveSessionRecord;
+    }
+  | {
+      ok: false;
+      reason: "membership-required";
+    };
+
+export type GetLiveSessionInput = {
+  userId: DiscoveryUserId;
+  sessionId?: string | null;
+};
+
+export type DiscoveryLiveSessionPayload =
+  | {
+      ok: true;
+      session: DiscoveryLiveSessionRecord;
+      matches: DiscoveryMatchHistoryItem[];
+      expiresInSeconds: number;
+    }
+  | {
+      ok: false;
+      reason: "membership-required" | "live-session-not-found";
+    };
+
+export type GetSurpriseRecommendationInput = {
+  userId: DiscoveryUserId;
+  filters?: DiscoveryDeckFilters;
+};
+
+export type GetSurpriseRecommendationResult =
+  | {
+      ok: true;
+      card: DiscoveryDeckCard;
+    }
+  | {
+      ok: false;
+      reason: "membership-required" | "surprise-not-found";
+    };
 
 export type DiscoveryCatalogSearch = (
   input?: SearchCatalogGamesInput
@@ -271,8 +332,9 @@ export type DiscoveryRepository = DiscoveryDeckRepository & {
     status: DiscoveryLibraryHandoffStatus;
   }): Promise<void>;
   getMatchHistory(input: GetMatchHistoryInput): Promise<DiscoveryMatchHistoryItem[]>;
-  answerMoodQuiz(input: AnswerMoodQuizInput): Promise<AnswerMoodQuizResult>;
-  getRecommendations(input: GetDiscoveryRecommendationsInput): Promise<DiscoveryRecommendationResult>;
+  startLiveSession(input: StartLiveSessionInput): Promise<StartLiveSessionResult>;
+  getLiveSession(input: GetLiveSessionInput): Promise<DiscoveryLiveSessionPayload>;
+  answerMoodQuiz(input: AnswerMoodQuizInput): Promise<DiscoveryMoodQuizState>;
 };
 
 export type DiscoveryRecommendationFactSource = {

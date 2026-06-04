@@ -1,15 +1,18 @@
 import type {
   AnswerMoodQuizInput,
-  DiscoveryRepository,
-  GetDiscoveryRecommendationsInput
+  DiscoveryRepository
 } from "./application/ports";
+import { answerMoodQuiz } from "./application/answer-mood-quiz";
 import { getDiscoveryDeck } from "./application/get-discovery-deck";
+import { getLiveSession } from "./application/get-live-session";
 import { searchDiscoveryGames } from "./application/search-discovery-games";
 import { getMatchHistory } from "./application/get-match-history";
+import { getSurpriseRecommendation } from "./application/get-surprise-recommendation";
 import {
   handoffDiscoveryMatchToLibrary,
   recordDiscoveryDecision
 } from "./application/record-discovery-decision";
+import { startLiveSession } from "./application/start-live-session";
 
 export {
   canCreateDiscoveryMatch,
@@ -86,22 +89,30 @@ export type {
   DiscoveryDeckRepository,
   DiscoveryDuoId,
   DiscoveryGameReadState,
+  DiscoveryLiveSessionPayload,
+  DiscoveryLiveSessionRecord,
   DiscoveryLibraryHandoffInput,
   DiscoveryLibraryHandoffResult,
   DiscoveryMatchHistoryItem,
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
+  DiscoveryMoodQuizState,
   DiscoveryReadState,
   DiscoveryRepository,
   DiscoverySearchResult,
   DiscoverySearchValidationResult,
   DiscoveryUserId,
+  GetLiveSessionInput,
   GetDiscoveryDeckInput,
   GetDiscoveryRecommendationsInput,
   GetMatchHistoryInput,
+  GetSurpriseRecommendationInput,
+  GetSurpriseRecommendationResult,
   RecordDiscoveryDecisionInput,
   RecordDiscoveryDecisionResult,
-  SearchDiscoveryGamesInput
+  SearchDiscoveryGamesInput,
+  StartLiveSessionInput,
+  StartLiveSessionResult
 } from "./application/ports";
 export {
   DISCOVERY_SEARCH_MAX_LIMIT,
@@ -110,23 +121,23 @@ export {
   normalizeDiscoverySearchInput
 } from "./application/search-discovery-games";
 export {
+  answerMoodQuiz,
   getDiscoveryDeck,
+  getLiveSession,
   getMatchHistory,
+  getSurpriseRecommendation,
   handoffDiscoveryMatchToLibrary,
   recordDiscoveryDecision,
-  searchDiscoveryGames
+  searchDiscoveryGames,
+  startLiveSession
 };
 
 export function answerDiscoveryMoodQuiz(
   input: AnswerMoodQuizInput,
-  repository: DiscoveryRepository
+  repository: Pick<DiscoveryRepository, "answerMoodQuiz" | "getReadState">,
+  catalogSearch: import("./application/ports").DiscoveryCatalogSearch
 ) {
-  return repository.answerMoodQuiz(input);
-}
-
-export function getDiscoveryRecommendations(
-  input: GetDiscoveryRecommendationsInput,
-  repository: DiscoveryRepository
-) {
-  return repository.getRecommendations(input);
+  return import("./application/answer-mood-quiz").then((module) =>
+    module.answerMoodQuizUseCase(input, repository, catalogSearch)
+  );
 }
