@@ -118,7 +118,7 @@ export function DiscoveryFilters({
         </div>
       </fieldset>
 
-      <details className="discovery-advanced-filters">
+      <details className="discovery-filter-sheet discovery-advanced-filters">
         <summary className="queue2-focusable">Mais filtros</summary>
         <fieldset className="discovery-filter-grid">
           <legend>Filtros avancados</legend>

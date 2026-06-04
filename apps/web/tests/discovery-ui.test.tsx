@@ -153,8 +153,24 @@ const discoveryDeckSource = readFileSync(
   "src/modules/discovery/presentation/discovery-deck.tsx",
   "utf8"
 );
+const discoveryFiltersSource = readFileSync(
+  "src/modules/discovery/presentation/discovery-filters.tsx",
+  "utf8"
+);
+const discoverySearchSource = readFileSync(
+  "src/modules/discovery/presentation/discovery-search.tsx",
+  "utf8"
+);
 const liveRefreshSource = readFileSync(
   "src/modules/discovery/presentation/live-session-refresh.tsx",
+  "utf8"
+);
+const moodQuizSource = readFileSync(
+  "src/modules/discovery/presentation/mood-quiz.tsx",
+  "utf8"
+);
+const matchHistorySource = readFileSync(
+  "src/modules/discovery/presentation/match-history.tsx",
   "utf8"
 );
 const globalCssSource = readFileSync("src/app/globals.css", "utf8");
@@ -305,6 +321,8 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByRole("radio", { name: /plataforma comum/i })).toBeChecked();
     expect(screen.getByRole("radio", { name: /explorar fora/i })).not.toBeChecked();
     expect(screen.getByText("Mais filtros")).toBeInTheDocument();
+    expect(container.querySelector(".discovery-filter-sheet")).not.toBeNull();
+    expect(screen.getByRole("dialog", { name: /busca no deck/i })).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /buscar jogo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /iniciar match live/i })).toBeInTheDocument();
     expect(screen.getByText(/atualizando a live/i)).toBeInTheDocument();
@@ -312,6 +330,11 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByText(/qual energia voces tem/i)).toHaveLength(1);
     expect(screen.getAllByText(/qual tamanho de compromisso/i)).toHaveLength(1);
     expect(screen.getAllByText(/que clima voces querem/i)).toHaveLength(1);
+    expect(
+      screen.getAllByText(
+        /qual energia voces tem|qual tamanho de compromisso|que clima voces querem/i
+      )
+    ).toHaveLength(3);
     expect(screen.getByText(/match da dupla criado/i)).toBeInTheDocument();
     const deckGroup = screen.getByRole("group", { name: /deck de descoberta/i });
     expect(deckGroup).toBeInTheDocument();
@@ -373,6 +396,18 @@ describe("Phase 3 Discovery route shell", () => {
     expect(discoveryDeckSource).toContain("ArrowDown");
     expect(discoveryDeckSource).toContain("discovery-reaction-badges");
     expect(discoveryDeckSource).toContain("Movimento reduzido ativo");
+  });
+
+  it("keeps supporting discovery modes as compact orbit sheets", () => {
+    expect(discoveryFiltersSource).toContain("discovery-filter-sheet");
+    expect(discoverySearchSource).toContain('role="dialog"');
+    expect(discoverySearchSource).toContain("Busca no deck");
+    expect(discoverySearchSource).toContain("Nada entrou na fila.");
+    expect(discoverySearchSource).toContain("Busca indisponivel agora.");
+    expect(moodQuizSource).toContain("MOOD_QUIZ_QUESTIONS.map");
+    expect(matchHistorySource).not.toMatch(/\b(review|Hall|timeline)\b/i);
+    expect(globalCssSource).toContain(".discovery-orbit-tray");
+    expect(globalCssSource).toContain(".discovery-search-sheet");
   });
 
   it("uses a valid surprise id to request and render the highlighted discovery card", async () => {

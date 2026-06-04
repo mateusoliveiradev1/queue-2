@@ -1425,6 +1425,23 @@ input {
   margin-top: var(--space-4);
 }
 
+.discovery-filter-sheet,
+.discovery-search-sheet,
+.discovery-orbit-tray {
+  background: color-mix(in oklch, var(--surface) 72%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  border-radius: var(--radius-sharp);
+  padding: var(--space-5);
+}
+
+.discovery-filter-sheet {
+  border-style: dashed;
+}
+
+.discovery-filter-sheet[open] {
+  border-style: solid;
+}
+
 .discovery-card-stage {
   background:
     linear-gradient(145deg, color-mix(in oklch, var(--primary) 8%, transparent), transparent 34%),
@@ -1446,6 +1463,12 @@ input {
 .discovery-tray {
   align-content: start;
   min-width: 0;
+}
+
+.discovery-tray.surface-band {
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
 .discovery-stage-trays[hidden],
@@ -1764,6 +1787,38 @@ input {
 .discovery-search-results .queue2-button {
   justify-content: start;
   width: 100%;
+}
+
+.discovery-search h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.discovery-search-empty,
+.discovery-orbit-status,
+.live-refresh-status {
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.35;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+}
+
+.discovery-search .muted[data-loading="true"] {
+  color: var(--primary);
+}
+
+.discovery-search-selected {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .discovery-search-selected .discovery-card {

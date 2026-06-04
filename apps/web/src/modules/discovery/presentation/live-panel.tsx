@@ -14,7 +14,7 @@ export function LivePanel({
   returnTo: string;
 }) {
   return (
-    <section className="live-panel" aria-labelledby="live-summary-title">
+    <section className="live-panel discovery-orbit-tray" aria-labelledby="live-summary-title">
       <div className="section-heading">
         <h2 className="eyebrow" id="live-summary-title">
           Live

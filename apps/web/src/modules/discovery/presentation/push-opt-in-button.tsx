@@ -117,7 +117,7 @@ export function PushOptInButton() {
   }
 
   return (
-    <div className="push-opt-in" aria-live="polite">
+    <div className="push-opt-in discovery-orbit-status" aria-live="polite">
       <button
         className="queue2-button"
         data-tone="quiet"

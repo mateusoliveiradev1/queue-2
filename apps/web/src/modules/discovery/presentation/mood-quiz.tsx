@@ -31,7 +31,11 @@ export function MoodQuiz({
   returnTo: string;
 }) {
   return (
-    <section className="mood-quiz" id="mood-quiz" aria-labelledby="mood-quiz-title">
+    <section
+      className="mood-quiz discovery-orbit-tray"
+      id="mood-quiz"
+      aria-labelledby="mood-quiz-title"
+    >
       <div className="section-heading">
         <h2 className="eyebrow" id="mood-quiz-title">
           Quiz

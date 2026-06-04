@@ -31,6 +31,7 @@ export function DiscoverySearch({
   const [results, setResults] = useState<DiscoveryDeckCard[]>([]);
   const [selectedCard, setSelectedCard] = useState<DiscoveryDeckCard | null>(null);
   const [status, setStatus] = useState("Digite ao menos duas letras.");
+  const [isLoading, setIsLoading] = useState(false);
   const listboxId = useId();
   const abortRef = useRef<AbortController | null>(null);
 
@@ -40,12 +41,15 @@ export function DiscoverySearch({
 
     if (normalized.length < 2) {
       setResults([]);
+      setIsLoading(false);
       setStatus("Digite ao menos duas letras.");
       return;
     }
 
     const controller = new AbortController();
     abortRef.current = controller;
+    setIsLoading(true);
+    setStatus("Buscando no deck...");
     const timer = window.setTimeout(async () => {
       try {
         const params = new URLSearchParams({
@@ -63,15 +67,17 @@ export function DiscoverySearch({
 
         if (!payload.ok) {
           setResults([]);
+          setIsLoading(false);
           setStatus("Busca indisponivel agora.");
           return;
         }
 
         setResults(payload.results);
+        setIsLoading(false);
         setStatus(
           payload.results.length > 0
             ? `${payload.results.length} sugestao(oes) para abrir no deck.`
-            : "Nenhuma sugestao encontrada."
+            : "Nada entrou na fila. Tente outro nome ou limpe os filtros antes de buscar de novo."
         );
       } catch (error) {
         if ((error as Error).name === "AbortError") {
@@ -79,6 +85,7 @@ export function DiscoverySearch({
         }
 
         setResults([]);
+        setIsLoading(false);
         setStatus("Busca indisponivel agora.");
       }
     }, 220);
@@ -90,10 +97,16 @@ export function DiscoverySearch({
   }, [query]);
 
   return (
-    <section className="discovery-search" id="discovery-search" aria-labelledby="discovery-search-title">
+    <section
+      aria-labelledby="discovery-search-title"
+      className="discovery-search discovery-search-sheet"
+      id="discovery-search"
+      role="dialog"
+    >
       <div className="section-heading">
-        <h2 className="eyebrow" id="discovery-search-title">
-          Busca
+        <p className="eyebrow">Busca</p>
+        <h2 id="discovery-search-title">
+          Busca no deck
         </h2>
         <p className="support-copy">
           Autocomplete de descoberta: escolher uma sugestao abre a carta com as
@@ -115,17 +128,22 @@ export function DiscoverySearch({
           value={query}
         />
       </label>
-      <p className="muted" role="status">
+      <p className="muted" data-loading={isLoading ? "true" : "false"} role="status">
         {status}
       </p>
       {results.length > 0 ? (
         <ul className="discovery-search-results" id={listboxId} role="listbox">
           {results.map((card) => (
-            <li key={card.catalogGameId} role="option">
+            <li key={card.catalogGameId}>
               <button
+                aria-selected={selectedCard?.catalogGameId === card.catalogGameId}
                 className="queue2-button"
                 data-tone="quiet"
-                onClick={() => setSelectedCard(card)}
+                onClick={() => {
+                  setSelectedCard(card);
+                  setStatus(`Carta selecionada: ${card.title}.`);
+                }}
+                role="option"
                 type="button"
               >
                 {card.title}
@@ -133,9 +151,12 @@ export function DiscoverySearch({
             </li>
           ))}
         </ul>
+      ) : query.trim().length >= 2 && !isLoading ? (
+        <p className="discovery-search-empty">Nada entrou na fila.</p>
       ) : null}
       {selectedCard ? (
         <div className="discovery-search-selected">
+          <p className="eyebrow">Contexto selecionado</p>
           <DiscoveryCard
             card={selectedCard}
             decisionAction={decisionAction}

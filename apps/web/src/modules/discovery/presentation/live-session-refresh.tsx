@@ -76,7 +76,7 @@ export function LiveSessionRefresh({
 
   if (!state.ok) {
     return (
-      <p className="live-refresh-status" role="status">
+      <p className="live-refresh-status discovery-orbit-status" role="status">
         Live encerrada ou indisponivel para esta dupla.
       </p>
     );
@@ -85,7 +85,7 @@ export function LiveSessionRefresh({
   const latestMatch = state.matches[0] ?? null;
 
   return (
-    <div className="live-refresh" aria-live="polite">
+    <div className="live-refresh discovery-orbit-status" aria-live="polite">
       {latestMatch ? (
         <div className="live-refresh-celebration" role="status">
           <p className="eyebrow">Match Live detectou</p>
