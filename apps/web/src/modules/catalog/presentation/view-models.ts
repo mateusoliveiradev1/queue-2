@@ -39,6 +39,7 @@ export type CatalogGameCardView = {
 export type CatalogGameDetailView = CatalogGameCardView & {
   description: string;
   descriptionSourceLabel: string;
+  sourceBreakdown: CatalogSourceFreshnessRowView[];
   rawgUrl: string;
   coopLabel: string;
   timeEstimate: CatalogDetailFactView;
@@ -47,6 +48,17 @@ export type CatalogGameDetailView = CatalogGameCardView & {
     hasCoreDetails: boolean;
     missingLabels: string[];
   };
+};
+
+export type CatalogSourceFreshnessRowView = {
+  id: "rawg" | "description" | "time-estimate" | "availability";
+  category: string;
+  sourceLabel: string;
+  sourceHref: string | null;
+  statusLabel: string;
+  freshnessTone: "fresh" | "stale" | "missing";
+  dateTime: string | null;
+  absoluteDateLabel: string | null;
 };
 
 export type CatalogDetailFactView =
@@ -109,6 +121,7 @@ export function toCatalogGameDetailView(
     ...card,
     description: description.description,
     descriptionSourceLabel: description.sourceLabel,
+    sourceBreakdown: buildSourceBreakdown(game, now),
     rawgUrl: game.rawgUrl,
     coopLabel: card.mainFlow.eligible
       ? "Confirmado para campanha ou historia coop em dupla."
@@ -119,6 +132,113 @@ export function toCatalogGameDetailView(
       hasCoreDetails: readiness.hasCoreDetails,
       missingLabels: readiness.missing
     }
+  };
+}
+
+function buildSourceBreakdown(
+  game: CatalogGameDetailRecord,
+  now: Date
+): CatalogSourceFreshnessRowView[] {
+  const rawg = getSourceAttribution(game);
+  const rawgDate = game.sourceUpdatedAt ?? game.syncedAt;
+  const rawgFreshness = getFreshnessState(game.sourceUpdatedAt, game.syncedAt, now);
+  const description = getCatalogDescriptionState(game.localization, now);
+  const timeEstimate = getEstimatedTimeState(game.timeEstimate, now);
+  const availability = getAvailabilityState(game.availability, now);
+
+  return [
+    {
+      id: "rawg",
+      category: "Dados e imagens",
+      sourceLabel: rawg.label,
+      sourceHref: rawg.href,
+      statusLabel: rawgFreshness.label,
+      freshnessTone: toSourceFreshnessTone(rawgFreshness.tone),
+      dateTime: rawgDate.toISOString(),
+      absoluteDateLabel: formatAbsoluteDate(rawgDate)
+    },
+    description.kind === "published" && game.localization
+      ? {
+          id: "description",
+          category: "Descricao em portugues",
+          sourceLabel: description.sourceLabel,
+          sourceHref: description.sourceUrl,
+          statusLabel: description.freshnessLabel,
+          freshnessTone: toSourceFreshnessTone(
+            getFreshnessState(game.localization.publishedAt, game.localization.reviewedAt, now)
+              .tone
+          ),
+          dateTime: game.localization.publishedAt.toISOString(),
+          absoluteDateLabel: formatAbsoluteDate(game.localization.publishedAt)
+        }
+      : {
+          id: "description",
+          category: "Descricao em portugues",
+          sourceLabel: description.sourceLabel,
+          sourceHref: null,
+          statusLabel: "Sem descricao revisada publicada",
+          freshnessTone: "missing",
+          dateTime: null,
+          absoluteDateLabel: null
+        },
+    timeEstimate.kind === "available" && game.timeEstimate
+      ? {
+          id: "time-estimate",
+          category: "Tempo estimado",
+          sourceLabel: timeEstimate.sourceLabel,
+          sourceHref: timeEstimate.sourceUrl,
+          statusLabel: timeEstimate.freshnessLabel,
+          freshnessTone: toSourceFreshnessTone(
+            getFreshnessState(game.timeEstimate.checkedAt, game.timeEstimate.checkedAt, now)
+              .tone
+          ),
+          dateTime: game.timeEstimate.checkedAt.toISOString(),
+          absoluteDateLabel: formatAbsoluteDate(game.timeEstimate.checkedAt)
+        }
+      : {
+          id: "time-estimate",
+          category: "Tempo estimado",
+          sourceLabel: timeEstimate.label,
+          sourceHref: null,
+          statusLabel: "Sem fonte ativa para exibir",
+          freshnessTone: "missing",
+          dateTime: null,
+          absoluteDateLabel: null
+        },
+    availability.kind === "available"
+      ? buildAvailabilityRow(game, availability, now)
+      : {
+          id: "availability",
+          category: "Disponibilidade",
+          sourceLabel: availability.label,
+          sourceHref: null,
+          statusLabel: "Sem fonte ativa para exibir",
+          freshnessTone: "missing",
+          dateTime: null,
+          absoluteDateLabel: null
+        }
+  ];
+}
+
+function buildAvailabilityRow(
+  game: CatalogGameDetailRecord,
+  availability: Extract<ReturnType<typeof getAvailabilityState>, { kind: "available" }>,
+  now: Date
+): CatalogSourceFreshnessRowView {
+  const available = game.availability.find((item) => item.status === "available");
+  const checkedAt = available?.checkedAt ?? null;
+
+  return {
+    id: "availability",
+    category: "Disponibilidade",
+    sourceLabel: availability.sourceLabel,
+    sourceHref: availability.sourceUrl,
+    statusLabel: availability.freshnessLabel,
+    freshnessTone: checkedAt
+      ? toSourceFreshnessTone(getFreshnessState(checkedAt, checkedAt, now).tone)
+      : "missing",
+    dateTime: checkedAt?.toISOString() ?? null,
+    absoluteDateLabel: checkedAt ? formatAbsoluteDate(checkedAt) : null
   };
 }
 
@@ -152,6 +272,19 @@ function formatRelease(releasedAt: Date | null): string {
     day: "2-digit",
     timeZone: "UTC"
   }).format(releasedAt);
+}
+
+function formatAbsoluteDate(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    year: "numeric",
+    month: "long",
+    day: "2-digit",
+    timeZone: "UTC"
+  }).format(date);
+}
+
+function toSourceFreshnessTone(tone: "fresh" | "stale" | "unknown") {
+  return tone === "unknown" ? "missing" : tone;
 }
 
 function formatPlatforms(platforms: CatalogPlatformRecord[]): string[] {

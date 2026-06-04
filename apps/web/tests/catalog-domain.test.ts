@@ -129,6 +129,34 @@ describe("catalog use cases", () => {
       slug: "it-takes-two",
       description: "Uma aventura coop sobre reconciliacao.",
       descriptionSourceLabel: "Descricao revisada: QUEUE/2",
+      sourceBreakdown: [
+        {
+          id: "rawg",
+          sourceLabel: "Dados e imagens: RAWG",
+          sourceHref: "https://rawg.io/games/it-takes-two",
+          statusLabel: "Atualizado ha 2 dias",
+          dateTime: "2026-06-01T12:00:00.000Z",
+          absoluteDateLabel: "01 de junho de 2026"
+        },
+        {
+          id: "description",
+          sourceLabel: "Descricao revisada: QUEUE/2",
+          statusLabel: "Atualizado hoje",
+          dateTime: "2026-06-03T12:00:00.000Z",
+          absoluteDateLabel: "03 de junho de 2026"
+        },
+        {
+          id: "time-estimate",
+          sourceLabel: "Curadoria QUEUE/2",
+          statusLabel: "Atualizado hoje"
+        },
+        {
+          id: "availability",
+          sourceLabel: "Nao verificado",
+          statusLabel: "Sem fonte ativa para exibir",
+          freshnessTone: "missing"
+        }
+      ],
       coopLabel: "Confirmado para campanha ou historia coop em dupla.",
       detailReadiness: {
         hasCoreDetails: true,
@@ -172,6 +200,15 @@ describe("catalog use cases", () => {
     ).resolves.toMatchObject({
       description: "Descricao em portugues ainda nao revisada.",
       descriptionSourceLabel: "Descricao em portugues ainda nao revisada",
+      sourceBreakdown: expect.arrayContaining([
+        expect.objectContaining({
+          id: "description",
+          sourceLabel: "Descricao em portugues ainda nao revisada",
+          statusLabel: "Sem descricao revisada publicada",
+          dateTime: null,
+          freshnessTone: "missing"
+        })
+      ]),
       detailReadiness: {
         hasCoreDetails: false,
         missingLabels: ["descricao"]
