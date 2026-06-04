@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 02.1-02-PLAN.md
-last_updated: "2026-06-04T00:01:10.805Z"
-last_activity: 2026-06-04
+status: completed
+stopped_at: Completed Phase 02.1; ready for Phase 3 planning
+last_updated: "2026-06-04T00:13:54.294Z"
+last_activity: 2026-06-03 -- Phase 02.1 marked complete
 progress:
   total_phases: 9
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 13
-  completed_plans: 12
-  percent: 92
+  completed_plans: 13
+  percent: 100
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 02.1 — localizacao-e-qualidade-do-catalogo
+**Current focus:** Phase 3 — descoberta-e-matches
 
 ## Current Position
 
-Phase: 02.1 (localizacao-e-qualidade-do-catalogo) — EXECUTING
-Plan: 3 of 3
-Status: Ready to execute
-Last activity: 2026-06-04
+Phase: 3 (descoberta-e-matches) — READY TO PLAN
+Plan: Not planned
+Status: Phase 02.1 complete; Phase 3 is next
+Last activity: 2026-06-03 -- Phase 02.1 marked complete
 
-Progress: [█████████░] 92%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 10
+- Total plans completed: 13
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -45,6 +45,7 @@ Progress: [█████████░] 92%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 02 | 3 | - | - |
+| 02.1 | 3 | - | - |
 
 **Recent Trend:**
 
@@ -64,6 +65,7 @@ Progress: [█████████░] 92%
 | Phase 02 P03 | 19 min | 5 tasks | 21 files |
 | Phase 02.1 P01 | 6 min | 4 tasks | 12 files |
 | Phase 02.1 P02 | 7 min | 4 tasks | 16 files |
+| Phase 02.1 P03 | 12 min | 4 tasks | 10 files |
 
 ## Quick Tasks Completed
 
@@ -109,12 +111,16 @@ Recent decisions affecting current work:
 - [Phase 01-04]: Email correction uses Better Auth changeEmail when a session exists and otherwise records a new verification state safely.
 - [Phase 01-04]: Proxy checks are UX-only; protected pages and server actions remain the authorization source.
 - [Phase 01-04]: Profile session revocation submits session ids; the server resolves Better Auth tokens before revoking.
+- [Phase 02.1]: Reviewed PT-BR catalog descriptions live in `catalog.game_localizations` and normal reads hydrate only published rows. — Missing localization shows honest PT-BR unavailable copy rather than RAWG English fallback.
+- [Phase 02.1]: RAWG sync preserves QUEUE/2 curation unless the allowlist explicitly changes curation fields. — External sync must not erase local quality decisions.
+- [Phase 02.1]: Game detail carries the complete `Fontes e frescor` source breakdown while catalog cards stay compact. — Source transparency belongs on detail without making browse cards noisy.
+- [Phase 02.1]: QUEUE/2-owned reviewed copy is text-only unless there is a real external source URL. — The UI does not invent links for internal curation.
 
 ### Pending Todos
 
-- Phase 2.1 planning: Localizacao e qualidade do catalogo antes da Fase 3.
 - Phase 3 planning: Descoberta e Matches.
 - Production launch follow-ups: real transactional email delivery check and Neon restore rehearsal evidence.
+- E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
 ### Blockers/Concerns
 
@@ -135,5 +141,5 @@ Items acknowledged and carried forward from initial scoping:
 ## Session Continuity
 
 Last session: 2026-06-04T00:01:10.799Z
-Stopped at: Completed 02.1-02-PLAN.md
+Stopped at: Completed Phase 02.1; ready for Phase 3 planning
 Resume file: None
