@@ -6,6 +6,7 @@ import {
   runCatalogSync,
   type CatalogSyncAudit
 } from "../src/modules/catalog/infrastructure/catalog-sync";
+import { applyCatalogCurationSeeds } from "../src/modules/catalog/infrastructure/catalog-curation-seeds";
 import { createCatalogRepository } from "../src/modules/catalog/infrastructure/catalog-repository";
 import {
   createRawgClient,
@@ -184,6 +185,133 @@ describe("catalog sync orchestration", () => {
   });
 });
 
+describe("catalog curation seed application", () => {
+  it("upserts published PT-BR localizations and verified availability for existing catalog games", async () => {
+    const { pool, calls } = fakePool({
+      gameIdsBySlug: new Map([
+        ["a-way-out-2018", "game-a-way-out"],
+        ["missing-game", "game-missing"]
+      ])
+    });
+    const checkedAt = new Date("2026-06-03T21:25:00.000-03:00");
+
+    const result = await applyCatalogCurationSeeds({
+      pool,
+      localizationSeeds: [
+        {
+          slug: "a-way-out-2018",
+          locale: "pt-BR",
+          version: 1,
+          status: "published",
+          description: "Descricao PT-BR revisada.",
+          source: "queue2-curation",
+          sourceUrl: null,
+          rawSourceHash: null,
+          provenance: {
+            kind: "phase-2-polish",
+            summary: "summary"
+          },
+          authorKind: "seed",
+          authorId: "queue2",
+          reviewerKind: "operator",
+          reviewerId: "queue2-curation",
+          reviewNotes: "reviewed",
+          qualityCheck: {
+            coop_facts_checked: true,
+            spoilers_avoided: true,
+            facts_not_invented: true,
+            natural_pt_br: true,
+            queue2_tone_controlled: true
+          },
+          reviewedAt: checkedAt,
+          publishedAt: checkedAt
+        }
+      ],
+      availabilitySeeds: [
+        {
+          slug: "a-way-out-2018",
+          type: "game-pass",
+          platformKey: "xbox",
+          source: "Xbox Store / EA Play",
+          sourceUrl: "https://www.xbox.com/en-us/games/store/a-way-out/bwvbncmf22zk",
+          checkedAt,
+          status: "available"
+        }
+      ]
+    });
+
+    expect(result).toMatchObject({
+      localizations: {
+        inputCount: 1,
+        appliedCount: 1,
+        missingSlugs: []
+      },
+      availability: {
+        inputCount: 1,
+        appliedCount: 1,
+        missingSlugs: []
+      }
+    });
+    expect(calls.some((call) => call.sql.includes("INSERT INTO catalog.game_localizations"))).toBe(true);
+    expect(calls.some((call) => call.sql.includes("INSERT INTO catalog.game_availability"))).toBe(true);
+  });
+
+  it("reports curation seeds whose games are not yet synchronized", async () => {
+    const { pool, calls } = fakePool({ gameIdsBySlug: new Map() });
+    const checkedAt = new Date("2026-06-03T21:25:00.000-03:00");
+
+    const result = await applyCatalogCurationSeeds({
+      pool,
+      localizationSeeds: [
+        {
+          slug: "not-synced-yet",
+          locale: "pt-BR",
+          version: 1,
+          status: "published",
+          description: "Descricao PT-BR revisada.",
+          source: "queue2-curation",
+          sourceUrl: null,
+          rawSourceHash: null,
+          provenance: {
+            kind: "phase-2-polish",
+            summary: "summary"
+          },
+          authorKind: "seed",
+          authorId: "queue2",
+          reviewerKind: "operator",
+          reviewerId: "queue2-curation",
+          reviewNotes: "reviewed",
+          qualityCheck: {
+            coop_facts_checked: true,
+            spoilers_avoided: true,
+            facts_not_invented: true,
+            natural_pt_br: true,
+            queue2_tone_controlled: true
+          },
+          reviewedAt: checkedAt,
+          publishedAt: checkedAt
+        }
+      ],
+      availabilitySeeds: [
+        {
+          slug: "not-synced-yet",
+          type: "game-pass",
+          platformKey: "xbox",
+          source: "Xbox Store",
+          sourceUrl: "https://www.xbox.com/",
+          checkedAt,
+          status: "available"
+        }
+      ]
+    });
+
+    expect(result.localizations.missingSlugs).toEqual(["not-synced-yet"]);
+    expect(result.availability.missingSlugs).toEqual(["not-synced-yet"]);
+    expect(calls.some((call) => call.sql.includes("INSERT INTO catalog.game_localizations"))).toBe(false);
+    expect(calls.some((call) => call.sql.includes("INSERT INTO catalog.game_availability"))).toBe(false);
+  });
+});
+
 describe("localization draft provider boundary", () => {
   it("ships without translation provider credentials configured", async () => {
     await expect(
@@ -295,11 +423,18 @@ function fakeAudit(): CatalogSyncAudit {
   };
 }
 
-function fakePool() {
+function fakePool(options: { gameIdsBySlug?: Map<string, string> } = {}) {
   const calls: QueryCall[] = [];
   const client = {
     query: vi.fn(async (sql: string, values: unknown[] = []) => {
       calls.push({ sql, values });
+
+      if (sql.includes("SELECT id FROM catalog.games WHERE slug")) {
+        const slug = values[0] as string;
+        const id = options.gameIdsBySlug?.get(slug);
+
+        return { rows: id ? [{ id }] : [] };
+      }
 
       if (sql.includes("RETURNING id")) {
         return { rows: [{ id: "game-1" }] };

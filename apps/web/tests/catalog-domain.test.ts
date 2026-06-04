@@ -70,6 +70,30 @@ describe("catalog policy", () => {
     });
   });
 
+  it("returns verified availability with source and freshness when curated rows exist", () => {
+    expect(
+      getAvailabilityState(
+        [
+          {
+            type: "game-pass",
+            platformKey: "xbox",
+            source: "Xbox Store / EA Play",
+            sourceUrl: "https://www.xbox.com/en-us/games/store/a-way-out/bwvbncmf22zk",
+            checkedAt: now,
+            status: "available"
+          }
+        ],
+        now
+      )
+    ).toEqual({
+      kind: "available",
+      label: "Game Pass verificado",
+      sourceLabel: "Xbox Store / EA Play",
+      sourceUrl: "https://www.xbox.com/en-us/games/store/a-way-out/bwvbncmf22zk",
+      freshnessLabel: "Atualizado hoje"
+    });
+  });
+
   it("returns reviewed QUEUE/2 description state for published localization records", () => {
     expect(getCatalogDescriptionState(catalogLocalization(), now)).toEqual({
       kind: "published",
