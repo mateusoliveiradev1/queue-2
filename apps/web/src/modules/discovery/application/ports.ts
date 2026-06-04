@@ -9,8 +9,7 @@ import type {
   CollaborativeInfluenceInput,
   DiscoveryRecommendation,
   DiscoveryRecommendationFilterInput,
-  DiscoveryRecommendationGameFacts,
-  DiscoveryRecommendationResult
+  DiscoveryRecommendationGameFacts
 } from "../domain/recommendation-policy";
 import type {
   DuoMoodMergeResult,
