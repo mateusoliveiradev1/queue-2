@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Completed Phase 02.1; ready for Phase 3 planning
-last_updated: "2026-06-04T00:52:12.462Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-cra: automatizar refresh do catalogo
+last_updated: "2026-06-04T01:00:00.000Z"
+last_activity: 2026-06-03 -- Completed quick task 260603-its: fechar skips de integracao
 progress:
   total_phases: 9
   completed_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
 Status: Phase 02.1 complete; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-cra: automatizar refresh do catalogo
+Last activity: 2026-06-03 -- Completed quick task 260603-its: fechar skips de integracao
 
 Progress: [██████████] 100%
 
@@ -78,6 +78,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | polir-catalogo-da-fase-2 | Cards do catalogo foram contidos visualmente e detalhes de jogos conhecidos receberam descricoes PT-BR curadas com fonte explicita. |
 | 2026-06-03 | fechar-uat-humano-da-fase-2 | Fase 2 foi aceita em UAT humano apos revisao visual autenticada do catalogo e detalhe de jogo. |
 | 2026-06-03 | automatizar-refresh-do-catalogo | Catalog refresh ganhou rota protegida de Vercel Cron, comando manual de debug e health check de descricoes PT-BR/disponibilidade. |
+| 2026-06-03 | fechar-skips-de-integracao | `pnpm test:integration` agora carrega `.env.local`, roda sem cache e passou com 23 testes sem skip; `catalog:seed-curation -- --dry-run` confirmado. |
 
 ## Accumulated Context
 
