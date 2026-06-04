@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-import { LibraryStatusControls } from "../../library/presentation/library-status-controls";
+import { LibraryStatusControls } from "../../library";
 import type { DiscoveryMatchHistoryItem } from "../application/ports";
 
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;

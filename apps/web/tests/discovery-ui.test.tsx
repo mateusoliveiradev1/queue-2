@@ -97,6 +97,36 @@ vi.mock("../src/modules/discovery", async () => {
 
 vi.mock("../src/modules/library", () => ({
   getLibraryOverview: libraryModuleMock.getLibraryOverview,
+  LibraryStatusControls: ({
+    action,
+    catalogGameId,
+    currentStatus,
+    returnTo
+  }: {
+    action: (formData: FormData) => Promise<void>;
+    catalogGameId: string;
+    currentStatus: string;
+    returnTo?: string;
+  }) => (
+    <div className="status-controls" aria-label="Mudar status na biblioteca">
+      {(["wishlist", "jogando", "pausado"] as const).map((status) => (
+        <form action={action} key={status}>
+          <input name="catalogGameId" type="hidden" value={catalogGameId} />
+          <input name="status" type="hidden" value={status} />
+          {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
+          <button aria-pressed={currentStatus === status} type="submit">
+            {status === "wishlist" ? "Wishlist" : status === "jogando" ? "Jogando" : "Pausado"}
+          </button>
+        </form>
+      ))}
+      <button disabled type="button">
+        Zerado bloqueado
+      </button>
+      <button disabled type="button">
+        Dropado bloqueado
+      </button>
+    </div>
+  ),
   toLibraryOverviewView: libraryModuleMock.toLibraryOverviewView
 }));
 
