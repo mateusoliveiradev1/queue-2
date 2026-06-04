@@ -5,6 +5,15 @@ import type {
   DiscoveryMatchPolicyResult,
   DiscoverySourceMode
 } from "../domain/discovery-policy";
+import type {
+  DiscoveryRecommendation,
+  DiscoveryRecommendationFilterInput,
+  DiscoveryRecommendationResult
+} from "../domain/recommendation-policy";
+import type {
+  DuoMoodMergeResult,
+  MoodQuizAnswers
+} from "../domain/mood-quiz";
 
 export type DiscoveryCatalogGameId = string;
 export type DiscoveryDuoId = string;
@@ -39,6 +48,7 @@ export type DiscoveryDeckFilters = {
   commonPlatformOnly?: boolean;
   availability?: "free" | "game-pass";
   maxEstimatedMinutes?: number;
+  recommendation?: DiscoveryRecommendationFilterInput;
 };
 
 export type DiscoveryDeckCard = {
@@ -68,7 +78,24 @@ export type RecordDiscoveryDecisionResult = {
   match: DiscoveryMatchRecord | null;
 };
 
+export type AnswerMoodQuizInput = {
+  userId: DiscoveryUserId;
+  answers: MoodQuizAnswers;
+};
+
+export type AnswerMoodQuizResult = {
+  mood: DuoMoodMergeResult;
+  recommendations: DiscoveryRecommendation[];
+};
+
+export type GetDiscoveryRecommendationsInput = {
+  userId: DiscoveryUserId;
+  filters?: DiscoveryRecommendationFilterInput;
+};
+
 export type DiscoveryRepository = {
   getDeck(input: GetDiscoveryDeckInput): Promise<DiscoveryDeckCard[]>;
   recordDecision(input: RecordDiscoveryDecisionInput): Promise<RecordDiscoveryDecisionResult>;
+  answerMoodQuiz(input: AnswerMoodQuizInput): Promise<AnswerMoodQuizResult>;
+  getRecommendations(input: GetDiscoveryRecommendationsInput): Promise<DiscoveryRecommendationResult>;
 };
