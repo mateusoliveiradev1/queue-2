@@ -234,7 +234,9 @@ async function syncRawgGame(
     const gameId = await upsertCatalogRawgFacts(client, input, curation);
     await replacePlatforms(client, gameId, input.platforms);
     await replaceGenres(client, gameId, input.genres);
-    await replaceTimeEstimate(client, gameId, input.timeEstimate ?? null);
+    if (input.timeEstimate) {
+      await replaceTimeEstimate(client, gameId, input.timeEstimate);
+    }
     await client.query("COMMIT");
     return gameId;
   } catch (error) {

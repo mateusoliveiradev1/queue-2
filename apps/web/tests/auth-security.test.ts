@@ -9,7 +9,11 @@ import {
   shouldUseSecureCookies
 } from "../src/platform/auth/server";
 import { authStatusMessages } from "../src/platform/auth/actions";
-import { sendAuthEmail, shouldUseDevelopmentEmailLog } from "../src/platform/auth/email";
+import {
+  renderAuthEmailHtml,
+  sendAuthEmail,
+  shouldUseDevelopmentEmailLog
+} from "../src/platform/auth/email";
 import { serializeAuthLogRecord } from "../src/platform/auth/logger";
 import {
   passwordBreachCheckPolicy,
@@ -203,6 +207,34 @@ describe("auth runtime security policy", () => {
     } finally {
       infoSpy.mockRestore();
     }
+  });
+
+  it("renders auth emails with a structured card and wrapped fallback link", () => {
+    const html = renderAuthEmailHtml({
+      title: "Verifique seu email",
+      eyebrow: "Confirmacao de conta",
+      lead: "Confirme seu email para liberar o pareamento e comecar a montar a fila da dupla.",
+      preview: "Confirme seu email para entrar na fila da dupla.",
+      cta: "Verificar email",
+      securityNote: "Este link confirma apenas o email desta conta.",
+      steps: [
+        { label: "01", value: "Email confirmado" },
+        { label: "02", value: "Dupla liberada" }
+      ],
+      url: "https://queue-2.vercel.app/api/auth/verify-email?token=very-long-token&callbackURL=%2Fverificar-email"
+    });
+
+    expect(html).toContain("max-width:600px");
+    expect(html).toContain("border-radius:8px");
+    expect(html).toContain("box-shadow:0 18px 45px");
+    expect(html).toContain("QUEUE<span");
+    expect(html).toContain("/2");
+    expect(html).toContain("Email confirmado");
+    expect(html).toContain("Nota de seguranca");
+    expect(html).toContain("overflow-wrap:anywhere");
+    expect(html).toContain("word-break:break-all");
+    expect(html).toContain("A fila e nossa");
+    expect(html).not.toContain("<main");
   });
 
   it("redacts user-facing auth errors", () => {

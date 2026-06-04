@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Login resend path fixed; one explicit test account manually verified; ready for Phase 3 planning
-last_updated: "2026-06-04T01:52:35.000Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-auth-login: login e verificacao de email
+stopped_at: Auth email templates polished; catalog sync preserves curated time; ready for Phase 3 planning
+last_updated: "2026-06-04T02:05:03.000Z"
+last_activity: 2026-06-03 -- Completed quick task 260603-email-template: templates transacionais de auth
 progress:
   total_phases: 9
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
-Status: Phase 02.1 complete; login resend path fixed and explicit test account verified; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-auth-login: login e verificacao de email
+Status: Phase 02.1 complete; auth email templates polished and explicit test account verified; Phase 3 is next
+Last activity: 2026-06-03 -- Completed quick task 260603-email-template: templates transacionais de auth
 
 Progress: [██████████] 100%
 
@@ -82,6 +82,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | publicar-e-deploy-vercel | Repo publico `queue-2` foi pushado no GitHub; Vercel producao ficou Ready em `https://queue-2.vercel.app` com banco limpo migrado/populado, Resend temporario configurado e envs sensiveis fora do git. |
 | 2026-06-03 | auth-feedback-e-verificacao-email | Formularios publicos de auth ganharam feedback pending; contas nao verificadas devem usar reenvio em `/verificar-email`, sem limpar banco por padrao. |
 | 2026-06-03 | auth-login-verificacao-resend | Login ganhou link explicito de reenvio; detector de `email_not_verified` foi reforcado; `mateus100saopaulino@hotmail.com` foi marcado como verificado; `mateus_sp4@outlook.com` nao existia no banco de producao. |
+| 2026-06-03 | polir-template-email-auth | Emails de verificacao e reset ganharam template responsivo QUEUE/2 com icone `/2`, CTA, etapas e nota de seguranca; gate tambem corrigiu RAWG sync para preservar tempo curado quando nao houver novo tempo estimado. |
 
 ## Accumulated Context
 
