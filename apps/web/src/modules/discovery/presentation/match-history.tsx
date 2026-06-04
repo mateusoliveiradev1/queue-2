@@ -80,14 +80,6 @@ export function MatchHistory({
                     currentStatus={item.libraryStatus ?? ""}
                     returnTo={returnTo}
                   />
-                  <div className="match-history-links">
-                    <a className="text-link" href={`/app/jogo/${item.slug}`}>
-                      Abrir detalhe
-                    </a>
-                    <a className="text-link" href="/app/biblioteca">
-                      Ver biblioteca
-                    </a>
-                  </div>
                 </div>
               </article>
             ))}

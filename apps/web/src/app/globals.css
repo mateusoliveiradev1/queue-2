@@ -2120,8 +2120,7 @@ input {
 
 .match-history,
 .match-history-grid,
-.match-history-body,
-.match-history-links {
+.match-history-body {
   display: grid;
   gap: var(--space-4);
 }
@@ -2258,10 +2257,6 @@ input {
   padding-left: var(--space-3);
   padding-right: var(--space-3);
   width: 100%;
-}
-
-.match-history-links {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @container (max-width: 360px) {
@@ -2456,8 +2451,7 @@ input {
   .library-game,
   .discovery-card,
   .match-celebration,
-  .match-history-card,
-  .match-history-links {
+  .match-history-card {
     grid-template-columns: 1fr;
   }
 

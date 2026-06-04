@@ -451,6 +451,8 @@ describe("Phase 3 Discovery route shell", () => {
     expect(matchHistorySource).toContain('data-discovery-tray="matches"');
     expect(matchHistorySource).toContain("Ver biblioteca completa");
     expect(matchHistorySource).toContain("esta area continua resumida");
+    expect(matchHistorySource).not.toContain("match-history-links");
+    expect(globalCssSource).not.toContain(".match-history-links");
     expect(globalCssSource).toContain('.discovery-tray:has([data-discovery-tray="matches"])');
     expect(globalCssSource).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr))");
     expect(globalCssSource).toContain("max-height: min(760px, 82svh)");
