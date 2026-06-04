@@ -173,6 +173,10 @@ const matchHistorySource = readFileSync(
   "src/modules/discovery/presentation/match-history.tsx",
   "utf8"
 );
+const matchCelebrationSource = readFileSync(
+  "src/modules/discovery/presentation/match-celebration.tsx",
+  "utf8"
+);
 const globalCssSource = readFileSync("src/app/globals.css", "utf8");
 
 afterEach(() => {
@@ -346,9 +350,19 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByRole("button", { name: "Agora nao" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pular" })).toBeInTheDocument();
     expect(container.querySelector(".discovery-card-tray")).not.toBeNull();
-    expect(screen.getByRole("status", { name: "It Takes Two" })).toHaveTextContent(
-      /primeiro o match/i
+    const celebration = screen.getByRole("status", { name: /os dois quiseram/i });
+    expect(celebration).toHaveTextContent(
+      /entrou no radar da dupla\. escolham para onde esse jogo vai agora\./i
     );
+    expect(within(celebration).getByRole("button", { name: "Mandar para Wishlist" })).toBeInTheDocument();
+    expect(within(celebration).getByRole("button", { name: "Comecar em Jogando" })).toBeInTheDocument();
+    expect(within(celebration).getByRole("button", { name: "Guardar em Pausado" })).toBeInTheDocument();
+    expect(
+      appearsBefore(
+        within(celebration).getByText(/entrou no radar da dupla/i),
+        within(celebration).getByRole("button", { name: "Mandar para Wishlist" })
+      )
+    ).toBe(true);
     expect(screen.getAllByRole("heading", { name: /it takes two/i }).length).toBeGreaterThan(1);
     expect(
       screen
@@ -408,6 +422,19 @@ describe("Phase 3 Discovery route shell", () => {
     expect(matchHistorySource).not.toMatch(/\b(review|Hall|timeline)\b/i);
     expect(globalCssSource).toContain(".discovery-orbit-tray");
     expect(globalCssSource).toContain(".discovery-search-sheet");
+  });
+
+  it("renders the match event before explicit library handoff actions", () => {
+    expect(matchCelebrationSource).toContain("Os dois quiseram");
+    expect(matchCelebrationSource).toContain(
+      "Entrou no radar da dupla. Escolham para onde esse jogo vai agora."
+    );
+    expect(matchCelebrationSource).toContain("Mandar para Wishlist");
+    expect(matchCelebrationSource).toContain("Comecar em Jogando");
+    expect(matchCelebrationSource).toContain("Guardar em Pausado");
+    expect(matchCelebrationSource).toContain('aria-live="polite"');
+    expect(matchHistorySource).toContain("Status atual");
+    expect(matchHistorySource).toContain("Match sozinho nao vira");
   });
 
   it("uses a valid surprise id to request and render the highlighted discovery card", async () => {

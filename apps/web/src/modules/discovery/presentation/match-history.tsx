@@ -22,7 +22,8 @@ export function MatchHistory({
         </h2>
         <p className="support-copy">
           Historico curto para retomar jogos aprovados pelos dois, focado
-          somente em status atual e proximo passo.
+          somente em status atual e proximo passo. Match sozinho nao vira
+          sorteio futuro; a dupla escolhe Wishlist, Jogando ou Pausado.
         </p>
       </div>
       {items.length > 0 ? (

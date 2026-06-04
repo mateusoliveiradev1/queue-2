@@ -116,7 +116,7 @@ test.describe("Phase 3 discovery ritual", () => {
       await secondPage.getByRole("button", { name: /quero jogar/i }).click();
       await expect(secondPage.getByRole("status")).toContainText(/match da dupla criado/i);
       await expect(secondPage.getByRole("heading", { name: new RegExp(discoveryQuery, "i") })).toBeVisible();
-      await expect(secondPage.getByRole("button", { name: /enviar para wishlist/i })).toBeVisible();
+      await expect(secondPage.getByRole("button", { name: /mandar para wishlist/i })).toBeVisible();
       await expect(secondPage.getByRole("button", { name: /zerado bloqueado/i })).toBeDisabled();
       await expect(secondPage.getByRole("button", { name: /dropado bloqueado/i })).toBeDisabled();
     } finally {
@@ -149,10 +149,10 @@ test.describe("Phase 3 discovery ritual", () => {
     await login(page, readyActor);
     await page.goto("/app/descobrir?estado=match-ja-existe");
 
-    const firstMatch = page.getByRole("status").filter({ hasText: /primeiro o match/i }).first();
+    const firstMatch = page.getByRole("status").filter({ hasText: /entrou no radar da dupla/i }).first();
     await expect(firstMatch).toBeVisible();
 
-    const wishlistButton = firstMatch.getByRole("button", { name: /wishlist/i }).first();
+    const wishlistButton = firstMatch.getByRole("button", { name: /mandar para wishlist/i }).first();
     if ((await wishlistButton.count()) > 0) {
       await wishlistButton.click();
       await expect(page).toHaveURL(/\/app\/descobrir/);

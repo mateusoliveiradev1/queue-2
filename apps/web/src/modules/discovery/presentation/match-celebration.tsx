@@ -8,9 +8,9 @@ import type { DiscoveryLibraryHandoffStatus } from "../domain/discovery-policy";
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
 
 const handoffLabels: Record<DiscoveryLibraryHandoffStatus, string> = {
-  wishlist: "Wishlist",
-  jogando: "Jogando",
-  pausado: "Pausado"
+  wishlist: "Mandar para Wishlist",
+  jogando: "Comecar em Jogando",
+  pausado: "Guardar em Pausado"
 };
 
 const handoffStatuses: DiscoveryLibraryHandoffStatus[] = [
@@ -53,11 +53,20 @@ export function MatchCelebration({
         )}
       </div>
       <div className="match-celebration-copy">
+        <div className="match-celebration-mark">
+          <span aria-hidden="true">/2</span>
+          <span className="match-pointer-mark" aria-hidden="true">
+            <svg fill="none" height="24" viewBox="0 0 24 24" width="24">
+              <path d="M4 5l11 7L4 19V5Z" fill="currentColor" />
+              <path d="M15 8l4 4-4 4-4-4 4-4Z" fill="currentColor" opacity="0.72" />
+            </svg>
+          </span>
+        </div>
         <p className="eyebrow">Match da dupla</p>
-        <h2 id="match-celebration-title">{match.title}</h2>
+        <h2 id="match-celebration-title">Os dois quiseram</h2>
+        <h3>{match.title}</h3>
         <p className="support-copy">
-          Os dois escolheram Quero jogar. Primeiro o match; depois voces decidem
-          se ele entra na Wishlist, em Jogando ou fica Pausado.
+          Entrou no radar da dupla. Escolham para onde esse jogo vai agora.
         </p>
         {match.reasons.length > 0 ? (
           <div className="tag-row" aria-label="Motivos do match">
@@ -71,14 +80,14 @@ export function MatchCelebration({
             Ja na biblioteca: {formatLibraryStatus(match.libraryStatus)}
           </p>
         ) : null}
-        <div className="form-actions">
+        <div className="form-actions match-celebration-actions">
           {handoffStatuses.map((status) => (
             <form action={handoffAction} key={status}>
               <input name="catalogGameId" type="hidden" value={match.match.catalogGameId} />
               <input name="returnTo" type="hidden" value={returnTo} />
               <input name="status" type="hidden" value={status} />
               <button className="queue2-button" data-tone="primary" type="submit">
-                {match.libraryStatus ? `Mover para ${handoffLabels[status]}` : `Enviar para ${handoffLabels[status]}`}
+                {handoffLabels[status]}
               </button>
             </form>
           ))}

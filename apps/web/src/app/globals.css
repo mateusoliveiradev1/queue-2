@@ -282,10 +282,6 @@ input {
   text-transform: uppercase;
 }
 
-.public-ritual-strip .queue2-roulette-pointer {
-  display: none !important;
-}
-
 .eyebrow {
   color: var(--primary);
   font-family: var(--font-mono);
@@ -1766,14 +1762,73 @@ input {
 }
 
 .match-celebration {
-  border-color: color-mix(in oklch, var(--primary) 62%, transparent);
-  grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--primary) 10%, transparent), transparent 34%),
+    linear-gradient(215deg, color-mix(in oklch, var(--accent) 10%, transparent), transparent 46%),
+    color-mix(in oklch, var(--surface-raised) 80%, black);
+  border-color: color-mix(in oklch, var(--primary) 58%, transparent);
+  grid-template-columns: minmax(150px, 240px) minmax(0, 1fr);
   padding: var(--space-5);
 }
 
 .match-celebration h2 {
   font-size: 28px;
   line-height: 1.1;
+}
+
+.match-celebration h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.match-celebration-mark {
+  align-items: center;
+  color: var(--primary);
+  display: flex;
+  gap: var(--space-3);
+}
+
+.match-celebration-mark > span:first-child {
+  border: 1px solid color-mix(in oklch, var(--primary) 50%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--primary);
+  display: grid;
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+  height: 44px;
+  place-items: center;
+  width: 44px;
+}
+
+.match-pointer-mark {
+  color: var(--accent);
+  display: inline-flex;
+}
+
+.match-celebration-actions {
+  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
+}
+
+.match-celebration-actions form {
+  display: flex;
+}
+
+.match-celebration-actions .queue2-button,
+.match-celebration-actions .text-link {
+  justify-content: center;
+  min-height: 48px;
+  text-align: center;
+  width: 100%;
 }
 
 .discovery-search-results {
