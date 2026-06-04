@@ -256,6 +256,24 @@ describe("Phase 3 Discovery route shell", () => {
     );
 
     expect(screen.getByRole("heading", { name: /os dois quiseram\?/i })).toBeInTheDocument();
+    const desktopNav = within(
+      screen.getByRole("navigation", { name: /area autenticada queue dois/i })
+    );
+    const mobileNav = within(
+      screen.getByRole("navigation", { name: /navegacao principal mobile/i })
+    );
+    expect(desktopNav.getByRole("link", { name: /descobrir/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(mobileNav.getByRole("link", { name: /descobrir/i })).toHaveAttribute(
+      "href",
+      "/app/descobrir"
+    );
+    expect(mobileNav.getByRole("link", { name: /descobrir/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
     expect(container.querySelector(".discovery-stage")).not.toBeNull();
     expect(container.querySelector(".discovery-card-stage")).not.toBeNull();
     expect(container.querySelector(".discovery-orbit-controls")).not.toBeNull();

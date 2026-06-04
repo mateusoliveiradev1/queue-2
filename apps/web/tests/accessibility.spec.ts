@@ -132,14 +132,21 @@ test.describe("Phase 3 discovery accessibility", () => {
   );
 
   test("discovery preserves reduced-motion, keyboard decisions and source links", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, readyActor);
     await page.goto("/app/descobrir");
 
-    await expect(page.getByRole("heading", { name: /o deck da dupla/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /os dois quiseram\?/i })).toBeVisible();
     await expect
       .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
       .toBe(true);
+    const mobileNav = page.getByRole("navigation", { name: /navegacao principal mobile/i });
+    await expect(mobileNav).toBeVisible();
+    await expect(mobileNav.getByRole("link", { name: /descobrir/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
 
     const deck = page.getByRole("group", { name: /deck de descoberta/i });
     await expect(deck).toBeVisible();

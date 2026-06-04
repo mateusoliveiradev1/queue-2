@@ -33,17 +33,30 @@ export function AppShell({
             <QueueWordmark compact />
           </a>
           <nav className="app-nav" aria-label="Area autenticada QUEUE dois">
-            {navigation.map((item) => (
-              <a
-                aria-current={currentPage === item.page ? "page" : undefined}
-                className="queue2-focusable"
-                href={item.href}
-                key={item.href}
-              >
-                <RoulettePointer aria-hidden="true" label="" />
-                <span>{item.label}</span>
-              </a>
-            ))}
+            {navigation.map((item) => {
+              const isActive = currentPage === item.page;
+
+              return (
+                <a
+                  aria-current={isActive ? "page" : undefined}
+                  className="queue2-focusable"
+                  data-active={isActive ? "true" : "false"}
+                  href={item.href}
+                  key={item.href}
+                >
+                  {isActive ? (
+                    <RoulettePointer
+                      aria-hidden="true"
+                      className="app-nav-pointer"
+                      label=""
+                    />
+                  ) : (
+                    <span className="app-nav-spacer" aria-hidden="true" />
+                  )}
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
           </nav>
         </div>
         <div className="neutral-state">
@@ -52,6 +65,32 @@ export function AppShell({
         </div>
       </aside>
       <main className="app-main">{children}</main>
+      <nav className="app-bottom-nav" aria-label="Navegacao principal mobile">
+        {navigation.map((item) => {
+          const isActive = currentPage === item.page;
+
+          return (
+            <a
+              aria-current={isActive ? "page" : undefined}
+              className="queue2-focusable"
+              data-active={isActive ? "true" : "false"}
+              href={item.href}
+              key={item.href}
+            >
+              {isActive ? (
+                <RoulettePointer
+                  aria-hidden="true"
+                  className="app-bottom-nav-pointer"
+                  label=""
+                />
+              ) : (
+                <span className="app-bottom-nav-dot" aria-hidden="true" />
+              )}
+              <span>{item.label}</span>
+            </a>
+          );
+        })}
+      </nav>
     </div>
   );
 }
