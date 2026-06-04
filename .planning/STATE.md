@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03-03-PLAN.md
-last_updated: "2026-06-04T11:16:01.283Z"
+status: verifying
+stopped_at: Completed 03-04-PLAN.md
+last_updated: "2026-06-04T11:43:11.737Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 9
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 17
-  completed_plans: 16
-  percent: 94
+  completed_plans: 17
+  percent: 100
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 03 (descoberta-e-matches) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-04
 
-Progress: [█████████░] 94%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -69,6 +69,7 @@ Progress: [█████████░] 94%
 | Phase 03-descoberta-e-matches P01 | 16 min | 3 tasks | 12 files |
 | Phase 03-descoberta-e-matches P02 | 19 min | 3 tasks | 17 files |
 | Phase 03-descoberta-e-matches P03 | 22 min | 4 tasks | 18 files |
+| Phase 03-descoberta-e-matches P04 | 22 min | 4 tasks | 25 files |
 
 ## Quick Tasks Completed
 
@@ -121,6 +122,9 @@ Recent decisions affecting current work:
 - [Phase 03-descoberta-e-matches]: Discovery uses Motion for the swipe deck but keeps Quero jogar, Agora nao and Pular as first-class form actions. — This preserves the premium card interaction while keeping accessible, reduced-motion and server-action paths equivalent.
 - [Phase 03-descoberta-e-matches]: Discovery handoff reuses the library public status control surface and keeps Zerado/Dropado disabled until Phase 4. — This satisfies the modular architecture contract and avoids implying future double-confirmation statuses are active.
 - [Phase 03-descoberta-e-matches]: Authenticated Discovery browser review remains gated on configured E2E database and ready-user fixtures. — The route requires a verified session and duo data, so visual validation must run once E2E_BASE_URL and ready-user credentials exist.
+- [Phase 03-04]: VAPID_PRIVATE_KEY stays in the server-only push adapter; browser code receives only the public VAPID key. — Preserves the push secret boundary while enabling explicit opt-in.
+- [Phase 03-04]: Push subscription endpoint and key material remain owner-scoped under RLS. — Match delivery reads each member subscription through that member database context instead of weakening policies.
+- [Phase 03-04]: Phase 3 Playwright and database integration gaps are explicit environment skips. — Missing TEST_DATABASE_URL and E2E fixture users are release follow-ups, not passing evidence.
 
 ### Pending Todos
 
@@ -147,6 +151,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T11:15:39.968Z
-Stopped at: Completed 03-03-PLAN.md
+Last session: 2026-06-04T11:43:11.730Z
+Stopped at: Completed 03-04-PLAN.md
 Resume file: None
