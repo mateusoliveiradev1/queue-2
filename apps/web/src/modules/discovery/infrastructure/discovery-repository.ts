@@ -9,16 +9,20 @@ import {
 
 import type {
   DiscoveryDecisionRecord,
-  DiscoveryDeckRepository,
   DiscoveryGameReadState,
+  DiscoveryMatchHistoryItem,
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
+  DiscoveryRepository,
   DiscoveryReadState
 } from "../application/ports";
-import type {
-  DiscoveryDecision,
-  DiscoveryLibraryHandoffStatus,
-  DiscoverySourceMode
+import {
+  canCreateDiscoveryMatch,
+  evaluateDiscoveryDecision,
+  type DiscoveryDecision,
+  type DiscoveryDecisionEffect,
+  type DiscoveryLibraryHandoffStatus,
+  type DiscoverySourceMode
 } from "../domain/discovery-policy";
 import type { LibraryStatus } from "../../library";
 
@@ -69,15 +73,57 @@ type GenreRow = {
   name: string;
 };
 
+type CatalogGameExistsRow = {
+  exists: boolean;
+};
+
+type ReasonFactRow = {
+  coop_campaign_confirmed: boolean;
+  estimated_minutes: number | null;
+  availability_type: "free" | "game-pass" | null;
+  common_platforms: string[] | null;
+};
+
+type MatchHistoryRow = MatchRow & {
+  slug: string;
+  name: string;
+  background_image_url: string | null;
+  library_status: LibraryStatus | null;
+};
+
 let runtimePool: QueueDbPool | undefined;
 
-export const discoveryRepository: DiscoveryDeckRepository = createDiscoveryRepository();
+export const discoveryRepository: DiscoveryRepository = createDiscoveryRepository();
 
 export function createDiscoveryRepository(
   pool: QueueDbPool = getRuntimePool()
-): DiscoveryDeckRepository {
+): DiscoveryRepository {
   return {
-    getReadState: (input) => getReadState(pool, input)
+    getReadState: (input) => getReadState(pool, input),
+    recordDecision: (input) => recordDecision(pool, input),
+    markMatchLibraryHandoff: (input) => markMatchLibraryHandoff(pool, input),
+    getMatchHistory: (input) => getMatchHistory(pool, input),
+    answerMoodQuiz: async () => ({
+      mood: {
+        kind: "empty",
+        answeredMembers: 0,
+        recommendationMode: "none"
+      },
+      recommendations: []
+    }),
+    getRecommendations: async () => ({
+      recommendations: [],
+      collaborativeInfluence: {
+        enabled: false,
+        weight: 0,
+        reason: "threshold-not-met",
+        minimums: {
+          currentDuoDecisionCount: 20,
+          crossDuoPositiveDecisionCount: 100
+        }
+      },
+      varietyBandSize: 0
+    })
   };
 }
 
@@ -125,6 +171,221 @@ async function getReadState(
         crossDuoPositiveDecisionCount: 0
       }
     };
+  });
+}
+
+async function recordDecision(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    catalogGameId: string;
+    decision: DiscoveryDecision;
+    sourceMode: DiscoverySourceMode;
+  }
+) {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return { ok: false as const, reason: "membership-required" as const };
+    }
+
+    if (!(await catalogGameExists(client, input.catalogGameId))) {
+      return { ok: false as const, reason: "catalog-game-not-found" as const };
+    }
+
+    const effect = evaluateDiscoveryDecision({ decision: input.decision });
+    const decision = await upsertDecision(client, {
+      ...input,
+      duoId: context.duoId,
+      effect
+    });
+    const existingMatch = await getExistingMatch(
+      client,
+      context.duoId,
+      input.catalogGameId
+    );
+    const partnerDecision = context.partnerUserId
+      ? await getPartnerDecision(client, {
+          duoId: context.duoId,
+          partnerUserId: context.partnerUserId,
+          catalogGameId: input.catalogGameId
+        })
+      : null;
+    const matchPolicy = canCreateDiscoveryMatch({
+      actorUserId: input.userId,
+      partnerUserId: context.partnerUserId ?? input.userId,
+      actorDecision: input.decision,
+      partnerDecision: partnerDecision?.decision ?? null,
+      existingMatch: Boolean(existingMatch)
+    });
+
+    await recordDiscoveryEvent(client, context.duoId, "discovery.decision_recorded", {
+      catalogGameId: input.catalogGameId,
+      userId: input.userId,
+      decision: input.decision,
+      sourceMode: input.sourceMode
+    });
+
+    if (existingMatch && input.decision === "want") {
+      return {
+        ok: true as const,
+        state: {
+          kind: "already-matched" as const,
+          catalogGameId: input.catalogGameId,
+          match: existingMatch
+        },
+        decision,
+        effect,
+        matchPolicy,
+        match: existingMatch
+      };
+    }
+
+    if (matchPolicy.ok && context.partnerUserId) {
+      const reasonSnapshot = await getReasonSnapshot(
+        client,
+        context.duoId,
+        input.catalogGameId
+      );
+      const createdMatch = await createMatch(client, {
+        duoId: context.duoId,
+        catalogGameId: input.catalogGameId,
+        sourceMode: input.sourceMode,
+        actorUserId: input.userId,
+        partnerUserId: context.partnerUserId,
+        reasonSnapshot
+      });
+
+      await recordDiscoveryEvent(client, context.duoId, "discovery.match_created", {
+        catalogGameId: input.catalogGameId,
+        matchId: createdMatch.id,
+        reasonSnapshot
+      });
+
+      return {
+        ok: true as const,
+        state: {
+          kind: "match-created" as const,
+          catalogGameId: input.catalogGameId,
+          match: createdMatch
+        },
+        decision,
+        effect,
+        matchPolicy,
+        match: createdMatch
+      };
+    }
+
+    if (effect.decision === "not_now" && effect.cooldownUntil) {
+      return {
+        ok: true as const,
+        state: {
+          kind: "cooldown-set" as const,
+          catalogGameId: input.catalogGameId,
+          cooldownUntil: effect.cooldownUntil
+        },
+        decision,
+        effect,
+        matchPolicy,
+        match: null
+      };
+    }
+
+    return {
+      ok: true as const,
+      state: {
+        kind: "card-advanced" as const,
+        catalogGameId: input.catalogGameId
+      },
+      decision,
+      effect,
+      matchPolicy,
+      match: null
+    };
+  });
+}
+
+async function markMatchLibraryHandoff(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    catalogGameId: string;
+    status: DiscoveryLibraryHandoffStatus;
+  }
+): Promise<void> {
+  await withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return;
+    }
+
+    await client.query(
+      `
+        UPDATE app.discovery_matches
+        SET library_handoff_status = $3,
+            library_handoff_at = now(),
+            library_handoff_by_user_id = $4
+        WHERE duo_id = $1
+          AND catalog_game_id = $2
+      `,
+      [context.duoId, input.catalogGameId, input.status, input.userId]
+    );
+  });
+}
+
+async function getMatchHistory(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    limit?: number;
+  }
+): Promise<DiscoveryMatchHistoryItem[]> {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return [];
+    }
+
+    const result = await client.query<MatchHistoryRow>(
+      `
+        SELECT
+          match.id,
+          match.duo_id,
+          match.catalog_game_id,
+          match.matched_at,
+          match.created_from,
+          match.first_user_id,
+          match.second_user_id,
+          match.reason_snapshot,
+          match.library_handoff_status,
+          game.slug,
+          game.name,
+          game.background_image_url,
+          library.status AS library_status
+        FROM app.discovery_matches AS match
+        INNER JOIN catalog.games AS game
+          ON game.id = match.catalog_game_id
+        LEFT JOIN app.duo_library_games AS library
+          ON library.duo_id = match.duo_id
+          AND library.catalog_game_id = match.catalog_game_id
+        WHERE match.duo_id = $1
+        ORDER BY match.matched_at DESC
+        LIMIT $2
+      `,
+      [context.duoId, Math.min(24, Math.max(1, input.limit ?? 12))]
+    );
+
+    return result.rows.map((row) => ({
+      match: mapMatch(row),
+      slug: row.slug,
+      title: row.name,
+      coverUrl: row.background_image_url,
+      libraryStatus: row.library_status,
+      reasons: row.reason_snapshot ?? []
+    }));
   });
 }
 
@@ -305,6 +566,275 @@ async function getCurrentDuoDecisionCount(
   return Number.parseInt(result.rows[0]?.count ?? "0", 10);
 }
 
+async function catalogGameExists(
+  client: QueueDbClient,
+  catalogGameId: string
+): Promise<boolean> {
+  const result = await client.query<CatalogGameExistsRow>(
+    `
+      SELECT EXISTS (
+        SELECT 1
+        FROM catalog.games
+        WHERE id = $1
+      ) AS exists
+    `,
+    [catalogGameId]
+  );
+
+  return result.rows[0]?.exists ?? false;
+}
+
+async function upsertDecision(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    userId: string;
+    catalogGameId: string;
+    decision: DiscoveryDecision;
+    sourceMode: DiscoverySourceMode;
+    effect: DiscoveryDecisionEffect;
+  }
+): Promise<DiscoveryDecisionRecord> {
+  const result = await client.query<DecisionRow>(
+    `
+      INSERT INTO app.discovery_member_decisions (
+        duo_id,
+        user_id,
+        catalog_game_id,
+        decision,
+        source_mode,
+        cooldown_until,
+        preference_weight,
+        decided_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, now(), now())
+      ON CONFLICT (duo_id, user_id, catalog_game_id) DO UPDATE
+      SET decision = excluded.decision,
+          source_mode = excluded.source_mode,
+          cooldown_until = excluded.cooldown_until,
+          preference_weight = excluded.preference_weight,
+          decided_at = excluded.decided_at,
+          updated_at = now()
+      RETURNING
+        duo_id,
+        user_id,
+        catalog_game_id,
+        decision,
+        source_mode,
+        decided_at,
+        cooldown_until,
+        preference_weight
+    `,
+    [
+      input.duoId,
+      input.userId,
+      input.catalogGameId,
+      input.decision,
+      input.sourceMode,
+      input.effect.cooldownUntil,
+      input.effect.preferenceWeight
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("discovery_decision_upsert_failed");
+  }
+
+  return mapDecision(row);
+}
+
+async function getExistingMatch(
+  client: QueueDbClient,
+  duoId: string,
+  catalogGameId: string
+): Promise<DiscoveryMatchRecord | null> {
+  const result = await client.query<MatchRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        catalog_game_id,
+        matched_at,
+        created_from,
+        first_user_id,
+        second_user_id,
+        reason_snapshot,
+        library_handoff_status
+      FROM app.discovery_matches
+      WHERE duo_id = $1
+        AND catalog_game_id = $2
+      LIMIT 1
+    `,
+    [duoId, catalogGameId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapMatch(row) : null;
+}
+
+async function getPartnerDecision(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    partnerUserId: string;
+    catalogGameId: string;
+  }
+): Promise<DiscoveryDecisionRecord | null> {
+  const result = await client.query<DecisionRow>(
+    `
+      SELECT
+        duo_id,
+        user_id,
+        catalog_game_id,
+        decision,
+        source_mode,
+        decided_at,
+        cooldown_until,
+        preference_weight
+      FROM app.discovery_member_decisions
+      WHERE duo_id = $1
+        AND user_id = $2
+        AND catalog_game_id = $3
+      LIMIT 1
+    `,
+    [input.duoId, input.partnerUserId, input.catalogGameId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapDecision(row) : null;
+}
+
+async function getReasonSnapshot(
+  client: QueueDbClient,
+  duoId: string,
+  catalogGameId: string
+): Promise<string[]> {
+  const result = await client.query<ReasonFactRow>(
+    `
+      WITH common_platforms AS (
+        SELECT platform.platform
+        FROM app.member_platforms AS platform
+        WHERE platform.duo_id = $1
+          AND platform.enabled = true
+        GROUP BY platform.platform
+        HAVING count(DISTINCT platform.user_id) = 2
+      )
+      SELECT
+        game.coop_campaign_confirmed,
+        estimate.minutes AS estimated_minutes,
+        availability.availability_type,
+        array_remove(array_agg(DISTINCT game_platform.platform_key), NULL) AS common_platforms
+      FROM catalog.games AS game
+      LEFT JOIN catalog.game_platforms AS game_platform
+        ON game_platform.game_id = game.id
+        AND game_platform.platform_key IN (SELECT platform FROM common_platforms)
+      LEFT JOIN catalog.game_time_estimates AS estimate
+        ON estimate.game_id = game.id
+        AND estimate.minutes IS NOT NULL
+      LEFT JOIN catalog.game_availability AS availability
+        ON availability.game_id = game.id
+        AND availability.status = 'available'
+      WHERE game.id = $2
+      GROUP BY
+        game.coop_campaign_confirmed,
+        estimate.minutes,
+        availability.availability_type
+      LIMIT 1
+    `,
+    [duoId, catalogGameId]
+  );
+  const row = result.rows[0];
+
+  return [
+    row?.coop_campaign_confirmed ? "campanha 2p" : null,
+    row?.common_platforms?.[0] ? `${formatPlatform(row.common_platforms[0])} em comum` : null,
+    row?.estimated_minutes && row.estimated_minutes <= 480 ? "curto para hoje" : null,
+    row?.availability_type === "game-pass" ? "Game Pass verificado" : null,
+    row?.availability_type === "free" ? "gratis verificado" : null
+  ].filter((reason): reason is string => Boolean(reason)).slice(0, 5);
+}
+
+async function createMatch(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    catalogGameId: string;
+    sourceMode: DiscoverySourceMode;
+    actorUserId: string;
+    partnerUserId: string;
+    reasonSnapshot: string[];
+  }
+): Promise<DiscoveryMatchRecord> {
+  const result = await client.query<MatchRow>(
+    `
+      INSERT INTO app.discovery_matches (
+        duo_id,
+        catalog_game_id,
+        created_from,
+        first_user_id,
+        second_user_id,
+        reason_snapshot
+      )
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+      ON CONFLICT (duo_id, catalog_game_id) DO NOTHING
+      RETURNING
+        id,
+        duo_id,
+        catalog_game_id,
+        matched_at,
+        created_from,
+        first_user_id,
+        second_user_id,
+        reason_snapshot,
+        library_handoff_status
+    `,
+    [
+      input.duoId,
+      input.catalogGameId,
+      input.sourceMode,
+      input.actorUserId,
+      input.partnerUserId,
+      JSON.stringify(input.reasonSnapshot)
+    ]
+  );
+  const row = result.rows[0];
+
+  if (row) {
+    return mapMatch(row);
+  }
+
+  const existing = await getExistingMatch(client, input.duoId, input.catalogGameId);
+
+  if (!existing) {
+    throw new Error("discovery_match_create_failed");
+  }
+
+  return existing;
+}
+
+async function recordDiscoveryEvent(
+  client: QueueDbClient,
+  duoId: string,
+  eventType: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  await client.query(
+    `
+      INSERT INTO ops.domain_events (
+        duo_id,
+        event_type,
+        aggregate_type,
+        aggregate_id,
+        payload
+      )
+      VALUES ($1, $2, 'discovery', $3, $4::jsonb)
+    `,
+    [duoId, eventType, duoId, JSON.stringify(payload)]
+  );
+}
+
 function toGameReadState(input: {
   catalogGameId: string;
   userId: string;
@@ -376,6 +906,18 @@ function mapMatch(row: MatchRow): DiscoveryMatchRecord {
     reasonSnapshot: row.reason_snapshot ?? [],
     libraryHandoffStatus: row.library_handoff_status
   };
+}
+
+function formatPlatform(platform: string): string {
+  const labels: Record<string, string> = {
+    pc: "PC",
+    playstation: "PlayStation",
+    xbox: "Xbox",
+    switch: "Switch",
+    "steam-deck": "Steam Deck"
+  };
+
+  return labels[platform] ?? platform;
 }
 
 function getRuntimePool(): QueueDbPool {

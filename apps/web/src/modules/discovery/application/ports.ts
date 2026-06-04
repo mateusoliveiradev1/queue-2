@@ -49,6 +49,15 @@ export type DiscoveryMatchRecord = {
   libraryHandoffStatus: DiscoveryLibraryHandoffStatus | null;
 };
 
+export type DiscoveryMatchHistoryItem = {
+  match: DiscoveryMatchRecord;
+  slug: string;
+  title: string;
+  coverUrl: string | null;
+  libraryStatus: LibraryStatus | null;
+  reasons: string[];
+};
+
 export type DiscoveryDeckFilters = {
   sourceMode?: DiscoverySourceMode;
   includeAlreadySeen?: boolean;
@@ -157,11 +166,75 @@ export type RecordDiscoveryDecisionInput = {
   sourceMode: DiscoverySourceMode;
 };
 
-export type RecordDiscoveryDecisionResult = {
-  decision: DiscoveryDecisionRecord;
-  effect: DiscoveryDecisionEffect;
-  matchPolicy: DiscoveryMatchPolicyResult;
-  match: DiscoveryMatchRecord | null;
+export type DiscoveryDecisionActionState =
+  | {
+      kind: "card-advanced";
+      catalogGameId: DiscoveryCatalogGameId;
+    }
+  | {
+      kind: "cooldown-set";
+      catalogGameId: DiscoveryCatalogGameId;
+      cooldownUntil: Date;
+    }
+  | {
+      kind: "match-created";
+      catalogGameId: DiscoveryCatalogGameId;
+      match: DiscoveryMatchRecord;
+    }
+  | {
+      kind: "already-matched";
+      catalogGameId: DiscoveryCatalogGameId;
+      match: DiscoveryMatchRecord;
+    };
+
+export type RecordDiscoveryDecisionResult =
+  | {
+      ok: true;
+      state: DiscoveryDecisionActionState;
+      decision: DiscoveryDecisionRecord;
+      effect: DiscoveryDecisionEffect;
+      matchPolicy: DiscoveryMatchPolicyResult;
+      match: DiscoveryMatchRecord | null;
+    }
+  | {
+      ok: false;
+      reason:
+        | "membership-required"
+        | "catalog-game-not-found"
+        | "invalid-decision"
+        | "invalid-source-mode";
+    };
+
+export type DiscoveryLibraryHandoffInput = {
+  userId: DiscoveryUserId;
+  catalogGameId: DiscoveryCatalogGameId;
+  status: string;
+};
+
+export type DiscoveryLibraryHandoffResult =
+  | {
+      ok: true;
+      state: {
+        kind: "library-updated";
+        catalogGameId: DiscoveryCatalogGameId;
+        status: DiscoveryLibraryHandoffStatus;
+      };
+    }
+  | {
+      ok: false;
+      reason:
+        | "membership-required"
+        | "catalog-game-not-found"
+        | "library-game-not-found"
+        | "invalid-status"
+        | "future-confirmation-required"
+        | "jogando-limit-reached";
+      status?: string;
+    };
+
+export type GetMatchHistoryInput = {
+  userId: DiscoveryUserId;
+  limit?: number;
 };
 
 export type AnswerMoodQuizInput = {
@@ -192,6 +265,12 @@ export type DiscoveryDeckRepository = {
 
 export type DiscoveryRepository = DiscoveryDeckRepository & {
   recordDecision(input: RecordDiscoveryDecisionInput): Promise<RecordDiscoveryDecisionResult>;
+  markMatchLibraryHandoff(input: {
+    userId: DiscoveryUserId;
+    catalogGameId: DiscoveryCatalogGameId;
+    status: DiscoveryLibraryHandoffStatus;
+  }): Promise<void>;
+  getMatchHistory(input: GetMatchHistoryInput): Promise<DiscoveryMatchHistoryItem[]>;
   answerMoodQuiz(input: AnswerMoodQuizInput): Promise<AnswerMoodQuizResult>;
   getRecommendations(input: GetDiscoveryRecommendationsInput): Promise<DiscoveryRecommendationResult>;
 };

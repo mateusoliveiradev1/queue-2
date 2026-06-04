@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { getDiscoveryDeckUseCase } from "../src/modules/discovery/application/get-discovery-deck";
+import { handoffDiscoveryMatchToLibraryUseCase } from "../src/modules/discovery/application/record-discovery-decision";
 import { searchDiscoveryGamesUseCase } from "../src/modules/discovery/application/search-discovery-games";
 import type {
   DiscoveryCatalogSearch,
@@ -8,6 +11,15 @@ import type {
   DiscoveryReadState
 } from "../src/modules/discovery/application/ports";
 import type { CatalogGameCardView } from "../src/modules/catalog";
+
+const discoveryRepositorySource = readFileSync(
+  "src/modules/discovery/infrastructure/discovery-repository.ts",
+  "utf8"
+);
+const discoveryActionsSource = readFileSync(
+  "src/app/app/descobrir/actions.ts",
+  "utf8"
+);
 
 describe("discovery application deck", () => {
   it("excludes games the current member already evaluated from the default deck", async () => {
@@ -131,6 +143,95 @@ describe("discovery application deck", () => {
     );
 
     expect(result).toEqual({ ok: false, reason: "query-too-long" });
+  });
+
+  it("keeps reciprocal match creation idempotent in the repository transaction", () => {
+    expect(discoveryRepositorySource).toContain(
+      "ON CONFLICT (duo_id, catalog_game_id) DO NOTHING"
+    );
+    expect(discoveryRepositorySource).toContain("discovery.match_created");
+    expect(discoveryRepositorySource).toContain("withAppUserTransaction");
+  });
+
+  it("moves an existing library row during handoff instead of adding a duplicate", async () => {
+    const calls: string[] = [];
+    const result = await handoffDiscoveryMatchToLibraryUseCase(
+      {
+        userId: "member-1",
+        catalogGameId: "game-1",
+        status: "jogando"
+      },
+      {
+        async markMatchLibraryHandoff() {
+          calls.push("mark");
+        }
+      },
+      {
+        async addGameToWishlist() {
+          calls.push("add");
+          return { ok: true };
+        },
+        async moveLibraryGame() {
+          calls.push("move");
+          return { ok: true };
+        }
+      }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      state: {
+        kind: "library-updated",
+        status: "jogando"
+      }
+    });
+    expect(calls).toEqual(["move", "mark"]);
+  });
+
+  it("adds to wishlist first only when a valid non-wishlist handoff has no library row", async () => {
+    const calls: string[] = [];
+    let moveCount = 0;
+    const result = await handoffDiscoveryMatchToLibraryUseCase(
+      {
+        userId: "member-1",
+        catalogGameId: "game-1",
+        status: "pausado"
+      },
+      {
+        async markMatchLibraryHandoff() {
+          calls.push("mark");
+        }
+      },
+      {
+        async addGameToWishlist() {
+          calls.push("add");
+          return { ok: true };
+        },
+        async moveLibraryGame() {
+          moveCount += 1;
+          calls.push(`move-${moveCount}`);
+          return moveCount === 1
+            ? { ok: false, reason: "library-game-not-found" }
+            : { ok: true };
+        }
+      }
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      state: {
+        kind: "library-updated",
+        status: "pausado"
+      }
+    });
+    expect(calls).toEqual(["move-1", "add", "move-2", "mark"]);
+  });
+
+  it("derives discovery server action user identity from the verified session", () => {
+    expect(discoveryActionsSource).toContain("requireVerifiedSession()");
+    expect(discoveryActionsSource).toContain("userId: session.user.id");
+    expect(discoveryActionsSource).toContain("getSafeReturnTo");
+    expect(discoveryActionsSource).not.toMatch(/formData\.get\(\"userId\"\)/);
   });
 });
 

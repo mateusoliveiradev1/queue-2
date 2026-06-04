@@ -1,11 +1,15 @@
 import type {
   AnswerMoodQuizInput,
   DiscoveryRepository,
-  GetDiscoveryRecommendationsInput,
-  RecordDiscoveryDecisionInput
+  GetDiscoveryRecommendationsInput
 } from "./application/ports";
 import { getDiscoveryDeck } from "./application/get-discovery-deck";
 import { searchDiscoveryGames } from "./application/search-discovery-games";
+import { getMatchHistory } from "./application/get-match-history";
+import {
+  handoffDiscoveryMatchToLibrary,
+  recordDiscoveryDecision
+} from "./application/record-discovery-decision";
 
 export {
   canCreateDiscoveryMatch,
@@ -75,12 +79,16 @@ export type {
   DiscoveryCatalogRecommendationFact,
   DiscoveryCatalogSearch,
   DiscoveryDeckBuildResult,
+  DiscoveryDecisionActionState,
   DiscoveryDecisionRecord,
   DiscoveryDeckCard,
   DiscoveryDeckFilters,
   DiscoveryDeckRepository,
   DiscoveryDuoId,
   DiscoveryGameReadState,
+  DiscoveryLibraryHandoffInput,
+  DiscoveryLibraryHandoffResult,
+  DiscoveryMatchHistoryItem,
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
   DiscoveryReadState,
@@ -90,6 +98,7 @@ export type {
   DiscoveryUserId,
   GetDiscoveryDeckInput,
   GetDiscoveryRecommendationsInput,
+  GetMatchHistoryInput,
   RecordDiscoveryDecisionInput,
   RecordDiscoveryDecisionResult,
   SearchDiscoveryGamesInput
@@ -100,16 +109,13 @@ export {
   DISCOVERY_SEARCH_MIN_QUERY_LENGTH,
   normalizeDiscoverySearchInput
 } from "./application/search-discovery-games";
-export { getDiscoveryDeck, searchDiscoveryGames };
-
-export function recordDiscoveryDecision(
-  input: RecordDiscoveryDecisionInput,
-  repository: {
-    recordDecision(input: RecordDiscoveryDecisionInput): Promise<unknown>;
-  }
-) {
-  return repository.recordDecision(input);
-}
+export {
+  getDiscoveryDeck,
+  getMatchHistory,
+  handoffDiscoveryMatchToLibrary,
+  recordDiscoveryDecision,
+  searchDiscoveryGames
+};
 
 export function answerDiscoveryMoodQuiz(
   input: AnswerMoodQuizInput,
