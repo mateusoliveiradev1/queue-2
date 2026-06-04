@@ -32,6 +32,16 @@ test.describe("Phase 2 catalog to library flow", () => {
     await page.goto(`/app/jogo/${slug}`);
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
     await expect(page.getByRole("link", { name: /dados e imagens: rawg/i })).toBeVisible();
+    const sourceSection = page.getByRole("region", { name: /fontes e frescor/i });
+    await expect(sourceSection).toBeVisible();
+    await expect(sourceSection.getByRole("link", { name: /dados e imagens: rawg/i })).toBeVisible();
+    await expect(sourceSection.getByText(/descricao em portugues/i)).toBeVisible();
+    expect(
+      (await sourceSection.getByText(/descricao revisada: queue\/2/i).count()) +
+        (await sourceSection.getByText(/sem descricao revisada publicada/i).count())
+    ).toBeGreaterThan(0);
+    expect(await sourceSection.locator("time[datetime]").count()).toBeGreaterThan(0);
+    await expect(page.getByText(/bring your favorite co-op partner/i)).toHaveCount(0);
 
     const addToWishlist = page.getByRole("button", { name: /adicionar a wishlist/i });
     if ((await addToWishlist.count()) > 0) {

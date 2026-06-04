@@ -127,6 +127,21 @@ test.describe("Phase 2 detail accessibility", () => {
   test("game detail has no WCAG A/AA axe violations", async ({ page }) => {
     await login(page, readyActor);
     await page.goto(`/app/jogo/${process.env.E2E_PHASE2_CATALOG_SLUG!}`);
+    const sourceSection = page.getByRole("region", { name: /fontes e frescor/i });
+    await expect(sourceSection).toBeVisible();
+    const rawgSourceLink = sourceSection.getByRole("link", { name: /dados e imagens: rawg/i });
+    await expect(rawgSourceLink).toBeVisible();
+    await rawgSourceLink.focus();
+    await expect(rawgSourceLink).toBeFocused();
+
+    const datedSources = sourceSection.locator("time");
+    for (let index = 0; index < (await datedSources.count()); index += 1) {
+      const datedSource = datedSources.nth(index);
+
+      await expect(datedSource).toHaveAttribute("datetime", /.+/);
+      await expect(datedSource).toHaveAttribute("title", /.+/);
+    }
+
     await expectNoAxeViolations(page);
   });
 });

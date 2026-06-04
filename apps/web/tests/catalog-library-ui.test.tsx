@@ -222,11 +222,12 @@ describe("Phase 2 authenticated catalog and library UI", () => {
   });
 
   it("renders game detail with source facts and no active future play controls", async () => {
-    render(
+    const { container } = render(
       await GamePage({
         params: Promise.resolve({ slug: "it-takes-two" })
       })
     );
+    const sourcePanel = screen.getByRole("region", { name: /fontes e frescor/i });
 
     expect(screen.getByRole("heading", { name: /it takes two/i })).toBeInTheDocument();
     expect(
@@ -238,13 +239,55 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.getAllByText(/curadoria queue\/2/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/sem fonte ativa para exibir/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /fontes e frescor/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /descricao revisada: queue\/2/i })).toHaveAttribute(
-      "href",
-      "https://queue2.example/localization/it-takes-two"
+    expect(within(sourcePanel).getByText(/descricao revisada: queue\/2/i)).toBeInTheDocument();
+    expect(within(sourcePanel).queryByRole("link", { name: /descricao revisada: queue\/2/i })).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".source-freshness-row")).toHaveLength(4);
+    expect(container.querySelector(".source-freshness-row[data-freshness='missing']")).toHaveTextContent(
+      /disponibilidade/i
+    );
+    expect(container.querySelectorAll("time[datetime]")).toHaveLength(3);
+    expect(container.querySelector("time[datetime='2026-06-03T12:00:00.000Z']")).toHaveAttribute(
+      "title",
+      "03 de junho de 2026"
     );
     expect(screen.getByText(/descricao em portugues/i)).toBeInTheDocument();
     expect(screen.getByText(/jornada da dupla/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /registrar checkpoint/i })).not.toBeInTheDocument();
+  });
+
+  it("renders an explicit missing localization state without English fallback", async () => {
+    const sourceBreakdown = catalogDetail().sourceBreakdown.map((row) =>
+      row.id === "description"
+        ? {
+            ...row,
+            sourceLabel: "Descricao em portugues ainda nao revisada.",
+            statusLabel: "Sem descricao revisada publicada",
+            freshnessTone: "missing" as const,
+            dateTime: null,
+            absoluteDateLabel: null
+          }
+        : row
+    );
+    catalogModuleMock.getCatalogGameDetail.mockResolvedValue(
+      catalogDetail({
+        description: "Descricao em portugues ainda nao revisada.",
+        descriptionSourceLabel: "Sem descricao revisada publicada",
+        sourceBreakdown
+      })
+    );
+
+    const { container } = render(
+      await GamePage({
+        params: Promise.resolve({ slug: "it-takes-two" })
+      })
+    );
+
+    expect(screen.getAllByText(/descricao em portugues ainda nao revisada/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/sem descricao revisada publicada/i).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/bring your favorite co-op partner/i)).not.toBeInTheDocument();
+    expect(container.querySelector(".source-freshness-row[data-freshness='missing']")).toHaveTextContent(
+      /descricao em portugues/i
+    );
   });
 });
 
@@ -285,7 +328,7 @@ function catalogCard(overrides = {}) {
   };
 }
 
-function catalogDetail() {
+function catalogDetail(overrides = {}) {
   return {
     ...catalogCard(),
     description: "Uma aventura coop sobre reconciliacao.",
@@ -305,7 +348,7 @@ function catalogDetail() {
         id: "description" as const,
         category: "Descricao em portugues",
         sourceLabel: "Descricao revisada: QUEUE/2",
-        sourceHref: "https://queue2.example/localization/it-takes-two",
+        sourceHref: null,
         statusLabel: "Atualizado hoje",
         freshnessTone: "fresh" as const,
         dateTime: "2026-06-03T12:00:00.000Z",
@@ -348,7 +391,8 @@ function catalogDetail() {
     detailReadiness: {
       hasCoreDetails: true,
       missingLabels: []
-    }
+    },
+    ...overrides
   };
 }
 
