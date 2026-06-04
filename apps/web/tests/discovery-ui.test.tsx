@@ -149,6 +149,7 @@ const liveRefreshSource = readFileSync(
   "src/modules/discovery/presentation/live-session-refresh.tsx",
   "utf8"
 );
+const globalCssSource = readFileSync("src/app/globals.css", "utf8");
 
 afterEach(() => {
   cleanup();
@@ -366,6 +367,22 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByRole("group", { name: /deck de descoberta/i })).toBeInTheDocument();
   });
 
+  it("blocks the old Discovery dashboard and viewport-scaled typography CSS", () => {
+    expect(globalCssSource).toContain(".discovery-stage");
+    expect(globalCssSource).toContain(".discovery-card-stage");
+    expect(globalCssSource).toContain(".discovery-orbit-controls");
+    expect(globalCssSource).toContain(".app-bottom-nav");
+    expect(globalCssSource).not.toMatch(
+      /\.discovery-mode-actions\s*{[\s\S]*?grid-template-columns:\s*repeat\(4/
+    );
+    expect(globalCssSource).not.toMatch(
+      /\.discovery-card h2,\s*\n\.match-celebration h2\s*{[\s\S]*?font-size:\s*clamp\(/
+    );
+    expect(
+      discoveryCssRules(globalCssSource).filter((rule) => /letter-spacing:\s*-/.test(rule))
+    ).toEqual([]);
+  });
+
   it("keeps live polling bounded, private and announced in-app", () => {
     expect(liveRouteSource).toContain("requireVerifiedSession()");
     expect(liveRouteSource).toContain("z.string().uuid()");
@@ -437,6 +454,22 @@ function expectEveryVisibleFormControlHasName(container: HTMLElement) {
 
 function appearsBefore(first: Element, second: Element): boolean {
   return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+}
+
+function discoveryCssRules(source: string): string[] {
+  return (
+    source
+      .match(/[^{}]+{[^{}]*}/g)
+      ?.filter((rule) => {
+        const selector = rule.slice(0, rule.indexOf("{"));
+
+        return (
+          selector.includes(".discovery") ||
+          selector.includes(".match-celebration") ||
+          selector.includes(".match-history")
+        );
+      }) ?? []
+  );
 }
 
 function discoveryCard() {

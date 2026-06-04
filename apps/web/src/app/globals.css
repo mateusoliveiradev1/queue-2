@@ -590,7 +590,7 @@ input {
 .app-sidebar .neutral-state {
   align-items: flex-start;
   background: color-mix(in oklch, var(--bg) 18%, transparent);
-  font-size: 0.88rem;
+  font-size: 14px;
   line-height: 1.35;
 }
 
@@ -1277,7 +1277,7 @@ input {
 
 .discovery-stage {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
   margin: 0 auto;
   max-width: 1320px;
   width: 100%;
@@ -1288,9 +1288,9 @@ input {
   border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-4);
+  gap: var(--space-5);
   justify-content: space-between;
-  padding-bottom: var(--space-5);
+  padding-bottom: var(--space-6);
 }
 
 .discovery-stage-top .eyebrow {
@@ -1298,7 +1298,8 @@ input {
 }
 
 .discovery-stage-top .page-title {
-  font-size: 1.75rem;
+  font-size: 28px;
+  font-weight: 600;
   line-height: 1.1;
 }
 
@@ -1316,14 +1317,15 @@ input {
 .discovery-search,
 .live-panel {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
 }
 
 .discovery-orbit-controls {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  justify-content: center;
 }
 
 .discovery-orbit-controls form,
@@ -1334,8 +1336,13 @@ input {
 
 .discovery-orbit-controls .queue2-button {
   align-items: center;
+  font-size: 14px;
+  font-weight: 600;
   justify-content: center;
+  line-height: 1.35;
   min-height: 44px;
+  padding: 0 var(--space-5);
+  white-space: normal;
 }
 
 .discovery-filters {
@@ -1357,8 +1364,9 @@ input {
 .mood-question > legend {
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   margin-bottom: var(--space-3);
   text-transform: uppercase;
 }
@@ -1375,7 +1383,7 @@ input {
   display: flex;
   gap: var(--space-3);
   min-height: 44px;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
 }
 
 .segmented-control label:has(input:checked) {
@@ -1387,22 +1395,27 @@ input {
 .segmented-control span {
   color: inherit;
   font-family: var(--font-mono);
-  font-size: 0.76rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
 .discovery-advanced-filters {
   border-top: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
-  padding-top: var(--space-4);
+  padding-top: var(--space-5);
 }
 
 .discovery-advanced-filters summary {
+  align-items: center;
   color: var(--primary);
   cursor: pointer;
+  display: flex;
   font-family: var(--font-mono);
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   min-height: 44px;
   text-transform: uppercase;
 }
@@ -1419,35 +1432,42 @@ input {
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   border-radius: var(--radius-sharp);
   display: grid;
-  gap: var(--space-5);
-  min-height: 520px;
-  padding: var(--space-5);
+  gap: var(--space-6);
+  min-height: min(760px, calc(100svh - 168px));
+  padding: var(--space-6);
 }
 
 .discovery-stage-trays {
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 }
 
 .discovery-tray {
   align-content: start;
+  min-width: 0;
+}
+
+.discovery-stage-trays[hidden],
+.discovery-tray[hidden] {
+  display: none;
 }
 
 .discovery-deck {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
   outline: 0;
 }
 
 .discovery-deck:focus-visible {
+  box-shadow: var(--focus-ring);
   outline: 2px solid var(--primary);
   outline-offset: 4px;
 }
 
 .discovery-deck-stack {
   display: grid;
-  min-height: min(760px, 78svh);
+  min-height: min(720px, 72svh);
   position: relative;
 }
 
@@ -1468,14 +1488,14 @@ input {
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   border-radius: var(--radius-sharp);
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
   overflow: hidden;
 }
 
 .discovery-card {
   grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1fr);
-  min-height: 620px;
-  padding: var(--space-4);
+  min-height: min(640px, 72svh);
+  padding: var(--space-5);
 }
 
 .discovery-card[data-reaction="want"] {
@@ -1494,15 +1514,16 @@ input {
   align-content: end;
   color: var(--ink-muted);
   grid-area: 1 / 1;
-  min-height: 620px;
+  min-height: min(640px, 72svh);
   padding: var(--space-5);
   pointer-events: none;
 }
 
 .discovery-card-preview strong {
   font-family: var(--font-display);
-  font-size: 2rem;
-  line-height: 1;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
   text-transform: uppercase;
 }
 
@@ -1515,8 +1536,8 @@ input {
   color: var(--primary);
   display: grid;
   font-family: var(--font-mono);
-  font-size: 2rem;
-  font-weight: 900;
+  font-size: 28px;
+  font-weight: 600;
   overflow: hidden;
   place-items: center;
   text-decoration: none;
@@ -1533,22 +1554,23 @@ input {
 .match-celebration-copy {
   align-content: center;
   display: grid;
-  gap: var(--space-5);
+  gap: var(--space-6);
   min-width: 0;
 }
 
 .discovery-card-heading {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
 .discovery-card h2,
 .match-celebration h2 {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: clamp(2rem, 5vw, 4.8rem);
+  font-size: 28px;
+  font-weight: 600;
   letter-spacing: 0;
-  line-height: 0.95;
+  line-height: 1.1;
   margin: 0;
   overflow-wrap: anywhere;
   text-transform: uppercase;
@@ -1569,12 +1591,13 @@ input {
   border-radius: var(--radius-sharp);
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 0.76rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   list-style: none;
   max-width: 100%;
   overflow-wrap: anywhere;
-  padding: var(--space-2) var(--space-3);
+  padding: var(--space-3) var(--space-5);
   text-transform: uppercase;
 }
 
@@ -1595,6 +1618,9 @@ input {
 
 .discovery-decision-actions .queue2-button,
 .discovery-handoff-actions .queue2-button {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
   min-height: 48px;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -1610,8 +1636,9 @@ input {
 .discovery-keyboard-hint {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   margin: 0;
   text-transform: uppercase;
 }
@@ -1619,11 +1646,12 @@ input {
 .match-celebration {
   border-color: color-mix(in oklch, var(--primary) 62%, transparent);
   grid-template-columns: minmax(120px, 180px) minmax(0, 1fr);
-  padding: var(--space-4);
+  padding: var(--space-5);
 }
 
 .match-celebration h2 {
-  font-size: clamp(1.8rem, 4vw, 3.5rem);
+  font-size: 28px;
+  line-height: 1.1;
 }
 
 .discovery-search-results {
@@ -1653,10 +1681,11 @@ input {
   border-radius: var(--radius-sharp);
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   margin: 0;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   text-transform: uppercase;
 }
 
@@ -1687,10 +1716,11 @@ input {
   color: var(--ink-muted);
   cursor: pointer;
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   min-height: 44px;
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-5);
   text-transform: uppercase;
 }
 
@@ -1741,9 +1771,10 @@ input {
 .match-history-card h3 {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: clamp(1.35rem, 3vw, 2.4rem);
+  font-size: 20px;
+  font-weight: 600;
   letter-spacing: 0;
-  line-height: 1;
+  line-height: 1.2;
   margin: 0;
   overflow-wrap: anywhere;
   text-transform: uppercase;
@@ -1752,10 +1783,25 @@ input {
 .match-history-status {
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 0.78rem;
-  font-weight: 800;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
   margin: 0;
   text-transform: uppercase;
+}
+
+.discovery-stage :where(.queue2-button, .queue2-input, .text-link, summary, a):focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 2px solid transparent;
+}
+
+.discovery-stage :where(.queue2-button, .text-link, summary):active {
+  transform: translateY(1px);
+}
+
+.discovery-stage :where(.queue2-button:disabled, .queue2-button[aria-disabled="true"]) {
+  cursor: not-allowed;
+  opacity: 0.62;
 }
 
 .match-history-card .status-controls {
@@ -1854,8 +1900,8 @@ input {
     color: var(--ink-muted);
     display: grid;
     font-family: var(--font-mono);
-    font-size: 0.875rem;
-    font-weight: 800;
+    font-size: 14px;
+    font-weight: 600;
     gap: var(--space-1);
     justify-items: center;
     line-height: 1.1;
@@ -1879,6 +1925,46 @@ input {
     display: block;
     height: 4px;
     width: 18px;
+  }
+
+  .discovery-stage {
+    gap: var(--space-5);
+  }
+
+  .discovery-stage-top {
+    align-items: start;
+    padding-bottom: var(--space-5);
+  }
+
+  .discovery-orbit-controls {
+    flex-wrap: nowrap;
+    justify-content: start;
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+    scroll-snap-type: x proximity;
+  }
+
+  .discovery-orbit-controls form,
+  .discovery-orbit-controls .queue2-button {
+    flex: 0 0 auto;
+  }
+
+  .discovery-card-stage {
+    gap: var(--space-5);
+    min-height: calc(100svh - 232px);
+    padding: var(--space-5);
+  }
+
+  .discovery-deck-stack {
+    min-height: min(620px, calc(100svh - 260px));
+  }
+
+  .discovery-card {
+    min-height: auto;
+  }
+
+  .discovery-card-cover {
+    max-height: min(42svh, 360px);
   }
 
   .app-nav,
