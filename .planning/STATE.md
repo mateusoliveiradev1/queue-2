@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-02-PLAN.md
-last_updated: "2026-06-04T04:45:25.005Z"
+stopped_at: Completed 03-03-PLAN.md
+last_updated: "2026-06-04T11:16:01.283Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 17
-  completed_plans: 15
-  percent: 88
+  completed_plans: 16
+  percent: 94
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 03 (descoberta-e-matches) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-06-04
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [█████████░] 88%
 | Phase 02.1 P03 | 12 min | 4 tasks | 10 files |
 | Phase 03-descoberta-e-matches P01 | 16 min | 3 tasks | 12 files |
 | Phase 03-descoberta-e-matches P02 | 19 min | 3 tasks | 17 files |
+| Phase 03-descoberta-e-matches P03 | 22 min | 4 tasks | 18 files |
 
 ## Quick Tasks Completed
 
@@ -117,6 +118,9 @@ Recent decisions affecting current work:
 - [Phase 03-02]: Discovery autocomplete uses persistent database-backed per-user rate limiting before catalog search.
 - [Phase 03-02]: Discovery cold-start tag signals reuse catalog genre labels until a dedicated catalog tag source exists.
 - [Phase 03-02]: Discovery application use cases expose injectable dependencies while public wrappers load server-only dependencies at runtime.
+- [Phase 03-descoberta-e-matches]: Discovery uses Motion for the swipe deck but keeps Quero jogar, Agora nao and Pular as first-class form actions. — This preserves the premium card interaction while keeping accessible, reduced-motion and server-action paths equivalent.
+- [Phase 03-descoberta-e-matches]: Discovery handoff reuses the library public status control surface and keeps Zerado/Dropado disabled until Phase 4. — This satisfies the modular architecture contract and avoids implying future double-confirmation statuses are active.
+- [Phase 03-descoberta-e-matches]: Authenticated Discovery browser review remains gated on configured E2E database and ready-user fixtures. — The route requires a verified session and duo data, so visual validation must run once E2E_BASE_URL and ready-user credentials exist.
 
 ### Pending Todos
 
@@ -130,6 +134,7 @@ Recent decisions affecting current work:
 - RAWG attribution and external data freshness must remain visible in implementation.
 - Economy balance for XP, pity, rarity and quests needs simulation during planning.
 - Restore capability and the applicable ASVS checklist must be validated before production launch.
+- Authenticated Discovery browser review is pending until DATABASE_URL, E2E_BASE_URL, E2E_READY_USER_EMAIL and E2E_READY_USER_PASSWORD are configured.
 
 ## Deferred Items
 
@@ -142,6 +147,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T04:45:17.976Z
-Stopped at: Completed 03-02-PLAN.md
+Last session: 2026-06-04T11:15:39.968Z
+Stopped at: Completed 03-03-PLAN.md
 Resume file: None
