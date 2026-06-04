@@ -191,7 +191,12 @@ async function syncAllowlistEntry({
 }): Promise<CatalogSyncItemOutcome> {
   try {
     const rawgGame = await rawgClient.getGame(entry.rawgRef);
-    const changes = plannedChanges(rawgGame, entry.curation);
+    validateExpectedName(entry, rawgGame);
+    const catalogGame = {
+      ...rawgGame,
+      slug: entry.slug
+    };
+    const changes = plannedChanges(catalogGame, entry.curation);
 
     if (mode === "dry-run") {
       return {
@@ -205,7 +210,7 @@ async function syncAllowlistEntry({
       };
     }
 
-    const gameId = await repository.syncRawgGame(rawgGame, entry.curation);
+    const gameId = await repository.syncRawgGame(catalogGame, entry.curation);
 
     return {
       slug: entry.slug,
@@ -227,6 +232,21 @@ async function syncAllowlistEntry({
       errorMessage: redactErrorMessage(error)
     };
   }
+}
+
+function validateExpectedName(
+  entry: CatalogSyncAllowlistEntry,
+  input: CatalogGameUpsertInput
+): void {
+  if (normalizeComparableName(input.name) !== normalizeComparableName(entry.expectedName)) {
+    throw new Error(
+      `RAWG returned "${input.name}" for "${entry.rawgRef}", expected "${entry.expectedName}".`
+    );
+  }
+}
+
+function normalizeComparableName(value: string): string {
+  return value.trim().toLocaleLowerCase("en-US");
 }
 
 function plannedChanges(

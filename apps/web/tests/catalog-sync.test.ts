@@ -6,6 +6,7 @@ import {
   runCatalogSync,
   type CatalogSyncAudit
 } from "../src/modules/catalog/infrastructure/catalog-sync";
+import { catalogSyncAllowlist } from "../src/modules/catalog/infrastructure/catalog-sync-allowlist";
 import { applyCatalogCurationSeeds } from "../src/modules/catalog/infrastructure/catalog-curation-seeds";
 import { createCatalogRepository } from "../src/modules/catalog/infrastructure/catalog-repository";
 import {
@@ -82,6 +83,27 @@ describe("catalog RAWG sync repository", () => {
     expect(upsert.values[20]).toBe(checkedAt);
     expect(upsert.values[22]).toBe(true);
     expect(upsert.values[23]).toBe(true);
+  });
+
+  it("adopts an existing curated slug when the RAWG identifier changes", async () => {
+    const { pool, calls } = fakePool();
+    const repository = createCatalogRepository(pool);
+
+    await repository.syncRawgGame(
+      rawgInput({
+        rawgId: 455597,
+        slug: "it-takes-two"
+      })
+    );
+
+    const adoption = findSql(calls, "UPDATE catalog.games AS game");
+    expect(adoption.sql).toContain("game.slug = $2");
+    expect(adoption.sql).toContain("rawg_match.rawg_id = $1");
+    expect(adoption.values).toEqual([455597, "it-takes-two"]);
+
+    const upsert = findSql(calls, "INSERT INTO catalog.games");
+    expect(upsert.values[0]).toBe(455597);
+    expect(upsert.values[1]).toBe("it-takes-two");
   });
 
   it("normalizes RAWG payloads as uncurated input that sync must treat carefully", () => {
@@ -167,7 +189,7 @@ describe("catalog sync orchestration", () => {
       failedCount: 0
     });
     expect(repository.syncRawgGame).toHaveBeenCalledWith(
-      expect.objectContaining({ rawgId: 3498 }),
+      expect.objectContaining({ rawgId: 3498, slug: "it-takes-two-2" }),
       expect.objectContaining({ mainFlowEligible: true })
     );
     expect(audit.startRun).toHaveBeenCalledOnce();
@@ -182,6 +204,43 @@ describe("catalog sync orchestration", () => {
     expect(() => createRawgClient({ apiKey: "" })).toThrow(
       /RAWG_API_KEY is required/
     );
+  });
+
+  it("fails allowlist entries when RAWG returns a different game name", async () => {
+    const repository = {
+      searchGames: vi.fn(),
+      getGameBySlug: vi.fn(),
+      upsertGame: vi.fn(),
+      upsertGames: vi.fn(),
+      syncRawgGame: vi.fn()
+    };
+
+    const result = await runCatalogSync({
+      mode: "apply",
+      allowlist: [allowlistEntry()],
+      rawgClient: {
+        searchGames: vi.fn(),
+        getGame: vi.fn(async () => rawgInput({ name: "It Takes Two (itch)" }))
+      },
+      repository,
+      audit: fakeAudit()
+    });
+
+    expect(result.failedCount).toBe(1);
+    expect(result.items[0]).toMatchObject({
+      errorMessage:
+        'RAWG returned "It Takes Two (itch)" for "it-takes-two", expected "It Takes Two".',
+      status: "failed"
+    });
+    expect(repository.syncRawgGame).not.toHaveBeenCalled();
+  });
+
+  it("keeps It Takes Two on the official RAWG entry with the QUEUE/2 slug", () => {
+    expect(catalogSyncAllowlist[0]).toMatchObject({
+      expectedName: "It Takes Two",
+      rawgRef: "it-takes-two-2",
+      slug: "it-takes-two"
+    });
   });
 });
 

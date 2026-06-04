@@ -231,6 +231,7 @@ async function syncRawgGame(
 
   try {
     await client.query("BEGIN");
+    await adoptExistingCuratedSlug(client, input);
     const gameId = await upsertCatalogRawgFacts(client, input, curation);
     await replacePlatforms(client, gameId, input.platforms);
     await replaceGenres(client, gameId, input.genres);
@@ -481,6 +482,27 @@ async function upsertCatalogGame(
   }
 
   return row.id;
+}
+
+async function adoptExistingCuratedSlug(
+  client: QueueDbClient,
+  input: CatalogGameUpsertInput
+): Promise<void> {
+  await client.query(
+    `
+      UPDATE catalog.games AS game
+      SET rawg_id = $1,
+          updated_at = now()
+      WHERE game.slug = $2
+        AND game.rawg_id <> $1
+        AND NOT EXISTS (
+          SELECT 1
+          FROM catalog.games AS rawg_match
+          WHERE rawg_match.rawg_id = $1
+        )
+    `,
+    [input.rawgId, input.slug]
+  );
 }
 
 async function upsertCatalogRawgFacts(

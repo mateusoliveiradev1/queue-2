@@ -10,7 +10,7 @@ export type CatalogSyncAllowlistEntry = {
 const checkedAt = new Date("2026-06-03T12:00:00.000Z");
 
 export const catalogSyncAllowlist: CatalogSyncAllowlistEntry[] = [
-  allowlistEntry("it-takes-two", "it-takes-two", "It Takes Two"),
+  allowlistEntry("it-takes-two-2", "it-takes-two", "It Takes Two"),
   allowlistEntry("a-way-out-2018", "a-way-out-2018", "A Way Out"),
   allowlistEntry("portal-2", "portal-2", "Portal 2"),
   allowlistEntry("unravel-two", "unravel-two", "Unravel Two"),
