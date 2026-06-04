@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 03.1 UI-SPEC approved
-last_updated: "2026-06-04T19:26:19.341Z"
-last_activity: 2026-06-04 -- Phase 03.1 planning complete
+stopped_at: Completed 03.1-01-PLAN.md
+last_updated: "2026-06-04T19:46:13.617Z"
+last_activity: 2026-06-04
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 21
-  completed_plans: 17
-  percent: 81
+  completed_plans: 18
+  percent: 86
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 03.1 - refinos-visuais-e-ux-da-descoberta
+**Current focus:** Phase 03.1 — refinos-visuais-e-ux-da-descoberta
 
 ## Current Position
 
-Phase: 03.1
-Plan: Not started
+Phase: 03.1 (refinos-visuais-e-ux-da-descoberta) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-06-04 -- Phase 03.1 planning complete
+Last activity: 2026-06-04
 
-Progress: [#####-----] 50%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -71,6 +71,7 @@ Progress: [#####-----] 50%
 | Phase 03-descoberta-e-matches P02 | 19 min | 3 tasks | 17 files |
 | Phase 03-descoberta-e-matches P03 | 22 min | 4 tasks | 18 files |
 | Phase 03-descoberta-e-matches P04 | 22 min | 4 tasks | 25 files |
+| Phase 03.1 P01 | 10 min | 3 tasks | 14 files |
 
 ## Quick Tasks Completed
 
@@ -132,6 +133,9 @@ Recent decisions affecting current work:
 - [Phase 03-04]: VAPID_PRIVATE_KEY stays in the server-only push adapter; browser code receives only the public VAPID key. — Preserves the push secret boundary while enabling explicit opt-in.
 - [Phase 03-04]: Push subscription endpoint and key material remain owner-scoped under RLS. — Match delivery reads each member subscription through that member database context instead of weakening policies.
 - [Phase 03-04]: Phase 3 Playwright and database integration gaps are explicit environment skips. — Missing TEST_DATABASE_URL and E2E fixture users are release follow-ups, not passing evidence.
+- [Phase 03.1]: Discovery card/read-model builders now live in the application layer. — Discovery use cases combine catalog cards, read state, recommendation facts and library action state before UI rendering.
+- [Phase 03.1]: The architecture checker enforces static same-module layer direction while preserving documented dynamic runtime wrappers. — Phase 3 documented dynamic application wrappers for server-only infrastructure, while the regression being blocked is a static application-to-presentation dependency.
+- [Phase 03.1]: Catalog pure read-model helpers and record shapes were moved to allowed layers so the new architecture gate can pass globally. — The new same-module checker surfaced existing Catalog inversions, and moving pure helpers/types preserved the global architecture contract without product scope changes.
 
 ### Pending Todos
 
@@ -158,6 +162,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T19:12:52.922Z
-Stopped at: Phase 03.1 UI-SPEC approved
-Resume file: .planning/phases/03.1-refinos-visuais-e-ux-da-descoberta/03.1-UI-SPEC.md
+Last session: 2026-06-04T19:46:13.611Z
+Stopped at: Completed 03.1-01-PLAN.md
+Resume file: None
