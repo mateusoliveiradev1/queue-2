@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed 03.1-04-PLAN.md
-last_updated: "2026-06-04T20:56:39.016Z"
+stopped_at: Completed quick task 260604-p00
+last_updated: "2026-06-04T21:01:06.000Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 10
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 03.1 (refinos-visuais-e-ux-da-descoberta) — COMPLETE
 Plan: 4 of 4
 Status: Phase complete — ready for verification
-Last activity: 2026-06-04
+Last activity: 2026-06-04 - Completed quick task 260604-p00: Remove redundant Discovery controls and match history overlap
 
 Progress: [██████████] 100%
 
@@ -84,6 +84,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 |---|-------------|------|--------|-----------|
 | 260604-l1p | Fix push opt-in hydration mismatch in Phase 3 discovery | 2026-06-04 | b994969 | [260604-l1p-fix-push-opt-in-hydration-mismatch-in-ph](./quick/260604-l1p-fix-push-opt-in-hydration-mismatch-in-ph/) |
 | 260604-l8d | Restore global loading screen for Discovery route | 2026-06-04 | 9ea4ee2 | [260604-l8d-restore-global-loading-screen-for-discov](./quick/260604-l8d-restore-global-loading-screen-for-discov/) |
+| 260604-p00 | Remove redundant Discovery controls and match history overlap | 2026-06-04 | 1613fa8 | [260604-p00-remove-redundant-nonfunctional-discovery](./quick/260604-p00-remove-redundant-nonfunctional-discovery/) |
 
 ## Accumulated Context
 
@@ -148,6 +149,8 @@ Recent decisions affecting current work:
 - [Phase 03.1-04]: Missing authenticated browser and database fixtures are blockers, not passing evidence. — `03.1-BROWSER-REVIEW.md` records `BLOCKED - missing fixture evidence` with exact variable names.
 - [Phase 03.1-04]: Discovery browser E2E must use product-authenticated ready duo, partner and other-duo users. — The suite does not introduce test-only session bypasses.
 - [Phase 03.1-04]: Discovery match history stays a recent-match surface. — Biblioteca remains the complete backlog/archive for accumulated matches and statuses.
+- [Quick 260604-p00]: Discovery must not show non-interactive decision badges that look like buttons. — The active card is the only visible decision surface for Quero jogar, Agora nao and Pular.
+- [Quick 260604-p00]: Match History cards must not render footer links that can overlap the next row. — The cover opens game detail and the tray header links to Biblioteca.
 
 ### Pending Todos
 
@@ -174,6 +177,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T20:56:38.768Z
-Stopped at: Completed 03.1-04-PLAN.md
+Last session: 2026-06-04T21:01:06.000Z
+Stopped at: Completed quick task 260604-p00
 Resume file: None
