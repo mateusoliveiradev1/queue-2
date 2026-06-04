@@ -24,6 +24,20 @@ const catalogRepositorySource = readFileSync(
   "src/modules/catalog/infrastructure/catalog-repository.ts",
   "utf8"
 );
+const discoveryApplicationReadModelSources = [
+  readFileSync(
+    "src/modules/discovery/application/get-discovery-deck.ts",
+    "utf8"
+  ),
+  readFileSync(
+    "src/modules/discovery/application/search-discovery-games.ts",
+    "utf8"
+  ),
+  readFileSync(
+    "src/modules/discovery/application/get-surprise-recommendation.ts",
+    "utf8"
+  )
+];
 
 describe("discovery application deck", () => {
   it("excludes games the current member already evaluated from the default deck", async () => {
@@ -181,6 +195,13 @@ describe("discovery application deck", () => {
     );
 
     expect(result).toEqual({ ok: false, reason: "query-too-long" });
+  });
+
+  it("keeps application read-model use cases independent from presentation view models", () => {
+    for (const source of discoveryApplicationReadModelSources) {
+      expect(source).not.toContain("../presentation/view-models");
+      expect(source).toContain("./view-models");
+    }
   });
 
   it("keeps reciprocal match creation idempotent in the repository transaction", () => {
