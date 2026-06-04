@@ -15,6 +15,7 @@
     "@queue/db": "workspace:*",
     "@queue/ui": "workspace:*",
     "better-auth": "1.6.14",
+    "motion": "12.40.0",
     "next": "16.2.7",
     "react": "19.2.7",
     "react-dom": "19.2.7",

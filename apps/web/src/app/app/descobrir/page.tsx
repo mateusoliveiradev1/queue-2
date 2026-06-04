@@ -10,9 +10,15 @@ import {
   type DiscoveryDeckFilters,
   type DiscoveryLiveSessionPayload
 } from "../../../modules/discovery";
+import { DiscoveryDeck } from "../../../modules/discovery/presentation/discovery-deck";
+import { MatchCelebration } from "../../../modules/discovery/presentation/match-celebration";
 import { getDuoDashboard } from "../../../modules/duo";
 import { requireVerifiedSession } from "../../../platform/auth/session";
-import { startDiscoveryLiveSessionAction } from "./actions";
+import {
+  handoffDiscoveryMatchToLibraryAction,
+  recordDiscoveryDecisionAction,
+  startDiscoveryLiveSessionAction
+} from "./actions";
 
 export const metadata: Metadata = {
   description:
@@ -63,6 +69,10 @@ export default async function DiscoveryPage({
       : Promise.resolve<DiscoveryLiveSessionPayload | null>(null)
   ]);
   const statusMessage = getDiscoveryStatusMessage(state);
+  const celebrationMatch =
+    state === "match-criado" || state === "match-ja-existe"
+      ? matchHistory[0] ?? null
+      : null;
 
   return (
     <AppShell currentPage="descobrir">
@@ -99,6 +109,11 @@ export default async function DiscoveryPage({
 
       <section className="discovery-route-grid" aria-label="Experiencia de descoberta">
         <div className="surface-band app-section discovery-deck-shell">
+          <MatchCelebration
+            handoffAction={handoffDiscoveryMatchToLibraryAction}
+            match={celebrationMatch}
+            returnTo={returnTo}
+          />
           <div className="section-heading">
             <p className="eyebrow" id="discovery-deck-title">
               Deck central
@@ -109,28 +124,12 @@ export default async function DiscoveryPage({
             </p>
           </div>
 
-          {deck.cards.length > 0 ? (
-            <div className="discovery-server-cards" aria-labelledby="discovery-deck-title">
-              {deck.cards.slice(0, 3).map((card) => (
-                <article className="discovery-server-card" key={card.catalogGameId}>
-                  <span className="eyebrow">{card.libraryStatus ?? "fora da biblioteca"}</span>
-                  <h2>{card.title}</h2>
-                  <p className="support-copy">
-                    {card.reasons.slice(0, 3).join(" / ") ||
-                      "Compatibilidade em avaliacao pela dupla."}
-                  </p>
-                </article>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <strong>Sem cartas prontas para este filtro</strong>
-              <span>
-                A descoberta respeita jogos ja avaliados, plataforma comum e
-                dados com fonte. Ajuste filtros ou busque um jogo especifico.
-              </span>
-            </div>
-          )}
+          <DiscoveryDeck
+            cards={deck.cards}
+            decisionAction={recordDiscoveryDecisionAction}
+            handoffAction={handoffDiscoveryMatchToLibraryAction}
+            returnTo={returnTo}
+          />
         </div>
 
         <aside className="discovery-side-rail" aria-label="Resumo da descoberta">

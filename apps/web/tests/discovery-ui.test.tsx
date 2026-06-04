@@ -75,6 +75,8 @@ vi.mock("../src/modules/duo", () => ({
 }));
 
 vi.mock("../src/app/app/descobrir/actions", () => ({
+  handoffDiscoveryMatchToLibraryAction: vi.fn(async () => undefined),
+  recordDiscoveryDecisionAction: vi.fn(async () => undefined),
   startDiscoveryLiveSessionAction: vi.fn(async () => undefined)
 }));
 
@@ -189,11 +191,19 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByRole("heading", { name: /o deck da dupla/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /entrar juntos/i })).toBeInTheDocument();
     expect(screen.getByText(/match da dupla criado/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /it takes two/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /it takes two/i })).toHaveAttribute(
-      "href",
-      "/app/jogo/it-takes-two"
+    expect(screen.getByRole("group", { name: /deck de descoberta/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Quero jogar" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Agora nao" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Pular" })).toBeInTheDocument();
+    expect(screen.getByRole("status", { name: "It Takes Two" })).toHaveTextContent(
+      /primeiro o match/i
     );
+    expect(screen.getAllByRole("heading", { name: /it takes two/i }).length).toBeGreaterThan(1);
+    expect(
+      screen
+        .getAllByRole("link", { name: /it takes two/i })
+        .some((link) => link.getAttribute("href") === "/app/jogo/it-takes-two")
+    ).toBe(true);
     expect(discoveryModuleMock.getDiscoveryDeck).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: "user-1",
