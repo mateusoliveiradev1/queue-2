@@ -7,6 +7,19 @@
     },
     "build": {
       "dependsOn": ["^build"],
+      "env": [
+        "DATABASE_URL",
+        "BETTER_AUTH_SECRET",
+        "BETTER_AUTH_URL",
+        "NEXT_PUBLIC_BETTER_AUTH_URL",
+        "BETTER_AUTH_TRUSTED_ORIGINS",
+        "AUTH_REQUIRE_EMAIL_VERIFICATION",
+        "AUTH_PASSWORD_BREACH_CHECK",
+        "CRON_SECRET",
+        "RAWG_API_KEY",
+        "RESEND_API_KEY",
+        "EMAIL_FROM"
+      ],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
