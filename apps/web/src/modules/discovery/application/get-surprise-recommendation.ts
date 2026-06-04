@@ -2,7 +2,7 @@ import {
   buildDiscoveryDeckCards,
   getReadableGameState,
   toRecommendationFacts
-} from "../presentation/view-models";
+} from "./view-models";
 import { rankDiscoveryRecommendations } from "../domain/recommendation-policy";
 import type {
   DiscoveryCatalogSearch,

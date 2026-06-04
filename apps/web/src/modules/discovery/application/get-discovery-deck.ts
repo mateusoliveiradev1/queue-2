@@ -8,7 +8,7 @@ import {
   buildDiscoveryDeckCards,
   getReadableGameState,
   toRecommendationFacts
-} from "../presentation/view-models";
+} from "./view-models";
 import type {
   DiscoveryCatalogSearch,
   DiscoveryDeckBuildResult,
