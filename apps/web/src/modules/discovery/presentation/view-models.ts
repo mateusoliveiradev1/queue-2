@@ -86,7 +86,7 @@ export function toRecommendationFacts(input: {
     moodTags: [],
     releaseYear: null,
     genres: card.genreLabels.map((genre) => genre.toLowerCase()),
-    tags: [],
+    tags: card.genreLabels.map((genre) => genre.toLowerCase()),
     rarity: "common"
   }));
 }

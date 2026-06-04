@@ -169,7 +169,7 @@ async function getReadState(
       ),
       positiveProfile: {
         genres: positiveGenres,
-        tags: []
+        tags: positiveGenres
       },
       collaborative: {
         currentDuoDecisionCount,
