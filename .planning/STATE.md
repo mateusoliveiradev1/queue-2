@@ -79,6 +79,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260604-l1p | Fix push opt-in hydration mismatch in Phase 3 discovery | 2026-06-04 | b994969 | [260604-l1p-fix-push-opt-in-hydration-mismatch-in-ph](./quick/260604-l1p-fix-push-opt-in-hydration-mismatch-in-ph/) |
+| 260604-l8d | Restore global loading screen for Discovery route | 2026-06-04 | 9ea4ee2 | [260604-l8d-restore-global-loading-screen-for-discov](./quick/260604-l8d-restore-global-loading-screen-for-discov/) |
 
 ## Accumulated Context
 
@@ -157,6 +158,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T18:18:00Z
-Stopped at: Inserted Phase 03.1: Refinos Visuais e UX da Descoberta
+Last session: 2026-06-04T18:19:00Z
+Stopped at: Completed quick task 260604-l8d: Restore global loading screen for Discovery route
 Resume file: None
