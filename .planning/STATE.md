@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03-01-PLAN.md
-last_updated: "2026-06-04T04:20:44.608Z"
+stopped_at: Completed 03-02-PLAN.md
+last_updated: "2026-06-04T04:45:25.005Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 17
-  completed_plans: 14
-  percent: 82
+  completed_plans: 15
+  percent: 88
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 03 (descoberta-e-matches) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-04
 
-Progress: [████████░░] 82%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -67,29 +67,11 @@ Progress: [████████░░] 82%
 | Phase 02.1 P02 | 7 min | 4 tasks | 16 files |
 | Phase 02.1 P03 | 12 min | 4 tasks | 10 files |
 | Phase 03-descoberta-e-matches P01 | 16 min | 3 tasks | 12 files |
+| Phase 03-descoberta-e-matches P02 | 19 min | 3 tasks | 17 files |
 
 ## Quick Tasks Completed
 
-| Date | Task | Summary |
-|------|------|---------|
-| 2026-06-03 | auth-senha-vazada-rate-limit | Cadastro e reset bloqueiam senhas comprometidas via k-anonymity SHA-1; auditoria de rate limit explicita storage, headers e regras por endpoint. |
-| 2026-06-03 | auth-signup-confirmacao-senha | Cadastro exige confirmacao de senha no cliente e no Server Action, com copy da politica alinhada a validacao real. |
-| 2026-06-03 | refinar-copy-layout-e-ui-ux-publica-da-h | Home e telas publicas de auth receberam copy publica, hierarquia de produto e polish visual guiado por Impeccable. |
-| 2026-06-03 | refinar-copy-visual-e-ui-ux-das-telas-au | Telas autenticadas de fila, dupla e perfil receberam copy de produto, refinamento visual e navegacao guiados por Impeccable. |
-| 2026-06-03 | polir-catalogo-da-fase-2 | Cards do catalogo foram contidos visualmente e detalhes de jogos conhecidos receberam descricoes PT-BR curadas com fonte explicita. |
-| 2026-06-03 | fechar-uat-humano-da-fase-2 | Fase 2 foi aceita em UAT humano apos revisao visual autenticada do catalogo e detalhe de jogo. |
-| 2026-06-03 | automatizar-refresh-do-catalogo | Catalog refresh ganhou rota protegida de Vercel Cron, comando manual de debug e health check de descricoes PT-BR/disponibilidade. |
-| 2026-06-03 | fechar-skips-de-integracao | `pnpm test:integration` agora carrega `.env.local`, roda sem cache e passou com 23 testes sem skip; `catalog:seed-curation -- --dry-run` confirmado. |
-| 2026-06-03 | publicar-e-deploy-vercel | Repo publico `queue-2` foi pushado no GitHub; Vercel producao ficou Ready em `https://queue-2.vercel.app` com banco limpo migrado/populado, Resend temporario configurado e envs sensiveis fora do git. |
-| 2026-06-03 | auth-feedback-e-verificacao-email | Formularios publicos de auth ganharam feedback pending; contas nao verificadas devem usar reenvio em `/verificar-email`, sem limpar banco por padrao. |
-| 2026-06-03 | auth-login-verificacao-resend | Login ganhou link explicito de reenvio; detector de `email_not_verified` foi reforcado; `mateus100saopaulino@hotmail.com` foi marcado como verificado; `mateus_sp4@outlook.com` nao existia no banco de producao. |
-| 2026-06-03 | polir-template-email-auth | Emails de verificacao e reset ganharam template responsivo QUEUE/2 com icone `/2`, CTA, etapas e nota de seguranca; gate tambem corrigiu RAWG sync para preservar tempo curado quando nao houver novo tempo estimado. |
-| 2026-06-03 | refinar-template-email-gmail | Template de auth foi compactado apos captura real do Gmail: fundo externo branco, marca dentro do card, menor largura, nota de seguranca mais cedo e sinal `translate="no"`. |
-| 2026-06-03 | polir-feedback-pareamento | Submits de `/parear` agora usam o mesmo feedback pending de login/cadastro para criar codigo, entrar com codigo e revogar convite. |
-| 2026-06-03 | auto-refresh-pareamento | Criador do codigo agora revalida `/parear` automaticamente e segue para `/app/dupla` quando a segunda pessoa entra. |
-| 2026-06-04 | seo-copy-fases-1-2 | Home ganhou metadata/canonical/OG/sitemap/robots; rotas operacionais ficaram `noindex`; copy publica e autenticada removeu linguagem interna de fase e reforcou ritual da dupla. |
-| 2026-06-04 | corrigir-it-takes-two-apontando-para-reg | It Takes Two em producao foi corrigido para o registro RAWG oficial; sync agora preserva slug curado, valida nome esperado e adota `rawg_id` atualizado sem conflito unico. |
-| 2026-06-04 | corrigir-validacao-do-cron-rawg-para-nom | Vercel Cron foi confirmado como registrado/invocavel; validacao RAWG agora aceita diferencas de pontuacao em nomes esperados sem liberar jogos errados. |
+Earlier quick-task history is retained in git history and prior STATE versions; current active context starts below.
 
 ## Accumulated Context
 
@@ -132,6 +114,9 @@ Recent decisions affecting current work:
 - [Phase 03]: Collaborative recommendation influence requires at least 20 current-duo decisions and 100 cross-duo positive facts.
 - [Phase 03]: Discovery library handoff is limited to Wishlist, Jogando and Pausado during Phase 3.
 - [Phase 03]: Push subscription rows are readable/writable only by their owning member because endpoint/auth material is sensitive.
+- [Phase 03-02]: Discovery autocomplete uses persistent database-backed per-user rate limiting before catalog search.
+- [Phase 03-02]: Discovery cold-start tag signals reuse catalog genre labels until a dedicated catalog tag source exists.
+- [Phase 03-02]: Discovery application use cases expose injectable dependencies while public wrappers load server-only dependencies at runtime.
 
 ### Pending Todos
 
@@ -157,6 +142,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T04:20:44.602Z
-Stopped at: Completed 03-01-PLAN.md
+Last session: 2026-06-04T04:45:17.976Z
+Stopped at: Completed 03-02-PLAN.md
 Resume file: None
