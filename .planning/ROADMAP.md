@@ -94,7 +94,12 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Usuario pode buscar com autocomplete e filtrar por tempo estimado, plataforma comum, coop type, mood, ano, genero, raridade e disponibilidade.
   4. Recomendacoes funcionam por similaridade de tags no cold start e passam a incorporar filtragem colaborativa quando houver dados suficientes.
   5. Um jogo descoberto pode entrar imediatamente na Wishlist ou em outro status valido da biblioteca.
-**Plans**: TBD
+**Plans**: 03-01, 03-02, 03-03, 03-04
+**Plan Waves**:
+  - **Wave 1**: `03-01` - Discovery persistence, RLS, decision/match/mood/recommendation rules.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `03-02` - Discovery application services, server actions, live/session/search contracts and library handoff.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `03-03` - Authenticated Discovery deck, filters, quiz, search, match celebration and history UI.
+  - **Wave 4 *(blocked on Wave 3 completion)*:** `03-04` - Match Live push, E2E/accessibility/integration hardening and final verification.
 **UI hint**: yes
 
 ### Phase 4: Jogando Agora, Sessoes E Agendamento
@@ -172,7 +177,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 4 -> 5 -> 6 -> 7
 | 01.1. Polimento Auth e Landing Intermediaria | 1/1 | Complete | 2026-06-03 |
 | 2. Catalogo E Biblioteca | 3/3 | Complete | 2026-06-03 |
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
-| 3. Descoberta E Matches | 0/TBD | Not started | - |
+| 3. Descoberta E Matches | 0/4 | Ready to execute | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
