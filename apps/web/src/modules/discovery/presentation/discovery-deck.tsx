@@ -49,12 +49,34 @@ export function DiscoveryDeck({
 
   if (!activeCard) {
     return (
-      <div className="empty-state discovery-deck-empty">
-        <strong>Sem cartas prontas para este filtro</strong>
+      <div
+        aria-label="Fim do deck de descoberta"
+        aria-live="polite"
+        className="empty-state discovery-deck-empty"
+        role="status"
+      >
+        <strong>Voce chegou ao fim do deck por enquanto</strong>
         <span>
-          Ajuste os filtros, use Busca ou volte quando a sincronizacao trouxer
-          mais coops com fonte.
+          Suas decisoes foram salvas. Agora a descoberta espera a outra pessoa
+          da dupla votar tambem; quando os dois marcam Quero jogar no mesmo
+          jogo, ele aparece em Matches recentes para ir para Wishlist, Jogando
+          ou Pausado.
         </span>
+        <span className="discovery-deck-empty-note">
+          Se quiser continuar agora, use Busca, ajuste Filtros ou veja os
+          matches que ja aconteceram.
+        </span>
+        <div className="discovery-deck-empty-actions" aria-label="Proximos passos da descoberta">
+          <a className="queue2-button" data-tone="primary" href="#discovery-search">
+            Buscar jogo
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="#discovery-filters-panel">
+            Ajustar filtros
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="#match-history-title">
+            Ver matches
+          </a>
+        </div>
       </div>
     );
   }

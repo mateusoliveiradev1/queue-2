@@ -1490,6 +1490,30 @@ input {
   position: relative;
 }
 
+.discovery-deck-empty {
+  align-content: center;
+  min-height: min(520px, 58svh);
+}
+
+.discovery-deck-empty-note {
+  color: var(--ink);
+}
+
+.discovery-deck-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.discovery-deck-empty-actions .queue2-button {
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: min(100%, 152px);
+  text-align: center;
+}
+
 .discovery-card-motion {
   align-self: stretch;
   display: grid;

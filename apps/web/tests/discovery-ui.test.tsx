@@ -456,6 +456,40 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByRole("group", { name: /deck de descoberta/i })).toBeInTheDocument();
   });
 
+  it("explains the duo wait state when the current member exhausts the deck", async () => {
+    discoveryModuleMock.getDiscoveryDeck.mockResolvedValueOnce({
+      cards: [],
+      recommendations: []
+    });
+
+    render(
+      await DiscoveryPage({
+        searchParams: Promise.resolve({})
+      })
+    );
+
+    const emptyDeck = screen.getByRole("status", {
+      name: /fim do deck de descoberta/i
+    });
+
+    expect(emptyDeck).toHaveTextContent(/suas decisoes foram salvas/i);
+    expect(emptyDeck).toHaveTextContent(/espera a outra pessoa da dupla votar tambem/i);
+    expect(emptyDeck).toHaveTextContent(/quando os dois marcam quero jogar/i);
+    expect(screen.queryByText(/sem cartas prontas para este filtro/i)).not.toBeInTheDocument();
+    expect(within(emptyDeck).getByRole("link", { name: /buscar jogo/i })).toHaveAttribute(
+      "href",
+      "#discovery-search"
+    );
+    expect(within(emptyDeck).getByRole("link", { name: /ajustar filtros/i })).toHaveAttribute(
+      "href",
+      "#discovery-filters-panel"
+    );
+    expect(within(emptyDeck).getByRole("link", { name: /ver matches/i })).toHaveAttribute(
+      "href",
+      "#match-history-title"
+    );
+  });
+
   it("blocks the old Discovery dashboard and viewport-scaled typography CSS", () => {
     expect(globalCssSource).toContain(".discovery-stage");
     expect(globalCssSource).toContain(".discovery-card-stage");
