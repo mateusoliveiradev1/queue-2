@@ -1,9 +1,11 @@
 ---
 phase: 03-descoberta-e-matches
 verified: 2026-06-04T17:06:06Z
-status: human_needed
+status: passed
 score: 5/5 must-haves verified
 overrides_applied: 0
+human_approval: 2026-06-04T15:18:00-03:00
+follow_up_phase: 03.1-refinos-visuais-e-ux-da-descoberta
 human_verification:
   - test: "Run discovery database integration tests with TEST_DATABASE_URL"
     expected: "RLS, cross-duo isolation, owner-only rows and reciprocal match concurrency tests execute instead of skipping"
@@ -23,7 +25,7 @@ human_verification:
 
 **Phase Goal:** A dupla pode reduzir indecisao, descobrir coops compativeis e transformar preferencias individuais em uma fila compartilhada.
 **Verified:** 2026-06-04T17:06:06Z
-**Status:** human_needed
+**Status:** passed
 **Re-verification:** No - initial verification
 
 ## Goal Achievement
@@ -38,7 +40,7 @@ human_verification:
 | 4 | Recomendacoes funcionam por similaridade de tags no cold start e passam a incorporar filtragem colaborativa quando houver dados suficientes. | VERIFIED | Recommendation facts include genres/tags/rarity/platform/time/availability (`recommendation-policy.ts:38-59`). Ranking adds genre/tag overlap reasons before collaborative influence (`recommendation-policy.ts:365-384`) and `evaluateCollaborativeInfluence` gates collaboration behind current-duo and cross-duo thresholds (`recommendation-policy.ts:88-205`). Tests cover compact reasons and thresholds (`discovery-domain.test.ts:373-417`). |
 | 5 | Um jogo descoberto pode entrar imediatamente na Wishlist ou em outro status valido da biblioteca. | VERIFIED | Discovery handoff is limited to `wishlist`, `jogando`, `pausado`; `zerado`/`dropado` return future-confirmation or invalid status (`discovery-policy.ts:141-155`). `handoffDiscoveryMatchToLibrary` calls library public APIs `addGameToWishlist`/`moveLibraryGame` and returns `library-updated` (`record-discovery-decision.ts:124-179`). UI renders Wishlist/Jogando/Pausado actions and disables Zerado/Dropado (`discovery-card.tsx:133-153`, `match-celebration.tsx:70-90`). |
 
-**Score:** 5/5 truths verified by code inspection. Overall status is `human_needed` because required database and authenticated browser gates skipped without environment fixtures.
+**Score:** 5/5 truths verified by code inspection. Overall status is `passed` after user approval on 2026-06-04. Runtime migrations were applied and smoke-checked; broader authenticated browser, visual/UX and architecture-warning refinement work is intentionally routed to Phase 03.1 instead of blocking Phase 3 closure.
 
 ### Required Artifacts
 
@@ -137,7 +139,9 @@ No orphaned Phase 3 requirement IDs were found in `.planning/REQUIREMENTS.md`; a
 
 03-REVIEW.md reports 0 critical findings and 1 warning. The warning is real in the current codebase: discovery application use cases import mappers from `../presentation/view-models`, which inverts the intended `presentation -> application -> domain` direction from `.planning/ARCHITECTURE.md`. The phase goal is still behaviorally achieved, but this is not hidden: it remains a warning and should be fixed or explicitly accepted before relying on the current architecture gate as complete coverage.
 
-### Human Verification Required
+### Human Verification Disposition
+
+Human verification was approved for Phase 3 closure on 2026-06-04 after fixing the push opt-in hydration issue in `b994969`. The items below remain useful follow-up checks, but no longer block Phase 3. Visual/UX refinements and the remaining architecture-warning cleanup are routed to Phase 03.1.
 
 #### 1. Discovery Database Integration
 
@@ -165,7 +169,7 @@ No orphaned Phase 3 requirement IDs were found in `.planning/REQUIREMENTS.md`; a
 
 ### Gaps Summary
 
-No blocker gaps were found against the Phase 3 goal or DISC-01 through DISC-12 by static/code verification. The phase should not be marked fully passed yet because required database and authenticated browser checks are environment-gated, and the remaining architecture warning needs explicit disposition.
+No blocker gaps were found against the Phase 3 goal or DISC-01 through DISC-12 by static/code verification. Phase 3 is approved as complete; visual/UX polish, authenticated browser hardening and the remaining architecture warning disposition move to Phase 03.1.
 
 ---
 
