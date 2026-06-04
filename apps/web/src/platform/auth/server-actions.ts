@@ -331,12 +331,26 @@ export async function logoutAction(_formData?: FormData) {
 function isUnverifiedEmailError(error: unknown): boolean {
   const serialized = serializeError(error);
 
-  return serialized.includes("email_not_verified") || serialized.includes("email not verified");
+  return (
+    serialized.includes("email_not_verified") ||
+    serialized.includes("email not verified") ||
+    serialized.includes("email is not verified") ||
+    serialized.includes("emailverified")
+  );
 }
 
 function serializeError(error: unknown): string {
   if (error instanceof Error) {
-    return error.message.toLowerCase();
+    return [
+      error.name,
+      error.message,
+      serializeErrorObject(error),
+      error.cause ? serializeError(error.cause) : ""
+    ].join(" ").toLowerCase();
+  }
+
+  if (error && typeof error === "object") {
+    return serializeErrorObject(error).toLowerCase();
   }
 
   try {
@@ -344,6 +358,36 @@ function serializeError(error: unknown): string {
   } catch {
     return "";
   }
+}
+
+function serializeErrorObject(error: object): string {
+  const seen = new WeakSet<object>();
+
+  return serializeObject(error, seen);
+}
+
+function serializeObject(value: unknown, seen: WeakSet<object>): string {
+  if (!value) {
+    return "";
+  }
+
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (typeof value !== "object") {
+    return String(value);
+  }
+
+  if (seen.has(value)) {
+    return "";
+  }
+
+  seen.add(value);
+
+  return Object.getOwnPropertyNames(value)
+    .map((key) => `${key}:${serializeObject((value as Record<string, unknown>)[key], seen)}`)
+    .join(" ");
 }
 
 function logDevelopmentAuthActionError(action: string, error: unknown) {

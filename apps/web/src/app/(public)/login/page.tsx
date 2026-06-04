@@ -81,6 +81,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
             <a className="text-link queue2-focusable" href="/recuperar-senha">
               Esqueci minha senha
             </a>
+            <a className="text-link queue2-focusable" href="/verificar-email">
+              Reenviar verificacao
+            </a>
           </div>
           <p className="support-copy">
             Ainda nao tem conta?{" "}

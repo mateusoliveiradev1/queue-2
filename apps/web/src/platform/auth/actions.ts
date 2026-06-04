@@ -14,7 +14,7 @@ export const authStatusMessages = {
   login: {
     saiu: "Sessao encerrada. Entre de novo para voltar para a fila da dupla.",
     "senha-alterada": "Senha alterada. Entre com a nova senha para seguir.",
-    "credenciais-invalidas": "Nao foi possivel entrar. Confira email, senha e verificacao.",
+    "credenciais-invalidas": "Nao foi possivel entrar. Confira email e senha; se ainda nao confirmou o email, reenvie a verificacao.",
     "verifique-email": "Confirme seu email antes de acessar a fila da dupla."
   },
   signup: {

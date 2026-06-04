@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Auth feedback improved; existing unverified accounts should use resend verification; ready for Phase 3 planning
-last_updated: "2026-06-04T01:46:32.000Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-auth-feedback: auth feedback e verificacao de email
+stopped_at: Login resend path fixed; one explicit test account manually verified; ready for Phase 3 planning
+last_updated: "2026-06-04T01:52:35.000Z"
+last_activity: 2026-06-03 -- Completed quick task 260603-auth-login: login e verificacao de email
 progress:
   total_phases: 9
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
-Status: Phase 02.1 complete; auth feedback/resend verification polished; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-auth-feedback: auth feedback e verificacao de email
+Status: Phase 02.1 complete; login resend path fixed and explicit test account verified; Phase 3 is next
+Last activity: 2026-06-03 -- Completed quick task 260603-auth-login: login e verificacao de email
 
 Progress: [██████████] 100%
 
@@ -81,6 +81,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | fechar-skips-de-integracao | `pnpm test:integration` agora carrega `.env.local`, roda sem cache e passou com 23 testes sem skip; `catalog:seed-curation -- --dry-run` confirmado. |
 | 2026-06-03 | publicar-e-deploy-vercel | Repo publico `queue-2` foi pushado no GitHub; Vercel producao ficou Ready em `https://queue-2.vercel.app` com banco limpo migrado/populado, Resend temporario configurado e envs sensiveis fora do git. |
 | 2026-06-03 | auth-feedback-e-verificacao-email | Formularios publicos de auth ganharam feedback pending; contas nao verificadas devem usar reenvio em `/verificar-email`, sem limpar banco por padrao. |
+| 2026-06-03 | auth-login-verificacao-resend | Login ganhou link explicito de reenvio; detector de `email_not_verified` foi reforcado; `mateus100saopaulino@hotmail.com` foi marcado como verificado; `mateus_sp4@outlook.com` nao existia no banco de producao. |
 
 ## Accumulated Context
 
@@ -123,7 +124,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Phase 3 planning: Descoberta e Matches.
-- Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, run real transactional email delivery check and capture Neon restore rehearsal evidence.
+- Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
 ### Blockers/Concerns
