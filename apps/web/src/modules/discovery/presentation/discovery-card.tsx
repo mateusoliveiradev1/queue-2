@@ -133,6 +133,12 @@ export function DiscoveryCard({
                 </button>
               </form>
             ))}
+            <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
+              Zerado bloqueado
+            </button>
+            <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
+              Dropado bloqueado
+            </button>
           </div>
         ) : (
           <p className="muted">

@@ -132,6 +132,24 @@ beforeEach(() => {
       coverUrl: "https://media.rawg.io/media/games/it-takes-two.jpg",
       libraryStatus: null,
       reasons: ["PC em comum"]
+    },
+    {
+      match: {
+        id: "match-2",
+        duoId: "duo-1",
+        catalogGameId: "game-2",
+        matchedAt: new Date("2026-06-03T09:30:00.000Z"),
+        createdFrom: "deck",
+        firstUserId: "user-1",
+        secondUserId: "user-2",
+        reasonSnapshot: ["Game Pass verificado"],
+        libraryHandoffStatus: "jogando"
+      },
+      slug: "portal-2",
+      title: "Portal 2",
+      coverUrl: "https://media.rawg.io/media/games/portal-2.jpg",
+      libraryStatus: "jogando",
+      reasons: ["Game Pass verificado"]
     }
   ]);
   discoveryModuleMock.getLiveSession.mockResolvedValue({
@@ -233,6 +251,12 @@ describe("Phase 3 Discovery route shell", () => {
       userId: "user-1",
       sessionId: "live-1"
     });
+    expect(screen.getByRole("heading", { name: /portal 2/i })).toBeInTheDocument();
+    expect(screen.getByText(/status atual: jogando/i)).toBeInTheDocument();
+    expect(screen.queryByText(/reviews/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/replay/i)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /zerado bloqueado/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /dropado bloqueado/i }).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
   });
 });

@@ -1370,8 +1370,7 @@ input {
   min-height: 520px;
 }
 
-.discovery-side-rail,
-.discovery-history-list {
+.discovery-side-rail {
   display: grid;
   gap: var(--space-4);
 }
@@ -1610,19 +1609,77 @@ input {
   width: 100%;
 }
 
-.discovery-history-list {
-  margin: 0;
-  padding: 0;
+.match-history,
+.match-history-grid,
+.match-history-body,
+.match-history-links {
+  display: grid;
+  gap: var(--space-4);
 }
 
-.discovery-history-list li {
+.match-history-card {
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   border-radius: var(--radius-sharp);
   display: grid;
-  gap: var(--space-2);
-  list-style: none;
-  min-height: 74px;
+  gap: var(--space-4);
+  grid-template-columns: 112px minmax(0, 1fr);
+  min-height: 220px;
   padding: var(--space-4);
+}
+
+.match-history-cover {
+  aspect-ratio: 3 / 4;
+  background: color-mix(in oklch, var(--bg) 64%, black);
+  border: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--primary);
+  display: grid;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 900;
+  overflow: hidden;
+  place-items: center;
+  text-decoration: none;
+}
+
+.match-history-cover img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.match-history-card h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 3vw, 2.4rem);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.match-history-status {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.match-history-card .status-controls {
+  gap: var(--space-2);
+}
+
+.match-history-card .status-controls .queue2-button {
+  min-height: 42px;
+  padding-left: var(--space-3);
+  padding-right: var(--space-3);
+}
+
+.match-history-links {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @container (max-width: 360px) {
@@ -1683,7 +1740,9 @@ input {
   .catalog-card-featured,
   .library-game,
   .discovery-card,
-  .match-celebration {
+  .match-celebration,
+  .match-history-card,
+  .match-history-links {
     grid-template-columns: 1fr;
   }
 

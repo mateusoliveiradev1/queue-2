@@ -66,6 +66,11 @@ export function MatchCelebration({
             ))}
           </div>
         ) : null}
+        {match.libraryStatus ? (
+          <p className="discovery-library-state" role="status">
+            Ja na biblioteca: {formatLibraryStatus(match.libraryStatus)}
+          </p>
+        ) : null}
         <div className="form-actions">
           {handoffStatuses.map((status) => (
             <form action={handoffAction} key={status}>
@@ -73,10 +78,16 @@ export function MatchCelebration({
               <input name="returnTo" type="hidden" value={returnTo} />
               <input name="status" type="hidden" value={status} />
               <button className="queue2-button" data-tone="primary" type="submit">
-                Enviar para {handoffLabels[status]}
+                {match.libraryStatus ? `Mover para ${handoffLabels[status]}` : `Enviar para ${handoffLabels[status]}`}
               </button>
             </form>
           ))}
+          <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
+            Zerado bloqueado
+          </button>
+          <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
+            Dropado bloqueado
+          </button>
           <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${match.slug}`}>
             Abrir detalhe
           </a>
@@ -87,4 +98,21 @@ export function MatchCelebration({
       </div>
     </section>
   );
+}
+
+function formatLibraryStatus(status: string): string {
+  switch (status) {
+    case "wishlist":
+      return "Wishlist";
+    case "jogando":
+      return "Jogando";
+    case "pausado":
+      return "Pausado";
+    case "zerado":
+      return "Zerado";
+    case "dropado":
+      return "Dropado";
+    default:
+      return status;
+  }
 }

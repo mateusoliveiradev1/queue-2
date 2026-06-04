@@ -14,6 +14,7 @@ import { DiscoveryDeck } from "../../../modules/discovery/presentation/discovery
 import { DiscoveryFilters } from "../../../modules/discovery/presentation/discovery-filters";
 import { DiscoverySearch } from "../../../modules/discovery/presentation/discovery-search";
 import { LivePanel } from "../../../modules/discovery/presentation/live-panel";
+import { MatchHistory } from "../../../modules/discovery/presentation/match-history";
 import { MatchCelebration } from "../../../modules/discovery/presentation/match-celebration";
 import { MoodQuiz } from "../../../modules/discovery/presentation/mood-quiz";
 import { getDuoDashboard } from "../../../modules/duo";
@@ -180,39 +181,11 @@ export default async function DiscoveryPage({
           </section>
 
           <section className="surface-band app-section" aria-labelledby="match-history-title">
-            <div className="section-heading">
-              <h2 className="eyebrow" id="match-history-title">
-                Matches recentes
-              </h2>
-              <p className="support-copy">
-                Historico curto para retomar jogos aprovados pelos dois, sem
-                virar Hall, review ou estatistica profunda.
-              </p>
-            </div>
-            {matchHistory.length > 0 ? (
-              <ol className="discovery-history-list">
-                {matchHistory.slice(0, 4).map((item) => (
-                  <li key={item.match.id}>
-                    <a className="text-link" href={`/app/jogo/${item.slug}`}>
-                      {item.title}
-                    </a>
-                    <span className="muted">
-                      {item.libraryStatus
-                        ? `Na biblioteca: ${formatLibraryStatus(item.libraryStatus)}`
-                        : "Ainda fora da biblioteca"}
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <div className="empty-state">
-                <strong>Nenhum match registrado ainda</strong>
-                <span>
-                  Quando ambos escolherem Quero jogar, o match aparece aqui
-                  antes de qualquer envio para a biblioteca.
-                </span>
-              </div>
-            )}
+            <MatchHistory
+              action={handoffDiscoveryMatchToLibraryAction}
+              items={matchHistory}
+              returnTo={returnTo}
+            />
           </section>
         </aside>
       </section>
@@ -364,21 +337,4 @@ function isRarity(value: string | null): value is "common" | "rare" | "epic" | "
 
 function getSearchParam(value: string | string[] | undefined): string | null {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
-}
-
-function formatLibraryStatus(status: string): string {
-  switch (status) {
-    case "wishlist":
-      return "Wishlist";
-    case "jogando":
-      return "Jogando";
-    case "pausado":
-      return "Pausado";
-    case "zerado":
-      return "Zerado";
-    case "dropado":
-      return "Dropado";
-    default:
-      return status;
-  }
 }
