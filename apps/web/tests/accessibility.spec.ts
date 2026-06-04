@@ -109,7 +109,14 @@ test.describe("Authenticated accessibility", () => {
     `Missing verified named-duo accessibility fixture: ${readyMissingEnv.join(", ")}`
   );
 
-  for (const route of ["/app", "/app/perfil", "/app/dupla", "/app/catalogo", "/app/biblioteca"]) {
+  for (const route of [
+    "/app",
+    "/app/perfil",
+    "/app/dupla",
+    "/app/catalogo",
+    "/app/descobrir",
+    "/app/biblioteca"
+  ]) {
     test(`${route} has no WCAG A/AA axe violations`, async ({ page }) => {
       await login(page, readyActor);
       await page.goto(route);
