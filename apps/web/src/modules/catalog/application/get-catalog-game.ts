@@ -1,7 +1,7 @@
 import {
   toCatalogGameDetailView,
   type CatalogGameDetailView
-} from "../presentation/view-models";
+} from "./view-models";
 import type { CatalogRepository } from "./ports";
 
 export async function getCatalogGameDetailUseCase(

@@ -4,7 +4,7 @@ import type {
   CatalogGameRecord,
   CatalogLocalizationRecord,
   CatalogTimeEstimateRecord
-} from "../application/ports";
+} from "./records";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

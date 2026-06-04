@@ -4,7 +4,7 @@ import {
 import {
   toCatalogGameCardView,
   type CatalogGameCardView
-} from "../presentation/view-models";
+} from "./view-models";
 import type {
   CatalogPlatformKey,
   CatalogRepository

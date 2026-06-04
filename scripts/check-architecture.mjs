@@ -24,6 +24,13 @@ const internalModuleLayers = new Set([
   "presentation",
   "events"
 ]);
+const sameModuleAllowedLayerImports = new Map([
+  ["presentation", new Set(["presentation", "application", "domain"])],
+  ["application", new Set(["application", "domain"])],
+  ["infrastructure", new Set(["infrastructure", "application", "domain", "events"])],
+  ["domain", new Set(["domain"])],
+  ["events", new Set(["events", "domain"])]
+]);
 const browserApiIdentifiers = new Set([
   "window",
   "document",
@@ -190,6 +197,7 @@ function analyzeSourceFile(filePath, source) {
 
   if (moduleInfo) {
     violations.push(...checkCrossModuleDeepImports(relativePath, filePath, moduleInfo, imports));
+    violations.push(...checkSameModuleLayerDirection(relativePath, filePath, moduleInfo, imports));
   }
 
   if (moduleInfo?.layer === "domain") {
@@ -218,7 +226,8 @@ function collectImportSpecifiers(sourceFile) {
     ) {
       imports.push({
         specifier: node.moduleSpecifier.text,
-        line: lineOf(sourceFile, node)
+        line: lineOf(sourceFile, node),
+        kind: "static"
       });
     }
 
@@ -230,7 +239,8 @@ function collectImportSpecifiers(sourceFile) {
     ) {
       imports.push({
         specifier: node.arguments[0].text,
-        line: lineOf(sourceFile, node)
+        line: lineOf(sourceFile, node),
+        kind: "dynamic"
       });
     }
 
@@ -258,6 +268,41 @@ function checkCrossModuleDeepImports(relativePath, filePath, moduleInfo, imports
         detail: `Module "${moduleInfo.domain}" imports "${target.domain}/${target.layer}" internals via "${importInfo.specifier}". Use the target module public index.ts.`
       });
     }
+  }
+
+  return violations;
+}
+
+function checkSameModuleLayerDirection(relativePath, filePath, moduleInfo, imports) {
+  const violations = [];
+  const sourceLayer = moduleInfo.layer;
+  const allowedTargets = sameModuleAllowedLayerImports.get(sourceLayer);
+
+  if (!allowedTargets) {
+    return violations;
+  }
+
+  for (const importInfo of imports) {
+    if (importInfo.kind === "dynamic") {
+      continue;
+    }
+
+    const target = getImportModuleTarget(importInfo.specifier, filePath);
+    if (
+      !target ||
+      target.domain !== moduleInfo.domain ||
+      !internalModuleLayers.has(target.layer) ||
+      allowedTargets.has(target.layer)
+    ) {
+      continue;
+    }
+
+    violations.push({
+      file: relativePath,
+      line: importInfo.line,
+      rule: "module-layer-direction",
+      detail: `Module "${moduleInfo.domain}" ${sourceLayer} cannot import ${target.layer} via "${importInfo.specifier}". Allowed direction is presentation -> application -> domain and infrastructure -> application ports/domain.`
+    });
   }
 
   return violations;
