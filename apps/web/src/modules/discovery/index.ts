@@ -147,6 +147,14 @@ export {
   startLiveSession
 };
 
+export { DiscoveryDeck } from "./presentation/discovery-deck";
+export { DiscoveryFilters } from "./presentation/discovery-filters";
+export { DiscoverySearch } from "./presentation/discovery-search";
+export { LivePanel } from "./presentation/live-panel";
+export { MatchCelebration } from "./presentation/match-celebration";
+export { MatchHistory } from "./presentation/match-history";
+export { MoodQuiz } from "./presentation/mood-quiz";
+
 export function answerDiscoveryMoodQuiz(
   input: AnswerMoodQuizInput,
   repository: Pick<DiscoveryRepository, "answerMoodQuiz" | "getReadState">,

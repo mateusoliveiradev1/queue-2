@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import {
   answerMoodQuiz,
@@ -13,6 +14,8 @@ import {
 } from "../../../modules/discovery";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 
+const uuidSchema = z.string().uuid();
+
 export async function recordDiscoveryDecisionAction(formData: FormData): Promise<void> {
   const session = await requireVerifiedSession();
   const catalogGameId = getFormString(formData, "catalogGameId");
@@ -21,7 +24,7 @@ export async function recordDiscoveryDecisionAction(formData: FormData): Promise
   const returnTo = getSafeReturnTo(formData, "/app/descobrir");
 
   if (
-    !catalogGameId ||
+    !isUuid(catalogGameId) ||
     !isDiscoveryDecision(decision) ||
     !isDiscoverySourceMode(sourceMode)
   ) {
@@ -50,7 +53,7 @@ export async function handoffDiscoveryMatchToLibraryAction(
   const status = getFormString(formData, "status");
   const returnTo = getSafeReturnTo(formData, "/app/descobrir");
 
-  if (!catalogGameId || !status) {
+  if (!isUuid(catalogGameId) || !status) {
     redirect(withState(returnTo, "acao-invalida"));
   }
 
@@ -80,7 +83,7 @@ export async function startDiscoveryLiveSessionAction(
     redirect(result.reason === "membership-required" ? "/parear" : withState(returnTo, "acao-invalida"));
   }
 
-  redirect(withState(`${returnTo}?live=${result.session.id}`, "live-iniciado"));
+  redirect(withState(withParam(returnTo, "live", result.session.id), "live-iniciado"));
 }
 
 export async function answerMoodQuizAction(formData: FormData): Promise<void> {
@@ -128,7 +131,12 @@ export async function getSurpriseRecommendationAction(
     redirect(withState(returnTo, "surpresa-indisponivel"));
   }
 
-  redirect(withState(`${returnTo}?surpresa=${result.card.catalogGameId}`, "surpresa-pronta"));
+  redirect(
+    withState(
+      withParam(returnTo, "surpresa", result.card.catalogGameId),
+      "surpresa-pronta"
+    )
+  );
 }
 
 function decisionResultToState(
@@ -192,6 +200,16 @@ function withState(path: string, state: string): string {
   const url = new URL(path, "https://queue.local");
   url.searchParams.set("estado", state);
   return `${url.pathname}${url.search}`;
+}
+
+function withParam(path: string, key: string, value: string): string {
+  const url = new URL(path, "https://queue.local");
+  url.searchParams.set(key, value);
+  return `${url.pathname}${url.search}`;
+}
+
+function isUuid(value: string): boolean {
+  return uuidSchema.safeParse(value).success;
 }
 
 function isMoodEnergyAnswer(value: string): value is "low" | "medium" | "high" {

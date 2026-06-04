@@ -85,12 +85,12 @@ vi.mock("../src/app/app/descobrir/actions", () => ({
 }));
 
 vi.mock("../src/modules/discovery", async () => {
-  const policy = await vi.importActual<
-    typeof import("../src/modules/discovery/domain/discovery-policy")
-  >("../src/modules/discovery/domain/discovery-policy");
+  const actual = await vi.importActual<typeof import("../src/modules/discovery")>(
+    "../src/modules/discovery"
+  );
 
   return {
-    ...policy,
+    ...actual,
     getDiscoveryDeck: discoveryModuleMock.getDiscoveryDeck,
     getLiveSession: discoveryModuleMock.getLiveSession,
     getMatchHistory: discoveryModuleMock.getMatchHistory
@@ -136,6 +136,11 @@ import DashboardPage from "../src/app/app/page";
 import DiscoveryPage from "../src/app/app/descobrir/page";
 import { LiveSessionRefresh } from "../src/modules/discovery/presentation/live-session-refresh";
 
+const DISCOVERY_CARD_ID = "00000000-0000-4000-8000-000000000001";
+const SECOND_DISCOVERY_CARD_ID = "00000000-0000-4000-8000-000000000002";
+const LIVE_SESSION_ID = "00000000-0000-4000-8000-000000000003";
+const LIVE_MATCH_ID = "00000000-0000-4000-8000-000000000004";
+
 const liveRouteSource = readFileSync(
   "src/app/api/discovery/live/[sessionId]/route.ts",
   "utf8"
@@ -161,7 +166,7 @@ beforeEach(() => {
         id: "match-1",
         duoId: "duo-1",
         userId: "user-1",
-        catalogGameId: "game-1",
+        catalogGameId: DISCOVERY_CARD_ID,
         matchedAt: new Date("2026-06-04T09:30:00.000Z"),
         createdFrom: "deck",
         firstUserId: "user-1",
@@ -179,7 +184,7 @@ beforeEach(() => {
       match: {
         id: "match-2",
         duoId: "duo-1",
-        catalogGameId: "game-2",
+        catalogGameId: SECOND_DISCOVERY_CARD_ID,
         matchedAt: new Date("2026-06-03T09:30:00.000Z"),
         createdFrom: "deck",
         firstUserId: "user-1",
@@ -197,7 +202,7 @@ beforeEach(() => {
   discoveryModuleMock.getLiveSession.mockResolvedValue({
     ok: true,
     session: {
-      id: "live-1",
+      id: LIVE_SESSION_ID,
       duoId: "duo-1",
       startedByUserId: "user-1",
       status: "active",
@@ -245,7 +250,7 @@ describe("Phase 3 Discovery route shell", () => {
       await DiscoveryPage({
         searchParams: Promise.resolve({
           estado: "match-criado",
-          live: "live-1"
+          live: LIVE_SESSION_ID
         })
       })
     );
@@ -283,7 +288,8 @@ describe("Phase 3 Discovery route shell", () => {
       expect.objectContaining({
         userId: "user-1",
         filters: expect.objectContaining({ commonPlatformOnly: true }),
-        limit: 6
+        limit: 6,
+        preferredCatalogGameId: undefined
       })
     );
     expect(discoveryModuleMock.getMatchHistory).toHaveBeenCalledWith({
@@ -292,7 +298,7 @@ describe("Phase 3 Discovery route shell", () => {
     });
     expect(discoveryModuleMock.getLiveSession).toHaveBeenCalledWith({
       userId: "user-1",
-      sessionId: "live-1"
+      sessionId: LIVE_SESSION_ID
     });
     expect(screen.getByRole("heading", { name: /portal 2/i })).toBeInTheDocument();
     expect(screen.getByText(/status atual: jogando/i)).toBeInTheDocument();
@@ -301,6 +307,25 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByRole("button", { name: /zerado bloqueado/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /dropado bloqueado/i }).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
+  });
+
+  it("uses a valid surprise id to request and render the highlighted discovery card", async () => {
+    render(
+      await DiscoveryPage({
+        searchParams: Promise.resolve({
+          estado: "surpresa-pronta",
+          surpresa: DISCOVERY_CARD_ID
+        })
+      })
+    );
+
+    expect(discoveryModuleMock.getDiscoveryDeck).toHaveBeenCalledWith(
+      expect.objectContaining({
+        preferredCatalogGameId: DISCOVERY_CARD_ID
+      })
+    );
+    expect(screen.getByText(/surpresa pronta/i)).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: /deck de descoberta/i })).toBeInTheDocument();
   });
 
   it("keeps live polling bounded, private and announced in-app", () => {
@@ -330,9 +355,9 @@ describe("Phase 3 Discovery route shell", () => {
           matches: [
             {
               match: {
-                id: "match-live-1",
+                id: LIVE_MATCH_ID,
                 duoId: "duo-1",
-                catalogGameId: "game-1",
+                catalogGameId: DISCOVERY_CARD_ID,
                 matchedAt: new Date("2026-06-04T09:08:00.000Z"),
                 createdFrom: "live",
                 firstUserId: "user-1",
@@ -374,7 +399,7 @@ function expectEveryVisibleFormControlHasName(container: HTMLElement) {
 
 function discoveryCard() {
   return {
-    catalogGameId: "game-1",
+    catalogGameId: DISCOVERY_CARD_ID,
     slug: "it-takes-two",
     title: "It Takes Two",
     coverUrl: "https://media.rawg.io/media/games/it-takes-two.jpg",

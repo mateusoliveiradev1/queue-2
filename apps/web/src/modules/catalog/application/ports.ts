@@ -75,6 +75,7 @@ export type CatalogGameDetailRecord = CatalogGameRecord & {
 };
 
 export type CatalogSearchInput = {
+  ids?: string[];
   query?: string;
   limit?: number;
   onlyMainFlow?: boolean;

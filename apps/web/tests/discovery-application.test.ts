@@ -146,6 +146,8 @@ describe("discovery application deck", () => {
   });
 
   it("keeps reciprocal match creation idempotent in the repository transaction", () => {
+    expect(discoveryRepositorySource).toContain("pg_advisory_xact_lock");
+    expect(discoveryRepositorySource).toContain("hashtextextended");
     expect(discoveryRepositorySource).toContain(
       "ON CONFLICT (duo_id, catalog_game_id) DO NOTHING"
     );
@@ -230,7 +232,10 @@ describe("discovery application deck", () => {
   it("derives discovery server action user identity from the verified session", () => {
     expect(discoveryActionsSource).toContain("requireVerifiedSession()");
     expect(discoveryActionsSource).toContain("userId: session.user.id");
+    expect(discoveryActionsSource).toContain("z.string().uuid()");
     expect(discoveryActionsSource).toContain("getSafeReturnTo");
+    expect(discoveryActionsSource).toContain('withParam(returnTo, "live"');
+    expect(discoveryActionsSource).toContain('withParam(returnTo, "surpresa"');
     expect(discoveryActionsSource).not.toMatch(/formData\.get\(\"userId\"\)/);
   });
 });

@@ -14,15 +14,17 @@ export function DiscoveryDeck({
   cards,
   decisionAction,
   handoffAction,
-  returnTo
+  returnTo,
+  surpriseCatalogGameId
 }: {
   cards: DiscoveryDeckCard[];
   decisionAction: DiscoveryDecisionAction;
   handoffAction: DiscoveryHandoffAction;
   returnTo: string;
+  surpriseCatalogGameId?: string;
 }) {
   const shouldReduceMotion = useReducedMotion();
-  const [activeIndex, setActiveIndex] = useState(0);
+  const activeIndex = 0;
   const [reaction, setReaction] = useState<Reaction | null>(null);
   const wantFormRef = useRef<HTMLFormElement | null>(null);
   const notNowFormRef = useRef<HTMLFormElement | null>(null);
@@ -46,22 +48,15 @@ export function DiscoveryDeck({
   }
 
   function submitDecision(decision: Reaction) {
+    const form =
+      decision === "want"
+        ? wantFormRef.current
+        : decision === "not_now"
+          ? notNowFormRef.current
+          : skipFormRef.current;
+
     setReaction(decision);
-    setActiveIndex((current) => Math.min(cards.length, current + 1));
-
-    window.setTimeout(
-      () => {
-        const form =
-          decision === "want"
-            ? wantFormRef.current
-            : decision === "not_now"
-              ? notNowFormRef.current
-              : skipFormRef.current;
-
-        form?.requestSubmit();
-      },
-      shouldReduceMotion ? 0 : 120
-    );
+    form?.requestSubmit();
   }
 
   function handleDragEnd(_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {
@@ -153,6 +148,11 @@ export function DiscoveryDeck({
             priority
             reaction={reaction}
             returnTo={returnTo}
+            sourceMode={
+              activeCard.catalogGameId === surpriseCatalogGameId
+                ? "surprise"
+                : "deck"
+            }
           />
         </motion.div>
       </div>

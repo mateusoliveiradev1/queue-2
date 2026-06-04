@@ -213,6 +213,11 @@ async function recordDecision(
       return { ok: false as const, reason: "catalog-game-not-found" as const };
     }
 
+    await lockDiscoveryDecisionPair(client, {
+      duoId: context.duoId,
+      catalogGameId: input.catalogGameId
+    });
+
     const effect = evaluateDiscoveryDecision({ decision: input.decision });
     const decision = await upsertDecision(client, {
       ...input,
@@ -1060,6 +1065,23 @@ async function catalogGameExists(
   );
 
   return result.rows[0]?.exists ?? false;
+}
+
+async function lockDiscoveryDecisionPair(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    catalogGameId: string;
+  }
+): Promise<void> {
+  await client.query(
+    `
+      SELECT pg_advisory_xact_lock(
+        hashtextextended($1 || ':' || $2, 0)
+      )
+    `,
+    [input.duoId, input.catalogGameId]
+  );
 }
 
 async function upsertDecision(

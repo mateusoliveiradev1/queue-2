@@ -142,6 +142,7 @@ export function DiscoverySearch({
             handoffAction={handoffAction}
             reaction={null}
             returnTo={returnTo}
+            sourceMode="search"
           />
         </div>
       ) : null}

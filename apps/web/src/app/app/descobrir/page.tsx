@@ -1,22 +1,23 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { AppShell } from "../../../components/app-shell";
 import { StatusToast } from "../../../components/status-toast";
 import {
+  DiscoveryDeck,
+  DiscoveryFilters,
+  DiscoverySearch,
   getDiscoveryDeck,
   getLiveSession,
   getMatchHistory,
+  LivePanel,
+  MatchCelebration,
+  MatchHistory,
+  MoodQuiz,
   type DiscoveryDeckFilters,
   type DiscoveryLiveSessionPayload
 } from "../../../modules/discovery";
-import { DiscoveryDeck } from "../../../modules/discovery/presentation/discovery-deck";
-import { DiscoveryFilters } from "../../../modules/discovery/presentation/discovery-filters";
-import { DiscoverySearch } from "../../../modules/discovery/presentation/discovery-search";
-import { LivePanel } from "../../../modules/discovery/presentation/live-panel";
-import { MatchHistory } from "../../../modules/discovery/presentation/match-history";
-import { MatchCelebration } from "../../../modules/discovery/presentation/match-celebration";
-import { MoodQuiz } from "../../../modules/discovery/presentation/mood-quiz";
 import { getDuoDashboard } from "../../../modules/duo";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 import {
@@ -37,6 +38,8 @@ type DiscoveryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+const uuidSchema = z.string().uuid();
+
 export default async function DiscoveryPage({
   searchParams
 }: DiscoveryPageProps = {}) {
@@ -55,14 +58,23 @@ export default async function DiscoveryPage({
   }
 
   const state = getSearchParam(params?.estado);
-  const liveId = getSearchParam(params?.live);
+  const liveParam = getSearchParam(params?.live);
+  const surpriseParam = getSearchParam(params?.surpresa);
+  const liveId = parseUuidSearchParam(liveParam);
+  const surpriseId = parseUuidSearchParam(surpriseParam);
+
+  if ((liveParam && !liveId) || (surpriseParam && !surpriseId)) {
+    redirect("/app/descobrir?estado=acao-invalida");
+  }
+
   const filters = getDiscoveryFilters(params);
   const returnTo = buildDiscoveryPath(params);
   const [deck, matchHistory, liveSession] = await Promise.all([
     getDiscoveryDeck({
       userId: session.user.id,
       filters,
-      limit: 6
+      limit: 6,
+      preferredCatalogGameId: surpriseId ?? undefined
     }),
     getMatchHistory({
       userId: session.user.id,
@@ -152,6 +164,7 @@ export default async function DiscoveryPage({
             decisionAction={recordDiscoveryDecisionAction}
             handoffAction={handoffDiscoveryMatchToLibraryAction}
             returnTo={returnTo}
+            surpriseCatalogGameId={surpriseId ?? undefined}
           />
         </div>
 
@@ -337,4 +350,13 @@ function isRarity(value: string | null): value is "common" | "rare" | "epic" | "
 
 function getSearchParam(value: string | string[] | undefined): string | null {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function parseUuidSearchParam(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const parsed = uuidSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }

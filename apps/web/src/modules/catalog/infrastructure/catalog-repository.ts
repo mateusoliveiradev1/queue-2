@@ -107,6 +107,7 @@ async function searchGames(
   input: CatalogSearchInput = {}
 ): Promise<CatalogGameDetailRecord[]> {
   const limit = clampLimit(input.limit);
+  const ids = [...new Set(input.ids ?? [])].filter(Boolean);
   const query = input.query?.trim() ? input.query.trim() : null;
   const onlyMainFlow = input.onlyMainFlow ?? false;
   const platformKeys = input.platformKeys ?? [];
@@ -133,21 +134,26 @@ async function searchGames(
         game.coop_confirmation_checked_at,
         game.main_flow_eligible
       FROM catalog.games AS game
-      WHERE ($1::text IS NULL OR game.name ILIKE '%' || $1 || '%' OR game.slug ILIKE '%' || $1 || '%')
-        AND ($2::boolean = false OR game.main_flow_eligible = true)
+      WHERE (cardinality($1::uuid[]) = 0 OR game.id = ANY($1::uuid[]))
+        AND ($2::text IS NULL OR game.name ILIKE '%' || $2 || '%' OR game.slug ILIKE '%' || $2 || '%')
+        AND ($3::boolean = false OR game.main_flow_eligible = true)
         AND (
-          cardinality($3::text[]) = 0
+          cardinality($4::text[]) = 0
           OR EXISTS (
             SELECT 1
             FROM catalog.game_platforms AS platform
             WHERE platform.game_id = game.id
-              AND platform.platform_key = ANY($3::text[])
+              AND platform.platform_key = ANY($4::text[])
           )
         )
-      ORDER BY game.main_flow_eligible DESC, game.synced_at DESC, game.name ASC
-      LIMIT $4
+      ORDER BY
+        CASE WHEN game.id = ANY($1::uuid[]) THEN 0 ELSE 1 END,
+        game.main_flow_eligible DESC,
+        game.synced_at DESC,
+        game.name ASC
+      LIMIT $5
     `,
-    [query, onlyMainFlow, platformKeys, limit]
+    [ids, query, onlyMainFlow, platformKeys, limit]
   );
 
   return Promise.all(result.rows.map((row) => hydrateGame(pool, row)));

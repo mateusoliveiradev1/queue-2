@@ -4,7 +4,10 @@ import Image from "next/image";
 import type { RefObject } from "react";
 
 import type { DiscoveryDeckCard } from "../application/ports";
-import type { DiscoveryLibraryHandoffStatus } from "../domain/discovery-policy";
+import type {
+  DiscoveryLibraryHandoffStatus,
+  DiscoverySourceMode
+} from "../domain/discovery-policy";
 import { DiscoverySourceMetadata } from "./discovery-source-metadata";
 
 type DiscoveryDecisionAction = (formData: FormData) => Promise<void>;
@@ -31,7 +34,8 @@ export function DiscoveryCard({
   handoffAction,
   priority = false,
   reaction,
-  returnTo
+  returnTo,
+  sourceMode = "deck"
 }: {
   card: DiscoveryDeckCard;
   decisionAction: DiscoveryDecisionAction;
@@ -40,6 +44,7 @@ export function DiscoveryCard({
   priority?: boolean;
   reaction: "want" | "not_now" | "skip" | null;
   returnTo: string;
+  sourceMode?: DiscoverySourceMode;
 }) {
   return (
     <article className="discovery-card" data-reaction={reaction ?? "idle"}>
@@ -102,6 +107,7 @@ export function DiscoveryCard({
             formRef={formRefs?.want}
             label="Quero jogar"
             returnTo={returnTo}
+            sourceMode={sourceMode}
           />
           <DecisionForm
             action={decisionAction}
@@ -110,6 +116,7 @@ export function DiscoveryCard({
             formRef={formRefs?.not_now}
             label="Agora nao"
             returnTo={returnTo}
+            sourceMode={sourceMode}
           />
           <DecisionForm
             action={decisionAction}
@@ -118,6 +125,7 @@ export function DiscoveryCard({
             formRef={formRefs?.skip}
             label="Pular"
             returnTo={returnTo}
+            sourceMode={sourceMode}
           />
         </div>
 
@@ -156,7 +164,8 @@ function DecisionForm({
   decision,
   formRef,
   label,
-  returnTo
+  returnTo,
+  sourceMode
 }: {
   action: DiscoveryDecisionAction;
   catalogGameId: string;
@@ -164,6 +173,7 @@ function DecisionForm({
   formRef?: RefObject<HTMLFormElement | null>;
   label: string;
   returnTo: string;
+  sourceMode: DiscoverySourceMode;
 }) {
   const tone = decision === "want" ? "primary" : "quiet";
 
@@ -171,7 +181,7 @@ function DecisionForm({
     <form action={action} ref={formRef}>
       <input name="catalogGameId" type="hidden" value={catalogGameId} />
       <input name="decision" type="hidden" value={decision} />
-      <input name="sourceMode" type="hidden" value="deck" />
+      <input name="sourceMode" type="hidden" value={sourceMode} />
       <input name="returnTo" type="hidden" value={returnTo} />
       <button className="queue2-button" data-decision={decision} data-tone={tone} type="submit">
         {label}

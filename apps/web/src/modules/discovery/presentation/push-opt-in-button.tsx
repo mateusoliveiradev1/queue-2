@@ -28,49 +28,53 @@ export function PushOptInButton() {
     }
 
     setState("enabling");
-    const configResponse = await fetch("/api/discovery/push", {
-      cache: "no-store"
-    });
-    const config = (await configResponse.json()) as
-      | {
-          ok: true;
-          publicKey: string;
-        }
-      | {
-          ok: false;
-          reason: string;
-        };
+    try {
+      const configResponse = await fetch("/api/discovery/push", {
+        cache: "no-store"
+      });
+      const config = (await configResponse.json()) as
+        | {
+            ok: true;
+            publicKey: string;
+          }
+        | {
+            ok: false;
+            reason: string;
+          };
 
-    if (!config.ok) {
-      setState(config.reason === "push-not-configured" ? "not-configured" : "failed");
-      return;
+      if (!config.ok) {
+        setState(config.reason === "push-not-configured" ? "not-configured" : "failed");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+
+      if (permission !== "granted") {
+        setState("denied");
+        return;
+      }
+
+      const registration = await navigator.serviceWorker.register(
+        "/discovery-push-sw.js"
+      );
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(config.publicKey)
+      });
+      const response = await fetch("/api/discovery/push", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          subscription: subscription.toJSON()
+        })
+      });
+
+      setState(response.ok ? "enabled" : "failed");
+    } catch {
+      setState("failed");
     }
-
-    const permission = await Notification.requestPermission();
-
-    if (permission !== "granted") {
-      setState("denied");
-      return;
-    }
-
-    const registration = await navigator.serviceWorker.register(
-      "/discovery-push-sw.js"
-    );
-    const subscription = await registration.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(config.publicKey)
-    });
-    const response = await fetch("/api/discovery/push", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        subscription: subscription.toJSON()
-      })
-    });
-
-    setState(response.ok ? "enabled" : "failed");
   }
 
   async function handleDisablePush() {
@@ -80,32 +84,36 @@ export function PushOptInButton() {
     }
 
     setState("disabling");
-    const registration = await navigator.serviceWorker.getRegistration(
-      "/discovery-push-sw.js"
-    );
-    const subscription = await registration?.pushManager.getSubscription();
+    try {
+      const registration = await navigator.serviceWorker.getRegistration(
+        "/discovery-push-sw.js"
+      );
+      const subscription = await registration?.pushManager.getSubscription();
 
-    if (!subscription) {
-      setState("disabled");
-      return;
+      if (!subscription) {
+        setState("disabled");
+        return;
+      }
+
+      const endpoint = subscription.endpoint;
+      const response = await fetch("/api/discovery/push", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ endpoint })
+      });
+
+      if (response.ok) {
+        await subscription.unsubscribe();
+        setState("disabled");
+        return;
+      }
+
+      setState("failed");
+    } catch {
+      setState("failed");
     }
-
-    const endpoint = subscription.endpoint;
-    const response = await fetch("/api/discovery/push", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ endpoint })
-    });
-
-    if (response.ok) {
-      await subscription.unsubscribe();
-      setState("disabled");
-      return;
-    }
-
-    setState("failed");
   }
 
   return (

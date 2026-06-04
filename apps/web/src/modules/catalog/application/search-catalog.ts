@@ -11,6 +11,7 @@ import type {
 } from "./ports";
 
 export type SearchCatalogGamesInput = {
+  ids?: string[];
   query?: string;
   limit?: number;
   platformKeys?: CatalogPlatformKey[];
@@ -24,6 +25,7 @@ export async function searchCatalogGamesUseCase(
 ): Promise<CatalogGameCardView[]> {
   const includeNonEligible = input.includeNonEligible ?? false;
   const records = await repository.searchGames({
+    ids: input.ids,
     query: input.query,
     limit: input.limit,
     platformKeys: input.platformKeys,

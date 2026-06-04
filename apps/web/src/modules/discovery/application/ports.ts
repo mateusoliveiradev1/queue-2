@@ -148,6 +148,7 @@ export type GetDiscoveryDeckInput = {
   userId: DiscoveryUserId;
   filters?: DiscoveryDeckFilters;
   limit?: number;
+  preferredCatalogGameId?: DiscoveryCatalogGameId;
 };
 
 export type SearchDiscoveryGamesInput = {

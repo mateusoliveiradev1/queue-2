@@ -23,10 +23,21 @@ export async function getDiscoveryDeckUseCase(
   catalogSearch: DiscoveryCatalogSearch
 ): Promise<DiscoveryDeckBuildResult> {
   const limit = clampLimit(input.limit, 12);
-  const catalogCards = await catalogSearch({
-    limit: Math.min(60, Math.max(24, limit * 4)),
-    includeNonEligible: false
-  });
+  const catalogCards = mergePreferredCatalogCards(
+    await Promise.all([
+      input.preferredCatalogGameId
+        ? catalogSearch({
+            ids: [input.preferredCatalogGameId],
+            limit: 1,
+            includeNonEligible: false
+          })
+        : Promise.resolve([]),
+      catalogSearch({
+        limit: Math.min(60, Math.max(24, limit * 4)),
+        includeNonEligible: false
+      })
+    ])
+  );
   const readState = await repository.getReadState({
     userId: input.userId,
     catalogGameIds: catalogCards.map((card) => card.id)
@@ -71,8 +82,15 @@ export async function getDiscoveryDeckUseCase(
     ])
   );
   const cardsById = new Map(eligibleCards.map((card) => [card.id, card]));
-  const rankedCards = recommendationResult.recommendations
-    .map((recommendation) => cardsById.get(recommendation.catalogGameId))
+  const rankedCatalogGameIds = prioritizePreferredCatalogGameId(
+    recommendationResult.recommendations.map(
+      (recommendation) => recommendation.catalogGameId
+    ),
+    input.preferredCatalogGameId,
+    cardsById.has(input.preferredCatalogGameId ?? "")
+  );
+  const rankedCards = rankedCatalogGameIds
+    .map((catalogGameId) => cardsById.get(catalogGameId))
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
     .slice(0, limit);
 
@@ -94,6 +112,34 @@ export async function getDiscoveryDeck(
   ]);
 
   return getDiscoveryDeckUseCase(input, discoveryRepository, searchCatalogGames);
+}
+
+function mergePreferredCatalogCards(
+  [preferredCards, catalogCards]: [
+    Awaited<ReturnType<DiscoveryCatalogSearch>>,
+    Awaited<ReturnType<DiscoveryCatalogSearch>>
+  ]
+) {
+  const cardsById = new Map(
+    [...preferredCards, ...catalogCards].map((card) => [card.id, card])
+  );
+
+  return [...cardsById.values()];
+}
+
+function prioritizePreferredCatalogGameId(
+  catalogGameIds: string[],
+  preferredCatalogGameId: string | undefined,
+  hasPreferredCard: boolean
+): string[] {
+  if (!preferredCatalogGameId || !hasPreferredCard) {
+    return catalogGameIds;
+  }
+
+  return [
+    preferredCatalogGameId,
+    ...catalogGameIds.filter((catalogGameId) => catalogGameId !== preferredCatalogGameId)
+  ];
 }
 
 function toRecommendationFilters(
