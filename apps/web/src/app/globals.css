@@ -1550,13 +1550,6 @@ input {
   z-index: 2;
 }
 
-.discovery-reaction-badges {
-  display: grid;
-  gap: var(--space-2);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.discovery-reaction-badges span,
 .discovery-deck-status,
 .discovery-card-failure-copy,
 .discovery-compatibility-signal {
@@ -1567,32 +1560,6 @@ input {
   font-size: 14px;
   font-weight: 600;
   line-height: 1.35;
-}
-
-.discovery-reaction-badges span {
-  align-items: center;
-  display: flex;
-  justify-content: center;
-  min-height: 36px;
-  padding: var(--space-2) var(--space-3);
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.discovery-reaction-badges span[data-active="true"] {
-  background: color-mix(in oklch, var(--primary) 10%, transparent);
-  border-color: color-mix(in oklch, var(--primary) 58%, transparent);
-  color: var(--ink);
-}
-
-.discovery-reaction-badges span[data-active="true"]:nth-child(2) {
-  background: color-mix(in oklch, var(--accent) 10%, transparent);
-  border-color: color-mix(in oklch, var(--accent) 46%, transparent);
-}
-
-.discovery-reaction-badges span[data-active="true"]:nth-child(3) {
-  background: color-mix(in oklch, var(--surface) 70%, black);
-  border-style: dashed;
 }
 
 .discovery-deck-status {
@@ -2264,7 +2231,6 @@ input {
 
 @media (prefers-reduced-motion: reduce) {
   .discovery-card-motion,
-  .discovery-reaction-badges span,
   .discovery-card,
   .match-celebration,
   .match-celebration::before,

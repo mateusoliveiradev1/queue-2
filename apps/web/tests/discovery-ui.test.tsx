@@ -347,9 +347,10 @@ describe("Phase 3 Discovery route shell", () => {
     expect(
       appearsBefore(deckGroup, screen.getByRole("combobox", { name: /buscar jogo/i }))
     ).toBe(true);
-    expect(screen.getByRole("button", { name: "Quero jogar" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Agora nao" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Pular" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Quero jogar" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Agora nao" })).toHaveLength(1);
+    expect(screen.getAllByRole("button", { name: "Pular" })).toHaveLength(1);
+    expect(container.querySelector(".discovery-reaction-badges")).toBeNull();
     expect(container.querySelector(".discovery-card-tray")).not.toBeNull();
     const celebration = screen.getByRole("status", { name: /os dois quiseram/i });
     expect(celebration).toHaveTextContent(
@@ -409,7 +410,8 @@ describe("Phase 3 Discovery route shell", () => {
     expect(discoveryDeckSource).toContain("ArrowRight");
     expect(discoveryDeckSource).toContain("ArrowLeft");
     expect(discoveryDeckSource).toContain("ArrowDown");
-    expect(discoveryDeckSource).toContain("discovery-reaction-badges");
+    expect(discoveryDeckSource).not.toContain("discovery-reaction-badges");
+    expect(globalCssSource).not.toContain(".discovery-reaction-badges");
     expect(discoveryDeckSource).toContain("Movimento reduzido ativo");
   });
 
