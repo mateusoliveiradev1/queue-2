@@ -35,10 +35,17 @@ export function MatchCelebration({
   return (
     <section
       className="match-celebration"
+      data-match-animation="entry"
       role="status"
       aria-live="polite"
       aria-labelledby="match-celebration-title"
     >
+      <div className="match-celebration-burst" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <span />
+      </div>
       <div className="match-celebration-cover">
         {match.coverUrl ? (
           <Image

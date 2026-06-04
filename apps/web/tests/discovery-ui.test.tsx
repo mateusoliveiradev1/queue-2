@@ -429,10 +429,17 @@ describe("Phase 3 Discovery route shell", () => {
     expect(matchCelebrationSource).toContain(
       "Entrou no radar da dupla. Escolham para onde esse jogo vai agora."
     );
+    expect(matchCelebrationSource).toContain('data-match-animation="entry"');
+    expect(matchCelebrationSource).toContain("match-celebration-burst");
     expect(matchCelebrationSource).toContain("Mandar para Wishlist");
     expect(matchCelebrationSource).toContain("Comecar em Jogando");
     expect(matchCelebrationSource).toContain("Guardar em Pausado");
     expect(matchCelebrationSource).toContain('aria-live="polite"');
+    expect(globalCssSource).toContain("@keyframes queue2-match-enter");
+    expect(globalCssSource).toContain("@keyframes queue2-match-spark");
+    expect(globalCssSource).toContain(".match-celebration-burst");
+    expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
+    expect(globalCssSource).toContain(".match-celebration-burst {\n    display: none;");
     expect(matchHistorySource).toContain("Status atual");
     expect(matchHistorySource).toContain("Match sozinho nao vira");
   });
