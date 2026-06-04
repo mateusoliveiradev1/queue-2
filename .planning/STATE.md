@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03.1-01-PLAN.md
-last_updated: "2026-06-04T19:46:13.617Z"
+stopped_at: Completed 03.1-02-PLAN.md
+last_updated: "2026-06-04T20:01:39.388Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 10
   completed_phases: 5
   total_plans: 21
-  completed_plans: 18
-  percent: 86
+  completed_plans: 19
+  percent: 90
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 03.1 (refinos-visuais-e-ux-da-descoberta) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-04
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -72,6 +72,7 @@ Progress: [█████████░] 86%
 | Phase 03-descoberta-e-matches P03 | 22 min | 4 tasks | 18 files |
 | Phase 03-descoberta-e-matches P04 | 22 min | 4 tasks | 25 files |
 | Phase 03.1 P01 | 10 min | 3 tasks | 14 files |
+| Phase 03.1 P02 | 10 min | 3 tasks | 5 files |
 
 ## Quick Tasks Completed
 
@@ -136,6 +137,9 @@ Recent decisions affecting current work:
 - [Phase 03.1]: Discovery card/read-model builders now live in the application layer. — Discovery use cases combine catalog cards, read state, recommendation facts and library action state before UI rendering.
 - [Phase 03.1]: The architecture checker enforces static same-module layer direction while preserving documented dynamic runtime wrappers. — Phase 3 documented dynamic application wrappers for server-only infrastructure, while the regression being blocked is a static application-to-presentation dependency.
 - [Phase 03.1]: Catalog pure read-model helpers and record shapes were moved to allowed layers so the new architecture gate can pass globally. — The new same-module checker surfaced existing Catalog inversions, and moving pure helpers/types preserved the global architecture contract without product scope changes.
+- [Phase 03.1-02]: Discovery now renders as top strip, orbit controls, card stage and secondary trays so the active card owns the first fold. — Keeps support modes subordinate to the Discovery ritual.
+- [Phase 03.1-02]: Mobile navigation is rendered from the same authenticated navigation model as the desktop rail, preserving route hrefs and active state. — Keeps mobile access thumb-friendly without changing authorization.
+- [Phase 03.1-02]: The Phase 03.1 CSS contract is enforced with source assertions for old four-mode grids, clamp Discovery display headings and negative Discovery letter spacing. — Makes visual anti-pattern regressions testable.
 
 ### Pending Todos
 
@@ -162,6 +166,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T19:46:13.611Z
-Stopped at: Completed 03.1-01-PLAN.md
+Last session: 2026-06-04T20:01:39.382Z
+Stopped at: Completed 03.1-02-PLAN.md
 Resume file: None
