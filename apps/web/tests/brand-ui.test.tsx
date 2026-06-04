@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueueToaster } from "@queue/ui";
@@ -101,6 +101,14 @@ const duoModuleMock = vi.hoisted(() => {
 const libraryModuleMock = vi.hoisted(() => ({
   getLibraryOverview: vi.fn()
 }));
+const navigationMock = vi.hoisted(() => ({
+  back: vi.fn(),
+  forward: vi.fn(),
+  prefetch: vi.fn(),
+  push: vi.fn(),
+  refresh: vi.fn(),
+  replace: vi.fn()
+}));
 
 vi.mock("../src/platform/auth/session", () => ({
   getVerifiedProfileAuthContext: vi.fn(async () => authSessionMock),
@@ -142,6 +150,15 @@ vi.mock("../src/modules/library", async () => {
   };
 });
 
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+
+  return {
+    ...actual,
+    useRouter: () => navigationMock
+  };
+});
+
 import SignupPage from "../src/app/(public)/cadastro/page";
 import LoginPage from "../src/app/(public)/login/page";
 import PairingPage from "../src/app/(public)/parear/page";
@@ -152,6 +169,7 @@ import DuoPage from "../src/app/app/dupla/page";
 import ProfilePage from "../src/app/app/perfil/page";
 import HomePage from "../src/app/page";
 import Loading from "../src/app/loading";
+import { PairingAutoRefresh } from "../src/components/pairing-auto-refresh";
 import { StatusToast } from "../src/components/status-toast";
 
 const iconSource = readFileSync("src/app/icon.svg", "utf8");
@@ -161,6 +179,7 @@ afterEach(() => {
 });
 
 beforeEach(() => {
+  navigationMock.refresh.mockClear();
   duoModuleMock.getDuoDashboard.mockResolvedValue(duoModuleMock.noDuo);
   libraryModuleMock.getLibraryOverview.mockResolvedValue({
     ok: true,
@@ -272,9 +291,26 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByLabelText(/codigo de pareamento q2k7m9/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copiar codigo/i })).toBeInTheDocument();
     expect(screen.getByText(/validade:/i)).toBeInTheDocument();
+    expect(screen.getByText(/a tela atualiza sozinha/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /revogar convite/i })).toHaveClass(
       "pending-submit-button"
     );
+  });
+
+  it("polls pairing state while the creator waits for the second player", () => {
+    vi.useFakeTimers();
+
+    try {
+      render(<PairingAutoRefresh intervalMs={50} />);
+
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+
+      expect(navigationMock.refresh).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("renders pairing form submits with pending feedback", async () => {

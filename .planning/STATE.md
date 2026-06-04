@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Pairing submit feedback polished; ready for Phase 3 planning
-last_updated: "2026-06-04T02:18:38.000Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-pairing-feedback: feedback de botoes no pareamento
+stopped_at: Pairing creator auto-refresh implemented; ready for Phase 3 planning
+last_updated: "2026-06-04T02:23:47.000Z"
+last_activity: 2026-06-03 -- Completed quick task 260603-pairing-auto-refresh: auto refresh do criador no pareamento
 progress:
   total_phases: 9
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
-Status: Phase 02.1 complete; pairing submit feedback polished; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-pairing-feedback: feedback de botoes no pareamento
+Status: Phase 02.1 complete; pairing creator auto-refresh implemented; Phase 3 is next
+Last activity: 2026-06-03 -- Completed quick task 260603-pairing-auto-refresh: auto refresh do criador no pareamento
 
 Progress: [██████████] 100%
 
@@ -85,6 +85,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | polir-template-email-auth | Emails de verificacao e reset ganharam template responsivo QUEUE/2 com icone `/2`, CTA, etapas e nota de seguranca; gate tambem corrigiu RAWG sync para preservar tempo curado quando nao houver novo tempo estimado. |
 | 2026-06-03 | refinar-template-email-gmail | Template de auth foi compactado apos captura real do Gmail: fundo externo branco, marca dentro do card, menor largura, nota de seguranca mais cedo e sinal `translate="no"`. |
 | 2026-06-03 | polir-feedback-pareamento | Submits de `/parear` agora usam o mesmo feedback pending de login/cadastro para criar codigo, entrar com codigo e revogar convite. |
+| 2026-06-03 | auto-refresh-pareamento | Criador do codigo agora revalida `/parear` automaticamente e segue para `/app/dupla` quando a segunda pessoa entra. |
 
 ## Accumulated Context
 

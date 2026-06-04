@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RoulettePointer } from "@queue/ui";
 
 import { CopyPairingCode } from "../../../components/copy-pairing-code";
+import { PairingAutoRefresh } from "../../../components/pairing-auto-refresh";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { PublicBrandLink } from "../../../components/public-brand-link";
 import { PublicRitualStrip } from "../../../components/public-ritual-strip";
@@ -156,9 +157,9 @@ function CreateCodePanel({
             tone="quiet"
           />
         </form>
-        <div className="neutral-state">
+        <div className="neutral-state" role="status">
           <RoulettePointer aria-hidden="true" label="" />
-          <span>A fila virou nossa quando o segundo jogador entrar.</span>
+          <PairingAutoRefresh />
         </div>
       </div>
     );
