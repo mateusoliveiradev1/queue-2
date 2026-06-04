@@ -3,7 +3,7 @@ import "server-only";
 import type {
   CatalogAvailabilityRecord,
   CatalogPlatformKey
-} from "../application/ports";
+} from "../application/ports.ts";
 
 export type CuratedCatalogAvailabilitySeed = CatalogAvailabilityRecord & {
   slug: string;
@@ -21,7 +21,7 @@ export const curatedCatalogAvailabilitySeeds: CuratedCatalogAvailabilitySeed[] =
     sourceUrl: "https://www.xbox.com/en-us/games/store/a-way-out/bwvbncmf22zk"
   }),
   gamePassSeed({
-    slug: "it-takes-two-2",
+    slug: "it-takes-two",
     source: "Xbox Store",
     sourceUrl: "https://www.xbox.com/en-us/games/store/It-Takes-Two/9NKJ0VZQ4N0L"
   }),

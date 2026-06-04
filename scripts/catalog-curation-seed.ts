@@ -52,7 +52,7 @@ const localizationSeeds: LocalizationSeed[] = [
       "Cuphead mistura chefes exigentes, plataforma e visual de animacao classica em uma campanha cooperativa intensa. A dupla precisa coordenar esquivas, reviver no susto e aceitar que algumas fases vao pedir repeticao."
   },
   {
-    slug: "it-takes-two-2",
+    slug: "it-takes-two",
     description:
       "May e Cody sao transformados em bonecos e precisam cooperar para atravessar mundos cheios de mecanicas novas. Cada trecho da campanha muda a forma de jogar, entao a dupla quase sempre precisa conversar, testar e rir do erro junto."
   },
@@ -103,7 +103,7 @@ const availabilitySeeds: AvailabilitySeed[] = [
     checkedAt: availabilityCheckedAt
   },
   {
-    slug: "it-takes-two-2",
+    slug: "it-takes-two",
     type: "game-pass",
     platformKey: "xbox",
     source: "Xbox Store",

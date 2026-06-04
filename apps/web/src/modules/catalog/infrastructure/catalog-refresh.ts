@@ -5,14 +5,14 @@ import {
   type QueueDbPool
 } from "@queue/db";
 
-import { applyCatalogCurationSeeds, type CatalogCurationSeedResult } from "./catalog-curation-seeds";
-import { checkCatalogCurationHealth, type CatalogCurationHealth } from "./catalog-health";
-import { createCatalogRepository } from "./catalog-repository";
+import { applyCatalogCurationSeeds, type CatalogCurationSeedResult } from "./catalog-curation-seeds.ts";
+import { checkCatalogCurationHealth, type CatalogCurationHealth } from "./catalog-health.ts";
+import { createCatalogRepository } from "./catalog-repository.ts";
 import {
   createCatalogSyncAudit,
   runCatalogSync,
   type CatalogSyncResult
-} from "./catalog-sync";
+} from "./catalog-sync.ts";
 
 export type CatalogRefreshSkippedSync = {
   source: "RAWG";

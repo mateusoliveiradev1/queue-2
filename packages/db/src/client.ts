@@ -3,7 +3,7 @@ import "server-only";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg, { type PoolClient, type QueryResultRow } from "pg";
 
-import * as schema from "./schema";
+import * as schema from "./schema/index.ts";
 
 const { Pool } = pg;
 

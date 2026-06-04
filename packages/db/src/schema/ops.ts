@@ -13,8 +13,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-import { duos } from "./app";
-import { catalogGames } from "./catalog";
+import { duos } from "./app.ts";
+import { catalogGames } from "./catalog.ts";
 
 export const opsSchema = pgSchema("ops");
 

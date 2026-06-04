@@ -6,7 +6,7 @@ import type {
   CatalogGenreRecord,
   CatalogPlatformKey,
   CatalogPlatformRecord
-} from "../application/ports";
+} from "../application/ports.ts";
 
 const RAWG_BASE_URL = "https://api.rawg.io/api";
 const RAWG_SITE_URL = "https://rawg.io";

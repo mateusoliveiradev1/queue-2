@@ -5,11 +5,11 @@ import type { QueueDbPool } from "@queue/db";
 import {
   curatedCatalogAvailabilitySeeds,
   type CuratedCatalogAvailabilitySeed
-} from "./availability-seeds";
+} from "./availability-seeds.ts";
 import {
   publishedCatalogLocalizationSeeds,
   type PublishedCatalogLocalizationSeed
-} from "./localization-seeds";
+} from "./localization-seeds.ts";
 
 export type CatalogCurationHealth = {
   ok: boolean;

@@ -13,8 +13,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
-import { authUsers } from "./auth";
-import { catalogGames } from "./catalog";
+import { authUsers } from "./auth.ts";
+import { catalogGames } from "./catalog.ts";
 
 export const appSchema = pgSchema("app");
 

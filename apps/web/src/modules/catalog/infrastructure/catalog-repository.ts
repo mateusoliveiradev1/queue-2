@@ -19,7 +19,7 @@ import type {
   CatalogRepository,
   CatalogSearchInput,
   CatalogTimeEstimateRecord
-} from "../application/ports";
+} from "../application/ports.ts";
 
 type GameRow = {
   id: string;
@@ -234,6 +234,7 @@ async function syncRawgGame(
     const gameId = await upsertCatalogRawgFacts(client, input, curation);
     await replacePlatforms(client, gameId, input.platforms);
     await replaceGenres(client, gameId, input.genres);
+    await replaceTimeEstimate(client, gameId, input.timeEstimate ?? null);
     await client.query("COMMIT");
     return gameId;
   } catch (error) {

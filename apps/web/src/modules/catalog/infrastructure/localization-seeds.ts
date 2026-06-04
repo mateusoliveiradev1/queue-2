@@ -59,7 +59,7 @@ export const publishedCatalogLocalizationSeeds: PublishedCatalogLocalizationSeed
     "Cuphead mistura chefes exigentes, plataforma e visual de animacao classica em uma campanha cooperativa intensa. A dupla precisa coordenar esquivas, reviver no susto e aceitar que algumas fases vao pedir repeticao."
   ),
   localizationSeed(
-    "it-takes-two-2",
+    "it-takes-two",
     "May e Cody sao transformados em bonecos e precisam cooperar para atravessar mundos cheios de mecanicas novas. Cada trecho da campanha muda a forma de jogar, entao a dupla quase sempre precisa conversar, testar e rir do erro junto."
   ),
   localizationSeed(

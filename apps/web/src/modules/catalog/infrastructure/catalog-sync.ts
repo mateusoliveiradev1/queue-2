@@ -9,16 +9,16 @@ import type {
   CatalogCurationPatch,
   CatalogGameUpsertInput,
   CatalogRepository
-} from "../application/ports";
-import { catalogRepository } from "./catalog-repository";
+} from "../application/ports.ts";
+import { catalogRepository } from "./catalog-repository.ts";
 import {
   catalogSyncAllowlist,
   type CatalogSyncAllowlistEntry
-} from "./catalog-sync-allowlist";
+} from "./catalog-sync-allowlist.ts";
 import {
   createRawgClient,
   type RawgClient
-} from "./rawg-client";
+} from "./rawg-client.ts";
 
 export type CatalogSyncMode = "dry-run" | "apply";
 
