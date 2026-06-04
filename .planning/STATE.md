@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: verifying
-stopped_at: Completed quick task 260604-p00
-last_updated: "2026-06-04T21:01:06.000Z"
+stopped_at: Completed quick task 260604-p91
+last_updated: "2026-06-04T21:27:53.000Z"
 last_activity: 2026-06-04
 progress:
   total_phases: 10
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 03.1 (refinos-visuais-e-ux-da-descoberta) — COMPLETE
 Plan: 4 of 4
 Status: Phase complete — ready for verification
-Last activity: 2026-06-04 - Completed quick task 260604-p00: Remove redundant Discovery controls and match history overlap
+Last activity: 2026-06-04 - Completed quick task 260604-p91: Tighten Discovery quiz completion and Match Live active-state flow
 
 Progress: [██████████] 100%
 
@@ -85,6 +85,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260604-l1p | Fix push opt-in hydration mismatch in Phase 3 discovery | 2026-06-04 | b994969 | [260604-l1p-fix-push-opt-in-hydration-mismatch-in-ph](./quick/260604-l1p-fix-push-opt-in-hydration-mismatch-in-ph/) |
 | 260604-l8d | Restore global loading screen for Discovery route | 2026-06-04 | 9ea4ee2 | [260604-l8d-restore-global-loading-screen-for-discov](./quick/260604-l8d-restore-global-loading-screen-for-discov/) |
 | 260604-p00 | Remove redundant Discovery controls and match history overlap | 2026-06-04 | 1613fa8 | [260604-p00-remove-redundant-nonfunctional-discovery](./quick/260604-p00-remove-redundant-nonfunctional-discovery/) |
+| 260604-p91 | Tighten Discovery quiz completion and Match Live active-state flow | 2026-06-04 | 9117076 | [260604-p91-tighten-discovery-quiz-completion-and-ma](./quick/260604-p91-tighten-discovery-quiz-completion-and-ma/) |
 
 ## Accumulated Context
 
@@ -151,6 +152,9 @@ Recent decisions affecting current work:
 - [Phase 03.1-04]: Discovery match history stays a recent-match surface. — Biblioteca remains the complete backlog/archive for accumulated matches and statuses.
 - [Quick 260604-p00]: Discovery must not show non-interactive decision badges that look like buttons. — The active card is the only visible decision surface for Quero jogar, Agora nao and Pular.
 - [Quick 260604-p00]: Match History cards must not render footer links that can overlap the next row. — The cover opens game detail and the tray header links to Biblioteca.
+- [Quick 260604-p91]: Discovery Quiz is a per-round input, not a persistent tray after the current member has answered. — The route reads mood quiz status from the Discovery application/repository layer and hides both the shortcut and tray when answered.
+- [Quick 260604-p91]: Match Live has one action owner. — The orbit control navigates to the Live panel, while the panel shows either the inactive start action or active live status/push controls.
+- [Quick 260604-p91]: Match Recentes mobile uses page scrolling with scroll padding, not an internal scroll trap. — Card controls stay reachable above the fixed bottom navigation.
 
 ### Pending Todos
 
@@ -177,6 +181,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T21:01:06.000Z
-Stopped at: Completed quick task 260604-p00
+Last session: 2026-06-04T21:27:53.000Z
+Stopped at: Completed quick task 260604-p91
 Resume file: None
