@@ -93,9 +93,13 @@ vi.mock("../src/modules/catalog", async () => {
   const source = await vi.importActual<
     typeof import("../src/modules/catalog/presentation/source-metadata")
   >("../src/modules/catalog/presentation/source-metadata");
+  const sourceFreshness = await vi.importActual<
+    typeof import("../src/modules/catalog/presentation/source-freshness-panel")
+  >("../src/modules/catalog/presentation/source-freshness-panel");
 
   return {
     CatalogCard: card.CatalogCard,
+    SourceFreshnessPanel: sourceFreshness.SourceFreshnessPanel,
     SourceMetadata: source.SourceMetadata,
     getCatalogGameDetail: catalogModuleMock.getCatalogGameDetail,
     searchCatalogGames: catalogModuleMock.searchCatalogGames
@@ -225,13 +229,20 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     );
 
     expect(screen.getByRole("heading", { name: /it takes two/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /dados e imagens: rawg/i })).toHaveAttribute(
-      "href",
-      "https://rawg.io/games/it-takes-two"
-    );
+    expect(
+      screen
+        .getAllByRole("link", { name: /dados e imagens: rawg/i })
+        .some((link) => link.getAttribute("href") === "https://rawg.io/games/it-takes-two")
+    ).toBe(true);
     expect(screen.getByText(/cerca de 14 horas/i)).toBeInTheDocument();
-    expect(screen.getByText(/curadoria queue\/2/i)).toBeInTheDocument();
-    expect(screen.getByText(/sem fonte ativa para exibir/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/curadoria queue\/2/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/sem fonte ativa para exibir/i).length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: /fontes e frescor/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /descricao revisada: queue\/2/i })).toHaveAttribute(
+      "href",
+      "https://queue2.example/localization/it-takes-two"
+    );
+    expect(screen.getByText(/descricao em portugues/i)).toBeInTheDocument();
     expect(screen.getByText(/jornada da dupla/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /registrar checkpoint/i })).not.toBeInTheDocument();
   });
@@ -279,6 +290,48 @@ function catalogDetail() {
     ...catalogCard(),
     description: "Uma aventura coop sobre reconciliacao.",
     descriptionSourceLabel: "Descricao revisada: QUEUE/2",
+    sourceBreakdown: [
+      {
+        id: "rawg" as const,
+        category: "Dados e imagens",
+        sourceLabel: "Dados e imagens: RAWG",
+        sourceHref: "https://rawg.io/games/it-takes-two",
+        statusLabel: "Atualizado hoje",
+        freshnessTone: "fresh" as const,
+        dateTime: "2026-06-03T12:00:00.000Z",
+        absoluteDateLabel: "03 de junho de 2026"
+      },
+      {
+        id: "description" as const,
+        category: "Descricao em portugues",
+        sourceLabel: "Descricao revisada: QUEUE/2",
+        sourceHref: "https://queue2.example/localization/it-takes-two",
+        statusLabel: "Atualizado hoje",
+        freshnessTone: "fresh" as const,
+        dateTime: "2026-06-03T12:00:00.000Z",
+        absoluteDateLabel: "03 de junho de 2026"
+      },
+      {
+        id: "time-estimate" as const,
+        category: "Tempo estimado",
+        sourceLabel: "Curadoria QUEUE/2",
+        sourceHref: null,
+        statusLabel: "Atualizado hoje",
+        freshnessTone: "fresh" as const,
+        dateTime: "2026-06-03T12:00:00.000Z",
+        absoluteDateLabel: "03 de junho de 2026"
+      },
+      {
+        id: "availability" as const,
+        category: "Disponibilidade",
+        sourceLabel: "Nao verificado",
+        sourceHref: null,
+        statusLabel: "Sem fonte ativa para exibir",
+        freshnessTone: "missing" as const,
+        dateTime: null,
+        absoluteDateLabel: null
+      }
+    ],
     rawgUrl: "https://rawg.io/games/it-takes-two",
     coopLabel: "Confirmado para campanha ou historia coop em dupla.",
     timeEstimate: {

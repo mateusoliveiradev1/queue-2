@@ -30,6 +30,7 @@ export {
   type CatalogSourceMetaView
 } from "./presentation/view-models";
 export { CatalogCard } from "./presentation/catalog-card";
+export { SourceFreshnessPanel } from "./presentation/source-freshness-panel";
 export { SourceMetadata } from "./presentation/source-metadata";
 
 export type {

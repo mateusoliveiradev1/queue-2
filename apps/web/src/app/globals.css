@@ -1130,6 +1130,68 @@ input {
   text-transform: uppercase;
 }
 
+.source-freshness-panel {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.source-freshness-grid {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.source-freshness-row {
+  align-items: start;
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(150px, 0.5fr) minmax(0, 1fr);
+  min-height: 74px;
+  padding: var(--space-4);
+}
+
+.source-freshness-row[data-freshness="fresh"] {
+  border-color: color-mix(in oklch, var(--primary) 36%, transparent);
+}
+
+.source-freshness-row[data-freshness="missing"] {
+  border-style: dashed;
+}
+
+.source-freshness-row dt {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.source-freshness-row dd {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  min-width: 0;
+}
+
+.source-freshness-row a {
+  color: var(--primary);
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  text-underline-offset: 0.18em;
+}
+
+.source-freshness-row span {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.source-freshness-row small {
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
 @container (max-width: 360px) {
   .catalog-card {
     grid-template-columns: 1fr;
@@ -1225,6 +1287,10 @@ input {
   .status-controls .queue2-button,
   .library-tabs a {
     width: 100%;
+  }
+
+  .source-freshness-row {
+    grid-template-columns: 1fr;
   }
 
   .public-ritual-strip {

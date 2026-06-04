@@ -7,6 +7,7 @@ import { MatchScoreBlock } from "../../../../components/match-score-block";
 import { StatusToast } from "../../../../components/status-toast";
 import {
   getCatalogGameDetail,
+  SourceFreshnessPanel,
   SourceMetadata,
   type CatalogDetailFactView
 } from "../../../../modules/catalog";
@@ -146,6 +147,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
           <span>{catalog.descriptionSourceLabel}</span>
           <p className="game-description">{catalog.description}</p>
         </div>
+        <SourceFreshnessPanel rows={catalog.sourceBreakdown} />
       </section>
 
       <section className="surface-band app-section" aria-labelledby="duo-context">
