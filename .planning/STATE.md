@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 3 planned; ready to execute plan 03-01
-last_updated: "2026-06-04T03:56:00.557Z"
-last_activity: 2026-06-04 -- Phase 03 planning complete
+stopped_at: Completed 03-01-PLAN.md
+last_updated: "2026-06-04T04:20:44.608Z"
+last_activity: 2026-06-04
 progress:
   total_phases: 9
   completed_phases: 4
   total_plans: 17
-  completed_plans: 13
-  percent: 76
+  completed_plans: 14
+  percent: 82
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 3 — descoberta-e-matches
+**Current focus:** Phase 03 — descoberta-e-matches
 
 ## Current Position
 
-Phase: 3 (descoberta-e-matches) — READY TO EXECUTE
-Plan: 03-01 pending
+Phase: 03 (descoberta-e-matches) — EXECUTING
+Plan: 2 of 4
 Status: Ready to execute
-Last activity: 2026-06-04 -- Phase 03 planning complete
+Last activity: 2026-06-04
 
-Progress: 76%
+Progress: [████████░░] 82%
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: 76%
 | Phase 02.1 P01 | 6 min | 4 tasks | 12 files |
 | Phase 02.1 P02 | 7 min | 4 tasks | 16 files |
 | Phase 02.1 P03 | 12 min | 4 tasks | 10 files |
+| Phase 03-descoberta-e-matches P01 | 16 min | 3 tasks | 12 files |
 
 ## Quick Tasks Completed
 
@@ -127,6 +128,10 @@ Recent decisions affecting current work:
 - [Phase 02.1]: RAWG sync preserves QUEUE/2 curation unless the allowlist explicitly changes curation fields. — External sync must not erase local quality decisions.
 - [Phase 02.1]: Game detail carries the complete `Fontes e frescor` source breakdown while catalog cards stay compact. — Source transparency belongs on detail without making browse cards noisy.
 - [Phase 02.1]: QUEUE/2-owned reviewed copy is text-only unless there is a real external source URL. — The UI does not invent links for internal curation.
+- [Phase 03]: Agora nao uses a 14-day cooldown and negative recommendation weight; Pular stays weight zero.
+- [Phase 03]: Collaborative recommendation influence requires at least 20 current-duo decisions and 100 cross-duo positive facts.
+- [Phase 03]: Discovery library handoff is limited to Wishlist, Jogando and Pausado during Phase 3.
+- [Phase 03]: Push subscription rows are readable/writable only by their owning member because endpoint/auth material is sensitive.
 
 ### Pending Todos
 
@@ -152,6 +157,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-04T03:42:51.464Z
-Stopped at: Phase 3 planned; ready to execute plan 03-01
-Resume file: .planning/phases/03-descoberta-e-matches/03-01-PLAN.md
+Last session: 2026-06-04T04:20:44.602Z
+Stopped at: Completed 03-01-PLAN.md
+Resume file: None

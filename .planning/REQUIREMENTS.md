@@ -102,17 +102,17 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Discovery
 
-- [ ] **DISC-01**: Each duo member can swipe independently on games and the duo sees a match when both approve
+- [x] **DISC-01**: Each duo member can swipe independently on games and the duo sees a match when both approve
 - [ ] **DISC-02**: Duo can start a live match discovery session and receive a push when a match occurs
-- [ ] **DISC-03**: Duo can request a surprise recommendation from games neither member has seen
-- [ ] **DISC-04**: Duo can answer a three-question mood quiz to receive recommendations
+- [x] **DISC-03**: Duo can request a surprise recommendation from games neither member has seen
+- [x] **DISC-04**: Duo can answer a three-question mood quiz to receive recommendations
 - [ ] **DISC-05**: User can search for games with autocomplete
-- [ ] **DISC-06**: User can filter discovery by estimated completion time
-- [ ] **DISC-07**: User can filter discovery by automatically detected common platform
-- [ ] **DISC-08**: User can filter discovery by coop type, mood, year, genre and rarity
-- [ ] **DISC-09**: User can filter discovery by free or Game Pass availability
-- [ ] **DISC-10**: Duo receives recommendations based on tag similarity before enough collaborative data exists
-- [ ] **DISC-11**: Duo recommendations can incorporate collaborative filtering after enough interaction data exists
+- [x] **DISC-06**: User can filter discovery by estimated completion time
+- [x] **DISC-07**: User can filter discovery by automatically detected common platform
+- [x] **DISC-08**: User can filter discovery by coop type, mood, year, genre and rarity
+- [x] **DISC-09**: User can filter discovery by free or Game Pass availability
+- [x] **DISC-10**: Duo receives recommendations based on tag similarity before enough collaborative data exists
+- [x] **DISC-11**: Duo recommendations can incorporate collaborative filtering after enough interaction data exists
 - [ ] **DISC-12**: User can move a discovered game into the duo Wishlist or another valid library status
 
 ### Playing Now And Progress
@@ -317,17 +317,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | LIB-03 | Phase 2 | Complete |
 | LIB-04 | Phase 2 | Complete |
 | LIB-05 | Phase 2 | Complete |
-| DISC-01 | Phase 3 | Pending |
+| DISC-01 | Phase 3 | Complete |
 | DISC-02 | Phase 3 | Pending |
-| DISC-03 | Phase 3 | Pending |
-| DISC-04 | Phase 3 | Pending |
+| DISC-03 | Phase 3 | Complete |
+| DISC-04 | Phase 3 | Complete |
 | DISC-05 | Phase 3 | Pending |
-| DISC-06 | Phase 3 | Pending |
-| DISC-07 | Phase 3 | Pending |
-| DISC-08 | Phase 3 | Pending |
-| DISC-09 | Phase 3 | Pending |
-| DISC-10 | Phase 3 | Pending |
-| DISC-11 | Phase 3 | Pending |
+| DISC-06 | Phase 3 | Complete |
+| DISC-07 | Phase 3 | Complete |
+| DISC-08 | Phase 3 | Complete |
+| DISC-09 | Phase 3 | Complete |
+| DISC-10 | Phase 3 | Complete |
+| DISC-11 | Phase 3 | Complete |
 | DISC-12 | Phase 3 | Pending |
 | PLAY-01 | Phase 4 | Pending |
 | PLAY-02 | Phase 4 | Pending |
