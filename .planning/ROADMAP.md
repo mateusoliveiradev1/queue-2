@@ -197,7 +197,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 4 -> 5 -> 6 -> 7
 | 2. Catalogo E Biblioteca | 3/3 | Complete | 2026-06-03 |
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
-| 03.1. Refinos Visuais e UX da Descoberta | 2/4 | In Progress|  |
+| 03.1. Refinos Visuais e UX da Descoberta | 3/4 | In Progress|  |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
