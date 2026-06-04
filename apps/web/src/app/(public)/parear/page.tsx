@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RoulettePointer } from "@queue/ui";
 
 import { CopyPairingCode } from "../../../components/copy-pairing-code";
+import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { PublicBrandLink } from "../../../components/public-brand-link";
 import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
@@ -149,9 +150,11 @@ function CreateCodePanel({
         </p>
         <form action={revokePairingCodeAction}>
           <input name="pairingCodeId" type="hidden" value={activeCode.id} />
-          <button className="queue2-button" data-tone="quiet" type="submit">
-            Revogar convite
-          </button>
+          <PendingSubmitButton
+            label="Revogar convite"
+            pendingLabel="Revogando..."
+            tone="quiet"
+          />
         </form>
         <div className="neutral-state">
           <RoulettePointer aria-hidden="true" label="" />
@@ -170,9 +173,10 @@ function CreateCodePanel({
       <p className="support-copy">
         Confirme o fuso da dupla. Sessoes e lembretes futuros usam esse horario.
       </p>
-      <button className="queue2-button" data-tone="primary" type="submit">
-        Criar codigo da dupla
-      </button>
+      <PendingSubmitButton
+        label="Criar codigo da dupla"
+        pendingLabel="Criando codigo..."
+      />
     </form>
   );
 }
@@ -206,9 +210,10 @@ function JoinCodePanel({ disabled }: { disabled: boolean }) {
           type="text"
         />
       </div>
-      <button className="queue2-button" data-tone="primary" type="submit">
-        Entrar com codigo
-      </button>
+      <PendingSubmitButton
+        label="Entrar com codigo"
+        pendingLabel="Entrando..."
+      />
       <p className="support-copy">
         Um codigo ativo forma a dupla imediatamente.
       </p>

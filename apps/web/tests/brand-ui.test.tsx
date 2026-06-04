@@ -272,7 +272,29 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByLabelText(/codigo de pareamento q2k7m9/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /copiar codigo/i })).toBeInTheDocument();
     expect(screen.getByText(/validade:/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /revogar convite/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /revogar convite/i })).toHaveClass(
+      "pending-submit-button"
+    );
+  });
+
+  it("renders pairing form submits with pending feedback", async () => {
+    render(await PairingPage());
+
+    expect(screen.getByRole("button", { name: /criar codigo da dupla/i })).toHaveClass(
+      "pending-submit-button"
+    );
+
+    cleanup();
+
+    render(
+      await PairingPage({
+        searchParams: Promise.resolve({ modo: "entrar" })
+      })
+    );
+
+    expect(screen.getByRole("button", { name: /entrar com codigo/i })).toHaveClass(
+      "pending-submit-button"
+    );
   });
 });
 
