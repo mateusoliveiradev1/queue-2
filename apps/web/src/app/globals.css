@@ -1231,10 +1231,6 @@ input {
   line-height: 1.4;
 }
 
-.discovery-header {
-  align-items: center;
-}
-
 .discovery-live-entry {
   align-items: center;
   border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
@@ -1253,14 +1249,39 @@ input {
   text-transform: uppercase;
 }
 
-.discovery-route-grid {
-  align-items: start;
+.discovery-stage {
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.72fr);
+  margin: 0 auto;
+  max-width: 1320px;
+  width: 100%;
 }
 
-.discovery-mode-actions,
+.discovery-stage-top {
+  align-items: end;
+  border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+  padding-bottom: var(--space-5);
+}
+
+.discovery-stage-top .eyebrow {
+  margin: 0;
+}
+
+.discovery-stage-top .page-title {
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+.discovery-stage-status {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.discovery-orbit-controls,
 .discovery-filters,
 .segmented-control,
 .discovery-filter-grid,
@@ -1272,29 +1293,29 @@ input {
   gap: var(--space-4);
 }
 
-.discovery-mode-actions {
-  align-items: stretch;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+.discovery-orbit-controls {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
-.discovery-mode-actions form,
-.discovery-mode-actions .queue2-button {
+.discovery-orbit-controls form,
+.discovery-orbit-controls .queue2-button {
   display: flex;
   min-width: 0;
-  width: 100%;
 }
 
-.discovery-mode-actions .queue2-button {
+.discovery-orbit-controls .queue2-button {
   align-items: center;
   justify-content: center;
-  min-height: 48px;
+  min-height: 44px;
 }
 
 .discovery-filters {
-  background: color-mix(in oklch, var(--surface) 70%, black);
-  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
-  border-radius: var(--radius-sharp);
-  padding: var(--space-4);
+  background: transparent;
+  border: 0;
+  padding: 0;
 }
 
 .discovery-filter-group,
@@ -1365,13 +1386,26 @@ input {
   margin-top: var(--space-4);
 }
 
-.discovery-deck-shell {
+.discovery-card-stage {
+  background:
+    linear-gradient(145deg, color-mix(in oklch, var(--primary) 8%, transparent), transparent 34%),
+    color-mix(in oklch, var(--surface) 82%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-5);
   min-height: 520px;
+  padding: var(--space-5);
 }
 
-.discovery-side-rail {
+.discovery-stage-trays {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-5);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+}
+
+.discovery-tray {
+  align-content: start;
 }
 
 .discovery-deck {
@@ -1761,8 +1795,7 @@ input {
   .detail-library-panel,
   .locked-status-grid,
   .game-detail-hero,
-  .discovery-route-grid,
-  .discovery-mode-actions {
+  .discovery-stage-trays {
     grid-template-columns: 1fr;
   }
 

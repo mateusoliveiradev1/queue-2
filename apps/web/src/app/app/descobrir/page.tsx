@@ -98,55 +98,56 @@ export default async function DiscoveryPage({
 
   return (
     <AppShell currentPage="descobrir">
-      <header className="app-header discovery-header">
-        <div>
-          <p className="eyebrow">Descoberta</p>
-          <h1 className="page-title">O deck da dupla</h1>
-          <p className="lede">
-            Swipe, surpresa, quiz e busca giram em torno do mesmo ritual:
-            descobrir se os dois querem colocar aquele coop na fila.
-          </p>
+      <section className="discovery-stage" aria-labelledby="discovery-stage-title">
+        <header className="discovery-stage-top">
+          <p className="eyebrow">Descoberta /2</p>
+          <h1 className="page-title" id="discovery-stage-title">
+            Os dois quiseram?
+          </h1>
+        </header>
+
+        {statusMessage ? (
+          <div className="discovery-stage-status">
+            <StatusToast
+              message={statusMessage}
+              state={state}
+              variant={state?.startsWith("match") ? "special" : "calm"}
+            />
+            <p className="status-banner" role="status">
+              {statusMessage}
+            </p>
+          </div>
+        ) : null}
+
+        <div
+          className="discovery-orbit-controls"
+          role="group"
+          aria-label="Controles orbitais de descoberta"
+        >
+          <form action={startDiscoveryLiveSessionAction}>
+            <input name="returnTo" type="hidden" value={returnTo} />
+            <button className="queue2-button" data-tone="primary" type="submit">
+              Live
+            </button>
+          </form>
+          <form action={getSurpriseRecommendationAction}>
+            <input name="returnTo" type="hidden" value={returnTo} />
+            <button className="queue2-button" data-tone="quiet" type="submit">
+              Surpresa
+            </button>
+          </form>
+          <a className="queue2-button" data-tone="quiet" href="#mood-quiz">
+            Quiz
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="#discovery-search">
+            Busca
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="#discovery-filters-panel">
+            Filtros
+          </a>
         </div>
-      </header>
 
-      {statusMessage ? (
-        <>
-          <StatusToast
-            message={statusMessage}
-            state={state}
-            variant={state?.startsWith("match") ? "special" : "calm"}
-          />
-          <p className="status-banner" role="status">
-            {statusMessage}
-          </p>
-        </>
-      ) : null}
-
-      <nav className="discovery-mode-actions" aria-label="Modos de descoberta">
-        <form action={startDiscoveryLiveSessionAction}>
-          <input name="returnTo" type="hidden" value={returnTo} />
-          <button className="queue2-button" data-tone="primary" type="submit">
-            Live
-          </button>
-        </form>
-        <form action={getSurpriseRecommendationAction}>
-          <input name="returnTo" type="hidden" value={returnTo} />
-          <button className="queue2-button" data-tone="quiet" type="submit">
-            Surpresa
-          </button>
-        </form>
-        <a className="queue2-button" data-tone="quiet" href="#mood-quiz">
-          Quiz
-        </a>
-        <a className="queue2-button" data-tone="quiet" href="#discovery-search">
-          Busca
-        </a>
-      </nav>
-
-      <DiscoveryFilters params={getDiscoveryFilterParams(params)} />
-
-      <section className="discovery-route-grid" aria-label="Experiencia de descoberta">
-        <div className="surface-band app-section discovery-deck-shell">
+        <section className="discovery-card-stage" aria-labelledby="discovery-deck-title">
           <MatchCelebration
             handoffAction={handoffDiscoveryMatchToLibraryAction}
             match={celebrationMatch}
@@ -169,10 +170,18 @@ export default async function DiscoveryPage({
             returnTo={returnTo}
             surpriseCatalogGameId={surpriseId ?? undefined}
           />
-        </div>
+        </section>
 
-        <aside className="discovery-side-rail" aria-label="Resumo da descoberta">
-          <section className="surface-band app-section" aria-labelledby="live-summary-title">
+        <section className="discovery-stage-trays" aria-label="Apoios da descoberta">
+          <section
+            className="surface-band app-section discovery-tray"
+            id="discovery-filters-panel"
+            aria-label="Filtros de descoberta"
+          >
+            <DiscoveryFilters params={getDiscoveryFilterParams(params)} />
+          </section>
+
+          <section className="surface-band app-section discovery-tray" aria-labelledby="live-summary-title">
             <LivePanel
               action={startDiscoveryLiveSessionAction}
               liveSession={liveSession}
@@ -180,7 +189,7 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section className="surface-band app-section" aria-labelledby="discovery-search-title">
+          <section className="surface-band app-section discovery-tray" aria-labelledby="discovery-search-title">
             <DiscoverySearch
               decisionAction={recordDiscoveryDecisionAction}
               handoffAction={handoffDiscoveryMatchToLibraryAction}
@@ -188,7 +197,7 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section className="surface-band app-section" aria-labelledby="mood-quiz-title">
+          <section className="surface-band app-section discovery-tray" aria-labelledby="mood-quiz-title">
             <MoodQuiz
               action={answerMoodQuizAction}
               resultState={state}
@@ -196,14 +205,14 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section className="surface-band app-section" aria-labelledby="match-history-title">
+          <section className="surface-band app-section discovery-tray" aria-labelledby="match-history-title">
             <MatchHistory
               action={handoffDiscoveryMatchToLibraryAction}
               items={matchHistory}
               returnTo={returnTo}
             />
           </section>
-        </aside>
+        </section>
       </section>
     </AppShell>
   );

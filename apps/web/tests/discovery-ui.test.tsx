@@ -255,11 +255,26 @@ describe("Phase 3 Discovery route shell", () => {
       })
     );
 
-    expect(screen.getByRole("heading", { name: /o deck da dupla/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Live" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Surpresa" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "#mood-quiz");
-    expect(screen.getByRole("link", { name: "Busca" })).toHaveAttribute("href", "#discovery-search");
+    expect(screen.getByRole("heading", { name: /os dois quiseram\?/i })).toBeInTheDocument();
+    expect(container.querySelector(".discovery-stage")).not.toBeNull();
+    expect(container.querySelector(".discovery-card-stage")).not.toBeNull();
+    expect(container.querySelector(".discovery-orbit-controls")).not.toBeNull();
+    expect(container.querySelector(".discovery-route-grid")).toBeNull();
+    expect(container.querySelector(".discovery-side-rail")).toBeNull();
+    expect(container.querySelector(".discovery-mode-actions")).toBeNull();
+    expect(screen.queryByRole("navigation", { name: /modos de descoberta/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("group", { name: /modos de descoberta/i })).not.toBeInTheDocument();
+    const orbitControls = within(
+      screen.getByRole("group", { name: /controles orbitais de descoberta/i })
+    );
+    expect(orbitControls.getByRole("button", { name: "Live" })).toBeInTheDocument();
+    expect(orbitControls.getByRole("button", { name: "Surpresa" })).toBeInTheDocument();
+    expect(orbitControls.getByRole("link", { name: "Quiz" })).toHaveAttribute("href", "#mood-quiz");
+    expect(orbitControls.getByRole("link", { name: "Busca" })).toHaveAttribute("href", "#discovery-search");
+    expect(orbitControls.getByRole("link", { name: "Filtros" })).toHaveAttribute(
+      "href",
+      "#discovery-filters-panel"
+    );
     expect(screen.getByRole("radio", { name: /plataforma comum/i })).toBeChecked();
     expect(screen.getByRole("radio", { name: /explorar fora/i })).not.toBeChecked();
     expect(screen.getByText("Mais filtros")).toBeInTheDocument();
@@ -271,7 +286,12 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByText(/qual tamanho de compromisso/i)).toHaveLength(1);
     expect(screen.getAllByText(/que clima voces querem/i)).toHaveLength(1);
     expect(screen.getByText(/match da dupla criado/i)).toBeInTheDocument();
-    expect(screen.getByRole("group", { name: /deck de descoberta/i })).toBeInTheDocument();
+    const deckGroup = screen.getByRole("group", { name: /deck de descoberta/i });
+    expect(deckGroup).toBeInTheDocument();
+    expect(appearsBefore(deckGroup, screen.getByText("Mais filtros"))).toBe(true);
+    expect(
+      appearsBefore(deckGroup, screen.getByRole("combobox", { name: /buscar jogo/i }))
+    ).toBe(true);
     expect(screen.getByRole("button", { name: "Quero jogar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Agora nao" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pular" })).toBeInTheDocument();
@@ -395,6 +415,10 @@ function expectEveryVisibleFormControlHasName(container: HTMLElement) {
   for (const control of controls) {
     expect(control).toHaveAccessibleName();
   }
+}
+
+function appearsBefore(first: Element, second: Element): boolean {
+  return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
 
 function discoveryCard() {
