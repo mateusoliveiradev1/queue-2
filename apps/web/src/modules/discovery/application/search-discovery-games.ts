@@ -4,11 +4,11 @@ import {
   toRecommendationFacts
 } from "./view-models";
 import { rankDiscoveryRecommendations } from "../domain/recommendation-policy";
-import { shouldExcludeFromCurrentDeck } from "../domain/discovery-policy";
 import {
   normalizeMemberPlatforms,
   toRecommendationFilters
 } from "./recommendation-filters";
+import { shouldShowInDiscoveryCycle } from "./discovery-visibility";
 import type {
   DiscoveryCatalogSearch,
   DiscoveryDeckRepository,
@@ -81,18 +81,9 @@ export async function searchDiscoveryGamesUseCase(
 
   const visibleCards = catalogCards.filter((card) => {
     const state = getReadableGameState(readState, card.id);
-
-    if (normalized.input.includeAlreadySeen || input.filters?.includeAlreadySeen) {
-      return true;
-    }
-
-    if (!state?.currentMemberDecision) {
-      return true;
-    }
-
-    return !shouldExcludeFromCurrentDeck({
-      decision: state.currentMemberDecision.decision,
-      cooldownUntil: state.currentMemberDecision.cooldownUntil
+    return shouldShowInDiscoveryCycle(state, {
+      includeAlreadySeen:
+        normalized.input.includeAlreadySeen || input.filters?.includeAlreadySeen
     });
   });
   const memberPlatforms = normalizeMemberPlatforms(readState.context.memberPlatforms);

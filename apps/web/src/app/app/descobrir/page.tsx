@@ -71,12 +71,14 @@ export default async function DiscoveryPage({
   }
 
   const filters = getDiscoveryFilters(params);
+  const deckPage = parsePositivePage(getSearchParam(params?.pagina));
   const returnTo = buildDiscoveryPath(params);
   const [deck, matchHistory, liveSession, moodQuizStatus] = await Promise.all([
     getDiscoveryDeck({
       userId: session.user.id,
       filters,
       limit: 6,
+      page: deckPage,
       preferredCatalogGameId: surpriseId ?? undefined
     }),
     getMatchHistory({
@@ -175,6 +177,7 @@ export default async function DiscoveryPage({
             cards={deck.cards}
             decisionAction={recordDiscoveryDecisionAction}
             handoffAction={handoffDiscoveryMatchToLibraryAction}
+            pagination={getDeckPagination(returnTo, deck.pageInfo)}
             returnTo={returnTo}
             surpriseCatalogGameId={surpriseId ?? undefined}
           />
@@ -244,6 +247,48 @@ export default async function DiscoveryPage({
       </section>
     </AppShell>
   );
+}
+
+function parsePositivePage(value: string | null): number {
+  if (!value) {
+    return 1;
+  }
+
+  const page = Number.parseInt(value, 10);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+function getDeckPagination(
+  returnTo: string,
+  pageInfo: Awaited<ReturnType<typeof getDiscoveryDeck>>["pageInfo"] | undefined
+) {
+  const resolvedPageInfo = pageInfo ?? {
+    currentPage: 1,
+    hasNextPage: false,
+    hasPreviousPage: false
+  };
+
+  return {
+    currentPage: resolvedPageInfo.currentPage,
+    nextHref: resolvedPageInfo.hasNextPage
+      ? withDiscoveryPage(returnTo, resolvedPageInfo.currentPage + 1)
+      : null,
+    previousHref: resolvedPageInfo.hasPreviousPage
+      ? withDiscoveryPage(returnTo, resolvedPageInfo.currentPage - 1)
+      : null
+  };
+}
+
+function withDiscoveryPage(path: string, page: number): string {
+  const url = new URL(path, "https://queue.local");
+
+  if (page <= 1) {
+    url.searchParams.delete("pagina");
+  } else {
+    url.searchParams.set("pagina", String(page));
+  }
+
+  return `${url.pathname}${url.search}`;
 }
 
 function getLivePanelHref(

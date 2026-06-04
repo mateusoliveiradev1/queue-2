@@ -24,7 +24,7 @@ const platformLabelToKey: Record<string, DiscoveryPlatformKey> = {
 
 export function buildDiscoveryDeckCards(input: {
   cards: DiscoveryCardBuildInput[];
-}): DiscoveryDeckBuildResult {
+}): Pick<DiscoveryDeckBuildResult, "cards" | "recommendations"> {
   return {
     cards: input.cards.map((card) => toDiscoveryDeckCardView(card)),
     recommendations: input.cards

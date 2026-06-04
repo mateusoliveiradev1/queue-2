@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   title: "Catalogo coop"
 };
 
+const CATALOG_PAGE_SIZE = 18;
+
 type CatalogPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -41,19 +43,24 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
   }
 
   const query = getSearchParam(params?.q)?.trim() ?? "";
+  const page = parsePositivePage(getSearchParam(params?.pagina));
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
-  const returnTo = buildCatalogPath(query);
+  const returnTo = buildCatalogPath(query, page);
   const [suggestedGames, browseGames] = await Promise.all([
     searchCatalogGames({ limit: 1 }),
     searchCatalogGames({
       includeNonEligible: true,
-      limit: 18,
+      limit: CATALOG_PAGE_SIZE + 1,
+      offset: (page - 1) * CATALOG_PAGE_SIZE,
       query: query || undefined
     })
   ]);
   const suggestedGame = suggestedGames[0] ?? null;
-  const supportingGames = browseGames.filter((game) => game.id !== suggestedGame?.id);
+  const hasNextPage = browseGames.length > CATALOG_PAGE_SIZE;
+  const supportingGames = browseGames
+    .slice(0, CATALOG_PAGE_SIZE)
+    .filter((game) => game.id !== suggestedGame?.id);
 
   return (
     <AppShell currentPage="catalogo">
@@ -149,16 +156,44 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
             </span>
           </div>
         )}
+        <nav className="catalog-pagination" aria-label="Paginas do catalogo">
+          <span>Pagina {page}</span>
+          {page > 1 ? (
+            <a className="queue2-button" data-tone="quiet" href={buildCatalogPath(query, page - 1)}>
+              Anterior
+            </a>
+          ) : null}
+          {hasNextPage ? (
+            <a className="queue2-button" data-tone="quiet" href={buildCatalogPath(query, page + 1)}>
+              Proxima
+            </a>
+          ) : null}
+        </nav>
       </section>
     </AppShell>
   );
 }
 
-function buildCatalogPath(query: string): string {
-  if (!query) {
-    return "/app/catalogo";
+function parsePositivePage(value: string | null): number {
+  if (!value) {
+    return 1;
   }
 
-  const params = new URLSearchParams({ q: query });
-  return `/app/catalogo?${params.toString()}`;
+  const page = Number.parseInt(value, 10);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+function buildCatalogPath(query: string, page = 1): string {
+  const params = new URLSearchParams();
+
+  if (query) {
+    params.set("q", query);
+  }
+
+  if (page > 1) {
+    params.set("pagina", String(page));
+  }
+
+  const serialized = params.toString();
+  return serialized ? `/app/catalogo?${serialized}` : "/app/catalogo";
 }

@@ -148,6 +148,7 @@ export type GetDiscoveryDeckInput = {
   userId: DiscoveryUserId;
   filters?: DiscoveryDeckFilters;
   limit?: number;
+  page?: number;
   preferredCatalogGameId?: DiscoveryCatalogGameId;
 };
 
@@ -403,6 +404,11 @@ export type DiscoveryCardBuildInput = {
 export type DiscoveryDeckBuildResult = {
   cards: DiscoveryDeckCard[];
   recommendations: DiscoveryRecommendation[];
+  pageInfo: {
+    currentPage: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 };
 
 export type DiscoveryCatalogRecommendationFact = DiscoveryRecommendationGameFacts;

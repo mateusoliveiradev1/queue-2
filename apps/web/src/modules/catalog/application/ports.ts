@@ -23,6 +23,7 @@ export type CatalogSearchInput = {
   ids?: string[];
   query?: string;
   limit?: number;
+  offset?: number;
   onlyMainFlow?: boolean;
   platformKeys?: CatalogPlatformKey[];
 };

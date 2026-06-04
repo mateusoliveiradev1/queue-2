@@ -8,6 +8,7 @@ import {
   normalizeMemberPlatforms,
   toRecommendationFilters
 } from "./recommendation-filters";
+import { shouldShowInDiscoveryCycle } from "./discovery-visibility";
 import type {
   DiscoveryCatalogSearch,
   DiscoveryDeckRepository,
@@ -35,7 +36,7 @@ export async function getSurpriseRecommendationUseCase(
 
   const unseenCards = catalogCards.filter((card) => {
     const state = getReadableGameState(readState, card.id);
-    return !state?.seenByAnyMember;
+    return !state?.seenByAnyMember && shouldShowInDiscoveryCycle(state);
   });
   const memberPlatforms = normalizeMemberPlatforms(readState.context.memberPlatforms);
   const recommendationResult = rankDiscoveryRecommendations({

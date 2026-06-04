@@ -779,6 +779,23 @@ input {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
 }
 
+.catalog-pagination,
+.deck-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.catalog-pagination span,
+.deck-pagination span {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
 .catalog-card {
   background: color-mix(in oklch, var(--surface) 76%, black);
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
@@ -1777,6 +1794,10 @@ input {
   line-height: 1.35;
   margin: 0;
   text-transform: uppercase;
+}
+
+.deck-pagination .queue2-button {
+  min-height: 40px;
 }
 
 .match-celebration {

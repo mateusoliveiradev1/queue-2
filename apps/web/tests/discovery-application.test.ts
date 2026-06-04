@@ -94,6 +94,61 @@ describe("discovery application deck", () => {
     expect(result.cards.map((card) => card.catalogGameId)).toEqual(["pc-game"]);
   });
 
+  it("keeps terminal library games out of the default discovery cycle", async () => {
+    const cards = [
+      catalogCard({ id: "finished-game", name: "Finished Game" }),
+      catalogCard({ id: "fresh-game", name: "Fresh Game" })
+    ];
+    const result = await getDiscoveryDeckUseCase(
+      {
+        userId: "member-1",
+        limit: 4
+      },
+      fakeRepository({
+        games: [
+          gameState({
+            catalogGameId: "finished-game",
+            libraryStatus: "zerado"
+          }),
+          gameState({ catalogGameId: "fresh-game" })
+        ]
+      }),
+      fakeCatalogSearch(cards)
+    );
+
+    expect(result.cards.map((card) => card.catalogGameId)).toEqual(["fresh-game"]);
+  });
+
+  it("requests a paged catalog window when the discovery page advances", async () => {
+    const calls: Array<Parameters<DiscoveryCatalogSearch>[0]> = [];
+    const result = await getDiscoveryDeckUseCase(
+      {
+        userId: "member-1",
+        limit: 6,
+        page: 3
+      },
+      fakeRepository({
+        games: [gameState({ catalogGameId: "paged-game" })]
+      }),
+      async (input) => {
+        calls.push(input);
+        return [catalogCard({ id: "paged-game", name: "Paged Game" })];
+      }
+    );
+
+    expect(result.cards.map((card) => card.catalogGameId)).toEqual(["paged-game"]);
+    expect(result.pageInfo).toEqual({
+      currentPage: 3,
+      hasNextPage: false,
+      hasPreviousPage: true
+    });
+    expect(calls[0]).toMatchObject({
+      limit: 25,
+      offset: 48,
+      includeNonEligible: false
+    });
+  });
+
   it("can intentionally include already seen games in search results", async () => {
     const cards = [
       catalogCard({ id: "seen-game", name: "Seen Game" }),

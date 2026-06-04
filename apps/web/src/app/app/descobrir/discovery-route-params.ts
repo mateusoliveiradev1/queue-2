@@ -65,6 +65,7 @@ export function buildDiscoveryPath(
     "anoAte",
     "genero",
     "raridade",
+    "pagina",
     "live",
     "surpresa"
   ]) {

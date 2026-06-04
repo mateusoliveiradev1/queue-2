@@ -1,7 +1,6 @@
 import {
   rankDiscoveryRecommendations
 } from "../domain/recommendation-policy";
-import { shouldExcludeFromCurrentDeck } from "../domain/discovery-policy";
 import {
   buildDiscoveryDeckCards,
   getReadableGameState,
@@ -11,6 +10,7 @@ import {
   normalizeMemberPlatforms,
   toRecommendationFilters
 } from "./recommendation-filters";
+import { shouldShowInDiscoveryCycle } from "./discovery-visibility";
 import type {
   DiscoveryCatalogSearch,
   DiscoveryDeckBuildResult,
@@ -24,20 +24,25 @@ export async function getDiscoveryDeckUseCase(
   catalogSearch: DiscoveryCatalogSearch
 ): Promise<DiscoveryDeckBuildResult> {
   const limit = clampLimit(input.limit, 12);
+  const page = clampPage(input.page);
+  const candidateWindow = getCandidateWindow(limit);
+  const [preferredCards, paginatedCards] = await Promise.all([
+    input.preferredCatalogGameId
+      ? catalogSearch({
+          ids: [input.preferredCatalogGameId],
+          limit: 1,
+          includeNonEligible: false
+        })
+      : Promise.resolve([]),
+    catalogSearch({
+      limit: candidateWindow + 1,
+      offset: (page - 1) * candidateWindow,
+      includeNonEligible: false
+    })
+  ]);
+  const hasNextPage = paginatedCards.length > candidateWindow;
   const catalogCards = mergePreferredCatalogCards(
-    await Promise.all([
-      input.preferredCatalogGameId
-        ? catalogSearch({
-            ids: [input.preferredCatalogGameId],
-            limit: 1,
-            includeNonEligible: false
-          })
-        : Promise.resolve([]),
-      catalogSearch({
-        limit: Math.min(60, Math.max(24, limit * 4)),
-        includeNonEligible: false
-      })
-    ])
+    [preferredCards, paginatedCards.slice(0, candidateWindow)]
   );
   const readState = await repository.getReadState({
     userId: input.userId,
@@ -47,24 +52,15 @@ export async function getDiscoveryDeckUseCase(
   if (!readState.context) {
     return {
       cards: [],
-      recommendations: []
+      recommendations: [],
+      pageInfo: getPageInfo(page, hasNextPage)
     };
   }
 
   const eligibleCards = catalogCards.filter((card) => {
     const state = getReadableGameState(readState, card.id);
-
-    if (input.filters?.includeAlreadySeen) {
-      return true;
-    }
-
-    if (!state?.currentMemberDecision) {
-      return true;
-    }
-
-    return !shouldExcludeFromCurrentDeck({
-      decision: state.currentMemberDecision.decision,
-      cooldownUntil: state.currentMemberDecision.cooldownUntil
+    return shouldShowInDiscoveryCycle(state, {
+      includeAlreadySeen: input.filters?.includeAlreadySeen
     });
   });
   const facts = toRecommendationFacts({ cards: eligibleCards });
@@ -102,13 +98,18 @@ export async function getDiscoveryDeckUseCase(
     .filter((card): card is NonNullable<typeof card> => Boolean(card))
     .slice(0, limit);
 
-  return buildDiscoveryDeckCards({
+  const deck = buildDiscoveryDeckCards({
     cards: rankedCards.map((card) => ({
       card,
       readState,
       recommendation: recommendationsByGame.get(card.id)
     }))
   });
+
+  return {
+    ...deck,
+    pageInfo: getPageInfo(page, hasNextPage)
+  };
 }
 
 export async function getDiscoveryDeck(
@@ -156,4 +157,24 @@ function clampLimit(value: number | undefined, fallback: number): number {
   }
 
   return Math.min(24, Math.max(1, Math.floor(value)));
+}
+
+function clampPage(value: number | undefined): number {
+  if (!value || Number.isNaN(value)) {
+    return 1;
+  }
+
+  return Math.max(1, Math.floor(value));
+}
+
+function getCandidateWindow(limit: number): number {
+  return Math.min(59, Math.max(24, limit * 4));
+}
+
+function getPageInfo(page: number, hasNextPage: boolean) {
+  return {
+    currentPage: page,
+    hasNextPage,
+    hasPreviousPage: page > 1
+  };
 }

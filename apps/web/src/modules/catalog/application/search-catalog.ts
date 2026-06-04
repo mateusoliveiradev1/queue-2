@@ -14,6 +14,7 @@ export type SearchCatalogGamesInput = {
   ids?: string[];
   query?: string;
   limit?: number;
+  offset?: number;
   platformKeys?: CatalogPlatformKey[];
   includeNonEligible?: boolean;
   now?: Date;
@@ -28,6 +29,7 @@ export async function searchCatalogGamesUseCase(
     ids: input.ids,
     query: input.query,
     limit: input.limit,
+    offset: input.offset,
     platformKeys: input.platformKeys,
     onlyMainFlow: !includeNonEligible
   });

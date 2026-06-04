@@ -111,6 +111,7 @@ async function searchGames(
   const query = input.query?.trim() ? input.query.trim() : null;
   const onlyMainFlow = input.onlyMainFlow ?? false;
   const platformKeys = input.platformKeys ?? [];
+  const offset = clampOffset(input.offset);
 
   const result = await pool.query<GameRow>(
     `
@@ -153,8 +154,9 @@ async function searchGames(
         game.synced_at DESC,
         game.name ASC
       LIMIT $5
+      OFFSET $6
     `,
-    [ids, query, onlyMainFlow, platformKeys, limit]
+    [ids, query, onlyMainFlow, platformKeys, limit, offset]
   );
 
   return Promise.all(result.rows.map((row) => hydrateGame(pool, row)));
@@ -755,6 +757,14 @@ function clampLimit(limit: number | undefined): number {
   }
 
   return Math.min(60, Math.max(1, Math.floor(limit)));
+}
+
+function clampOffset(offset: number | undefined): number {
+  if (!offset || Number.isNaN(offset)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(offset));
 }
 
 function coerceDate(value: Date | string): Date {

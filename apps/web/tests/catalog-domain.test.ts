@@ -144,6 +144,35 @@ describe("catalog use cases", () => {
     ]);
   });
 
+  it("passes pagination inputs to the catalog repository", async () => {
+    const calls: unknown[] = [];
+    const repository: CatalogRepository = {
+      ...createRepository([catalogGame()]),
+      searchGames: async (input) => {
+        calls.push(input);
+        return [catalogGame()];
+      }
+    };
+
+    await searchCatalogGamesUseCase(
+      {
+        includeNonEligible: true,
+        limit: 18,
+        offset: 36,
+        query: "coop",
+        now
+      },
+      repository
+    );
+
+    expect(calls[0]).toMatchObject({
+      limit: 18,
+      offset: 36,
+      query: "coop",
+      onlyMainFlow: false
+    });
+  });
+
   it("maps catalog detail into presentation-ready data without React or database imports", async () => {
     const repository = createRepository([catalogGame()]);
 

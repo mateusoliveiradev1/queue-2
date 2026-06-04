@@ -9,6 +9,11 @@ import { DiscoveryCard } from "./discovery-card";
 type DiscoveryDecisionAction = (formData: FormData) => Promise<void>;
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
 type Reaction = "want" | "not_now" | "skip";
+type DiscoveryDeckPagination = {
+  currentPage: number;
+  nextHref: string | null;
+  previousHref: string | null;
+};
 
 const reactionStatus: Record<Reaction, string> = {
   want: "Quero jogar enviado. O servidor confirma se virou match.",
@@ -20,12 +25,14 @@ export function DiscoveryDeck({
   cards,
   decisionAction,
   handoffAction,
+  pagination,
   returnTo,
   surpriseCatalogGameId
 }: {
   cards: DiscoveryDeckCard[];
   decisionAction: DiscoveryDecisionAction;
   handoffAction: DiscoveryHandoffAction;
+  pagination: DiscoveryDeckPagination;
   returnTo: string;
   surpriseCatalogGameId?: string;
 }) {
@@ -61,9 +68,15 @@ export function DiscoveryDeck({
           matches que ja aconteceram.
         </span>
         <div className="discovery-deck-empty-actions" aria-label="Proximos passos da descoberta">
-          <a className="queue2-button" data-tone="primary" href="#discovery-search">
-            Buscar jogo
-          </a>
+          {pagination.nextHref ? (
+            <a className="queue2-button" data-tone="primary" href={pagination.nextHref}>
+              Ver mais cartas
+            </a>
+          ) : (
+            <a className="queue2-button" data-tone="primary" href="#discovery-search">
+              Buscar jogo
+            </a>
+          )}
           <a className="queue2-button" data-tone="quiet" href="#discovery-filters-panel">
             Ajustar filtros
           </a>
@@ -204,6 +217,19 @@ export function DiscoveryDeck({
       <p className="discovery-keyboard-hint">
         Setas: direita Quero jogar, esquerda Agora nao, baixo Pular.
       </p>
+      <nav className="deck-pagination" aria-label="Paginas do deck de descoberta">
+        <span>Pagina {pagination.currentPage}</span>
+        {pagination.previousHref ? (
+          <a className="queue2-button" data-tone="quiet" href={pagination.previousHref}>
+            Anterior
+          </a>
+        ) : null}
+        {pagination.nextHref ? (
+          <a className="queue2-button" data-tone="quiet" href={pagination.nextHref}>
+            Mais cartas
+          </a>
+        ) : null}
+      </nav>
     </div>
   );
 }
