@@ -4,8 +4,8 @@ milestone: v1.0
 milestone_name: milestone
 status: completed
 stopped_at: Pairing creator auto-refresh implemented; ready for Phase 3 planning
-last_updated: "2026-06-04T02:57:30.000Z"
-last_activity: 2026-06-04 -- Completed quick task 260603-x2w: corrigir It Takes Two em producao
+last_updated: "2026-06-04T03:09:20.000Z"
+last_activity: 2026-06-04 -- Completed quick task 260604-06w: corrigir validacao do cron RAWG
 progress:
   total_phases: 9
   completed_phases: 4
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
 Status: Phase 02.1 complete; pairing creator auto-refresh implemented; Phase 3 is next
-Last activity: 2026-06-04 -- Completed quick task 260603-x2w: corrigir It Takes Two em producao
+Last activity: 2026-06-04 -- Completed quick task 260604-06w: corrigir validacao do cron RAWG
 
 Progress: [██████████] 100%
 
@@ -88,6 +88,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | auto-refresh-pareamento | Criador do codigo agora revalida `/parear` automaticamente e segue para `/app/dupla` quando a segunda pessoa entra. |
 | 2026-06-04 | seo-copy-fases-1-2 | Home ganhou metadata/canonical/OG/sitemap/robots; rotas operacionais ficaram `noindex`; copy publica e autenticada removeu linguagem interna de fase e reforcou ritual da dupla. |
 | 2026-06-04 | corrigir-it-takes-two-apontando-para-reg | It Takes Two em producao foi corrigido para o registro RAWG oficial; sync agora preserva slug curado, valida nome esperado e adota `rawg_id` atualizado sem conflito unico. |
+| 2026-06-04 | corrigir-validacao-do-cron-rawg-para-nom | Vercel Cron foi confirmado como registrado/invocavel; validacao RAWG agora aceita diferencas de pontuacao em nomes esperados sem liberar jogos errados. |
 
 ## Accumulated Context
 
