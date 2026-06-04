@@ -1,5 +1,5 @@
 ---
-status: in_progress
+status: completed
 created: 2026-06-03
 quick_id: 260603-vdp
 slug: publicar-e-deploy-vercel
