@@ -188,3 +188,126 @@ CREATE POLICY ops_idempotency_keys_select_members ON ops.idempotency_keys
 CREATE POLICY ops_idempotency_keys_insert_members ON ops.idempotency_keys
   FOR INSERT TO PUBLIC
   WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.discovery_live_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.discovery_live_sessions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_discovery_live_sessions_select_members ON app.discovery_live_sessions;
+DROP POLICY IF EXISTS app_discovery_live_sessions_insert_members ON app.discovery_live_sessions;
+DROP POLICY IF EXISTS app_discovery_live_sessions_update_members ON app.discovery_live_sessions;
+CREATE POLICY app_discovery_live_sessions_select_members ON app.discovery_live_sessions
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_discovery_live_sessions_insert_members ON app.discovery_live_sessions
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    started_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_discovery_live_sessions_update_members ON app.discovery_live_sessions
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.discovery_member_decisions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.discovery_member_decisions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_discovery_member_decisions_select_members ON app.discovery_member_decisions;
+DROP POLICY IF EXISTS app_discovery_member_decisions_insert_own ON app.discovery_member_decisions;
+DROP POLICY IF EXISTS app_discovery_member_decisions_update_own ON app.discovery_member_decisions;
+CREATE POLICY app_discovery_member_decisions_select_members ON app.discovery_member_decisions
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_discovery_member_decisions_insert_own ON app.discovery_member_decisions
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_discovery_member_decisions_update_own ON app.discovery_member_decisions
+  FOR UPDATE TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  )
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.discovery_matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.discovery_matches FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_discovery_matches_select_members ON app.discovery_matches;
+DROP POLICY IF EXISTS app_discovery_matches_insert_members ON app.discovery_matches;
+DROP POLICY IF EXISTS app_discovery_matches_update_members ON app.discovery_matches;
+CREATE POLICY app_discovery_matches_select_members ON app.discovery_matches
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_discovery_matches_insert_members ON app.discovery_matches
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND app.has_duo_membership(first_user_id, duo_id)
+    AND app.has_duo_membership(second_user_id, duo_id)
+  );
+CREATE POLICY app_discovery_matches_update_members ON app.discovery_matches
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      library_handoff_by_user_id IS NULL
+      OR library_handoff_by_user_id = app.current_user_id()
+    )
+  );
+
+ALTER TABLE app.discovery_mood_quiz_answers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.discovery_mood_quiz_answers FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_discovery_mood_quiz_answers_select_members ON app.discovery_mood_quiz_answers;
+DROP POLICY IF EXISTS app_discovery_mood_quiz_answers_insert_own ON app.discovery_mood_quiz_answers;
+DROP POLICY IF EXISTS app_discovery_mood_quiz_answers_update_own ON app.discovery_mood_quiz_answers;
+CREATE POLICY app_discovery_mood_quiz_answers_select_members ON app.discovery_mood_quiz_answers
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_discovery_mood_quiz_answers_insert_own ON app.discovery_mood_quiz_answers
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_discovery_mood_quiz_answers_update_own ON app.discovery_mood_quiz_answers
+  FOR UPDATE TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  )
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.discovery_push_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.discovery_push_subscriptions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_discovery_push_subscriptions_select_own ON app.discovery_push_subscriptions;
+DROP POLICY IF EXISTS app_discovery_push_subscriptions_insert_own ON app.discovery_push_subscriptions;
+DROP POLICY IF EXISTS app_discovery_push_subscriptions_update_own ON app.discovery_push_subscriptions;
+CREATE POLICY app_discovery_push_subscriptions_select_own ON app.discovery_push_subscriptions
+  FOR SELECT TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_discovery_push_subscriptions_insert_own ON app.discovery_push_subscriptions
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_discovery_push_subscriptions_update_own ON app.discovery_push_subscriptions
+  FOR UPDATE TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  )
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );

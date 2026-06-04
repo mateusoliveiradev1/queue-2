@@ -47,6 +47,20 @@ GRANT SELECT, INSERT ON app.member_platforms TO queue2_app_runtime, queue2_worke
 GRANT UPDATE (enabled, updated_at) ON app.member_platforms TO queue2_app_runtime, queue2_worker;
 GRANT SELECT, INSERT ON app.duo_library_games TO queue2_app_runtime, queue2_worker;
 GRANT UPDATE (status, status_updated_by_user_id, updated_at) ON app.duo_library_games TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.discovery_live_sessions TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (status, expires_at, ended_at, updated_at) ON app.discovery_live_sessions TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.discovery_member_decisions TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (decision, source_mode, live_session_id, decided_at, cooldown_until, preference_weight, updated_at)
+  ON app.discovery_member_decisions TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.discovery_matches TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (library_handoff_status, library_handoff_at, library_handoff_by_user_id)
+  ON app.discovery_matches TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.discovery_mood_quiz_answers TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (answer_key, answered_at, updated_at)
+  ON app.discovery_mood_quiz_answers TO queue2_app_runtime, queue2_worker;
+GRANT SELECT, INSERT ON app.discovery_push_subscriptions TO queue2_app_runtime, queue2_worker;
+GRANT UPDATE (endpoint, p256dh, auth_secret, user_agent, enabled, disabled_at, last_seen_at, updated_at)
+  ON app.discovery_push_subscriptions TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON ALL TABLES IN SCHEMA app TO queue2_readonly;
 
 GRANT SELECT, INSERT ON ops.domain_events TO queue2_app_runtime, queue2_worker;
