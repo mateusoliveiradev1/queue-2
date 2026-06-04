@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import type { RefObject } from "react";
+import { useFormStatus } from "react-dom";
 
 import type { DiscoveryDeckCard } from "../application/ports";
 import type {
@@ -22,10 +23,22 @@ const libraryStatusLabels: Record<string, string> = {
 };
 
 const handoffLabels: Record<DiscoveryLibraryHandoffStatus, string> = {
-  wishlist: "Wishlist",
-  jogando: "Jogando",
-  pausado: "Pausado"
+  wishlist: "Mandar para Wishlist",
+  jogando: "Comecar em Jogando",
+  pausado: "Guardar em Pausado"
 };
+
+const handoffMoveLabels: Record<DiscoveryLibraryHandoffStatus, string> = {
+  wishlist: "Mover para Wishlist",
+  jogando: "Mover para Jogando",
+  pausado: "Mover para Pausado"
+};
+
+const decisionPendingLabels = {
+  want: "Guardando quero jogar",
+  not_now: "Guardando agora nao",
+  skip: "Pulando carta"
+} as const;
 
 export function DiscoveryCard({
   card,
@@ -48,20 +61,26 @@ export function DiscoveryCard({
 }) {
   return (
     <article className="discovery-card" data-reaction={reaction ?? "idle"}>
-      <a className="discovery-card-cover queue2-focusable" href={`/app/jogo/${card.slug}`}>
-        {card.coverUrl ? (
-          <Image
-            alt={`Capa de ${card.title}`}
-            height={760}
-            priority={priority}
-            sizes="(max-width: 820px) 92vw, 36vw"
-            src={card.coverUrl}
-            width={570}
-          />
-        ) : (
+      <div className="discovery-card-primary">
+        <a className="discovery-card-cover queue2-focusable" href={`/app/jogo/${card.slug}`}>
+          {card.coverUrl ? (
+            <Image
+              alt={`Capa de ${card.title}`}
+              height={760}
+              priority={priority}
+              sizes="(max-width: 820px) 92vw, 36vw"
+              src={card.coverUrl}
+              width={570}
+            />
+          ) : (
+            <span aria-hidden="true">/2</span>
+          )}
+        </a>
+        <div className="discovery-compatibility-signal" aria-label="Sinal de compatibilidade">
           <span aria-hidden="true">/2</span>
-        )}
-      </a>
+          <strong>{card.reasons[0] ?? "Coop para avaliar juntos"}</strong>
+        </div>
+      </div>
 
       <div className="discovery-card-body">
         <div className="discovery-card-heading">
@@ -73,31 +92,6 @@ export function DiscoveryCard({
               .join(" / ") || "Dados de genero em sincronizacao"}
           </p>
         </div>
-
-        <div className="tag-row" aria-label="Plataformas compativeis">
-          {card.platformLabels.slice(0, 4).map((platform) => (
-            <span key={platform}>{platform}</span>
-          ))}
-        </div>
-
-        <ul className="discovery-reasons" aria-label="Motivos da recomendacao">
-          {card.reasons.slice(0, 5).map((reason) => (
-            <li key={reason}>{reason}</li>
-          ))}
-        </ul>
-
-        <div className="discovery-facts" aria-label="Fonte, tempo e disponibilidade">
-          <span>{card.timeEstimateLabel}</span>
-          <span>{card.availabilityLabel}</span>
-        </div>
-
-        <DiscoverySourceMetadata source={card.sourceMeta} />
-
-        {card.libraryStatus ? (
-          <p className="discovery-library-state" role="status">
-            Ja na biblioteca: {formatLibraryStatus(card.libraryStatus)}
-          </p>
-        ) : null}
 
         <div className="discovery-decision-actions" aria-label="Decisoes da carta">
           <DecisionForm
@@ -128,31 +122,62 @@ export function DiscoveryCard({
             sourceMode={sourceMode}
           />
         </div>
+        <p className="discovery-card-failure-copy">
+          Se uma tentativa falhar: Nao deu para mover a carta. Use o mesmo
+          botao para tentar de novo antes de seguir.
+        </p>
 
-        {card.allowedLibraryActions.length > 0 ? (
-          <div className="discovery-handoff-actions" aria-label="Enviar para a biblioteca">
-            {card.allowedLibraryActions.map((status) => (
-              <form action={handoffAction} key={status}>
-                <input name="catalogGameId" type="hidden" value={card.catalogGameId} />
-                <input name="returnTo" type="hidden" value={returnTo} />
-                <input name="status" type="hidden" value={status} />
-                <button className="queue2-button" data-tone="quiet" type="submit">
-                  {card.libraryStatus ? `Mover para ${handoffLabels[status]}` : `Adicionar a ${handoffLabels[status]}`}
-                </button>
-              </form>
+        <div className="discovery-card-tray" aria-label="Detalhes da carta">
+          <div className="tag-row" aria-label="Plataformas compativeis">
+            {card.platformLabels.slice(0, 4).map((platform) => (
+              <span key={platform}>{platform}</span>
             ))}
-            <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
-              Zerado bloqueado
-            </button>
-            <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
-              Dropado bloqueado
-            </button>
           </div>
-        ) : (
-          <p className="muted">
-            Zerado e Dropado ficam bloqueados ate a confirmacao dupla da Fase 4.
-          </p>
-        )}
+
+          <div className="discovery-facts" aria-label="Tempo e disponibilidade">
+            <span>{card.timeEstimateLabel}</span>
+            <span>{card.availabilityLabel}</span>
+          </div>
+
+          <DiscoverySourceMetadata source={card.sourceMeta} />
+
+          <ul className="discovery-reasons" aria-label="Motivos da recomendacao">
+            {card.reasons.slice(0, 5).map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+
+          {card.libraryStatus ? (
+            <p className="discovery-library-state" role="status">
+              Ja na biblioteca: {formatLibraryStatus(card.libraryStatus)}
+            </p>
+          ) : null}
+
+          {card.allowedLibraryActions.length > 0 ? (
+            <div className="discovery-handoff-actions" aria-label="Enviar para a biblioteca">
+              {card.allowedLibraryActions.map((status) => (
+                <form action={handoffAction} key={status}>
+                  <input name="catalogGameId" type="hidden" value={card.catalogGameId} />
+                  <input name="returnTo" type="hidden" value={returnTo} />
+                  <input name="status" type="hidden" value={status} />
+                  <button className="queue2-button" data-tone="quiet" type="submit">
+                    {card.libraryStatus ? handoffMoveLabels[status] : handoffLabels[status]}
+                  </button>
+                </form>
+              ))}
+              <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
+                Zerado bloqueado
+              </button>
+              <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
+                Dropado bloqueado
+              </button>
+            </div>
+          ) : (
+            <p className="muted">
+              Zerado e Dropado ficam bloqueados ate a confirmacao dupla da Fase 4.
+            </p>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -183,10 +208,42 @@ function DecisionForm({
       <input name="decision" type="hidden" value={decision} />
       <input name="sourceMode" type="hidden" value={sourceMode} />
       <input name="returnTo" type="hidden" value={returnTo} />
-      <button className="queue2-button" data-decision={decision} data-tone={tone} type="submit">
-        {label}
-      </button>
+      <DecisionSubmitButton
+        decision={decision}
+        label={label}
+        pendingLabel={decisionPendingLabels[decision]}
+        tone={tone}
+      />
     </form>
+  );
+}
+
+function DecisionSubmitButton({
+  decision,
+  label,
+  pendingLabel,
+  tone
+}: {
+  decision: "want" | "not_now" | "skip";
+  label: string;
+  pendingLabel: string;
+  tone: "primary" | "quiet";
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      aria-busy={pending}
+      className="queue2-button pending-submit-button"
+      data-decision={decision}
+      data-pending={pending ? "true" : "false"}
+      data-tone={tone}
+      disabled={pending}
+      type="submit"
+    >
+      <span aria-hidden="true" className="pending-submit-button__spinner" />
+      <span>{pending ? pendingLabel : label}</span>
+    </button>
   );
 }
 

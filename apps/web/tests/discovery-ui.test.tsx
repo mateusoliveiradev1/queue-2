@@ -145,6 +145,14 @@ const liveRouteSource = readFileSync(
   "src/app/api/discovery/live/[sessionId]/route.ts",
   "utf8"
 );
+const discoveryCardSource = readFileSync(
+  "src/modules/discovery/presentation/discovery-card.tsx",
+  "utf8"
+);
+const discoveryDeckSource = readFileSync(
+  "src/modules/discovery/presentation/discovery-deck.tsx",
+  "utf8"
+);
 const liveRefreshSource = readFileSync(
   "src/modules/discovery/presentation/live-session-refresh.tsx",
   "utf8"
@@ -314,6 +322,7 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByRole("button", { name: "Quero jogar" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Agora nao" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Pular" })).toBeInTheDocument();
+    expect(container.querySelector(".discovery-card-tray")).not.toBeNull();
     expect(screen.getByRole("status", { name: "It Takes Two" })).toHaveTextContent(
       /primeiro o match/i
     );
@@ -346,6 +355,24 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByRole("button", { name: /zerado bloqueado/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /dropado bloqueado/i }).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
+  });
+
+  it("keeps tactile card decision feedback server-action based", () => {
+    expect(discoveryCardSource).toContain("discovery-card-tray");
+    expect(discoveryCardSource).toContain("Guardando quero jogar");
+    expect(discoveryCardSource).toContain("Guardando agora nao");
+    expect(discoveryCardSource).toContain("Pulando carta");
+    expect(discoveryCardSource).toContain("Nao deu para mover a carta.");
+    expect(discoveryCardSource).toContain('name="catalogGameId"');
+    expect(discoveryCardSource).toContain('name="decision"');
+    expect(discoveryCardSource).toContain('name="sourceMode"');
+    expect(discoveryCardSource).toContain('name="returnTo"');
+    expect(discoveryDeckSource).toContain("useReducedMotion");
+    expect(discoveryDeckSource).toContain("ArrowRight");
+    expect(discoveryDeckSource).toContain("ArrowLeft");
+    expect(discoveryDeckSource).toContain("ArrowDown");
+    expect(discoveryDeckSource).toContain("discovery-reaction-badges");
+    expect(discoveryDeckSource).toContain("Movimento reduzido ativo");
   });
 
   it("uses a valid surprise id to request and render the highlighted discovery card", async () => {

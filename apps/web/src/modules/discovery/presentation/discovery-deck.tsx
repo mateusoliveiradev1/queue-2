@@ -10,6 +10,18 @@ type DiscoveryDecisionAction = (formData: FormData) => Promise<void>;
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
 type Reaction = "want" | "not_now" | "skip";
 
+const reactionLabels: Record<Reaction, string> = {
+  want: "Quero jogar",
+  not_now: "Agora nao",
+  skip: "Pular"
+};
+
+const reactionStatus: Record<Reaction, string> = {
+  want: "Quero jogar enviado. O servidor confirma se virou match.",
+  not_now: "Agora nao enviado. O servidor aplica o cooldown sem culpa.",
+  skip: "Pular enviado. O servidor avanca a carta sem peso."
+};
+
 export function DiscoveryDeck({
   cards,
   decisionAction,
@@ -108,6 +120,13 @@ export function DiscoveryDeck({
       tabIndex={0}
       aria-label="Deck de descoberta. Use os botoes ou setas direita, esquerda e baixo."
     >
+      <div className="discovery-reaction-badges" aria-hidden="true">
+        {(["want", "not_now", "skip"] as const).map((item) => (
+          <span data-active={reaction === item ? "true" : "false"} key={item}>
+            {reactionLabels[item]}
+          </span>
+        ))}
+      </div>
       <div className="discovery-deck-stack" aria-live="polite">
         {nextCards.map((card, index) => (
           <article
@@ -155,6 +174,23 @@ export function DiscoveryDeck({
             }
           />
         </motion.div>
+      </div>
+      <div className="discovery-deck-status" aria-live="polite">
+        {reaction ? (
+          <p>{reactionStatus[reaction]}</p>
+        ) : shouldReduceMotion ? (
+          <p>
+            Movimento reduzido ativo. Use os botoes ou as setas para decidir
+            com resposta imediata.
+          </p>
+        ) : (
+          <p>Arraste a carta ou use os botoes. A proxima carta ja fica preparada.</p>
+        )}
+        {nextCards[0] ? (
+          <p className="discovery-next-card-copy">
+            Proxima carta no trilho: {nextCards[0].title}
+          </p>
+        ) : null}
       </div>
       <p className="discovery-keyboard-hint">
         Setas: direita Quero jogar, esquerda Agora nao, baixo Pular.
