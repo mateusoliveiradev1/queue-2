@@ -154,11 +154,17 @@ test.describe("Phase 3 discovery accessibility", () => {
 
     const deck = page.getByRole("group", { name: /deck de descoberta/i });
     await expect(deck).toBeVisible();
-    for (const name of [/quero jogar/i, /agora nao/i, /^pular$/i]) {
+    const decisionControls = [
+      { label: "Quero jogar", name: /quero jogar/i },
+      { label: "Agora nao", name: /agora nao/i },
+      { label: "Pular", name: /^pular$/i }
+    ];
+
+    for (const { label, name } of decisionControls) {
       const control = deck.getByRole("button", { name }).first();
       await expect(control).toBeVisible();
       await control.focus();
-      await expect(control).toBeFocused();
+      await expect(control, `${label} should expose keyboard focus`).toBeFocused();
     }
 
     const sourceLinks = page.getByRole("link", { name: /dados e imagens: rawg/i });

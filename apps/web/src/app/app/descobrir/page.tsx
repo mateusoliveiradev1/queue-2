@@ -175,13 +175,18 @@ export default async function DiscoveryPage({
         <section className="discovery-stage-trays" aria-label="Apoios da descoberta">
           <section
             className="surface-band app-section discovery-tray"
+            data-discovery-tray-slot="filters"
             id="discovery-filters-panel"
             aria-label="Filtros de descoberta"
           >
             <DiscoveryFilters params={getDiscoveryFilterParams(params)} />
           </section>
 
-          <section className="surface-band app-section discovery-tray" aria-labelledby="live-summary-title">
+          <section
+            className="surface-band app-section discovery-tray"
+            data-discovery-tray-slot="live"
+            aria-labelledby="live-summary-title"
+          >
             <LivePanel
               action={startDiscoveryLiveSessionAction}
               liveSession={liveSession}
@@ -189,7 +194,11 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section className="surface-band app-section discovery-tray" aria-labelledby="discovery-search-title">
+          <section
+            className="surface-band app-section discovery-tray"
+            data-discovery-tray-slot="search"
+            aria-labelledby="discovery-search-title"
+          >
             <DiscoverySearch
               decisionAction={recordDiscoveryDecisionAction}
               handoffAction={handoffDiscoveryMatchToLibraryAction}
@@ -197,7 +206,11 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section className="surface-band app-section discovery-tray" aria-labelledby="mood-quiz-title">
+          <section
+            className="surface-band app-section discovery-tray"
+            data-discovery-tray-slot="quiz"
+            aria-labelledby="mood-quiz-title"
+          >
             <MoodQuiz
               action={answerMoodQuizAction}
               resultState={state}
@@ -205,7 +218,11 @@ export default async function DiscoveryPage({
             />
           </section>
 
-          <section className="surface-band app-section discovery-tray" aria-labelledby="match-history-title">
+          <section
+            className="surface-band app-section discovery-tray"
+            data-discovery-tray-slot="matches"
+            aria-labelledby="match-history-title"
+          >
             <MatchHistory
               action={handoffDiscoveryMatchToLibraryAction}
               items={matchHistory}

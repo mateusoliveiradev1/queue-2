@@ -149,6 +149,7 @@ const discoveryCardSource = readFileSync(
   "src/modules/discovery/presentation/discovery-card.tsx",
   "utf8"
 );
+const discoveryPageSource = readFileSync("src/app/app/descobrir/page.tsx", "utf8");
 const discoveryDeckSource = readFileSync(
   "src/modules/discovery/presentation/discovery-deck.tsx",
   "utf8"
@@ -440,9 +441,19 @@ describe("Phase 3 Discovery route shell", () => {
     expect(globalCssSource).toContain(".match-celebration-burst");
     expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
     expect(globalCssSource).toContain(".match-celebration-burst {\n    display: none;");
+    expect(discoveryPageSource).toContain('data-discovery-tray-slot="filters"');
+    expect(discoveryPageSource).toContain('data-discovery-tray-slot="live"');
+    expect(discoveryPageSource).toContain('data-discovery-tray-slot="search"');
+    expect(discoveryPageSource).toContain('data-discovery-tray-slot="quiz"');
+    expect(discoveryPageSource).toContain('data-discovery-tray-slot="matches"');
     expect(matchHistorySource).toContain('data-discovery-tray="matches"');
+    expect(matchHistorySource).toContain("Ver biblioteca completa");
+    expect(matchHistorySource).toContain("esta area continua resumida");
     expect(globalCssSource).toContain('.discovery-tray:has([data-discovery-tray="matches"])');
     expect(globalCssSource).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr))");
+    expect(globalCssSource).toContain("max-height: min(760px, 82svh)");
+    expect(globalCssSource).toContain('.discovery-tray[data-discovery-tray-slot="quiz"]');
+    expect(globalCssSource).toContain(".mood-quiz-form {\n  align-items: start;");
     expect(matchHistorySource).toContain("Status atual");
     expect(matchHistorySource).toContain("Match sozinho nao vira");
   });
@@ -509,6 +520,8 @@ describe("Phase 3 Discovery route shell", () => {
     expect(globalCssSource).toContain(".discovery-stage");
     expect(globalCssSource).toContain(".discovery-card-stage");
     expect(globalCssSource).toContain(".discovery-orbit-controls");
+    expect(globalCssSource).toContain(".app-sidebar .neutral-state");
+    expect(globalCssSource).toContain("border-bottom: 0");
     expect(globalCssSource).toContain(".app-bottom-nav");
     expect(globalCssSource).not.toMatch(
       /\.discovery-mode-actions\s*{[\s\S]*?grid-template-columns:\s*repeat\(4/

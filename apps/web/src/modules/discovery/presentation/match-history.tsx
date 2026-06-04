@@ -25,65 +25,74 @@ export function MatchHistory({
           Matches recentes
         </h2>
         <p className="support-copy">
-          Historico curto para retomar jogos aprovados pelos dois, focado
-          somente em status atual e proximo passo. Match sozinho nao vira
-          sorteio futuro; a dupla escolhe Wishlist, Jogando ou Pausado.
+          Mostramos so os matches mais recentes para a descoberta nao virar
+          arquivo infinito. Match sozinho nao vira backlog futuro; Biblioteca
+          concentra o estado atual e aqui fica o proximo passo da dupla.
         </p>
+        <a className="text-link match-history-library-link" href="/app/biblioteca">
+          Ver biblioteca completa
+        </a>
       </div>
       {items.length > 0 ? (
-        <div className="match-history-grid">
-          {items.map((item) => (
-            <article className="match-history-card" key={item.match.id}>
-              <a className="match-history-cover queue2-focusable" href={`/app/jogo/${item.slug}`}>
-                {item.coverUrl ? (
-                  <Image
-                    alt={`Capa de ${item.title}`}
-                    height={360}
-                    sizes="(max-width: 820px) 34vw, 160px"
-                    src={item.coverUrl}
-                    width={270}
-                  />
-                ) : (
-                  <span aria-hidden="true">/2</span>
-                )}
-              </a>
-              <div className="match-history-body">
-                <div>
-                  <p className="eyebrow">Match em {formatMatchDate(item.match.matchedAt)}</p>
-                  <h3>{item.title}</h3>
-                </div>
-                {item.reasons.length > 0 ? (
-                  <div className="tag-row" aria-label={`Motivos de ${item.title}`}>
-                    {item.reasons.slice(0, 4).map((reason) => (
-                      <span key={reason}>{reason}</span>
-                    ))}
+        <>
+          <p className="match-history-limit-note">
+            Ultimos {items.length} matches carregados. Se a dupla acumular
+            centenas ou milhares, esta area continua resumida.
+          </p>
+          <div className="match-history-grid">
+            {items.map((item) => (
+              <article className="match-history-card" key={item.match.id}>
+                <a className="match-history-cover queue2-focusable" href={`/app/jogo/${item.slug}`}>
+                  {item.coverUrl ? (
+                    <Image
+                      alt={`Capa de ${item.title}`}
+                      height={360}
+                      sizes="(max-width: 820px) 34vw, 160px"
+                      src={item.coverUrl}
+                      width={270}
+                    />
+                  ) : (
+                    <span aria-hidden="true">/2</span>
+                  )}
+                </a>
+                <div className="match-history-body">
+                  <div>
+                    <p className="eyebrow">Match em {formatMatchDate(item.match.matchedAt)}</p>
+                    <h3>{item.title}</h3>
                   </div>
-                ) : (
-                  <p className="support-copy">Motivos do match foram salvos sem detalhes extras.</p>
-                )}
-                <p className="match-history-status" role="status">
-                  {item.libraryStatus
-                    ? `Status atual: ${formatLibraryStatus(item.libraryStatus)}`
-                    : "Ainda fora da biblioteca"}
-                </p>
-                <LibraryStatusControls
-                  action={action}
-                  catalogGameId={item.match.catalogGameId}
-                  currentStatus={item.libraryStatus ?? ""}
-                  returnTo={returnTo}
-                />
-                <div className="match-history-links">
-                  <a className="text-link" href={`/app/jogo/${item.slug}`}>
-                    Abrir detalhe
-                  </a>
-                  <a className="text-link" href="/app/biblioteca">
-                    Ver biblioteca
-                  </a>
+                  {item.reasons.length > 0 ? (
+                    <div className="tag-row" aria-label={`Motivos de ${item.title}`}>
+                      {item.reasons.slice(0, 4).map((reason) => (
+                        <span key={reason}>{reason}</span>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="support-copy">Motivos do match foram salvos sem detalhes extras.</p>
+                  )}
+                  <p className="match-history-status" role="status">
+                    {item.libraryStatus
+                      ? `Status atual: ${formatLibraryStatus(item.libraryStatus)}`
+                      : "Ainda fora da biblioteca"}
+                  </p>
+                  <LibraryStatusControls
+                    action={action}
+                    catalogGameId={item.match.catalogGameId}
+                    currentStatus={item.libraryStatus ?? ""}
+                    returnTo={returnTo}
+                  />
+                  <div className="match-history-links">
+                    <a className="text-link" href={`/app/jogo/${item.slug}`}>
+                      Abrir detalhe
+                    </a>
+                    <a className="text-link" href="/app/biblioteca">
+                      Ver biblioteca
+                    </a>
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
+              </article>
+            ))}
+          </div>
+        </>
       ) : (
         <div className="empty-state">
           <strong>Nenhum match registrado ainda</strong>
