@@ -58,6 +58,34 @@ export type DiscoveryMatchHistoryItem = {
   reasons: string[];
 };
 
+export type DiscoveryPushSubscription = {
+  endpoint: string;
+  p256dh: string;
+  authSecret: string;
+  userAgent: string | null;
+};
+
+export type DiscoveryPushSubscriptionInput = {
+  userId: DiscoveryUserId;
+  endpoint: string;
+  p256dh: string;
+  authSecret: string;
+  userAgent?: string | null;
+};
+
+export type DiscoveryPushSubscriptionResult =
+  | {
+      ok: true;
+      state: "enabled" | "disabled";
+    }
+  | {
+      ok: false;
+      reason:
+        | "membership-required"
+        | "invalid-endpoint"
+        | "invalid-key-material";
+    };
+
 export type DiscoveryDeckFilters = {
   sourceMode?: DiscoverySourceMode;
   includeAlreadySeen?: boolean;
@@ -335,6 +363,16 @@ export type DiscoveryRepository = DiscoveryDeckRepository & {
   startLiveSession(input: StartLiveSessionInput): Promise<StartLiveSessionResult>;
   getLiveSession(input: GetLiveSessionInput): Promise<DiscoveryLiveSessionPayload>;
   answerMoodQuiz(input: AnswerMoodQuizInput): Promise<DiscoveryMoodQuizState>;
+  registerPushSubscription(
+    input: DiscoveryPushSubscriptionInput
+  ): Promise<DiscoveryPushSubscriptionResult>;
+  disablePushSubscription(input: {
+    userId: DiscoveryUserId;
+    endpoint: string;
+  }): Promise<DiscoveryPushSubscriptionResult>;
+  getEnabledPushSubscriptionsForMatch(input: {
+    match: DiscoveryMatchRecord;
+  }): Promise<DiscoveryPushSubscription[]>;
 };
 
 export type DiscoveryRecommendationFactSource = {

@@ -15,6 +15,7 @@ const knownSecretNames = [
   "RESEND_API_KEY",
   "EMAIL_FROM",
   "CRON_SECRET",
+  "VAPID_PRIVATE_KEY",
   "DEEPL_API_KEY",
   "OPENAI_API_KEY",
   "GOOGLE_TRANSLATE_API_KEY",

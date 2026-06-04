@@ -97,6 +97,9 @@ export type {
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
   DiscoveryMoodQuizState,
+  DiscoveryPushSubscription,
+  DiscoveryPushSubscriptionInput,
+  DiscoveryPushSubscriptionResult,
   DiscoveryReadState,
   DiscoveryRepository,
   DiscoverySearchResult,
@@ -114,6 +117,18 @@ export type {
   StartLiveSessionInput,
   StartLiveSessionResult
 } from "./application/ports";
+export {
+  DISCOVERY_PUSH_AUTH_MAX_LENGTH,
+  DISCOVERY_PUSH_ENDPOINT_MAX_LENGTH,
+  DISCOVERY_PUSH_KEY_MAX_LENGTH,
+  disableDiscoveryPushSubscription,
+  getDiscoveryPushPublicConfig,
+  registerDiscoveryPushSubscription,
+  type BrowserPushSubscriptionPayload,
+  type RegisterDiscoveryPushSubscriptionInput,
+  disableDiscoveryPushSubscriptionUseCase,
+  registerDiscoveryPushSubscriptionUseCase
+} from "./application/register-push-subscription";
 export {
   DISCOVERY_SEARCH_MAX_LIMIT,
   DISCOVERY_SEARCH_MAX_QUERY_LENGTH,

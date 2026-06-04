@@ -17,6 +17,9 @@ import type {
   DiscoveryMatchHistoryItem,
   DiscoveryMatchRecord,
   DiscoveryMemberContext,
+  DiscoveryPushSubscription,
+  DiscoveryPushSubscriptionInput,
+  DiscoveryPushSubscriptionResult,
   DiscoveryRepository,
   DiscoveryReadState
 } from "../application/ports";
@@ -106,6 +109,13 @@ type LiveSessionRow = {
   ended_at: Date | null;
 };
 
+type PushSubscriptionRow = {
+  endpoint: string;
+  p256dh: string;
+  auth_secret: string;
+  user_agent: string | null;
+};
+
 type MoodAnswerRow = {
   user_id: string;
   quiz_round: string;
@@ -128,7 +138,11 @@ export function createDiscoveryRepository(
     getMatchHistory: (input) => getMatchHistory(pool, input),
     startLiveSession: (input) => startLiveSession(pool, input),
     getLiveSession: (input) => getLiveSession(pool, input),
-    answerMoodQuiz: (input) => answerMoodQuiz(pool, input)
+    answerMoodQuiz: (input) => answerMoodQuiz(pool, input),
+    registerPushSubscription: (input) => registerPushSubscription(pool, input),
+    disablePushSubscription: (input) => disablePushSubscription(pool, input),
+    getEnabledPushSubscriptionsForMatch: (input) =>
+      getEnabledPushSubscriptionsForMatch(pool, input)
   };
 }
 
@@ -535,6 +549,116 @@ async function answerMoodQuiz(
   });
 }
 
+async function registerPushSubscription(
+  pool: QueueDbPool,
+  input: DiscoveryPushSubscriptionInput
+): Promise<DiscoveryPushSubscriptionResult> {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return { ok: false, reason: "membership-required" };
+    }
+
+    await client.query(
+      `
+        INSERT INTO app.discovery_push_subscriptions (
+          duo_id,
+          user_id,
+          endpoint,
+          p256dh,
+          auth_secret,
+          user_agent,
+          enabled,
+          disabled_at,
+          last_seen_at,
+          updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, true, null, now(), now())
+        ON CONFLICT (duo_id, user_id, endpoint) DO UPDATE
+        SET p256dh = excluded.p256dh,
+            auth_secret = excluded.auth_secret,
+            user_agent = excluded.user_agent,
+            enabled = true,
+            disabled_at = null,
+            last_seen_at = now(),
+            updated_at = now()
+      `,
+      [
+        context.duoId,
+        input.userId,
+        input.endpoint,
+        input.p256dh,
+        input.authSecret,
+        input.userAgent ?? null
+      ]
+    );
+
+    return {
+      ok: true,
+      state: "enabled"
+    };
+  });
+}
+
+async function disablePushSubscription(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    endpoint: string;
+  }
+): Promise<DiscoveryPushSubscriptionResult> {
+  return withAppUserTransaction(pool, input.userId, async (client) => {
+    const context = await getMemberContext(client, input.userId);
+
+    if (!context) {
+      return { ok: false, reason: "membership-required" };
+    }
+
+    await client.query(
+      `
+        UPDATE app.discovery_push_subscriptions
+        SET enabled = false,
+            disabled_at = now(),
+            updated_at = now()
+        WHERE duo_id = $1
+          AND user_id = $2
+          AND endpoint = $3
+          AND enabled = true
+      `,
+      [context.duoId, input.userId, input.endpoint]
+    );
+
+    return {
+      ok: true,
+      state: "disabled"
+    };
+  });
+}
+
+async function getEnabledPushSubscriptionsForMatch(
+  pool: QueueDbPool,
+  input: {
+    match: DiscoveryMatchRecord;
+  }
+): Promise<DiscoveryPushSubscription[]> {
+  const userIds = [
+    ...new Set([input.match.firstUserId, input.match.secondUserId].filter(Boolean))
+  ];
+  const subscriptions = await Promise.all(
+    userIds.map((userId) =>
+      withAppUserTransaction(pool, userId, async (client) =>
+        getEnabledPushSubscriptionsForUser(client, {
+          duoId: input.match.duoId,
+          userId
+        })
+      )
+    )
+  );
+
+  return subscriptions.flat();
+}
+
 async function expireOldLiveSessions(
   client: QueueDbClient,
   duoId: string
@@ -625,6 +749,34 @@ async function getLiveMatches(
     coverUrl: row.background_image_url,
     libraryStatus: row.library_status,
     reasons: row.reason_snapshot ?? []
+  }));
+}
+
+async function getEnabledPushSubscriptionsForUser(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    userId: string;
+  }
+): Promise<DiscoveryPushSubscription[]> {
+  const result = await client.query<PushSubscriptionRow>(
+    `
+      SELECT endpoint, p256dh, auth_secret, user_agent
+      FROM app.discovery_push_subscriptions
+      WHERE duo_id = $1
+        AND user_id = $2
+        AND enabled = true
+      ORDER BY last_seen_at DESC
+      LIMIT 8
+    `,
+    [input.duoId, input.userId]
+  );
+
+  return result.rows.map((row) => ({
+    endpoint: row.endpoint,
+    p256dh: row.p256dh,
+    authSecret: row.auth_secret,
+    userAgent: row.user_agent
   }));
 }
 

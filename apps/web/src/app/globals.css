@@ -1609,6 +1609,37 @@ input {
   width: 100%;
 }
 
+.push-opt-in {
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 14%, transparent);
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+}
+
+.push-opt-in .queue2-button,
+.push-opt-in .text-button {
+  width: 100%;
+}
+
+.push-opt-in .text-button {
+  background: transparent;
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 24%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink-muted);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  min-height: 44px;
+  padding: var(--space-3) var(--space-4);
+  text-transform: uppercase;
+}
+
+.push-opt-in .text-button:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
 .match-history,
 .match-history-grid,
 .match-history-body,

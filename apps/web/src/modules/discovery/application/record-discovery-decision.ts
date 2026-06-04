@@ -102,7 +102,14 @@ export async function recordDiscoveryDecision(
   input: RecordDiscoveryDecisionInput
 ): Promise<RecordDiscoveryDecisionResult> {
   const { discoveryRepository } = await import("../infrastructure/discovery-repository");
-  return recordDiscoveryDecisionUseCase(input, discoveryRepository);
+  const result = await recordDiscoveryDecisionUseCase(input, discoveryRepository);
+
+  if (result.ok && result.state.kind === "match-created") {
+    const { sendMatchNotification } = await import("./send-match-notification");
+    await sendMatchNotification({ match: result.state.match });
+  }
+
+  return result;
 }
 
 export async function handoffDiscoveryMatchToLibrary(
