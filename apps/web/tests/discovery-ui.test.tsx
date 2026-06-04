@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -132,6 +134,16 @@ vi.mock("../src/modules/library", () => ({
 
 import DashboardPage from "../src/app/app/page";
 import DiscoveryPage from "../src/app/app/descobrir/page";
+import { LiveSessionRefresh } from "../src/modules/discovery/presentation/live-session-refresh";
+
+const liveRouteSource = readFileSync(
+  "src/app/api/discovery/live/[sessionId]/route.ts",
+  "utf8"
+);
+const liveRefreshSource = readFileSync(
+  "src/modules/discovery/presentation/live-session-refresh.tsx",
+  "utf8"
+);
 
 afterEach(() => {
   cleanup();
@@ -248,6 +260,7 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getByText("Mais filtros")).toBeInTheDocument();
     expect(screen.getByRole("combobox", { name: /buscar jogo/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /iniciar match live/i })).toBeInTheDocument();
+    expect(screen.getByText(/atualizando a live/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /salvar mood/i })).toBeInTheDocument();
     expect(screen.getAllByText(/qual energia voces tem/i)).toHaveLength(1);
     expect(screen.getAllByText(/qual tamanho de compromisso/i)).toHaveLength(1);
@@ -288,6 +301,62 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByRole("button", { name: /zerado bloqueado/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("button", { name: /dropado bloqueado/i }).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
+  });
+
+  it("keeps live polling bounded, private and announced in-app", () => {
+    expect(liveRouteSource).toContain("requireVerifiedSession()");
+    expect(liveRouteSource).toContain("z.string().uuid()");
+    expect(liveRouteSource).toContain("getLiveSession");
+    expect(liveRouteSource).toContain('"Cache-Control": "no-store"');
+    expect(liveRefreshSource).toContain("/api/discovery/live/");
+    expect(liveRefreshSource).toContain("window.setInterval");
+    expect(liveRefreshSource).toContain("window.clearInterval");
+    expect(liveRefreshSource).toContain("expiresInSeconds > 0");
+    expect(liveRefreshSource).toContain('aria-live="polite"');
+
+    render(
+      <LiveSessionRefresh
+        initialLiveSession={{
+          ok: true,
+          session: {
+            id: "live-1",
+            duoId: "duo-1",
+            startedByUserId: "user-1",
+            status: "active",
+            startedAt: new Date("2026-06-04T09:00:00.000Z"),
+            expiresAt: new Date("2026-06-04T09:20:00.000Z"),
+            endedAt: null
+          },
+          matches: [
+            {
+              match: {
+                id: "match-live-1",
+                duoId: "duo-1",
+                catalogGameId: "game-1",
+                matchedAt: new Date("2026-06-04T09:08:00.000Z"),
+                createdFrom: "live",
+                firstUserId: "user-1",
+                secondUserId: "user-2",
+                reasonSnapshot: ["PC em comum"],
+                libraryHandoffStatus: null
+              },
+              slug: "it-takes-two",
+              title: "It Takes Two",
+              coverUrl: null,
+              libraryStatus: null,
+              reasons: ["PC em comum"]
+            }
+          ],
+          expiresInSeconds: 600
+        }}
+      />
+    );
+
+    expect(screen.getByRole("status")).toHaveTextContent(/match live detectou/i);
+    expect(screen.getByRole("link", { name: /abrir detalhe/i })).toHaveAttribute(
+      "href",
+      "/app/jogo/it-takes-two"
+    );
   });
 });
 

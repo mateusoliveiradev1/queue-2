@@ -1,4 +1,5 @@
 import type { DiscoveryLiveSessionPayload } from "../application/ports";
+import { LiveSessionRefresh } from "./live-session-refresh";
 import { PushOptInButton } from "./push-opt-in-button";
 
 type LiveAction = (formData: FormData) => Promise<void>;
@@ -26,6 +27,7 @@ export function LivePanel({
           Iniciar Match Live
         </button>
       </form>
+      <LiveSessionRefresh initialLiveSession={liveSession} />
       <PushOptInButton />
     </section>
   );
