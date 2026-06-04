@@ -1231,6 +1231,82 @@ input {
   line-height: 1.4;
 }
 
+.discovery-header {
+  align-items: center;
+}
+
+.discovery-live-entry {
+  align-items: center;
+  border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+  border-radius: var(--radius-sharp);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  padding: var(--space-3);
+}
+
+.discovery-live-entry span,
+.discovery-loading span {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.discovery-route-grid {
+  align-items: start;
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.72fr);
+}
+
+.discovery-deck-shell {
+  min-height: 520px;
+}
+
+.discovery-server-cards,
+.discovery-side-rail,
+.discovery-history-list {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.discovery-server-card {
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-3);
+  min-height: 128px;
+  padding: var(--space-5);
+}
+
+.discovery-server-card h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.7rem);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.discovery-history-list {
+  margin: 0;
+  padding: 0;
+}
+
+.discovery-history-list li {
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-2);
+  list-style: none;
+  min-height: 74px;
+  padding: var(--space-4);
+}
+
 @container (max-width: 360px) {
   .catalog-card {
     grid-template-columns: 1fr;
@@ -1279,7 +1355,8 @@ input {
   .library-overview-grid,
   .detail-library-panel,
   .locked-status-grid,
-  .game-detail-hero {
+  .game-detail-hero,
+  .discovery-route-grid {
     grid-template-columns: 1fr;
   }
 
@@ -1318,13 +1395,15 @@ input {
   }
 
   .status-controls,
-  .library-tabs {
+  .library-tabs,
+  .discovery-live-entry {
     align-items: stretch;
     flex-direction: column;
   }
 
   .status-controls .queue2-button,
-  .library-tabs a {
+  .library-tabs a,
+  .discovery-live-entry .queue2-button {
     width: 100%;
   }
 

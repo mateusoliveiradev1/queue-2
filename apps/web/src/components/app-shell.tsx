@@ -1,11 +1,18 @@
 import type { ReactNode } from "react";
 import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
 
-type AppShellPage = "dashboard" | "catalogo" | "biblioteca" | "perfil" | "dupla";
+type AppShellPage =
+  | "dashboard"
+  | "catalogo"
+  | "descobrir"
+  | "biblioteca"
+  | "perfil"
+  | "dupla";
 
 const navigation = [
   { href: "/app", label: "Fila", page: "dashboard" },
   { href: "/app/catalogo", label: "Catalogo", page: "catalogo" },
+  { href: "/app/descobrir", label: "Descobrir", page: "descobrir" },
   { href: "/app/biblioteca", label: "Biblioteca", page: "biblioteca" },
   { href: "/app/dupla", label: "Dupla", page: "dupla" },
   { href: "/app/perfil", label: "Perfil", page: "perfil" }

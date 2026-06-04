@@ -35,6 +35,11 @@ const nextActions = [
     href: "/app/catalogo"
   },
   {
+    title: "Descobrir",
+    text: "Aprovem, pulem e encontrem matches antes do jogo entrar na fila.",
+    href: "/app/descobrir"
+  },
+  {
     title: "Biblioteca",
     text: "Separem vontade, prioridade e pausa sem perder o combinado.",
     href: "/app/biblioteca"
@@ -76,8 +81,9 @@ export default async function DashboardPage() {
           <p className="eyebrow">Dupla formada</p>
           <h1 className="page-title">A fila ja tem dono</h1>
           <p className="lede">
-            Catalogo e biblioteca transformam vontade em backlog compartilhado.
-            Match, roleta e sessoes entram depois que a fila tiver jogos reais.
+            Catalogo, Descobrir e Biblioteca transformam vontade em backlog
+            compartilhado. Roleta e sessoes entram depois que a fila tiver jogos
+            reais.
           </p>
         </div>
       </header>
