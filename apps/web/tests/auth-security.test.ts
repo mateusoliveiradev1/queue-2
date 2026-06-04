@@ -224,9 +224,11 @@ describe("auth runtime security policy", () => {
       url: "https://queue-2.vercel.app/api/auth/verify-email?token=very-long-token&callbackURL=%2Fverificar-email"
     });
 
-    expect(html).toContain("max-width:600px");
+    expect(html).toContain('translate="no"');
+    expect(html).toContain("background:#ffffff");
+    expect(html).toContain("max-width:560px");
     expect(html).toContain("border-radius:8px");
-    expect(html).toContain("box-shadow:0 18px 45px");
+    expect(html).toContain("box-shadow:0 16px 38px");
     expect(html).toContain("QUEUE<span");
     expect(html).toContain("/2");
     expect(html).toContain("Email confirmado");

@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Auth email templates polished; catalog sync preserves curated time; ready for Phase 3 planning
-last_updated: "2026-06-04T02:05:03.000Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-email-template: templates transacionais de auth
+stopped_at: Auth email template refined after Gmail preview; ready for Phase 3 planning
+last_updated: "2026-06-04T02:13:46.000Z"
+last_activity: 2026-06-03 -- Completed quick task 260603-email-template-gmail: refinamento visual de email auth
 progress:
   total_phases: 9
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
-Status: Phase 02.1 complete; auth email templates polished and explicit test account verified; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-email-template: templates transacionais de auth
+Status: Phase 02.1 complete; auth email template refined after Gmail preview; Phase 3 is next
+Last activity: 2026-06-03 -- Completed quick task 260603-email-template-gmail: refinamento visual de email auth
 
 Progress: [██████████] 100%
 
@@ -83,6 +83,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | auth-feedback-e-verificacao-email | Formularios publicos de auth ganharam feedback pending; contas nao verificadas devem usar reenvio em `/verificar-email`, sem limpar banco por padrao. |
 | 2026-06-03 | auth-login-verificacao-resend | Login ganhou link explicito de reenvio; detector de `email_not_verified` foi reforcado; `mateus100saopaulino@hotmail.com` foi marcado como verificado; `mateus_sp4@outlook.com` nao existia no banco de producao. |
 | 2026-06-03 | polir-template-email-auth | Emails de verificacao e reset ganharam template responsivo QUEUE/2 com icone `/2`, CTA, etapas e nota de seguranca; gate tambem corrigiu RAWG sync para preservar tempo curado quando nao houver novo tempo estimado. |
+| 2026-06-03 | refinar-template-email-gmail | Template de auth foi compactado apos captura real do Gmail: fundo externo branco, marca dentro do card, menor largura, nota de seguranca mais cedo e sinal `translate="no"`. |
 
 ## Accumulated Context
 
