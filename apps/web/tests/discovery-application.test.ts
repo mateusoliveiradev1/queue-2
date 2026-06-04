@@ -70,6 +70,30 @@ describe("discovery application deck", () => {
     expect(result.cards.map((card) => card.catalogGameId)).toEqual(["fresh-game"]);
   });
 
+  it("does not blank the default deck while duo platform preferences are missing", async () => {
+    const result = await getDiscoveryDeckUseCase(
+      {
+        userId: "member-1",
+        limit: 4
+      },
+      fakeRepository({
+        context: {
+          duoId: "duo-1",
+          userId: "member-1",
+          partnerUserId: "member-2",
+          memberUserIds: ["member-1", "member-2"],
+          memberPlatforms: {
+            first: [],
+            second: []
+          }
+        }
+      }),
+      fakeCatalogSearch([catalogCard({ id: "pc-game", name: "PC Game" })])
+    );
+
+    expect(result.cards.map((card) => card.catalogGameId)).toEqual(["pc-game"]);
+  });
+
   it("can intentionally include already seen games in search results", async () => {
     const cards = [
       catalogCard({ id: "seen-game", name: "Seen Game" }),

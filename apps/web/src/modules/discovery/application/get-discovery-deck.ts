@@ -1,7 +1,5 @@
 import {
-  rankDiscoveryRecommendations,
-  type DiscoveryPlatformKey,
-  type DiscoveryRecommendationFilterInput
+  rankDiscoveryRecommendations
 } from "../domain/recommendation-policy";
 import { shouldExcludeFromCurrentDeck } from "../domain/discovery-policy";
 import {
@@ -9,10 +7,13 @@ import {
   getReadableGameState,
   toRecommendationFacts
 } from "./view-models";
+import {
+  normalizeMemberPlatforms,
+  toRecommendationFilters
+} from "./recommendation-filters";
 import type {
   DiscoveryCatalogSearch,
   DiscoveryDeckBuildResult,
-  DiscoveryDeckFilters,
   DiscoveryDeckRepository,
   GetDiscoveryDeckInput
 } from "./ports";
@@ -67,10 +68,11 @@ export async function getDiscoveryDeckUseCase(
     });
   });
   const facts = toRecommendationFacts({ cards: eligibleCards });
+  const memberPlatforms = normalizeMemberPlatforms(readState.context.memberPlatforms);
   const recommendationResult = rankDiscoveryRecommendations({
     games: facts,
-    memberPlatforms: normalizeMemberPlatforms(readState.context.memberPlatforms),
-    filters: toRecommendationFilters(input.filters),
+    memberPlatforms,
+    filters: toRecommendationFilters(input.filters, memberPlatforms),
     positiveGenres: readState.positiveProfile.genres,
     positiveTags: readState.positiveProfile.tags,
     collaborative: readState.collaborative
@@ -146,40 +148,6 @@ function prioritizePreferredCatalogGameId(
     preferredCatalogGameId,
     ...catalogGameIds.filter((catalogGameId) => catalogGameId !== preferredCatalogGameId)
   ];
-}
-
-function toRecommendationFilters(
-  filters: DiscoveryDeckFilters | undefined
-): DiscoveryRecommendationFilterInput {
-  return {
-    ...(filters?.recommendation ?? {}),
-    commonPlatformOnly:
-      filters?.commonPlatformOnly ??
-      filters?.recommendation?.commonPlatformOnly ??
-      true,
-    availability:
-      filters?.availability ??
-      filters?.recommendation?.availability ??
-      null,
-    maxEstimatedMinutes:
-      filters?.maxEstimatedMinutes ??
-      filters?.recommendation?.maxEstimatedMinutes ??
-      null
-  };
-}
-
-function normalizeMemberPlatforms(input: {
-  first: string[];
-  second: string[];
-}): { first: DiscoveryPlatformKey[]; second: DiscoveryPlatformKey[] } {
-  return {
-    first: input.first.filter(isDiscoveryPlatformKey),
-    second: input.second.filter(isDiscoveryPlatformKey)
-  };
-}
-
-function isDiscoveryPlatformKey(value: string): value is DiscoveryPlatformKey {
-  return ["pc", "playstation", "xbox", "switch", "steam-deck"].includes(value);
 }
 
 function clampLimit(value: number | undefined, fallback: number): number {

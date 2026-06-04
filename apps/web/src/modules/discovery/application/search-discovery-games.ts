@@ -5,6 +5,10 @@ import {
 } from "./view-models";
 import { rankDiscoveryRecommendations } from "../domain/recommendation-policy";
 import { shouldExcludeFromCurrentDeck } from "../domain/discovery-policy";
+import {
+  normalizeMemberPlatforms,
+  toRecommendationFilters
+} from "./recommendation-filters";
 import type {
   DiscoveryCatalogSearch,
   DiscoveryDeckRepository,
@@ -91,19 +95,13 @@ export async function searchDiscoveryGamesUseCase(
       cooldownUntil: state.currentMemberDecision.cooldownUntil
     });
   });
+  const memberPlatforms = normalizeMemberPlatforms(readState.context.memberPlatforms);
   const recommendations = rankDiscoveryRecommendations({
     games: toRecommendationFacts({ cards: visibleCards }),
-    memberPlatforms: {
-      first: readState.context.memberPlatforms.first.filter(isDiscoveryPlatformKey),
-      second: readState.context.memberPlatforms.second.filter(isDiscoveryPlatformKey)
-    },
-    filters: {
-      ...(input.filters?.recommendation ?? {}),
-      commonPlatformOnly:
-        input.filters?.commonPlatformOnly ??
-        input.filters?.recommendation?.commonPlatformOnly ??
-        false
-    },
+    memberPlatforms,
+    filters: toRecommendationFilters(input.filters, memberPlatforms, {
+      defaultCommonPlatformOnly: false
+    }),
     positiveGenres: readState.positiveProfile.genres,
     positiveTags: readState.positiveProfile.tags,
     collaborative: readState.collaborative
@@ -137,8 +135,4 @@ export async function searchDiscoveryGames(
   ]);
 
   return searchDiscoveryGamesUseCase(input, discoveryRepository, searchCatalogGames);
-}
-
-function isDiscoveryPlatformKey(value: string): value is "pc" | "playstation" | "xbox" | "switch" | "steam-deck" {
-  return ["pc", "playstation", "xbox", "switch", "steam-deck"].includes(value);
 }

@@ -59,15 +59,18 @@ export async function runCatalogSync({
   allowlist = catalogSyncAllowlist,
   rawgClient = createRawgClient(),
   repository = catalogRepository,
-  audit
+  audit,
+  syncConcurrency = 4
 }: {
   mode: CatalogSyncMode;
   allowlist?: CatalogSyncAllowlistEntry[];
   rawgClient?: RawgClient;
   repository?: CatalogRepository;
   audit?: CatalogSyncAudit;
+  syncConcurrency?: number;
 }): Promise<CatalogSyncResult> {
   const items: CatalogSyncItemOutcome[] = [];
+  const concurrency = clampSyncConcurrency(syncConcurrency);
   const auditWriter = mode === "apply" ? (audit ?? createCatalogSyncAudit()) : null;
   const runId =
     auditWriter
@@ -81,12 +84,18 @@ export async function runCatalogSync({
         })
       : null;
 
-  for (const entry of allowlist) {
-    const item = await syncAllowlistEntry({ entry, mode, rawgClient, repository });
-    items.push(item);
+  for (let index = 0; index < allowlist.length; index += concurrency) {
+    const chunk = allowlist.slice(index, index + concurrency);
+    const chunkItems = await Promise.all(
+      chunk.map((entry) => syncAllowlistEntry({ entry, mode, rawgClient, repository }))
+    );
 
-    if (runId) {
-      await auditWriter!.recordItem(runId, item);
+    for (const item of chunkItems) {
+      items.push(item);
+
+      if (runId) {
+        await auditWriter!.recordItem(runId, item);
+      }
     }
   }
 
@@ -290,6 +299,14 @@ function summarizeSync(mode: CatalogSyncMode, items: CatalogSyncItemOutcome[]): 
     failedCount: items.filter((item) => item.status === "failed").length,
     items
   };
+}
+
+function clampSyncConcurrency(value: number): number {
+  if (!Number.isInteger(value) || value <= 0) {
+    return 1;
+  }
+
+  return Math.min(6, value);
 }
 
 function redactErrorMessage(error: unknown): string {

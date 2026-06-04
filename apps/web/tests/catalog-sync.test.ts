@@ -278,6 +278,14 @@ describe("catalog sync orchestration", () => {
       slug: "it-takes-two"
     });
   });
+
+  it("keeps the production sync allowlist broad enough for Discovery", () => {
+    const slugs = catalogSyncAllowlist.map((entry) => entry.slug);
+
+    expect(catalogSyncAllowlist.length).toBeGreaterThanOrEqual(40);
+    expect(new Set(slugs).size).toBe(catalogSyncAllowlist.length);
+    expect(slugs).toEqual(expect.arrayContaining(["overcooked-2", "we-were-here", "deep-rock-galactic"]));
+  });
 });
 
 describe("catalog curation seed application", () => {
