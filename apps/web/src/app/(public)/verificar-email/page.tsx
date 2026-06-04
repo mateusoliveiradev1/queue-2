@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RoulettePointer } from "@queue/ui";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
+import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
 import { VerificationResendForm } from "../../../components/verification-resend-form";
@@ -77,7 +78,7 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
           <StatusToast message={statusMessage} state={state} />
           <div className="auth-panel-header">
             <h2>Confirmar email</h2>
-            <p>Enviamos um link para o email cadastrado.</p>
+            <p>Use o link de verificacao ou peca um novo envio para o email pendente.</p>
           </div>
           {email ? (
             <p className="support-copy">
@@ -132,17 +133,17 @@ export default async function VerifyEmailPage({ searchParams }: VerifyEmailPageP
                 type="password"
               />
             </div>
-            <button className="queue2-button" data-tone="quiet" type="submit">
-              Corrigir e enviar de novo
-            </button>
+            <PendingSubmitButton
+              label="Corrigir e enviar de novo"
+              pendingLabel="Enviando..."
+              tone="quiet"
+            />
             <p className="support-copy">
               Confirme a senha para trocar o email e invalidar o link anterior.
             </p>
           </form>
           <form action={logoutAction}>
-            <button className="queue2-button" data-tone="quiet" type="submit">
-              Sair desta conta
-            </button>
+            <PendingSubmitButton label="Sair desta conta" pendingLabel="Saindo..." tone="quiet" />
           </form>
         </div>
       </section>

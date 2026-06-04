@@ -423,6 +423,40 @@ input {
   transform: translateY(0);
 }
 
+.pending-submit-button {
+  align-items: center;
+  display: inline-flex;
+  gap: var(--space-2);
+  justify-content: center;
+  min-width: 132px;
+}
+
+.pending-submit-button__spinner {
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 999px;
+  display: none;
+  height: 1em;
+  width: 1em;
+}
+
+.pending-submit-button[data-pending="true"] .pending-submit-button__spinner {
+  animation: queue2-spin 720ms linear infinite;
+  display: inline-block;
+}
+
+@keyframes queue2-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pending-submit-button[data-pending="true"] .pending-submit-button__spinner {
+    animation: none;
+  }
+}
+
 .queue2-input:hover:not(:disabled) {
   border-color: color-mix(in oklch, var(--ink-muted) 52%, transparent);
 }

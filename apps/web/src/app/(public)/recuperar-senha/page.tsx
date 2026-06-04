@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
 import { PublicRitualStrip } from "../../../components/public-ritual-strip";
+import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import {
@@ -86,9 +87,10 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
             </div>
           )}
           <div className="form-actions">
-            <button className="queue2-button" data-tone="primary" type="submit">
-              {token ? "Alterar senha" : "Enviar link seguro"}
-            </button>
+            <PendingSubmitButton
+              label={token ? "Alterar senha" : "Enviar link seguro"}
+              pendingLabel={token ? "Alterando..." : "Enviando..."}
+            />
             <a className="text-link queue2-focusable" href="/login">
               Voltar ao login
             </a>

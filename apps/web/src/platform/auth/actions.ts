@@ -26,7 +26,7 @@ export const authStatusMessages = {
   },
   verify: {
     cadastro: "Cadastro recebido. Enviamos um link para confirmar seu email.",
-    "verifique-email": "Email ainda nao confirmado. Reenviamos o link quando possivel.",
+    "verifique-email": "Email ainda nao confirmado. Solicite um novo link abaixo.",
     reenviado: "Se houver uma conta pendente com esse email, um novo link sera enviado.",
     "email-corrigido": "Registramos uma nova verificacao para o email informado.",
     "email-invalido": "Informe um email valido para receber a verificacao.",

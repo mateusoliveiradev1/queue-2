@@ -3,6 +3,7 @@ import { RouletteDivider } from "@queue/ui";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
 import { PublicRitualStrip } from "../../../components/public-ritual-strip";
+import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
 import { loginAction } from "../../../platform/auth/server-actions";
@@ -76,9 +77,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
             </div>
           </div>
           <div className="form-actions">
-            <button className="queue2-button" data-tone="primary" type="submit">
-              Entrar
-            </button>
+            <PendingSubmitButton label="Entrar" pendingLabel="Entrando..." />
             <a className="text-link queue2-focusable" href="/recuperar-senha">
               Esqueci minha senha
             </a>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
 import { PublicRitualStrip } from "../../../components/public-ritual-strip";
+import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { SignupFields } from "../../../components/signup-fields";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
@@ -52,9 +53,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
           ) : null}
           <SignupFields />
           <div className="form-actions">
-            <button className="queue2-button" data-tone="primary" type="submit">
-              Criar conta
-            </button>
+            <PendingSubmitButton label="Criar conta" pendingLabel="Criando..." />
             <a className="text-link queue2-focusable" href="/login">
               Ja tenho conta
             </a>

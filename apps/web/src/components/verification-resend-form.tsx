@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+import { PendingSubmitButton } from "./pending-submit-button";
+
 type VerificationResendFormProps = {
   action: (formData: FormData) => void | Promise<void>;
   email: string | null;
@@ -47,14 +49,11 @@ export function VerificationResendForm({
           />
         </div>
       )}
-      <button
-        className="queue2-button"
-        data-tone="primary"
+      <PendingSubmitButton
         disabled={isCoolingDown}
-        type="submit"
-      >
-        Reenviar email
-      </button>
+        label="Reenviar email"
+        pendingLabel="Reenviando..."
+      />
       <p className="support-copy" aria-live="polite">
         {isCoolingDown
           ? `Novo reenvio disponivel em ${secondsRemaining} segundos.`
