@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type pg from "pg";
 
 import {
@@ -138,6 +140,7 @@ async function createReadyDuo(pool: pg.Pool, label: string) {
 }
 
 async function insertCatalogGame(pool: pg.Pool, slug: string): Promise<string> {
+  const uniqueSlug = `${slug}-${randomUUID()}`;
   const result = await pool.query<{ id: string }>(
     `
       INSERT INTO catalog.games (
@@ -151,12 +154,12 @@ async function insertCatalogGame(pool: pg.Pool, slug: string): Promise<string> {
         floor(random() * 100000000)::integer,
         $1,
         $2,
-        'https://rawg.io/games/' || $1,
-        'https://rawg.io/games/' || $1
+        $3,
+        $3
       )
       RETURNING id
     `,
-    [slug, slug]
+    [uniqueSlug, uniqueSlug, `https://rawg.io/games/${uniqueSlug}`]
   );
 
   return result.rows[0]!.id;
