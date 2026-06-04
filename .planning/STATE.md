@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: completed
-stopped_at: Published GitHub repo and deployed production Vercel; ready for Phase 3 planning
-last_updated: "2026-06-04T01:31:30.000Z"
-last_activity: 2026-06-03 -- Completed quick task 260603-vdp: publicar repo e deploy Vercel
+stopped_at: Production deploy complete with Resend email envs configured; ready for Phase 3 planning
+last_updated: "2026-06-04T01:40:00.000Z"
+last_activity: 2026-06-03 -- Configured Resend production email envs and redeployed Vercel
 progress:
   total_phases: 9
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 3 (descoberta-e-matches) — READY TO PLAN
 Plan: Not planned
-Status: Phase 02.1 complete; production deploy ready; Phase 3 is next
-Last activity: 2026-06-03 -- Completed quick task 260603-vdp: publicar repo e deploy Vercel
+Status: Phase 02.1 complete; production deploy and temporary Resend sender ready; Phase 3 is next
+Last activity: 2026-06-03 -- Configured Resend production email envs and redeployed Vercel
 
 Progress: [██████████] 100%
 
@@ -79,7 +79,7 @@ Progress: [██████████] 100%
 | 2026-06-03 | fechar-uat-humano-da-fase-2 | Fase 2 foi aceita em UAT humano apos revisao visual autenticada do catalogo e detalhe de jogo. |
 | 2026-06-03 | automatizar-refresh-do-catalogo | Catalog refresh ganhou rota protegida de Vercel Cron, comando manual de debug e health check de descricoes PT-BR/disponibilidade. |
 | 2026-06-03 | fechar-skips-de-integracao | `pnpm test:integration` agora carrega `.env.local`, roda sem cache e passou com 23 testes sem skip; `catalog:seed-curation -- --dry-run` confirmado. |
-| 2026-06-03 | publicar-e-deploy-vercel | Repo publico `queue-2` foi pushado no GitHub; Vercel producao ficou Ready em `https://queue-2.vercel.app` com banco limpo migrado/populado e envs sensiveis fora do git. |
+| 2026-06-03 | publicar-e-deploy-vercel | Repo publico `queue-2` foi pushado no GitHub; Vercel producao ficou Ready em `https://queue-2.vercel.app` com banco limpo migrado/populado, Resend temporario configurado e envs sensiveis fora do git. |
 
 ## Accumulated Context
 
@@ -122,7 +122,7 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Phase 3 planning: Descoberta e Matches.
-- Production launch follow-ups: configure `RESEND_API_KEY`/`EMAIL_FROM`, run real transactional email delivery check and capture Neon restore rehearsal evidence.
+- Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
 ### Blockers/Concerns
