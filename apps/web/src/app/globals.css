@@ -1245,8 +1245,7 @@ input {
   padding: var(--space-3);
 }
 
-.discovery-live-entry span,
-.discovery-loading span {
+.discovery-live-entry span {
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 0.82rem;

@@ -1,5 +1,5 @@
 import { act, cleanup, render, screen, within } from "@testing-library/react";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { QueueToaster } from "@queue/ui";
 
@@ -246,6 +246,7 @@ describe("public QUEUE/2 route surfaces", () => {
     render(<Loading />);
 
     expect(screen.getByRole("status", { name: /carregando a fila/i })).toBeInTheDocument();
+    expect(existsSync("src/app/app/descobrir/loading.tsx")).toBe(false);
     expect(iconSource).toContain("<svg");
     expect(iconSource).toContain("#c9f72b");
   });
