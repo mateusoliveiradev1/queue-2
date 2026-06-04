@@ -82,12 +82,18 @@ export async function getDiscoveryDeckUseCase(
     ])
   );
   const cardsById = new Map(eligibleCards.map((card) => [card.id, card]));
+  const hasRecommendedPreferred =
+    Boolean(input.preferredCatalogGameId) &&
+    recommendationResult.recommendations.some(
+      (recommendation) =>
+        recommendation.catalogGameId === input.preferredCatalogGameId
+    );
   const rankedCatalogGameIds = prioritizePreferredCatalogGameId(
     recommendationResult.recommendations.map(
       (recommendation) => recommendation.catalogGameId
     ),
     input.preferredCatalogGameId,
-    cardsById.has(input.preferredCatalogGameId ?? "")
+    hasRecommendedPreferred
   );
   const rankedCards = rankedCatalogGameIds
     .map((catalogGameId) => cardsById.get(catalogGameId))

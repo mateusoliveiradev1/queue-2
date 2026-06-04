@@ -20,6 +20,10 @@ const discoveryActionsSource = readFileSync(
   "src/app/app/descobrir/actions.ts",
   "utf8"
 );
+const catalogRepositorySource = readFileSync(
+  "src/modules/catalog/infrastructure/catalog-repository.ts",
+  "utf8"
+);
 
 describe("discovery application deck", () => {
   it("excludes games the current member already evaluated from the default deck", async () => {
@@ -130,6 +134,40 @@ describe("discovery application deck", () => {
     });
   });
 
+  it("does not force a preferred surprise card outside the active filters", async () => {
+    const cards = [
+      catalogCard({
+        id: "long-surprise",
+        name: "Long Surprise",
+        timeEstimateLabel: "Cerca de 20 horas"
+      }),
+      catalogCard({
+        id: "short-match",
+        name: "Short Match",
+        timeEstimateLabel: "Cerca de 4 horas"
+      })
+    ];
+    const result = await getDiscoveryDeckUseCase(
+      {
+        userId: "member-1",
+        limit: 2,
+        preferredCatalogGameId: "long-surprise",
+        filters: {
+          maxEstimatedMinutes: 480
+        }
+      },
+      fakeRepository({
+        games: [
+          gameState({ catalogGameId: "long-surprise" }),
+          gameState({ catalogGameId: "short-match" })
+        ]
+      }),
+      fakeCatalogSearch(cards)
+    );
+
+    expect(result.cards.map((card) => card.catalogGameId)).toEqual(["short-match"]);
+  });
+
   it("rejects unbounded autocomplete input before reading catalog data", async () => {
     const result = await searchDiscoveryGamesUseCase(
       {
@@ -234,14 +272,21 @@ describe("discovery application deck", () => {
     expect(discoveryActionsSource).toContain("userId: session.user.id");
     expect(discoveryActionsSource).toContain("z.string().uuid()");
     expect(discoveryActionsSource).toContain("getSafeReturnTo");
+    expect(discoveryActionsSource).toContain("getDiscoveryFiltersFromPath(returnTo)");
     expect(discoveryActionsSource).toContain('withParam(returnTo, "live"');
     expect(discoveryActionsSource).toContain('withParam(returnTo, "surpresa"');
     expect(discoveryActionsSource).not.toMatch(/formData\.get\(\"userId\"\)/);
   });
+
+  it("keeps RAWG update freshness in catalog repository reads", () => {
+    const rawgUpdatedAtSelections = catalogRepositorySource.match(/game\.rawg_updated_at/g) ?? [];
+    expect(rawgUpdatedAtSelections.length).toBeGreaterThanOrEqual(2);
+  });
 });
 
 function fakeCatalogSearch(cards: CatalogGameCardView[]): DiscoveryCatalogSearch {
-  return async () => cards;
+  return async (input) =>
+    input?.ids ? cards.filter((card) => input.ids?.includes(card.id)) : cards;
 }
 
 function fakeRepository(state: Partial<DiscoveryReadState>): DiscoveryDeckRepository {

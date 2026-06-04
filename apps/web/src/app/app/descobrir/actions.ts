@@ -13,6 +13,7 @@ import {
   startLiveSession
 } from "../../../modules/discovery";
 import { requireVerifiedSession } from "../../../platform/auth/session";
+import { getDiscoveryFiltersFromPath } from "./discovery-route-params";
 
 const uuidSchema = z.string().uuid();
 
@@ -120,7 +121,8 @@ export async function getSurpriseRecommendationAction(
   const session = await requireVerifiedSession();
   const returnTo = getSafeReturnTo(formData, "/app/descobrir");
   const result = await getSurpriseRecommendation({
-    userId: session.user.id
+    userId: session.user.id,
+    filters: getDiscoveryFiltersFromPath(returnTo)
   });
 
   if (!result.ok && result.reason === "membership-required") {
