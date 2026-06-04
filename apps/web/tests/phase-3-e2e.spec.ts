@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type E2EActor = {
   email: string;
@@ -22,11 +22,104 @@ const phase3MissingEnv = missingEnv([
 
 reportMissingEnv("Phase 3 discovery/match E2E", phase3MissingEnv);
 
+const desktopViewport = { width: 1440, height: 1000 };
+const mobileViewport = { width: 390, height: 844 };
+const hydrationErrorPatterns = [
+  /Hydration/,
+  /hydration/,
+  /Text content does not match/,
+  /Expected server HTML/
+];
+
 test.describe("Phase 3 discovery ritual", () => {
   test.skip(
     phase3MissingEnv.length > 0,
     `Missing Phase 3 E2E fixture: ${phase3MissingEnv.join(", ")}`
   );
+
+  test("desktop viewport proves deck-first Discovery browser contract", async ({ page }) => {
+    const hydrationErrors = collectHydrationErrors(page);
+
+    await page.setViewportSize(desktopViewport);
+    await login(page, readyActor);
+    await page.goto("/app/descobrir");
+
+    await expectDiscoveryBrowserContract(page);
+    await expectTabFocusVisible(
+      page,
+      page.locator(".discovery-card-motion").getByRole("button", { name: "Quero jogar" }),
+      "Quero jogar"
+    );
+    await expectTabFocusVisible(
+      page,
+      page.getByRole("combobox", { name: /buscar jogo/i }),
+      "Busca"
+    );
+    await expectTabFocusVisible(
+      page,
+      page.getByRole("radio", { name: /plataforma comum/i }),
+      "Filtro de plataforma comum"
+    );
+    expectNoHydrationErrors(hydrationErrors);
+  });
+
+  test("mobile viewport keeps card stage first and Descobrir active in bottom nav", async ({ page }) => {
+    const hydrationErrors = collectHydrationErrors(page);
+
+    await page.setViewportSize(mobileViewport);
+    await login(page, readyActor);
+    await page.goto("/app/descobrir");
+
+    await expectDiscoveryBrowserContract(page);
+    const mobileNav = page.getByRole("navigation", { name: /navegacao principal mobile/i });
+    await expect(mobileNav).toBeVisible();
+    await expect(mobileNav.getByRole("link", { name: /descobrir/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    await expectTabFocusVisible(
+      page,
+      page.locator(".discovery-card-motion").getByRole("button", { name: "Agora nao" }),
+      "Agora nao"
+    );
+    await expectTabFocusVisible(
+      page,
+      page.getByRole("combobox", { name: /buscar jogo/i }),
+      "Busca"
+    );
+    await expectTabFocusVisible(
+      page,
+      page.getByRole("radio", { name: /explorar fora/i }),
+      "Filtro explorar fora"
+    );
+    expectNoHydrationErrors(hydrationErrors);
+  });
+
+  test("reduced motion preserves decisions, search result, celebration and handoff", async ({ page }) => {
+    const hydrationErrors = collectHydrationErrors(page);
+
+    await page.setViewportSize(desktopViewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/descobrir?estado=match-ja-existe");
+
+    await expectDiscoveryBrowserContract(page);
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+    await expect(page.locator(".discovery-deck-status")).toContainText(/movimento reduzido ativo/i);
+    await openDiscoverySearchCard(page, discoveryQuery);
+
+    const searchDialog = page.getByRole("dialog", { name: /busca no deck/i });
+    await expect(searchDialog.getByText(/contexto selecionado/i)).toBeVisible();
+    const celebration = page.getByRole("status", { name: /os dois quiseram/i }).first();
+    await expect(celebration).toBeVisible();
+    await expect(celebration).toContainText(/entrou no radar da dupla/i);
+    await expect(celebration.getByRole("button", { name: /mandar para wishlist/i })).toBeVisible();
+    await expect(celebration.getByRole("button", { name: /comecar em jogando/i })).toBeVisible();
+    await expect(celebration.getByRole("button", { name: /guardar em pausado/i })).toBeVisible();
+    expectNoHydrationErrors(hydrationErrors);
+  });
 
   test("loads deck, modes, filters, source links and keyboard decision controls", async ({ page }) => {
     await login(page, readyActor);
@@ -199,4 +292,147 @@ function reportMissingEnv(scope: string, names: string[]): void {
   if (names.length > 0) {
     console.warn(`${scope} skipped. Missing: ${names.join(", ")}.`);
   }
+}
+
+function collectHydrationErrors(page: Page): string[] {
+  const messages: string[] = [];
+
+  page.on("console", (message) => {
+    if (message.type() !== "error" && message.type() !== "warning") {
+      return;
+    }
+
+    const text = message.text();
+
+    if (hydrationErrorPatterns.some((pattern) => pattern.test(text))) {
+      messages.push(text);
+    }
+  });
+  page.on("pageerror", (error) => {
+    const text = error.message;
+
+    if (hydrationErrorPatterns.some((pattern) => pattern.test(text))) {
+      messages.push(text);
+    }
+  });
+
+  return messages;
+}
+
+async function expectDiscoveryBrowserContract(page: Page): Promise<void> {
+  const cardStage = page.locator(".discovery-card-stage").first();
+  const filterSheet = page.locator(".discovery-filter-sheet").first();
+  const searchSheet = page.locator(".discovery-search-sheet").first();
+
+  await expect(cardStage).toBeVisible();
+  await expect(filterSheet).toBeVisible();
+  await expect(searchSheet).toBeVisible();
+  await expectElementBefore(cardStage, filterSheet, "Discovery card stage should render before filters");
+  await expectElementBefore(cardStage, searchSheet, "Discovery card stage should render before search");
+  await expectActiveCardTitleAndDecisionButtonsDoNotOverlap(page);
+}
+
+async function expectActiveCardTitleAndDecisionButtonsDoNotOverlap(page: Page): Promise<void> {
+  const activeCard = page.locator(".discovery-card-motion .discovery-card").first();
+  const title = activeCard.locator(".discovery-card-heading h2").first();
+
+  await expect(activeCard).toBeVisible();
+  await expect(title).toBeVisible();
+
+  for (const name of ["Quero jogar", "Agora nao", "Pular"]) {
+    const button = activeCard.getByRole("button", { name });
+
+    await expect(button).toBeVisible();
+    await expectNoOverlap(title, button, `Active card title overlaps ${name}`);
+  }
+}
+
+async function expectTabFocusVisible(
+  page: Page,
+  target: Locator,
+  label: string
+): Promise<void> {
+  await expect(target).toBeVisible();
+  await page.evaluate(() => {
+    const active = document.activeElement;
+
+    if (active instanceof HTMLElement) {
+      active.blur();
+    }
+  });
+
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    await page.keyboard.press("Tab");
+
+    const isFocused = await target.evaluate((element) => element === document.activeElement);
+
+    if (!isFocused) {
+      continue;
+    }
+
+    const hasFocusTreatment = await target.evaluate((element) => {
+      const style = window.getComputedStyle(element);
+      const parentStyle =
+        element.parentElement instanceof HTMLElement
+          ? window.getComputedStyle(element.parentElement)
+          : null;
+
+      return (
+        element.matches(":focus-visible") ||
+        style.outlineStyle !== "none" ||
+        style.boxShadow !== "none" ||
+        Boolean(
+          parentStyle &&
+            (parentStyle.outlineStyle !== "none" || parentStyle.boxShadow !== "none")
+        )
+      );
+    });
+
+    expect(hasFocusTreatment, `${label} should expose visible keyboard focus`).toBe(true);
+    return;
+  }
+
+  throw new Error(`${label} was not reachable by tabbing`);
+}
+
+async function expectElementBefore(
+  first: Locator,
+  second: Locator,
+  message: string
+): Promise<void> {
+  const firstHandle = await first.elementHandle();
+  const secondHandle = await second.elementHandle();
+
+  expect(firstHandle, `${message}: first element missing`).not.toBeNull();
+  expect(secondHandle, `${message}: second element missing`).not.toBeNull();
+
+  const isBefore = await firstHandle!.evaluate((firstElement, secondElement) => {
+    return Boolean(firstElement.compareDocumentPosition(secondElement as Node) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }, secondHandle);
+
+  expect(isBefore, message).toBe(true);
+}
+
+async function expectNoOverlap(
+  first: Locator,
+  second: Locator,
+  message: string
+): Promise<void> {
+  const firstBox = await first.boundingBox();
+  const secondBox = await second.boundingBox();
+
+  expect(firstBox, `${message}: first boundingBox missing`).not.toBeNull();
+  expect(secondBox, `${message}: second boundingBox missing`).not.toBeNull();
+
+  const overlaps =
+    firstBox!.x < secondBox!.x + secondBox!.width &&
+    firstBox!.x + firstBox!.width > secondBox!.x &&
+    firstBox!.y < secondBox!.y + secondBox!.height &&
+    firstBox!.y + firstBox!.height > secondBox!.y;
+
+  expect(overlaps, message).toBe(false);
+}
+
+function expectNoHydrationErrors(messages: string[]): void {
+  expect(messages, `Unexpected hydration console errors: ${messages.join("\n")}`).toEqual([]);
 }

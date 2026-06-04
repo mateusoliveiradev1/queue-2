@@ -138,6 +138,10 @@ test.describe("Phase 3 discovery accessibility", () => {
     await page.goto("/app/descobrir");
 
     await expect(page.getByRole("heading", { name: /os dois quiseram\?/i })).toBeVisible();
+    await expect(page.locator(".discovery-card-stage")).toBeVisible();
+    await expect(page.locator(".discovery-orbit-controls")).toBeVisible();
+    await expect(page.locator(".discovery-filter-sheet")).toBeVisible();
+    await expect(page.locator(".discovery-search-sheet")).toBeVisible();
     await expect
       .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
       .toBe(true);
@@ -161,6 +165,16 @@ test.describe("Phase 3 discovery accessibility", () => {
     await expect(sourceLinks.first()).toBeVisible();
     await sourceLinks.first().focus();
     await expect(sourceLinks.first()).toBeFocused();
+
+    const searchControl = page.getByRole("combobox", { name: /buscar jogo/i });
+    await expect(searchControl).toBeVisible();
+    await searchControl.focus();
+    await expect(searchControl).toBeFocused();
+
+    const filterControl = page.getByRole("radio", { name: /plataforma comum/i });
+    await expect(filterControl).toBeVisible();
+    await filterControl.focus();
+    await expect(filterControl).toBeFocused();
 
     await expect(page.getByRole("button", { name: /ativar alertas push/i })).toBeVisible();
     await expect(page.getByText(/atualizando a live|sessao curta/i).first()).toBeVisible();

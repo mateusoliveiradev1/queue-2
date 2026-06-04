@@ -488,6 +488,11 @@ describe("Phase 3 Discovery route shell", () => {
       "href",
       "#match-history-title"
     );
+    expect(discoveryDeckSource).toContain("Fim do deck de descoberta");
+    expect(discoveryDeckSource).toContain("espera a outra pessoa");
+    expect(discoveryDeckSource).toContain("quando os dois marcam Quero jogar");
+    expect(discoveryDeckSource).not.toContain("Sem cartas prontas para este filtro");
+    expect(discoveryDeckSource).not.toContain("Ajustem os filtros ou voltem mais tarde");
   });
 
   it("blocks the old Discovery dashboard and viewport-scaled typography CSS", () => {
