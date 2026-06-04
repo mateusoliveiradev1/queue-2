@@ -1,0 +1,139 @@
+import {
+  rankDiscoveryRecommendations,
+  type DiscoveryPlatformKey,
+  type DiscoveryRecommendationFilterInput
+} from "../domain/recommendation-policy";
+import { shouldExcludeFromCurrentDeck } from "../domain/discovery-policy";
+import {
+  buildDiscoveryDeckCards,
+  getReadableGameState,
+  toRecommendationFacts
+} from "../presentation/view-models";
+import type {
+  DiscoveryCatalogSearch,
+  DiscoveryDeckBuildResult,
+  DiscoveryDeckFilters,
+  DiscoveryDeckRepository,
+  GetDiscoveryDeckInput
+} from "./ports";
+
+export async function getDiscoveryDeckUseCase(
+  input: GetDiscoveryDeckInput,
+  repository: DiscoveryDeckRepository,
+  catalogSearch: DiscoveryCatalogSearch
+): Promise<DiscoveryDeckBuildResult> {
+  const limit = clampLimit(input.limit, 12);
+  const catalogCards = await catalogSearch({
+    limit: Math.min(60, Math.max(24, limit * 4)),
+    includeNonEligible: false
+  });
+  const readState = await repository.getReadState({
+    userId: input.userId,
+    catalogGameIds: catalogCards.map((card) => card.id)
+  });
+
+  if (!readState.context) {
+    return {
+      cards: [],
+      recommendations: []
+    };
+  }
+
+  const eligibleCards = catalogCards.filter((card) => {
+    const state = getReadableGameState(readState, card.id);
+
+    if (input.filters?.includeAlreadySeen) {
+      return true;
+    }
+
+    if (!state?.currentMemberDecision) {
+      return true;
+    }
+
+    return !shouldExcludeFromCurrentDeck({
+      decision: state.currentMemberDecision.decision,
+      cooldownUntil: state.currentMemberDecision.cooldownUntil
+    });
+  });
+  const facts = toRecommendationFacts({ cards: eligibleCards });
+  const recommendationResult = rankDiscoveryRecommendations({
+    games: facts,
+    memberPlatforms: normalizeMemberPlatforms(readState.context.memberPlatforms),
+    filters: toRecommendationFilters(input.filters),
+    positiveGenres: readState.positiveProfile.genres,
+    positiveTags: readState.positiveProfile.tags,
+    collaborative: readState.collaborative
+  });
+  const recommendationsByGame = new Map(
+    recommendationResult.recommendations.map((recommendation) => [
+      recommendation.catalogGameId,
+      recommendation
+    ])
+  );
+  const cardsById = new Map(eligibleCards.map((card) => [card.id, card]));
+  const rankedCards = recommendationResult.recommendations
+    .map((recommendation) => cardsById.get(recommendation.catalogGameId))
+    .filter((card): card is NonNullable<typeof card> => Boolean(card))
+    .slice(0, limit);
+
+  return buildDiscoveryDeckCards({
+    cards: rankedCards.map((card) => ({
+      card,
+      readState,
+      recommendation: recommendationsByGame.get(card.id)
+    }))
+  });
+}
+
+export async function getDiscoveryDeck(
+  input: GetDiscoveryDeckInput
+): Promise<DiscoveryDeckBuildResult> {
+  const [{ discoveryRepository }, { searchCatalogGames }] = await Promise.all([
+    import("../infrastructure/discovery-repository"),
+    import("../../catalog")
+  ]);
+
+  return getDiscoveryDeckUseCase(input, discoveryRepository, searchCatalogGames);
+}
+
+function toRecommendationFilters(
+  filters: DiscoveryDeckFilters | undefined
+): DiscoveryRecommendationFilterInput {
+  return {
+    ...(filters?.recommendation ?? {}),
+    commonPlatformOnly:
+      filters?.commonPlatformOnly ??
+      filters?.recommendation?.commonPlatformOnly ??
+      true,
+    availability:
+      filters?.availability ??
+      filters?.recommendation?.availability ??
+      null,
+    maxEstimatedMinutes:
+      filters?.maxEstimatedMinutes ??
+      filters?.recommendation?.maxEstimatedMinutes ??
+      null
+  };
+}
+
+function normalizeMemberPlatforms(input: {
+  first: string[];
+  second: string[];
+}): { first: DiscoveryPlatformKey[]; second: DiscoveryPlatformKey[] } {
+  return {
+    first: input.first.filter(isDiscoveryPlatformKey),
+    second: input.second.filter(isDiscoveryPlatformKey)
+  };
+}
+
+function isDiscoveryPlatformKey(value: string): value is DiscoveryPlatformKey {
+  return ["pc", "playstation", "xbox", "switch", "steam-deck"].includes(value);
+}
+
+function clampLimit(value: number | undefined, fallback: number): number {
+  if (!value || Number.isNaN(value)) {
+    return fallback;
+  }
+
+  return Math.min(24, Math.max(1, Math.floor(value)));
+}
