@@ -99,6 +99,7 @@ export {
   type LibraryQueueViewModel
 } from "./presentation/view-models";
 export { LibraryStatusControls } from "./presentation/library-status-controls";
+export { LibraryQueueCard } from "./presentation/library-card";
 export { PlatformPicker } from "./presentation/platform-picker";
 
 export function getLibraryOverview(userId: string) {

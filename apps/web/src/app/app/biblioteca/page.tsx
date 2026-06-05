@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "../../../components/app-shell";
-import { MatchScoreBlock } from "../../../components/match-score-block";
 import { StatusToast } from "../../../components/status-toast";
 import { getDuoDashboard } from "../../../modules/duo";
 import {
   getLibraryQueue,
+  LibraryQueueCard,
   PlatformPicker,
   toLibraryQueueView,
-  type LibraryGameDetailView,
   type LibraryQueueView,
   type Phase2LibraryStatus,
   type PlatformKey
@@ -123,7 +121,12 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           {view.nextQueue.length > 0 ? (
             <div className="library-list" data-library-slice="next-queue">
               {view.nextQueue.map((game) => (
-                <LibraryGameCard game={game} key={game.id} returnTo={returnTo} />
+                <LibraryQueueCard
+                  action={moveLibraryGameAction}
+                  game={game}
+                  key={game.id}
+                  returnTo={returnTo}
+                />
               ))}
             </div>
           ) : (
@@ -146,7 +149,12 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           {view.playing.length > 0 ? (
             <div className="library-list" data-library-slice="playing">
               {view.playing.map((game) => (
-                <LibraryGameCard game={game} key={game.id} returnTo={returnTo} />
+                <LibraryQueueCard
+                  action={moveLibraryGameAction}
+                  game={game}
+                  key={game.id}
+                  returnTo={returnTo}
+                />
               ))}
             </div>
           ) : (
@@ -259,7 +267,12 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           {view.page.items.length > 0 ? (
             <div className="library-list" data-library-slice="page">
               {view.page.items.map((game) => (
-                <LibraryGameCard game={game} key={game.id} returnTo={returnTo} />
+                <LibraryQueueCard
+                  action={moveLibraryGameAction}
+                  game={game}
+                  key={game.id}
+                  returnTo={returnTo}
+                />
               ))}
             </div>
           ) : (
@@ -299,82 +312,6 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
       </main>
     </AppShell>
   );
-}
-
-function LibraryGameCard({
-  game,
-  returnTo
-}: {
-  game: LibraryGameDetailView;
-  returnTo: string;
-}) {
-  const primaryAction = getPrimaryStatusAction(game.status);
-
-  return (
-    <article className="library-game">
-      <a className="library-cover queue2-focusable" href={`/app/jogo/${game.slug}`}>
-        {game.coverUrl ? (
-          <Image
-            alt={`Capa de ${game.name}`}
-            height={320}
-            sizes="96px"
-            src={game.coverUrl}
-            width={240}
-          />
-        ) : (
-          <span aria-hidden="true">/2</span>
-        )}
-      </a>
-      <div className="library-game-body">
-        <div>
-          <p className="eyebrow">{game.status}</p>
-          <h3>
-            <a className="queue2-focusable" href={`/app/jogo/${game.slug}`}>
-              {game.name}
-            </a>
-          </h3>
-          <p className="support-copy">
-            {game.commonPlatformLabels.length
-              ? `Em comum: ${game.commonPlatformLabels.join(", ")}`
-              : "Sem plataforma comum registrada para este jogo."}
-          </p>
-        </div>
-        <MatchScoreBlock
-          factors={game.match.factors}
-          label={game.match.label}
-          recommended={game.match.recommendedForMainFlow}
-        />
-        <div className="form-actions">
-          <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${game.slug}`}>
-            Abrir detalhe
-          </a>
-          {primaryAction ? (
-            <form action={moveLibraryGameAction}>
-              <input name="catalogGameId" type="hidden" value={game.catalogGameId} />
-              <input name="status" type="hidden" value={primaryAction.status} />
-              <input name="returnTo" type="hidden" value={returnTo} />
-              <button className="queue2-button" data-tone="primary" type="submit">
-                {primaryAction.label}
-              </button>
-            </form>
-          ) : null}
-        </div>
-      </div>
-    </article>
-  );
-}
-
-function getPrimaryStatusAction(statusLabel: string): { status: Phase2LibraryStatus; label: string } | null {
-  switch (statusLabel) {
-    case "Wishlist":
-      return { status: "jogando", label: "Comecar em Jogando" };
-    case "Jogando":
-      return { status: "pausado", label: "Pausar" };
-    case "Pausado":
-      return { status: "jogando", label: "Retomar em Jogando" };
-    default:
-      return null;
-  }
 }
 
 function getViewTitle(view: LibraryQueueView): string {

@@ -115,6 +115,9 @@ vi.mock("../src/modules/library", async () => {
   const statusControls = await vi.importActual<
     typeof import("../src/modules/library/presentation/library-status-controls")
   >("../src/modules/library/presentation/library-status-controls");
+  const libraryCard = await vi.importActual<
+    typeof import("../src/modules/library/presentation/library-card")
+  >("../src/modules/library/presentation/library-card");
   const platformPicker = await vi.importActual<
     typeof import("../src/modules/library/presentation/platform-picker")
   >("../src/modules/library/presentation/platform-picker");
@@ -127,6 +130,7 @@ vi.mock("../src/modules/library", async () => {
 
   return {
     ...viewModels,
+    LibraryQueueCard: libraryCard.LibraryQueueCard,
     LibraryStatusControls: statusControls.LibraryStatusControls,
     PlatformPicker: platformPicker.PlatformPicker,
     addGameToWishlist: libraryModuleMock.addGameToWishlist,
@@ -248,7 +252,9 @@ describe("Phase 2 authenticated catalog and library UI", () => {
 
     expect(source).toContain("library-operational-shell");
     expect(source).toContain("getLibraryQueue");
+    expect(source).toContain("LibraryQueueCard");
     expect(source).not.toContain("getLibraryOverview");
+    expect(source).not.toContain("function LibraryGameCard");
     expect(source).not.toContain("library-board");
     expect(source).not.toContain("locked-status");
     expect(source).not.toContain("Zerado bloqueado");
@@ -318,6 +324,15 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.getByLabelText("PC")).toBeChecked();
     expect(screen.getAllByText(/em comum/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText("PC").length).toBeGreaterThan(1);
+    expect(
+      screen
+        .getAllByRole("link", { name: /it takes two/i })
+        .some((link) => link.getAttribute("href") === "/app/jogo/it-takes-two")
+    ).toBe(true);
+    expect(screen.getAllByRole("link", { name: /capa de it takes two/i })[0]).toHaveAttribute(
+      "href",
+      "/app/jogo/it-takes-two"
+    );
     expect(screen.queryByRole("button", { name: /zerado bloqueado/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /dropado bloqueado/i })).not.toBeInTheDocument();
     expect(screen.getAllByText(/coop campanha 2p confirmado/i).length).toBeGreaterThan(0);
