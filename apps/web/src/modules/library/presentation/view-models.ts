@@ -1,5 +1,6 @@
 import {
   getLockedStatusLabel,
+  JOGANDO_LIMIT,
   type FutureConfirmationStatus,
   type Phase2LibraryStatus
 } from "../domain/library-policy";
@@ -8,7 +9,8 @@ import {
 } from "../domain/platforms";
 import type {
   LibraryGameDetailRecord,
-  LibraryOverviewRecord
+  LibraryOverviewRecord,
+  LibraryQueueRecord
 } from "../application/ports";
 
 export type LibraryGameDetailView = {
@@ -38,6 +40,29 @@ export type LibraryOverviewView = {
   }>;
 };
 
+export type LibraryQueuePageView = {
+  items: LibraryGameDetailView[];
+  total: number;
+  limit: 12 | 24;
+  offset: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  resultLabel: string;
+};
+
+export type LibraryQueueViewModel = {
+  commonPlatformLabels: string[];
+  counts: Record<Phase2LibraryStatus, number>;
+  archiveCount: number;
+  archiveSummary: string | null;
+  nextQueue: LibraryGameDetailView[];
+  playing: LibraryGameDetailView[];
+  playingLimitLabel: string;
+  page: LibraryQueuePageView;
+};
+
 export function toLibraryOverviewView(
   overview: LibraryOverviewRecord
 ): LibraryOverviewView {
@@ -59,6 +84,32 @@ export function toLibraryOverviewView(
       status,
       label: getLockedStatusLabel(status)
     }))
+  };
+}
+
+export function toLibraryQueueView(queue: LibraryQueueRecord): LibraryQueueViewModel {
+  return {
+    commonPlatformLabels: queue.commonPlatforms.map(formatPlatformLabel),
+    counts: queue.statusCounts,
+    archiveCount: queue.archiveCount,
+    archiveSummary:
+      queue.archiveCount > 0
+        ? `${queue.archiveCount} fora da fila ativa, guardados para uma acao explicita futura.`
+        : null,
+    nextQueue: queue.nextQueue.map(toLibraryGameDetailView),
+    playing: queue.playing.map(toLibraryGameDetailView),
+    playingLimitLabel: `Ate ${JOGANDO_LIMIT} ativos`,
+    page: {
+      items: queue.page.items.map(toLibraryGameDetailView),
+      total: queue.page.total,
+      limit: queue.page.limit,
+      offset: queue.page.offset,
+      currentPage: Math.floor(queue.page.offset / queue.page.limit) + 1,
+      totalPages: Math.max(1, Math.ceil(queue.page.total / queue.page.limit)),
+      hasNextPage: queue.page.hasNextPage,
+      hasPreviousPage: queue.page.hasPreviousPage,
+      resultLabel: formatResultLabel(queue.page.total)
+    }
   };
 }
 
@@ -110,4 +161,16 @@ function getDuoJourneyText(status: string): string {
   }
 
   return "Na fila da dupla, pronto para virar plano quando voces escolherem.";
+}
+
+function formatResultLabel(total: number): string {
+  if (total === 0) {
+    return "Nenhum jogo nesta visao";
+  }
+
+  if (total === 1) {
+    return "1 jogo nesta visao";
+  }
+
+  return `${total} jogos nesta visao`;
 }

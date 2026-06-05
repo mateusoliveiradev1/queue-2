@@ -8,7 +8,9 @@ import {
 } from "@queue/db";
 
 import {
+  JOGANDO_LIMIT,
   PHASE_2_ACTIVE_STATUSES,
+  PHASE_4_CONFIRMATION_STATUSES,
   type LibraryStatus,
   type Phase2LibraryStatus
 } from "../domain/library-policy";
@@ -63,7 +65,17 @@ type CatalogGameRow = {
   has_verified_availability: boolean;
 };
 
+type StatusCountRow = {
+  status: Phase2LibraryStatus;
+  count: string;
+};
+
+type CountRow = {
+  count: string;
+};
+
 let runtimePool: QueueDbPool | undefined;
+const NEXT_QUEUE_LIMIT = 4;
 
 export const libraryRepository: LibraryRepository = createLibraryRepository();
 
@@ -128,23 +140,104 @@ async function getQueue(
       return null;
     }
 
+    const memberPlatforms = await getMemberPlatforms(client, membership.duoId);
+    const commonPlatforms = calculateCommonMemberPlatforms(memberPlatforms);
+    const platformKeys = getQueuePlatformKeys(input, commonPlatforms);
+    const statusCounts = await getActiveStatusCounts(client, membership.duoId);
+    const archiveCount = await getArchiveCount(client, membership.duoId);
+    const playingRows = await getLibraryRows(client, {
+      duoId: membership.duoId,
+      statuses: ["jogando"],
+      query: null,
+      platformKeys: [],
+      sort: "recentes",
+      limit: JOGANDO_LIMIT,
+      offset: 0
+    });
+    const nextQueueRows = await getLibraryRows(client, {
+      duoId: membership.duoId,
+      statuses: [...PHASE_2_ACTIVE_STATUSES],
+      query: null,
+      platformKeys: commonPlatforms,
+      sort: "match",
+      limit: NEXT_QUEUE_LIMIT,
+      offset: 0
+    });
+    const total = await countLibraryRows(client, {
+      duoId: membership.duoId,
+      statuses: input.statuses,
+      query: input.query,
+      platformKeys
+    });
+    const pageRows = await getLibraryRows(client, {
+      duoId: membership.duoId,
+      statuses: input.statuses,
+      query: input.query,
+      platformKeys,
+      sort: input.sort,
+      limit: input.limit,
+      offset: input.offset
+    });
+
     return {
-      memberPlatforms: [],
-      commonPlatforms: [],
-      statusCounts: createEmptyCounts(),
-      archiveCount: 0,
-      nextQueue: [],
-      playing: [],
+      memberPlatforms,
+      commonPlatforms,
+      statusCounts,
+      archiveCount,
+      nextQueue: await hydrateLibraryRows(client, nextQueueRows, memberPlatforms),
+      playing: await hydrateLibraryRows(client, playingRows, memberPlatforms),
       page: {
-        items: [],
-        total: 0,
+        items: await hydrateLibraryRows(client, pageRows, memberPlatforms),
+        total,
         limit: input.limit,
         offset: input.offset,
-        hasNextPage: false,
+        hasNextPage: input.offset + input.limit < total,
         hasPreviousPage: input.offset > 0
       }
     };
   });
+}
+
+async function getActiveStatusCounts(
+  client: QueueDbClient,
+  duoId: string
+): Promise<Record<Phase2LibraryStatus, number>> {
+  const result = await client.query<StatusCountRow>(
+    `
+      SELECT status, count(*) AS count
+      FROM app.duo_library_games
+      WHERE duo_id = $1
+        AND status = ANY($2::text[])
+      GROUP BY status
+    `,
+    [duoId, [...PHASE_2_ACTIVE_STATUSES]]
+  );
+  const counts = createEmptyCounts();
+
+  for (const row of result.rows) {
+    if (PHASE_2_ACTIVE_STATUSES.includes(row.status)) {
+      counts[row.status] = Number(row.count);
+    }
+  }
+
+  return counts;
+}
+
+async function getArchiveCount(
+  client: QueueDbClient,
+  duoId: string
+): Promise<number> {
+  const result = await client.query<CountRow>(
+    `
+      SELECT count(*) AS count
+      FROM app.duo_library_games
+      WHERE duo_id = $1
+        AND status = ANY($2::text[])
+    `,
+    [duoId, [...PHASE_4_CONFIRMATION_STATUSES]]
+  );
+
+  return Number(result.rows[0]?.count ?? 0);
 }
 
 async function updateMemberPlatforms(
@@ -458,6 +551,169 @@ async function getMemberPlatforms(
     userId,
     platforms
   }));
+}
+
+async function countLibraryRows(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    statuses: LibraryStatus[];
+    query: string | null;
+    platformKeys: string[];
+  }
+): Promise<number> {
+  const result = await client.query<CountRow>(
+    `
+      SELECT count(*) AS count
+      FROM app.duo_library_games AS library_game
+      INNER JOIN catalog.games AS game
+        ON game.id = library_game.catalog_game_id
+      WHERE library_game.duo_id = $1
+        AND library_game.status = ANY($2::text[])
+        AND (
+          $3::text IS NULL
+          OR game.name ILIKE '%' || $3 || '%'
+          OR game.slug ILIKE '%' || $3 || '%'
+        )
+        AND (
+          cardinality($4::text[]) = 0
+          OR EXISTS (
+            SELECT 1
+            FROM catalog.game_platforms AS platform
+            WHERE platform.game_id = game.id
+              AND platform.platform_key = ANY($4::text[])
+          )
+        )
+    `,
+    [input.duoId, input.statuses, input.query, input.platformKeys]
+  );
+
+  return Number(result.rows[0]?.count ?? 0);
+}
+
+async function getLibraryRows(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    statuses: LibraryStatus[];
+    query: string | null;
+    platformKeys: string[];
+    sort: "recentes" | "match" | "nome";
+    limit: number;
+    offset: number;
+  }
+): Promise<LibraryGameRecord[]> {
+  const result = await client.query<LibraryGameRow>(
+    `
+      SELECT
+        library_game.id,
+        library_game.duo_id,
+        library_game.catalog_game_id,
+        library_game.status,
+        library_game.added_by_user_id,
+        library_game.status_updated_by_user_id,
+        library_game.created_at,
+        library_game.updated_at
+      FROM app.duo_library_games AS library_game
+      INNER JOIN catalog.games AS game
+        ON game.id = library_game.catalog_game_id
+      WHERE library_game.duo_id = $1
+        AND library_game.status = ANY($2::text[])
+        AND (
+          $3::text IS NULL
+          OR game.name ILIKE '%' || $3 || '%'
+          OR game.slug ILIKE '%' || $3 || '%'
+        )
+        AND (
+          cardinality($4::text[]) = 0
+          OR EXISTS (
+            SELECT 1
+            FROM catalog.game_platforms AS platform
+            WHERE platform.game_id = game.id
+              AND platform.platform_key = ANY($4::text[])
+          )
+        )
+      ${getLibraryOrderBy(input.sort)}
+      LIMIT $5
+      OFFSET $6
+    `,
+    [
+      input.duoId,
+      input.statuses,
+      input.query,
+      input.platformKeys,
+      input.limit,
+      input.offset
+    ]
+  );
+
+  return result.rows.map(mapLibraryGame);
+}
+
+async function hydrateLibraryRows(
+  client: QueueDbClient,
+  rows: LibraryGameRecord[],
+  memberPlatforms: LibraryMemberPlatformRecord[]
+): Promise<LibraryGameDetailRecord[]> {
+  return Promise.all(
+    rows.map((row) => hydrateLibraryGame(client, row, memberPlatforms))
+  );
+}
+
+function getLibraryOrderBy(sort: "recentes" | "match" | "nome"): string {
+  if (sort === "nome") {
+    return `
+      ORDER BY game.name ASC, library_game.updated_at DESC, library_game.created_at DESC
+    `;
+  }
+
+  if (sort === "match") {
+    return `
+      ORDER BY
+        game.main_flow_eligible DESC,
+        game.coop_campaign_confirmed DESC,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_platforms AS platform
+          WHERE platform.game_id = game.id
+            AND platform.platform_key = ANY($4::text[])
+        ) DESC,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_time_estimates AS estimate
+          WHERE estimate.game_id = game.id
+            AND estimate.minutes IS NOT NULL
+            AND estimate.confidence IN ('verified', 'estimated')
+        ) DESC,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_availability AS availability
+          WHERE availability.game_id = game.id
+            AND availability.status = 'available'
+        ) DESC,
+        library_game.updated_at DESC,
+        game.name ASC
+    `;
+  }
+
+  return `
+    ORDER BY library_game.updated_at DESC, library_game.created_at DESC, game.name ASC
+  `;
+}
+
+function getQueuePlatformKeys(
+  input: LibraryQueueRepositoryInput,
+  commonPlatforms: PlatformKey[]
+): string[] {
+  if (input.platform) {
+    return [input.platform];
+  }
+
+  if (!input.commonPlatformOnly) {
+    return [];
+  }
+
+  return commonPlatforms.length ? commonPlatforms : ["__no_common_platform__"];
 }
 
 async function getLibraryGames(

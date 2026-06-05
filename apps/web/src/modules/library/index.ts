@@ -91,9 +91,12 @@ export type {
 
 export {
   toLibraryGameDetailView,
+  toLibraryQueueView,
   toLibraryOverviewView,
   type LibraryGameDetailView,
-  type LibraryOverviewView
+  type LibraryOverviewView,
+  type LibraryQueuePageView,
+  type LibraryQueueViewModel
 } from "./presentation/view-models";
 export { LibraryStatusControls } from "./presentation/library-status-controls";
 export { PlatformPicker } from "./presentation/platform-picker";
