@@ -167,7 +167,14 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. A dupla pode iniciar uma sessao live com timer resiliente a refresh, confirmar em conjunto e registrar "Jogamos Hoje" rapidamente sem duplicar bonus.
   4. Cada jogo exibe timeline com marcadores, Momentos inline e spoilers ocultos ate revelacao explicita.
   5. A dupla pode agendar uma sessao, confirmar presenca, receber lembrete push 30 minutos antes e desativar push quando desejar.
-**Plans**: TBD
+**Plans**: 04-01, 04-02, 04-03, 04-04, 04-05, 04-06
+
+**Plan Waves**:
+  - **Wave 1:** `04-01` - Play schema, RLS, domain policies, XP awards, jobs and module foundation.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `04-02` - Jogando Agora dashboard, Principal/secondary roles and accessible reorder.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `04-03`, `04-04` - Sessions/progress/terminal confirmation plus timeline, milestones, Momentos and spoilers.
+  - **Wave 4 *(blocked on Wave 3 completion)*:** `04-05` - Scheduling, attendance, reminders, product push and Central da Dupla.
+  - **Wave 5 *(blocked on Wave 4 completion)*:** `04-06` - Phase gate, E2E/security/performance evidence and reminder readiness.
 **UI hint**: yes
 
 ### Phase 5: Gamificacao Coletiva
