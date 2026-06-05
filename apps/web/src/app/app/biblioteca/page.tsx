@@ -6,11 +6,11 @@ import { StatusToast } from "../../../components/status-toast";
 import { getDuoDashboard } from "../../../modules/duo";
 import {
   getLibraryQueue,
+  LibraryFilterBar,
   LibraryQueueCard,
   PlatformPicker,
   toLibraryQueueView,
   type LibraryQueueView,
-  type Phase2LibraryStatus,
   type PlatformKey
 } from "../../../modules/library";
 import { requireVerifiedSession } from "../../../platform/auth/session";
@@ -36,13 +36,6 @@ export const metadata: Metadata = {
 type LibraryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
-
-const viewTabs: Array<{ view: LibraryQueueView; label: string }> = [
-  { view: "todas", label: "Todas" },
-  { view: "wishlist", label: "Wishlist" },
-  { view: "jogando", label: "Jogando" },
-  { view: "pausado", label: "Pausado" }
-];
 
 export default async function LibraryPage({ searchParams }: LibraryPageProps = {}) {
   const session = await requireVerifiedSession();
@@ -195,64 +188,12 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           </div>
         </section>
 
-        <section className="surface-band app-section" aria-labelledby="library-filter-title">
-          <div className="section-heading">
-            <h2 className="eyebrow" id="library-filter-title">
-              Filtrar fila ativa
-            </h2>
-            <p className="support-copy">
-              A URL guarda visao, busca, plataforma, ordem e pagina para a dupla voltar ao mesmo recorte.
-            </p>
-          </div>
-          <nav className="library-tabs" aria-label="Filtrar biblioteca por status">
-            {viewTabs.map((tab) => (
-              <a
-                aria-current={routeParams.view === tab.view ? "page" : undefined}
-                href={buildLibraryPath(routeParams, { view: tab.view })}
-                key={tab.view}
-              >
-                {tab.label}
-                {tab.view !== "todas" ? (
-                  <span>{view.counts[tab.view as Phase2LibraryStatus]}</span>
-                ) : null}
-              </a>
-            ))}
-          </nav>
-          <form action="/app/biblioteca" className="search-form">
-            {routeParams.view !== "todas" ? (
-              <input name="visao" type="hidden" value={routeParams.view} />
-            ) : null}
-            {routeParams.commonPlatformOnly ? (
-              <input name="plataforma" type="hidden" value="comum" />
-            ) : routeParams.platform ? (
-              <input name="plataforma" type="hidden" value={routeParams.platform} />
-            ) : null}
-            {routeParams.limit !== 12 ? (
-              <input name="tamanho" type="hidden" value={routeParams.limit} />
-            ) : null}
-            <label className="field">
-              <span>Buscar jogo na fila</span>
-              <input
-                className="queue2-input"
-                defaultValue={routeParams.query}
-                name="q"
-                placeholder="It Takes Two, Overcooked..."
-                type="search"
-              />
-            </label>
-            <label className="field">
-              <span>Ordenar</span>
-              <select className="queue2-input" defaultValue={routeParams.sort} name="ordenar">
-                <option value="recentes">Mais recentes</option>
-                <option value="match">Melhor match</option>
-                <option value="nome">Nome</option>
-              </select>
-            </label>
-            <button className="queue2-button" data-tone="primary" type="submit">
-              Aplicar
-            </button>
-          </form>
-        </section>
+        <LibraryFilterBar
+          buildHref={(overrides) => buildLibraryPath(routeParams, overrides)}
+          commonPlatformLabels={view.commonPlatformLabels}
+          counts={view.counts}
+          params={routeParams}
+        />
 
         <section className="app-section library-results" aria-labelledby="library-results-title">
           <div className="section-heading">

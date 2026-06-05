@@ -100,6 +100,7 @@ export {
 } from "./presentation/view-models";
 export { LibraryStatusControls } from "./presentation/library-status-controls";
 export { LibraryQueueCard } from "./presentation/library-card";
+export { LibraryFilterBar } from "./presentation/library-filter-bar";
 export { PlatformPicker } from "./presentation/platform-picker";
 
 export function getLibraryOverview(userId: string) {

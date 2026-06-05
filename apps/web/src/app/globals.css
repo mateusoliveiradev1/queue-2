@@ -1089,6 +1089,80 @@ input {
   font-variant-numeric: tabular-nums;
 }
 
+.library-filter-bar {
+  gap: var(--space-4);
+}
+
+.library-filter-form {
+  align-items: end;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+}
+
+.library-filter-search {
+  min-width: 0;
+}
+
+.library-filter-sheet {
+  position: relative;
+}
+
+.library-filter-sheet > summary {
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  list-style: none;
+  min-height: 44px;
+  min-width: 136px;
+}
+
+.library-filter-sheet > summary::-webkit-details-marker {
+  display: none;
+}
+
+.library-filter-sheet[open] > summary {
+  background: color-mix(in oklch, var(--primary) 10%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 64%, var(--ink));
+}
+
+.library-filter-sheet-panel {
+  background: color-mix(in oklch, var(--surface-raised) 92%, black);
+  border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+  border-radius: var(--radius-sharp);
+  box-shadow: 0 18px 40px color-mix(in oklch, black 34%, transparent);
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+  min-width: min(360px, calc(100vw - 32px));
+  padding: var(--space-4);
+  position: absolute;
+  right: 0;
+  z-index: 22;
+}
+
+.library-filter-fieldset {
+  border: 0;
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+}
+
+.library-filter-fieldset legend {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0;
+  text-transform: uppercase;
+}
+
+.library-filter-bar :where(.queue2-button, .queue2-input, summary, a):focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 2px solid transparent;
+}
+
 .library-operational-shell {
   display: grid;
   gap: var(--space-5);
@@ -2618,6 +2692,44 @@ input {
 
   .search-form {
     grid-template-columns: 1fr;
+  }
+
+  .library-filter-bar {
+    position: sticky;
+    top: var(--space-3);
+    z-index: 18;
+  }
+
+  .library-filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .library-filter-sheet > summary {
+    width: 100%;
+  }
+
+  .library-filter-sheet[open]::before {
+    background: color-mix(in oklch, black 44%, transparent);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: fixed;
+    z-index: 55;
+  }
+
+  .library-filter-sheet[open] > summary {
+    position: relative;
+    z-index: 61;
+  }
+
+  .library-filter-sheet-panel {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    left: var(--space-4);
+    margin: 0;
+    min-width: 0;
+    position: fixed;
+    right: var(--space-4);
+    z-index: 60;
   }
 
   .match-history-grid {

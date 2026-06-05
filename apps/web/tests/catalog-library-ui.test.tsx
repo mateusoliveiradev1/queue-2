@@ -118,6 +118,9 @@ vi.mock("../src/modules/library", async () => {
   const libraryCard = await vi.importActual<
     typeof import("../src/modules/library/presentation/library-card")
   >("../src/modules/library/presentation/library-card");
+  const libraryFilterBar = await vi.importActual<
+    typeof import("../src/modules/library/presentation/library-filter-bar")
+  >("../src/modules/library/presentation/library-filter-bar");
   const platformPicker = await vi.importActual<
     typeof import("../src/modules/library/presentation/platform-picker")
   >("../src/modules/library/presentation/platform-picker");
@@ -130,6 +133,7 @@ vi.mock("../src/modules/library", async () => {
 
   return {
     ...viewModels,
+    LibraryFilterBar: libraryFilterBar.LibraryFilterBar,
     LibraryQueueCard: libraryCard.LibraryQueueCard,
     LibraryStatusControls: statusControls.LibraryStatusControls,
     PlatformPicker: platformPicker.PlatformPicker,
@@ -256,13 +260,19 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "src/modules/library/presentation/library-status-controls.tsx",
       "utf8"
     );
+    const filterSource = readFileSync(
+      "src/modules/library/presentation/library-filter-bar.tsx",
+      "utf8"
+    );
     const css = readFileSync("src/app/globals.css", "utf8");
 
     expect(source).toContain("library-operational-shell");
     expect(source).toContain("getLibraryQueue");
+    expect(source).toContain("LibraryFilterBar");
     expect(source).toContain("LibraryQueueCard");
     expect(source).not.toContain("getLibraryOverview");
     expect(source).not.toContain("function LibraryGameCard");
+    expect(source).not.toContain("search-form");
     expect(source).not.toContain("library-board");
     expect(source).not.toContain("locked-status");
     expect(source).not.toContain("Zerado bloqueado");
@@ -271,10 +281,15 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(statusControlsSource).toContain("library-action-sheet");
     expect(statusControlsSource).not.toContain("Zerado bloqueado");
     expect(statusControlsSource).not.toContain("Dropado bloqueado");
+    expect(filterSource).toContain("LibraryFilterBar");
+    expect(filterSource).toContain("library-filter-sheet");
+    expect(filterSource).not.toMatch(/mood|raridade|genero|ano|Game Pass/i);
     expect(css).toContain(".library-operational-shell");
     expect(css).toContain(".library-priority-strip");
     expect(css).toContain(".library-playing-strip");
     expect(css).toContain(".library-results");
+    expect(css).toContain(".library-filter-bar");
+    expect(css).toContain(".library-filter-sheet");
     expect(css).toContain(".library-action-sheet");
     expect(css).toContain(".library-pagination");
     expect(css).not.toContain(".library-board");
@@ -333,7 +348,10 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.getByRole("heading", { name: /^jogando$/i })).toBeInTheDocument();
     expect(screen.getByText(/ate 3 ativos/i)).toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: /buscar jogo na fila/i })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: /ordenar/i })).toHaveValue("recentes");
+    expect(screen.getByRole("combobox", { name: /ordenar fila/i })).toHaveValue("recentes");
+    expect(screen.getByRole("radio", { name: /todas plataformas/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /plataformas em comum: pc/i })).toBeInTheDocument();
+    expect(screen.getByText("Filtros")).toBeInTheDocument();
     expect(screen.getByLabelText("PC")).toBeChecked();
     expect(screen.getAllByText(/em comum/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText("PC").length).toBeGreaterThan(1);
