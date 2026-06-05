@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03.2-02-PLAN.md
-last_updated: "2026-06-05T00:15:46.608Z"
+stopped_at: Completed 03.2-03-PLAN.md
+last_updated: "2026-06-05T00:29:20.308Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 11
   completed_phases: 6
   total_plans: 25
-  completed_plans: 23
-  percent: 92
+  completed_plans: 24
+  percent: 96
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 03.2 (Biblioteca Escalavel e Backlog Operacional) — EXECUTING
-Plan: 3 of 4
+Plan: 4 of 4
 Status: Ready to execute
 Last activity: 2026-06-05
 
-Progress: [█████████░] 92%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -77,6 +77,7 @@ Progress: [█████████░] 92%
 | Phase 03.1 P04 | 18 min | 3 tasks | 8 files |
 | Phase 03.2 P01 | 8 min | 3 tasks | 8 files |
 | Phase 03.2 P02 | 8 min | 3 tasks | 4 files |
+| Phase 03.2 P03 | 12 min | 3 tasks | 7 files |
 
 ## Quick Tasks Completed
 
@@ -158,6 +159,9 @@ Recent decisions affecting current work:
 - [Quick 260604-p91]: Discovery Quiz is a per-round input, not a persistent tray after the current member has answered. — The route reads mood quiz status from the Discovery application/repository layer and hides both the shortcut and tray when answered.
 - [Quick 260604-p91]: Match Live has one action owner. — The orbit control navigates to the Live panel, while the panel shows either the inactive start action or active live status/push controls.
 - [Quick 260604-p91]: Match Recentes mobile uses page scrolling with scroll padding, not an internal scroll trap. — Card controls stay reachable above the fixed bottom navigation.
+- [Phase 03.2-03]: Biblioteca detail navigation uses linked cover/title instead of a separate large detail button. — Preserves compact card action space for status movement while keeping game detail reachable.
+- [Phase 03.2-03]: Biblioteca status controls expose one visible primary action and move alternatives into library-action-sheet. — Keeps cards dense and accessible while removing dead terminal buttons before Phase 4 confirmation rules exist.
+- [Phase 03.2-03]: Biblioteca filtering is limited to view, search, common platform and ordering. — Separates operational backlog filtering from exploratory Discovery filters such as mood, rarity, genre, year and availability.
 
 ### Pending Todos
 
@@ -184,6 +188,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T00:15:46.602Z
-Stopped at: Completed 03.2-02-PLAN.md
+Last session: 2026-06-05T00:29:20.302Z
+Stopped at: Completed 03.2-03-PLAN.md
 Resume file: None

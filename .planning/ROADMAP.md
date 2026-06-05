@@ -127,7 +127,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 **Goal:** A Biblioteca deixa de ser uma lista crescente e vira uma superficie operacional escalavel para backlog, filtros, status, arquivo e retomada do fluxo da dupla.
 **Requirements**: LIB-02, LIB-03, LIB-04, DISC-12, BRND-08, BRND-09, BRND-10, DATA-11, SEC-02
 **Depends on:** Phase 03.1
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 **Plan Waves**:
   - **Wave 1:** `03.2-01` - Scalable Biblioteca read contract, active/archive policy and bounded repository queries.
@@ -213,7 +213,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 4 -> 5 -
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
 | 03.1. Refinos Visuais e UX da Descoberta | 4/4 | Complete   | 2026-06-04 |
-| 03.2. Biblioteca Escalavel e Backlog Operacional | 2/4 | In Progress|  |
+| 03.2. Biblioteca Escalavel e Backlog Operacional | 3/4 | In Progress|  |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
