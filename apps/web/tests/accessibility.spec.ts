@@ -50,6 +50,17 @@ const phase33PerformanceMissingEnv = missingEnv([
   "E2E_PHASE3_3_CATALOG_QUERY",
   "E2E_PHASE3_3_GAME_SLUG"
 ]);
+const phase4MissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD",
+  "E2E_READY_PARTNER_EMAIL",
+  "E2E_READY_PARTNER_PASSWORD",
+  "E2E_OTHER_DUO_USER_EMAIL",
+  "E2E_OTHER_DUO_USER_PASSWORD",
+  "E2E_PHASE4_PRINCIPAL_SLUG",
+  "E2E_PHASE4_SECONDARY_SLUG"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -59,6 +70,7 @@ reportMissingEnv("Authenticated accessibility", readyMissingEnv);
 reportMissingEnv("Phase 2 detail accessibility", phase2DetailMissingEnv);
 reportMissingEnv("Phase 03.2 Biblioteca accessibility", phase32LibraryMissingEnv);
 reportMissingEnv("Phase 03.3 performance feedback accessibility", phase33PerformanceMissingEnv);
+reportMissingEnv("Phase 4 Jogando Agora accessibility", phase4MissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -286,6 +298,38 @@ test.describe("Phase 03.3 performance feedback accessibility", () => {
     await expect(button).toBeDisabled();
     await expectStaticFeedbackMark(page.locator(".action-feedback-button__mark").first());
     await expectNoOverlap(button, status, "Pending Discovery button overlaps feedback copy");
+    await expectNoAxeViolations(page);
+  });
+});
+
+test.describe("Phase 4 Jogando Agora accessibility", () => {
+  test.skip(
+    phase4MissingEnv.length > 0,
+    `Missing Phase 4 accessibility fixture: ${phase4MissingEnv.join(", ")}`
+  );
+
+  test("dashboard and game detail remain axe-clean on mobile with reduced motion", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+
+    await page.goto("/app");
+    await expect(page.locator(".playing-now")).toBeVisible();
+    await expect(page.locator(".notification-center")).toBeVisible();
+    await expect(page.getByRole("navigation", { name: /navegacao principal mobile/i })).toBeVisible();
+    await expectNoAxeViolations(page);
+
+    await page.goto(`/app/jogo/${process.env.E2E_PHASE4_PRINCIPAL_SLUG!}`);
+    await expect(page.getByRole("heading", { name: /sessao ao vivo/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /proxima sessao/i })).toBeVisible();
+    await expect(page.locator(".notification-center")).toBeVisible();
+    await expect(page.getByRole("button", { name: /agendar sessao/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /ativar push de sessoes/i })).toBeVisible();
+    await expectNoOverlap(
+      page.locator(".schedule-session-form"),
+      page.locator(".notification-center"),
+      "Schedule form overlaps Central da Dupla on mobile"
+    );
     await expectNoAxeViolations(page);
   });
 });

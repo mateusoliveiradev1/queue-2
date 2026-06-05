@@ -6,6 +6,8 @@ type E2EActor = {
 };
 
 const readyActor = actorFromEnv("E2E_READY_USER");
+const partnerActor = actorFromEnv("E2E_READY_PARTNER");
+const otherDuoActor = actorFromEnv("E2E_OTHER_DUO_USER");
 const principalSlug = process.env.E2E_PHASE4_PRINCIPAL_SLUG ?? "";
 const secondarySlug = process.env.E2E_PHASE4_SECONDARY_SLUG ?? "";
 const phase4MissingEnv = missingEnv([
@@ -105,6 +107,86 @@ test.describe("Phase 4 Jogando Agora dashboard", () => {
     await expectTabFocusVisible(page, page.getByRole("button", { name: /arrastar/i }).first(), "Drag handle");
     await expectStaticFeedbackMark(page.locator(".action-feedback-button__mark").first());
     expectNoHydrationErrors(hydrationErrors);
+  });
+
+  test("game detail exposes sessions, progress, terminal status, timeline, scheduling and Central", async ({ page }) => {
+    // Covers PLAY-03, PLAY-04, PLAY-08, PLAY-10, PLAY-11, SESS-01, SESS-11 and SESS-14.
+    const hydrationErrors = collectHydrationErrors(page);
+
+    await page.setViewportSize(desktopViewport);
+    await login(page, readyActor);
+    await page.goto(`/app/jogo/${principalSlug}`);
+
+    await expect(page.getByRole("heading", { name: /sessao ao vivo/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /jogamos hoje/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /progresso/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /zerado ou dropado/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /linha do tempo/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /proxima sessao/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /central da dupla/i })).toBeVisible();
+    await expect(page.getByLabel(/data e horario da dupla/i)).toBeVisible();
+    await expect(page.getByRole("button", { name: /agendar sessao/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /ativar push de sessoes/i })).toBeVisible();
+    expectNoHydrationErrors(hydrationErrors);
+  });
+
+  test("partner actor can reach confirmation-dependent Phase 4 surfaces", async ({ page }) => {
+    // Covers PLAY-09, PLAY-12, PLAY-13, SESS-02, SESS-03, SESS-12 and SESS-13.
+    await page.setViewportSize(desktopViewport);
+    await login(page, partnerActor);
+    await page.goto(`/app/jogo/${principalSlug}`);
+
+    await expect(page.getByRole("heading", { name: /sessao ao vivo/i })).toBeVisible();
+    await expect(page.getByText(/confirmacao/i).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: /confirmar presenca/i }).or(page.getByRole("button", { name: /confirmar/i })).first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: /central da dupla/i })).toBeVisible();
+  });
+
+  test("other-duo actor cannot see the ready duo's operational play state", async ({ page }) => {
+    // Covers SAFE-01 and SAFE-02 at the browser evidence layer.
+    await page.setViewportSize(desktopViewport);
+    await login(page, otherDuoActor);
+    await page.goto(`/app/jogo/${principalSlug}`);
+
+    await expect(page.getByRole("heading", { name: /proxima sessao/i })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /central da dupla/i })).toBeVisible();
+    await expect(page.getByText(/sessoes combinadas/i)).toHaveCount(0);
+  });
+
+  test("mobile game detail keeps schedule and notification controls non-overlapping", async ({ page }) => {
+    await page.setViewportSize(mobileViewport);
+    await login(page, readyActor);
+    await page.goto(`/app/jogo/${principalSlug}`);
+
+    await expect(page.getByRole("heading", { name: /proxima sessao/i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /central da dupla/i })).toBeVisible();
+    await expectNoVisibleControlOverlap(page);
+  });
+
+  test("push permission is requested only after explicit user action", async ({ page }) => {
+    await page.setViewportSize(desktopViewport);
+    await login(page, readyActor);
+    await page.goto(`/app/jogo/${principalSlug}`);
+
+    const requestCount = await page.evaluate(() => {
+      let count = 0;
+
+      Object.defineProperty(window, "Notification", {
+        configurable: true,
+        value: {
+          requestPermission: () => {
+            count += 1;
+            return Promise.resolve("denied");
+          }
+        }
+      });
+
+      return count;
+    });
+
+    expect(requestCount).toBe(0);
+    await page.getByRole("button", { name: /ativar push de sessoes/i }).click();
+    await expect(page.getByText(/permissao negada|push nao esta disponivel|nao foi possivel/i)).toBeVisible();
   });
 });
 

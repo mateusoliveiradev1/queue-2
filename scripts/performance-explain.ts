@@ -43,14 +43,11 @@ type PgPool = {
 
 const scriptDir = dirname(fileURLToPath(import.meta.url));
 const workspaceRoot = resolve(scriptDir, "..");
-const queryReviewPath = resolve(
-  workspaceRoot,
-  ".planning/phases/03.3-performance-de-producao-e-ux-de-latencia/03.3-QUERY-REVIEW.md"
-);
+const requestedPhase = readFlag("--phase") ?? "03.3";
 
 loadEnvLocal();
 
-export const reviewQueries: ReviewQuery[] = [
+export const phase33ReviewQueries: ReviewQuery[] = [
   {
     name: "Catalogo browse",
     surface: "/app/catalogo",
@@ -320,6 +317,194 @@ export const reviewQueries: ReviewQuery[] = [
   }
 ];
 
+export const phase4ReviewQueries: ReviewQuery[] = [
+  {
+    name: "Jogando Agora dashboard",
+    surface: "/app",
+    mode: "read-analyze",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_play_active_games_duo_order_idx",
+      "app_duo_library_games_duo_status_idx",
+      "app_play_progress_library_uidx"
+    ],
+    sql: `
+      SELECT active.id, active.role, active.position, library.status, progress.confirmed_coop_seconds
+      FROM app.play_active_games AS active
+      INNER JOIN app.duo_library_games AS library
+        ON library.id = active.library_game_id
+      LEFT JOIN app.play_progress AS progress
+        ON progress.library_game_id = library.id
+      WHERE active.duo_id = $1::uuid
+        AND library.status = 'jogando'
+      ORDER BY active.position ASC
+      LIMIT 3
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Game play detail",
+    surface: "/app/jogo/[slug]",
+    mode: "read-analyze",
+    queryCount: 4,
+    expectedIndexes: [
+      "app_duo_library_games_duo_catalog_uidx",
+      "app_play_sessions_duo_game_started_idx",
+      "app_play_chapters_duo_game_idx",
+      "app_play_scheduled_sessions_duo_start_idx"
+    ],
+    sql: `
+      SELECT library.id, library.status
+      FROM app.duo_library_games AS library
+      INNER JOIN catalog.games AS game
+        ON game.id = library.catalog_game_id
+      WHERE library.duo_id = $1::uuid
+        AND game.slug = $2
+      LIMIT 1
+    `,
+    params: ["00000000-0000-0000-0000-000000000001", "phase-4-query-review"]
+  },
+  {
+    name: "Game timeline",
+    surface: "/app/jogo/[slug] timeline",
+    mode: "read-analyze",
+    queryCount: 3,
+    expectedIndexes: [
+      "app_play_sessions_duo_game_started_idx",
+      "app_play_chapters_duo_game_idx",
+      "app_play_momentos_duo_game_created_idx",
+      "app_play_spoiler_reveals_momento_user_uidx"
+    ],
+    sql: `
+      SELECT id, kind, status, started_at, ended_at
+      FROM app.play_sessions
+      WHERE duo_id = $1::uuid
+        AND library_game_id = $2::uuid
+        AND status = 'confirmed'
+      ORDER BY started_at ASC
+      LIMIT 50
+    `,
+    params: [
+      "00000000-0000-0000-0000-000000000001",
+      "00000000-0000-0000-0000-000000000002"
+    ]
+  },
+  {
+    name: "Notification center polling",
+    surface: "Central da Dupla",
+    mode: "read-analyze",
+    queryCount: 2,
+    expectedIndexes: [
+      "app_play_notifications_duo_state_idx",
+      "app_play_notifications_recipient_state_idx"
+    ],
+    sql: `
+      SELECT id, notification_type, state, created_at
+      FROM app.play_notifications
+      WHERE duo_id = $1::uuid
+        AND state <> 'archived'
+      ORDER BY created_at DESC
+      LIMIT 30
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Due reminder jobs",
+    surface: "/api/jobs/play/reminders",
+    mode: "mutation-static",
+    queryCount: 1,
+    expectedIndexes: [
+      "ops_scheduled_jobs_due_idx",
+      "ops_scheduled_jobs_duo_type_idx",
+      "ops_scheduled_jobs_key_uidx"
+    ],
+    sql: `
+      WITH due_jobs AS (
+        SELECT id
+        FROM ops.scheduled_jobs
+        WHERE status IN ('pending', 'failed')
+          AND job_type = 'play-session-reminder'
+          AND run_at <= now()
+        ORDER BY run_at ASC, id ASC
+        LIMIT 25
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE ops.scheduled_jobs AS job
+      SET status = 'claimed',
+          attempts = attempts + 1,
+          locked_at = now(),
+          locked_by = 'query-review'
+      FROM due_jobs
+      WHERE job.id = due_jobs.id
+    `
+  },
+  {
+    name: "Session confirmation",
+    surface: "confirmPlaySessionAction",
+    mode: "mutation-static",
+    queryCount: 2,
+    expectedIndexes: [
+      "app_play_session_confirmations_session_user_uidx",
+      "app_duo_xp_awards_key_uidx"
+    ],
+    sql: `
+      INSERT INTO app.play_session_confirmations (
+        duo_id,
+        session_id,
+        user_id
+      )
+      VALUES (gen_random_uuid(), gen_random_uuid(), 'query-review-user')
+      ON CONFLICT (session_id, user_id) DO NOTHING
+    `
+  },
+  {
+    name: "Scheduled attendance confirmation",
+    surface: "confirmScheduledSessionAction",
+    mode: "mutation-static",
+    queryCount: 2,
+    expectedIndexes: [
+      "app_play_scheduled_attendance_session_user_uidx",
+      "app_duo_xp_awards_key_uidx"
+    ],
+    sql: `
+      INSERT INTO app.play_scheduled_attendance (
+        duo_id,
+        scheduled_session_id,
+        user_id
+      )
+      VALUES (gen_random_uuid(), gen_random_uuid(), 'query-review-user')
+      ON CONFLICT (scheduled_session_id, user_id) DO NOTHING
+    `
+  },
+  {
+    name: "Active play reorder",
+    surface: "reorderPlayingGamesAction",
+    mode: "mutation-static",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_play_active_games_duo_position_uidx",
+      "app_play_active_games_one_principal_uidx"
+    ],
+    sql: `
+      UPDATE app.play_active_games
+      SET position = CASE library_game_id
+            WHEN gen_random_uuid() THEN 1
+            ELSE position
+          END,
+          role = CASE position
+            WHEN 1 THEN 'principal'
+            ELSE 'secondary'
+          END
+      WHERE duo_id = gen_random_uuid()
+    `
+  }
+];
+
+const queryReviewConfig = getQueryReviewConfig(requestedPhase);
+const queryReviewPath = queryReviewConfig.path;
+
+export const reviewQueries: ReviewQuery[] = queryReviewConfig.queries;
+
 if (isMainModule()) {
   await main();
 }
@@ -329,7 +514,7 @@ async function main(): Promise<void> {
 
   if (!testDatabaseUrl) {
     if (hasFreshProductionRuntimeQueryReview()) {
-      console.log("Query review PASSED using recent production runtime evidence artifact.");
+      console.log(`${queryReviewConfig.label} query review PASSED using recent production runtime evidence artifact.`);
       console.log(`Artifact: ${queryReviewPath}`);
       return;
     }
@@ -346,7 +531,7 @@ async function main(): Promise<void> {
     }));
 
     await writeQueryReview("BLOCKED - missing TEST_DATABASE_URL", results);
-    console.log("Query review BLOCKED. Missing: TEST_DATABASE_URL.");
+    console.log(`${queryReviewConfig.label} query review BLOCKED. Missing: TEST_DATABASE_URL.`);
     console.log(`Artifact: ${queryReviewPath}`);
     return;
   }
@@ -354,7 +539,7 @@ async function main(): Promise<void> {
   const review = await runQueryReviews(testDatabaseUrl);
 
   await writeQueryReview(review.result, review.results);
-  console.log(`Query review ${review.result}.`);
+  console.log(`${queryReviewConfig.label} query review ${review.result}.`);
   console.log(`Artifact: ${queryReviewPath}`);
 
   if (review.result === "FAILED") {
@@ -445,19 +630,19 @@ export function buildQueryReviewMarkdown(
   const nextAction =
     options.nextAction ??
     (result === "BLOCKED - missing TEST_DATABASE_URL"
-      ? "- Provide TEST_DATABASE_URL for an isolated Neon/test Postgres database, then rerun `node --experimental-strip-types scripts/performance-explain.ts`."
+      ? `- Provide TEST_DATABASE_URL for an isolated Neon/test Postgres database, then rerun \`${queryReviewConfig.command}\`.`
       : "- Keep this artifact updated after batching or index changes.");
 
   return [
     "---",
-    "phase: 03.3",
-    "plan: 02",
-    "artifact: query-review",
+    `phase: ${queryReviewConfig.phase}`,
+    `plan: ${queryReviewConfig.plan}`,
+    `artifact: ${queryReviewConfig.artifact}`,
     `generated: ${generated}`,
     `result: ${result}`,
     "---",
     "",
-    "# Phase 03.3 Query Review",
+    `# ${queryReviewConfig.title}`,
     "",
     "## Environment",
     "",
@@ -549,6 +734,10 @@ function loadEnvLocal(): void {
 }
 
 function hasFreshProductionRuntimeQueryReview(): boolean {
+  if (queryReviewConfig.phase !== "03.3") {
+    return false;
+  }
+
   if (!existsSync(queryReviewPath)) {
     return false;
   }
@@ -564,6 +753,62 @@ function hasFreshProductionRuntimeQueryReview(): boolean {
     Number.isFinite(generatedAt) &&
     Date.now() - generatedAt <= maxAgeMs
   );
+}
+
+type QueryReviewConfig = {
+  artifact: string;
+  command: string;
+  label: string;
+  path: string;
+  phase: string;
+  plan: string;
+  queries: ReviewQuery[];
+  title: string;
+};
+
+function getQueryReviewConfig(phase: string): QueryReviewConfig {
+  if (phase === "4" || phase === "04") {
+    return {
+      artifact: "performance-review",
+      command: "node --experimental-strip-types scripts/performance-explain.ts --phase=4",
+      label: "Phase 4",
+      path: resolve(
+        workspaceRoot,
+        ".planning/phases/04-jogando-agora-sessoes-e-agendamento/04-PERFORMANCE-REVIEW.md"
+      ),
+      phase: "04",
+      plan: "06",
+      queries: phase4ReviewQueries,
+      title: "Phase 4 Performance Review"
+    };
+  }
+
+  return {
+    artifact: "query-review",
+    command: "node --experimental-strip-types scripts/performance-explain.ts",
+    label: "Phase 03.3",
+    path: resolve(
+      workspaceRoot,
+      ".planning/phases/03.3-performance-de-producao-e-ux-de-latencia/03.3-QUERY-REVIEW.md"
+    ),
+    phase: "03.3",
+    plan: "02",
+    queries: phase33ReviewQueries,
+    title: "Phase 03.3 Query Review"
+  };
+}
+
+function readFlag(name: string): string | null {
+  const valueFlag = process.argv.find((arg) => arg.startsWith(`${name}=`));
+
+  if (valueFlag) {
+    return valueFlag.slice(name.length + 1);
+  }
+
+  const index = process.argv.indexOf(name);
+  const next = index >= 0 ? process.argv[index + 1] : undefined;
+
+  return next && !next.startsWith("--") ? next : null;
 }
 
 function unquote(value: string): string {

@@ -96,6 +96,23 @@ describe.skipIf(!testDatabaseUrl)("play database-backed concurrency invariants",
     await expect(readConfirmationCount(pool, duo.ownerUserId, sessionId)).resolves.toBe(1);
     await expect(readXpAwardCount(pool, duo.ownerUserId, duo.duoId, awardKey)).resolves.toBe(1);
   });
+
+  test("replayed scheduled attendance confirmations are stored once", async () => {
+    const duo = await createReadyDuo(pool, "play-scheduled-idempotency");
+    const libraryGameId = await createJogandoLibraryGame(pool, duo, "scheduled-idempotency-game");
+    const scheduledSessionId = await withRuntimeUser(pool, duo.ownerUserId, (client) =>
+      insertScheduledSession(client, duo.duoId, libraryGameId, duo.ownerUserId)
+    );
+
+    const attendanceResults = await Promise.allSettled([
+      insertScheduledAttendance(pool, duo.ownerUserId, scheduledSessionId),
+      insertScheduledAttendance(pool, duo.ownerUserId, scheduledSessionId)
+    ]);
+
+    expect(attendanceResults.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(attendanceResults.filter((result) => result.status === "rejected")).toHaveLength(1);
+    await expect(readScheduledAttendanceCount(pool, duo.ownerUserId, scheduledSessionId)).resolves.toBe(1);
+  });
 });
 
 type ReadyDuo = Awaited<ReturnType<typeof createReadyDuo>>;
@@ -246,6 +263,62 @@ async function insertPendingSession(
   return result.rows[0]!.id;
 }
 
+async function insertScheduledSession(
+  client: pg.PoolClient,
+  duoId: string,
+  libraryGameId: string,
+  userId: string
+): Promise<string> {
+  const result = await client.query<{ id: string }>(
+    `
+      INSERT INTO app.play_scheduled_sessions (
+        duo_id,
+        library_game_id,
+        scheduled_start_at,
+        timezone,
+        reminder_due_at,
+        created_by_user_id,
+        updated_by_user_id
+      )
+      VALUES (
+        $1,
+        $2,
+        now() + interval '2 hours',
+        'America/Sao_Paulo',
+        now() + interval '90 minutes',
+        $3,
+        $3
+      )
+      RETURNING id
+    `,
+    [duoId, libraryGameId, userId]
+  );
+
+  return result.rows[0]!.id;
+}
+
+async function insertScheduledAttendance(
+  pool: pg.Pool,
+  userId: string,
+  scheduledSessionId: string
+): Promise<void> {
+  await withRuntimeUser(pool, userId, async (client) => {
+    await client.query(
+      `
+        INSERT INTO app.play_scheduled_attendance (
+          duo_id,
+          scheduled_session_id,
+          user_id
+        )
+        SELECT duo_id, id, $2
+        FROM app.play_scheduled_sessions
+        WHERE id = $1
+      `,
+      [scheduledSessionId, userId]
+    );
+  });
+}
+
 async function insertSessionConfirmation(
   pool: pg.Pool,
   userId: string,
@@ -347,6 +420,25 @@ async function readConfirmationCount(
         WHERE session_id = $1
       `,
       [sessionId]
+    );
+
+    return Number(result.rows[0]?.count ?? 0);
+  });
+}
+
+async function readScheduledAttendanceCount(
+  pool: pg.Pool,
+  userId: string,
+  scheduledSessionId: string
+): Promise<number> {
+  return withRuntimeUser(pool, userId, async (client) => {
+    const result = await client.query<{ count: string }>(
+      `
+        SELECT count(*) AS count
+        FROM app.play_scheduled_attendance
+        WHERE scheduled_session_id = $1
+      `,
+      [scheduledSessionId]
     );
 
     return Number(result.rows[0]?.count ?? 0);
