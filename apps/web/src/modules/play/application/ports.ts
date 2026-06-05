@@ -171,7 +171,7 @@ export interface PlayRepository {
   }): Promise<PlayConfirmationRecord | null>;
   cancelConfirmation(input: {
     userId: PlayUserId;
-    confirmationId: string;
+    sessionId: string;
   }): Promise<void>;
   insertNotificationItem(input: PlayNotificationInput): Promise<PlayNotificationRecord>;
   insertXpAward(input: PlayXpAwardInput): Promise<PlayXpAwardRecord | null>;
