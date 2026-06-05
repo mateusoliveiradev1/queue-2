@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { QueueToaster } from "@queue/ui";
 
 import "./globals.css";
+import { WebVitalsReporter } from "../components/web-vitals-reporter";
 import { siteDescription, siteName, siteOrigin, siteTagline } from "./seo";
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default function RootLayout({
     <html lang="pt-BR">
       <body className="queue2-theme">
         {children}
+        <WebVitalsReporter />
         <QueueToaster />
       </body>
     </html>

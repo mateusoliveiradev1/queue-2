@@ -1,4 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { NextRequest } from "next/server";
+
+import { POST as recordWebVitals } from "../src/app/api/performance/web-vitals/route";
 
 import {
   createPerformanceMetricEvent,
@@ -164,5 +168,62 @@ describe("performance budgets", () => {
       "library.status.move"
     ]);
   });
-}
-);
+});
+
+describe("web vitals ingestion", () => {
+  it("accepts valid Web Vitals payloads with no-store responses", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    const request = new NextRequest("https://queue.test/api/performance/web-vitals", {
+      body: JSON.stringify({
+        name: "LCP",
+        navigationType: "navigate",
+        rating: "good",
+        route: "/app/catalogo?busca=private",
+        value: 1_200
+      }),
+      method: "POST"
+    });
+
+    const response = await recordWebVitals(request);
+
+    expect(response.status).toBe(202);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(info).toHaveBeenCalledWith(expect.stringContaining('"route":"app.catalogo"'));
+    expect(info).not.toHaveBeenCalledWith(expect.stringContaining("busca"));
+    info.mockRestore();
+  });
+
+  it("rejects invalid payloads without echoing request details", async () => {
+    const request = new NextRequest("https://queue.test/api/performance/web-vitals", {
+      body: JSON.stringify({
+        name: "LCP",
+        password: "not logged",
+        route: "/app/catalogo",
+        value: 1_200
+      }),
+      method: "POST"
+    });
+
+    const response = await recordWebVitals(request);
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(body).toEqual({
+      ok: false,
+      reason: "invalid-metric"
+    });
+  });
+
+  it("keeps Web Vitals in a single narrow client boundary mounted from layout", () => {
+    const layoutSource = readFileSync("src/app/layout.tsx", "utf8");
+    const reporterSource = readFileSync("src/components/web-vitals-reporter.tsx", "utf8");
+
+    expect(layoutSource).toContain("WebVitalsReporter");
+    expect(reporterSource).toContain('"use client"');
+    expect(reporterSource).toContain("useReportWebVitals");
+    expect(reporterSource).toContain("window.location.pathname");
+    expect(reporterSource).not.toContain("window.location.href");
+    expect(reporterSource).not.toContain("window.location.search");
+  });
+});
