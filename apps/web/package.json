@@ -8,6 +8,7 @@
     "build": "next build",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "performance:baseline": "node --experimental-strip-types scripts/performance-baseline.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "check:architecture": "node ../../scripts/check-architecture.mjs"
   },
