@@ -131,9 +131,9 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PLAY-04**: Duo can drag to reorder the Principal and secondary games
 - [ ] **PLAY-05**: Dashboard shows the duo XP, level, streak, active quests and recent achievements
 - [x] **PLAY-06**: Duo can compare accumulated coop time with the game's estimated completion time
-- [ ] **PLAY-07**: Duo can create and complete manual chapters for a game
+- [x] **PLAY-07**: Duo can create and complete manual chapters for a game
 - [x] **PLAY-08**: Duo receives 25 XP once for each completed manual chapter
-- [ ] **PLAY-09**: Duo can record a subjective completion percentage for a game
+- [x] **PLAY-09**: Duo can record a subjective completion percentage for a game
 - [ ] **PLAY-10**: Duo sees automatic milestones at 50% and 100% of the estimated completion time
 - [ ] **PLAY-11**: Duo can receive contextual milestones such as "Voces tao viciados" and a reminder to Pausar
 - [x] **PLAY-12**: Moving a game to Zerado requires confirmation from both duo members
@@ -145,7 +145,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SESS-02**: Live session timer is based on server timestamps and remains accurate after refresh
 - [x] **SESS-03**: Each duo member can confirm a completed live session
 - [x] **SESS-04**: Duo receives the 30 XP live-session bonus only once after both members confirm
-- [ ] **SESS-05**: Duo can record an offline "Jogamos Hoje" session in approximately two clicks
+- [x] **SESS-05**: Duo can record an offline "Jogamos Hoje" session in approximately two clicks
 - [ ] **SESS-06**: User can view a chronological session timeline on each game
 - [ ] **SESS-07**: Session timeline marks a first session, night session and marathon when applicable
 - [ ] **SESS-08**: Duo can add inline Momentos to a game
@@ -348,9 +348,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAY-04 | Phase 4 | Complete |
 | PLAY-05 | Phase 5 | Pending |
 | PLAY-06 | Phase 4 | Complete |
-| PLAY-07 | Phase 4 | Pending |
+| PLAY-07 | Phase 4 | Complete |
 | PLAY-08 | Phase 4 | Complete |
-| PLAY-09 | Phase 4 | Pending |
+| PLAY-09 | Phase 4 | Complete |
 | PLAY-10 | Phase 4 | Pending |
 | PLAY-11 | Phase 4 | Pending |
 | PLAY-12 | Phase 4 | Complete |
@@ -359,7 +359,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-02 | Phase 4 | Complete |
 | SESS-03 | Phase 4 | Complete |
 | SESS-04 | Phase 4 | Complete |
-| SESS-05 | Phase 4 | Pending |
+| SESS-05 | Phase 4 | Complete |
 | SESS-06 | Phase 4 | Pending |
 | SESS-07 | Phase 4 | Pending |
 | SESS-08 | Phase 4 | Pending |
@@ -430,4 +430,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-05 after Phase 03.3 performance gate closeout*
+*Last updated: 2026-06-05 after Phase 04-03 sessions/progress completion*

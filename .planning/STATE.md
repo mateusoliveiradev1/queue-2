@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-02-PLAN.md
-last_updated: "2026-06-05T16:10:42.032Z"
+stopped_at: Completed 04-03-PLAN.md
+last_updated: "2026-06-05T16:39:16.335Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 35
-  completed_plans: 31
-  percent: 89
+  completed_plans: 32
+  percent: 91
 ---
 
 # Project State
@@ -26,17 +26,17 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 04 (jogando-agora-sessoes-e-agendamento) — EXECUTING
-Plan: 3 of 6
-Status: Ready to execute
+Plan: 4 of 6
+Status: Ready to execute 04-04
 Last activity: 2026-06-05
 
-Progress: [█████████░] 89%
+Progress: [#########-] 91%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 17
+- Total plans completed: 18
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -85,6 +85,7 @@ Progress: [█████████░] 89%
 | Phase 03.3 P04 | 38 min | 3 tasks | 11 files |
 | Phase 04 P01 | 35 min | 3 tasks | 13 files |
 | Phase 04 P02 | 3h 45m | 3 tasks | 30 files |
+| Phase 04 P03 | 30m | 4 tasks | 26 files |
 
 ## Quick Tasks Completed
 
@@ -217,6 +218,9 @@ Recent decisions affecting current work:
 - [Phase 04-02]: Phase 4 dashboard E2E requires real active-game fixtures. — The browser suite records missing fixture variables as blocked evidence instead of bypassing auth or duo state.
 - [Phase 04-02]: Dashboard reorder and promotion treat client order as a proposal, not authority. — Server use cases validate membership, exact active set and unique IDs before writing role/position.
 - [Phase 04-02]: Library status moves coordinate with play activation for Jogando role assignment. — Library remains the status owner, while play assigns Principal/secondary roles after the server-authoritative move.
+- [Phase 04-03]: Play owns live/offline sessions, progress effects, chapter awards and terminal confirmation. - Routes and UI call the play public entrypoint while server transactions keep confirmation-gated effects authoritative.
+- [Phase 04-03]: Raw library moves to `zerado`/`dropado` remain locked until the play terminal request is partner-confirmed. - The confirmed terminal transaction updates the archive status and removes active play roles atomically.
+- [Phase 04-03]: Missing TEST_DATABASE_URL and Phase 4 E2E fixtures remain explicit blockers. - Unit/UI/type/architecture gates pass, but DB isolation/concurrency and browser evidence still need configured fixtures.
 
 ### Pending Todos
 
@@ -234,6 +238,8 @@ Recent decisions affecting current work:
 - Phase 03.1 visual and architecture debt is closed locally; real authenticated Discovery browser/database evidence remains blocked by named fixtures in `03.1-BROWSER-REVIEW.md`.
 - Phase 03.2 browser evidence blocked until E2E_BASE_URL, E2E_READY_USER_EMAIL, E2E_READY_USER_PASSWORD, E2E_READY_PARTNER_EMAIL, E2E_READY_PARTNER_PASSWORD, E2E_OTHER_DUO_USER_EMAIL, E2E_OTHER_DUO_USER_PASSWORD and E2E_PHASE3_2_LIBRARY_QUERY are configured.
 - Phase 03.2 DB isolation evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
+- Phase 04.3 DB integration evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
+- Phase 04.3 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
 
 ## Deferred Items
 
@@ -246,6 +252,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T16:10:31.744Z
-Stopped at: Completed 04-02-PLAN.md
+Last session: 2026-06-05T16:39:16.335Z
+Stopped at: Completed 04-03-PLAN.md
 Resume file: None
