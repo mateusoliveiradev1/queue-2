@@ -17,7 +17,10 @@ import {
   measureStage,
   withServerTiming
 } from "../../../platform/performance/server-timing";
-import { addGameToWishlistAction } from "../phase-2-actions";
+import {
+  addGameToWishlistAction,
+  addGameToWishlistEnhancedAction
+} from "../phase-2-actions";
 import {
   getPhase2StatusMessage,
   getSearchParam
@@ -157,6 +160,7 @@ async function renderCatalogPage({ searchParams }: CatalogPageProps = {}) {
         {suggestedGame ? (
           <CatalogCard
             addAction={addGameToWishlistAction}
+            enhancedAddAction={addGameToWishlistEnhancedAction}
             game={suggestedGame}
             libraryState={getCatalogLibraryState(libraryStatuses[suggestedGame.id])}
             priority
@@ -188,6 +192,7 @@ async function renderCatalogPage({ searchParams }: CatalogPageProps = {}) {
             {supportingGames.map((game) => (
               <CatalogCard
                 addAction={addGameToWishlistAction}
+                enhancedAddAction={addGameToWishlistEnhancedAction}
                 game={game}
                 key={game.id}
                 libraryState={getCatalogLibraryState(libraryStatuses[game.id])}

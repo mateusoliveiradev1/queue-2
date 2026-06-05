@@ -17,9 +17,33 @@ import {
 const addWishlistTimingContext = { action: "catalog.wishlist.add" } as const;
 const moveLibraryTimingContext = { action: "library.status.move" } as const;
 
+export type EnhancedLibraryMutationResult =
+  | { ok: true; state: string }
+  | {
+      ok: false;
+      reason:
+        | "catalog-game-not-found"
+        | "invalid-input"
+        | "library-game-not-found"
+        | "membership-required"
+        | "future-confirmation-required"
+        | "invalid-status"
+        | "jogando-limit-reached";
+      state: string;
+      redirectTo?: string;
+    };
+
 export async function addGameToWishlistAction(formData: FormData): Promise<void> {
   return withServerTiming(addWishlistTimingContext, () =>
     addGameToWishlistActionTimed(formData)
+  );
+}
+
+export async function addGameToWishlistEnhancedAction(
+  formData: FormData
+): Promise<EnhancedLibraryMutationResult> {
+  return withServerTiming(addWishlistTimingContext, () =>
+    addGameToWishlistEnhancedActionTimed(formData)
   );
 }
 
@@ -63,9 +87,67 @@ async function addGameToWishlistActionTimed(formData: FormData): Promise<void> {
   );
 }
 
+async function addGameToWishlistEnhancedActionTimed(
+  formData: FormData
+): Promise<EnhancedLibraryMutationResult> {
+  const session = await measureStage("auth", addWishlistTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, returnTo } = await measureStage(
+    "validation",
+    addWishlistTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      returnTo: getSafeReturnTo(formData, "/app/biblioteca")
+    })
+  );
+
+  if (!catalogGameId) {
+    return { ok: false, reason: "invalid-input", state: "acao-invalida" };
+  }
+
+  const result = await measureStage("database", addWishlistTimingContext, () =>
+    addGameToWishlist({
+      userId: session.user.id,
+      catalogGameId
+    })
+  );
+
+  if (!result.ok && result.reason === "membership-required") {
+    return {
+      ok: false,
+      reason: "membership-required",
+      redirectTo: "/parear",
+      state: "membership-required"
+    };
+  }
+
+  if (result.ok) {
+    await measureStage("revalidation", addWishlistTimingContext, async () => {
+      revalidateEnhancedLibrarySurfaces(returnTo);
+    });
+
+    return { ok: true, state: "wishlist-adicionada" };
+  }
+
+  return {
+    ok: false,
+    reason: "catalog-game-not-found",
+    state: "jogo-nao-encontrado"
+  };
+}
+
 export async function moveLibraryGameAction(formData: FormData): Promise<void> {
   return withServerTiming(moveLibraryTimingContext, () =>
     moveLibraryGameActionTimed(formData)
+  );
+}
+
+export async function moveLibraryGameEnhancedAction(
+  formData: FormData
+): Promise<EnhancedLibraryMutationResult> {
+  return withServerTiming(moveLibraryTimingContext, () =>
+    moveLibraryGameEnhancedActionTimed(formData)
   );
 }
 
@@ -104,6 +186,58 @@ async function moveLibraryGameActionTimed(formData: FormData): Promise<void> {
   });
 
   redirect(withState(returnTo, moveResultToState(result)));
+}
+
+async function moveLibraryGameEnhancedActionTimed(
+  formData: FormData
+): Promise<EnhancedLibraryMutationResult> {
+  const session = await measureStage("auth", moveLibraryTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, status, returnTo } = await measureStage(
+    "validation",
+    moveLibraryTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      status: getFormString(formData, "status"),
+      returnTo: getSafeReturnTo(formData, "/app/biblioteca")
+    })
+  );
+
+  if (!catalogGameId || !status) {
+    return { ok: false, reason: "invalid-input", state: "acao-invalida" };
+  }
+
+  const result = await measureStage("database", moveLibraryTimingContext, () =>
+    moveLibraryGame({
+      userId: session.user.id,
+      catalogGameId,
+      status
+    })
+  );
+
+  if (!result.ok && result.reason === "membership-required") {
+    return {
+      ok: false,
+      reason: "membership-required",
+      redirectTo: "/parear",
+      state: "membership-required"
+    };
+  }
+
+  if (result.ok) {
+    await measureStage("revalidation", moveLibraryTimingContext, async () => {
+      revalidateEnhancedLibrarySurfaces(returnTo);
+    });
+
+    return { ok: true, state: "status-atualizado" };
+  }
+
+  return {
+    ok: false,
+    reason: result.reason,
+    state: moveResultToState(result)
+  };
 }
 
 export async function updateMemberPlatformsAction(formData: FormData): Promise<void> {
@@ -172,5 +306,10 @@ function revalidateLibrarySurfaces(returnTo: string): void {
   revalidatePath("/app");
   revalidatePath("/app/biblioteca");
   revalidatePath("/app/catalogo");
+  revalidatePath(new URL(returnTo, "https://queue.local").pathname);
+}
+
+function revalidateEnhancedLibrarySurfaces(returnTo: string): void {
+  revalidatePath("/app/biblioteca");
   revalidatePath(new URL(returnTo, "https://queue.local").pathname);
 }

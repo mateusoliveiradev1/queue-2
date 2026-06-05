@@ -7,12 +7,14 @@ import { MatchScoreBlock } from "../../../components/match-score-block";
 
 export function CatalogCard({
   addAction,
+  enhancedAddAction,
   game,
   libraryState,
   priority = false,
   returnTo
 }: {
   addAction: (formData: FormData) => Promise<void>;
+  enhancedAddAction?: (formData: FormData) => Promise<{ ok: boolean; redirectTo?: string }>;
   game: CatalogGameCardView;
   libraryState?: {
     href: string;
@@ -72,11 +74,12 @@ export function CatalogCard({
               </a>
             </div>
           ) : (
-            <form action={addAction}>
-              <input name="catalogGameId" type="hidden" value={game.id} />
-              {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
-              <CatalogWishlistSubmitButton />
-            </form>
+            <CatalogWishlistSubmitButton
+              action={addAction}
+              catalogGameId={game.id}
+              enhancedAction={enhancedAddAction}
+              returnTo={returnTo}
+            />
           )}
         </div>
       </div>

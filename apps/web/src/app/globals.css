@@ -509,6 +509,17 @@ input {
   min-width: 168px;
 }
 
+.action-feedback-form {
+  display: grid;
+  flex: 1 1 180px;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.action-feedback-form .action-feedback-button {
+  width: 100%;
+}
+
 @keyframes queue2-spin {
   to {
     transform: rotate(1turn);
@@ -1368,6 +1379,11 @@ input {
 .status-controls form {
   display: flex;
   min-width: 0;
+}
+
+.status-controls .action-feedback-form {
+  display: grid;
+  flex: 1 1 160px;
 }
 
 .status-controls .queue2-button {

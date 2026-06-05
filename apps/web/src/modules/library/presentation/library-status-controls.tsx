@@ -1,3 +1,12 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+
+import {
+  ActionFeedback,
+  ActionFeedbackButton,
+  type ActionFeedbackState
+} from "../../../components/action-feedback";
 import type { Phase2LibraryStatus } from "../domain/library-policy";
 
 type StatusAction = {
@@ -11,11 +20,13 @@ export function LibraryStatusControls({
   action,
   catalogGameId,
   currentStatus,
+  enhancedAction,
   returnTo
 }: {
   action: (formData: FormData) => Promise<void>;
   catalogGameId: string;
   currentStatus: string;
+  enhancedAction?: (formData: FormData) => Promise<{ ok: boolean; redirectTo?: string }>;
   returnTo?: string;
 }) {
   const normalizedStatus = normalizeCurrentStatus(currentStatus);
@@ -28,6 +39,7 @@ export function LibraryStatusControls({
         <StatusActionForm
           action={action}
           catalogGameId={catalogGameId}
+          enhancedAction={enhancedAction}
           item={primaryAction}
           returnTo={returnTo}
           tone="primary"
@@ -43,6 +55,7 @@ export function LibraryStatusControls({
               <StatusActionForm
                 action={action}
                 catalogGameId={catalogGameId}
+                enhancedAction={enhancedAction}
                 item={item}
                 key={item.status}
                 returnTo={returnTo}
@@ -59,24 +72,67 @@ export function LibraryStatusControls({
 function StatusActionForm({
   action,
   catalogGameId,
+  enhancedAction,
   item,
   returnTo,
   tone
 }: {
   action: (formData: FormData) => Promise<void>;
   catalogGameId: string;
+  enhancedAction?: (formData: FormData) => Promise<{ ok: boolean; redirectTo?: string }>;
   item: StatusAction;
   returnTo?: string;
   tone: "primary" | "quiet";
 }) {
+  const [state, setState] = useState<ActionFeedbackState>("idle");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!enhancedAction) {
+      return;
+    }
+
+    event.preventDefault();
+    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    try {
+      const result = await enhancedAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        window.location.assign(result.redirectTo);
+        return;
+      }
+
+      setState(result.ok ? "confirmed" : "failed");
+    } catch {
+      setState("failed");
+    }
+  }
+
   return (
-    <form action={action}>
+    <form action={action} className="action-feedback-form" onSubmit={handleSubmit}>
       <input name="catalogGameId" type="hidden" value={catalogGameId} />
       <input name="status" type="hidden" value={item.status} />
       {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
-      <button className="queue2-button" data-tone={tone} type="submit">
-        {item.label}
-      </button>
+      <ActionFeedbackButton
+        labels={{
+          idle: item.label,
+          syncing: "Movendo na fila",
+          confirmed: "Confirmado",
+          failed: "Tentar de novo",
+          retrying: "Tentando de novo"
+        }}
+        state={state}
+        tone={tone}
+      />
+      <ActionFeedback
+        copy={{
+          syncing: "Movimento salvo aqui, sincronizando...",
+          confirmed: "Status confirmado pelo servidor.",
+          failed: "Nao deu para mover. Tente de novo.",
+          retrying: "Tentando mover de novo..."
+        }}
+        state={state}
+      />
     </form>
   );
 }

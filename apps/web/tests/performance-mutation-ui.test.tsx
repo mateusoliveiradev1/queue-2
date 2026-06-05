@@ -9,6 +9,8 @@ import {
   getActionFeedbackCopy,
   type ActionFeedbackState
 } from "../src/components/action-feedback";
+import { CatalogWishlistSubmitButton } from "../src/modules/catalog/presentation/catalog-wishlist-submit-button";
+import { LibraryStatusControls } from "../src/modules/library/presentation/library-status-controls";
 
 type Deferred = {
   promise: Promise<void>;
@@ -141,6 +143,80 @@ describe("action feedback primitives", () => {
       '.action-feedback-button[data-action-state="retrying"]'
     );
     expect(reducedMotionBlock).toContain("animation: none");
+  });
+});
+
+describe("enhanced catalog and library mutation forms", () => {
+  it("enhances Wishlist submit while preserving native fallback inputs", async () => {
+    const deferred = createDeferred();
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => {
+      await deferred.promise;
+      return { ok: true };
+    });
+    const { container } = render(
+      <CatalogWishlistSubmitButton
+        action={fallbackAction}
+        catalogGameId="game-1"
+        enhancedAction={enhancedAction}
+        returnTo="/app/catalogo"
+      />
+    );
+
+    const button = screen.getByRole("button", { name: /adicionar a wishlist/i });
+    const form = button.closest("form");
+
+    expect(form).toHaveAttribute("action");
+    expect(form?.querySelector("input[name='catalogGameId']")).toHaveValue("game-1");
+    expect(form?.querySelector("input[name='returnTo']")).toHaveValue("/app/catalogo");
+
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    expect(enhancedAction).toHaveBeenCalledOnce();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /salvo aqui, sincronizando/i
+    );
+    expect(
+      screen.getByRole("button", { name: /salvo aqui, sincronizando/i })
+    ).toBeDisabled();
+
+    await act(async () => {
+      deferred.resolve();
+      await deferred.promise;
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /wishlist confirmada pelo servidor/i
+    );
+    expect(container.querySelector(".action-feedback-form")).not.toBeNull();
+  });
+
+  it("keeps Biblioteca status move local feedback and retry state", async () => {
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => ({
+      ok: false,
+      reason: "library-game-not-found"
+    }));
+    const { container } = render(
+      <LibraryStatusControls
+        action={fallbackAction}
+        catalogGameId="game-1"
+        currentStatus="wishlist"
+        enhancedAction={enhancedAction}
+        returnTo="/app/biblioteca"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /comecar em jogando/i }));
+
+    expect(enhancedAction).toHaveBeenCalledOnce();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      /nao deu para mover\. tente de novo/i
+    );
+    expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
+    expect(container.querySelector("input[name='status']")).toHaveValue("jogando");
+    expect(container.querySelector("input[name='returnTo']")).toHaveValue("/app/biblioteca");
   });
 });
 

@@ -6,10 +6,12 @@ import type { LibraryGameDetailView } from "./view-models";
 
 export function LibraryQueueCard({
   action,
+  enhancedAction,
   game,
   returnTo
 }: {
   action: (formData: FormData) => Promise<void>;
+  enhancedAction?: (formData: FormData) => Promise<{ ok: boolean; redirectTo?: string }>;
   game: LibraryGameDetailView;
   returnTo: string;
 }) {
@@ -51,6 +53,7 @@ export function LibraryQueueCard({
           action={action}
           catalogGameId={game.catalogGameId}
           currentStatus={game.status}
+          enhancedAction={enhancedAction}
           returnTo={returnTo}
         />
       </div>

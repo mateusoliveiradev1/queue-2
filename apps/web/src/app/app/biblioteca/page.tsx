@@ -19,6 +19,7 @@ import {
   withServerTiming
 } from "../../../platform/performance/server-timing";
 import {
+  moveLibraryGameEnhancedAction,
   moveLibraryGameAction,
   updateMemberPlatformsAction
 } from "../phase-2-actions";
@@ -134,6 +135,7 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
               {view.nextQueue.map((game) => (
                 <LibraryQueueCard
                   action={moveLibraryGameAction}
+                  enhancedAction={moveLibraryGameEnhancedAction}
                   game={game}
                   key={game.id}
                   returnTo={returnTo}
@@ -162,6 +164,7 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
               {view.playing.map((game) => (
                 <LibraryQueueCard
                   action={moveLibraryGameAction}
+                  enhancedAction={moveLibraryGameEnhancedAction}
                   game={game}
                   key={game.id}
                   returnTo={returnTo}
@@ -228,6 +231,7 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
               {view.page.items.map((game) => (
                 <LibraryQueueCard
                   action={moveLibraryGameAction}
+                  enhancedAction={moveLibraryGameEnhancedAction}
                   game={game}
                   key={game.id}
                   returnTo={returnTo}
