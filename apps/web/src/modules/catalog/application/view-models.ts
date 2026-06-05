@@ -42,6 +42,7 @@ export type CatalogGameDetailView = CatalogGameCardView & {
   sourceBreakdown: CatalogSourceFreshnessRowView[];
   rawgUrl: string;
   coopLabel: string;
+  estimatedMinutes: number | null;
   timeEstimate: CatalogDetailFactView;
   availability: CatalogDetailFactView;
   detailReadiness: {
@@ -121,6 +122,10 @@ export function toCatalogGameDetailView(
     ...card,
     description: description.description,
     descriptionSourceLabel: description.sourceLabel,
+    estimatedMinutes:
+      timeEstimate.kind === "available" && game.timeEstimate?.minutes
+        ? game.timeEstimate.minutes
+        : null,
     sourceBreakdown: buildSourceBreakdown(game, now),
     rawgUrl: game.rawgUrl,
     coopLabel: card.mainFlow.eligible

@@ -54,6 +54,7 @@ export const performanceActionKeys = [
   "play.progress",
   "play.session",
   "play.terminal",
+  "play.timeline",
   "unknown"
 ] as const;
 

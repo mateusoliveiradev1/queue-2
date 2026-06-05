@@ -178,6 +178,7 @@ describe("server timing helpers", () => {
     expect(playActions).toContain('action: "play.progress"');
     expect(playActions).toContain('action: "play.chapter"');
     expect(playActions).toContain('action: "play.terminal"');
+    expect(playActions).toContain('action: "play.timeline"');
     expect(discoveryActions).toContain('action: "discovery.decision"');
     expect(discoveryActions).toContain('action: "discovery.handoff"');
     expect(discoveryActions).toContain('action: "discovery.live.start"');
@@ -215,7 +216,8 @@ describe("performance budgets", () => {
       "play.order.reorder",
       "play.progress",
       "play.session",
-      "play.terminal"
+      "play.terminal",
+      "play.timeline"
     ]);
   });
 });

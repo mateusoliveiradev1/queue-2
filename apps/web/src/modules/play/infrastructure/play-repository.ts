@@ -11,9 +11,11 @@ import type {
   ActivePlayGameRecord,
   CurrentPlayGameRecord,
   CurrentPlayRecord,
+  GameTimelineRecord,
   GamePlayDetailRecord,
   PlayChapterRecord,
   PlayMembershipContext,
+  PlayMomentoRecord,
   PlayNotificationInput,
   PlayNotificationRecord,
   PlayActivationLibraryGameRecord,
@@ -23,11 +25,18 @@ import type {
   PlayRepositoryTransaction,
   PlaySessionDetailRecord,
   PlaySessionRecord,
+  PlayTimelineEvent,
+  PlayTimelineMilestoneRecord,
   PlayTerminalRequestRecord,
   PlayUserId,
   PlayXpAwardInput,
   PlayXpAwardRecord
 } from "../application/ports";
+import {
+  classifyTimelineMilestones,
+  getTimelineMilestoneCopy,
+  type TimelineMilestoneKind
+} from "../domain/milestone-policy";
 import type {
   PlayGameRole,
   PlayNotificationType,
@@ -39,6 +48,10 @@ import type {
 type MembershipRow = {
   duo_id: string;
   user_id: string;
+};
+
+type DuoTimezoneRow = {
+  timezone: string | null;
 };
 
 type ActiveGameRow = {
@@ -133,6 +146,19 @@ type TerminalRequestRow = {
   updated_at: Date;
 };
 
+type MomentoRow = {
+  id: string;
+  duo_id: string;
+  library_game_id: string;
+  session_id: string | null;
+  author_user_id: string;
+  body: string;
+  is_spoiler: boolean;
+  revealed_for_viewer: boolean;
+  created_at: Date;
+  updated_at: Date;
+};
+
 type NotificationRow = {
   id: string;
   duo_id: string;
@@ -177,6 +203,7 @@ export const playRepository: PlayRepository = {
   resolveMembership: (...args) => getDefaultPlayRepository().resolveMembership(...args),
   readCurrentPlay: (...args) => getDefaultPlayRepository().readCurrentPlay(...args),
   readGamePlayDetail: (...args) => getDefaultPlayRepository().readGamePlayDetail(...args),
+  readGameTimeline: (...args) => getDefaultPlayRepository().readGameTimeline(...args),
   readActivePlayGames: (...args) => getDefaultPlayRepository().readActivePlayGames(...args),
   upsertActiveRoleRows: (...args) => getDefaultPlayRepository().upsertActiveRoleRows(...args),
   createSessionConfirmation: (...args) =>
@@ -208,6 +235,19 @@ export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): Play
               duoId: membership.duoId,
               catalogGameId: input.catalogGameId,
               memberUserIds: membership.memberUserIds
+            })
+          : null;
+      }),
+    readGameTimeline: (input) =>
+      withAppUserTransaction(pool, input.userId, async (client) => {
+        const membership = await resolveMembership(client, input.userId);
+        return membership
+          ? readGameTimeline(client, {
+              duoId: membership.duoId,
+              catalogGameId: input.catalogGameId,
+              estimatedMinutes: input.estimatedMinutes,
+              memberUserIds: membership.memberUserIds,
+              viewerUserId: input.userId
             })
           : null;
       }),
@@ -284,6 +324,13 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
         memberUserIds: membership
       });
     },
+    readGameTimeline: async (input) => {
+      const membership = await resolveMembershipByDuo(client, input.duoId);
+      return readGameTimeline(client, {
+        ...input,
+        memberUserIds: membership
+      });
+    },
     readActiveLiveSession: (input) => readActiveLiveSession(client, input.duoId),
     endLiveSession: (input) => endLiveSession(client, input),
     readSessionDetail: async (input) => {
@@ -301,6 +348,8 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     createTerminalRequest: (input) => createTerminalRequest(client, input),
     cancelTerminalRequest: (input) => cancelTerminalRequest(client, input),
     confirmTerminalRequest: (input) => confirmTerminalRequest(client, input),
+    createMomento: (input) => createMomento(client, input),
+    revealMomento: (input) => revealMomento(client, input),
     insertNotificationItem: (input) => insertNotificationItem(client, input),
     insertXpAward: (input) =>
       insertXpAward(client, input).then((award) => {
@@ -447,6 +496,106 @@ async function readGamePlayDetail(
   };
 }
 
+async function readGameTimeline(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    catalogGameId: string;
+    estimatedMinutes: number | null;
+    memberUserIds: string[];
+    viewerUserId: string;
+  }
+): Promise<GameTimelineRecord | null> {
+  const result = await client.query<ActivationLibraryGameRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        catalog_game_id,
+        status,
+        updated_at
+      FROM app.duo_library_games
+      WHERE duo_id = $1
+        AND catalog_game_id = $2
+      LIMIT 1
+    `,
+    [input.duoId, input.catalogGameId]
+  );
+  const libraryGame = result.rows[0];
+
+  if (!libraryGame) {
+    return null;
+  }
+
+  const [timezone, sessions, chapters, momentos] = await Promise.all([
+    readDuoTimezone(client, input.duoId),
+    readConfirmedSessionsForLibraryGame(client, {
+      duoId: input.duoId,
+      libraryGameId: libraryGame.id,
+      memberUserIds: input.memberUserIds
+    }),
+    readChapters(client, input.duoId, libraryGame.id),
+    readMomentosForLibraryGame(client, {
+      duoId: input.duoId,
+      libraryGameId: libraryGame.id,
+      viewerUserId: input.viewerUserId
+    })
+  ]);
+
+  const sessionEvents: PlayTimelineEvent[] = sessions.map((session) => ({
+    id: `session:${session.id}`,
+    type: "session",
+    occurredAt: session.endedAt ?? session.startedAt,
+    session
+  }));
+  const chapterEvents: PlayTimelineEvent[] = chapters
+    .filter((chapter) => chapter.completedAt)
+    .map((chapter) => ({
+      id: `chapter:${chapter.id}`,
+      type: "chapter",
+      occurredAt: chapter.completedAt ?? chapter.updatedAt,
+      chapter
+    }));
+  const momentoEvents: PlayTimelineEvent[] = momentos.map((momento) => ({
+    id: `momento:${momento.id}`,
+    type: "momento",
+    occurredAt: momento.createdAt,
+    momento
+  }));
+  const milestoneEvents = buildMilestoneEvents({
+    estimatedMinutes: input.estimatedMinutes,
+    sessions,
+    timezone
+  });
+  const events = [
+    ...sessionEvents,
+    ...chapterEvents,
+    ...milestoneEvents,
+    ...momentoEvents
+  ].sort((first, second) => first.occurredAt.getTime() - second.occurredAt.getTime());
+
+  return {
+    duoId: input.duoId,
+    libraryGameId: libraryGame.id,
+    catalogGameId: libraryGame.catalog_game_id,
+    events
+  };
+}
+
+async function readDuoTimezone(client: QueueDbClient, duoId: string): Promise<string> {
+  const result = await client.query<DuoTimezoneRow>(
+    `
+      SELECT timezone
+      FROM app.duos
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [duoId]
+  );
+
+  return result.rows[0]?.timezone ?? "UTC";
+}
+
 async function readCurrentPlay(
   client: QueueDbClient,
   duoId: string
@@ -570,6 +719,44 @@ async function readPendingSessionsForLibraryGame(
       GROUP BY session.id
       ORDER BY session.updated_at DESC
       LIMIT 8
+    `,
+    [input.duoId, input.libraryGameId]
+  );
+
+  return result.rows.map((row) => mapSessionDetail(row, input.memberUserIds));
+}
+
+async function readConfirmedSessionsForLibraryGame(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlaySessionDetailRecord[]> {
+  const result = await client.query<SessionDetailRow>(
+    `
+      SELECT
+        session.id,
+        session.duo_id,
+        session.library_game_id,
+        session.kind,
+        session.status,
+        session.started_at,
+        session.ended_at,
+        session.duration_seconds,
+        session.created_by_user_id,
+        coalesce(array_agg(confirmation.user_id ORDER BY confirmation.confirmed_at) FILTER (WHERE confirmation.user_id IS NOT NULL), ARRAY[]::text[]) AS confirmed_by_user_ids,
+        count(confirmation.user_id)::int AS confirmation_count
+      FROM app.play_sessions AS session
+      LEFT JOIN app.play_session_confirmations AS confirmation
+        ON confirmation.session_id = session.id
+      WHERE session.duo_id = $1
+        AND session.library_game_id = $2
+        AND session.status = 'confirmed'
+      GROUP BY session.id
+      ORDER BY coalesce(session.ended_at, session.started_at) ASC
+      LIMIT 100
     `,
     [input.duoId, input.libraryGameId]
   );
@@ -705,6 +892,42 @@ async function readPendingTerminalRequest(
   const row = result.rows[0];
 
   return row ? mapTerminalRequest(row) : null;
+}
+
+async function readMomentosForLibraryGame(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    viewerUserId: string;
+  }
+): Promise<PlayMomentoRecord[]> {
+  const result = await client.query<MomentoRow>(
+    `
+      SELECT
+        momento.id,
+        momento.duo_id,
+        momento.library_game_id,
+        momento.session_id,
+        momento.author_user_id,
+        momento.body,
+        momento.is_spoiler,
+        (reveal.momento_id IS NOT NULL) AS revealed_for_viewer,
+        momento.created_at,
+        momento.updated_at
+      FROM app.play_momentos AS momento
+      LEFT JOIN app.play_spoiler_reveals AS reveal
+        ON reveal.momento_id = momento.id
+       AND reveal.user_id = $3
+      WHERE momento.duo_id = $1
+        AND momento.library_game_id = $2
+      ORDER BY momento.created_at ASC
+      LIMIT 100
+    `,
+    [input.duoId, input.libraryGameId, input.viewerUserId]
+  );
+
+  return result.rows.map(mapMomento);
 }
 
 async function readLibraryGameForActivation(
@@ -1517,6 +1740,118 @@ async function confirmTerminalRequest(
   return mapTerminalRequest(row);
 }
 
+async function createMomento(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    sessionId: string | null;
+    body: string;
+    isSpoiler: boolean;
+    actorUserId: string;
+  }
+): Promise<PlayMomentoRecord | null> {
+  const result = await client.query<MomentoRow>(
+    `
+      INSERT INTO app.play_momentos (
+        duo_id,
+        library_game_id,
+        session_id,
+        author_user_id,
+        body,
+        is_spoiler,
+        updated_at
+      )
+      VALUES ($1, $2, $3::uuid, $4, $5, $6, now())
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        session_id,
+        author_user_id,
+        body,
+        is_spoiler,
+        false AS revealed_for_viewer,
+        created_at,
+        updated_at
+    `,
+    [
+      input.duoId,
+      input.libraryGameId,
+      input.sessionId,
+      input.actorUserId,
+      input.body,
+      input.isSpoiler
+    ]
+  );
+  const row = result.rows[0];
+
+  return row ? mapMomento(row) : null;
+}
+
+async function revealMomento(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    momentoId: string;
+    viewerUserId: string;
+  }
+): Promise<PlayMomentoRecord | null> {
+  await client.query(
+    `
+      INSERT INTO app.play_spoiler_reveals (
+        duo_id,
+        momento_id,
+        user_id
+      )
+      SELECT $1, momento.id, $3
+      FROM app.play_momentos AS momento
+      WHERE momento.duo_id = $1
+        AND momento.id = $2
+      ON CONFLICT (momento_id, user_id) DO NOTHING
+    `,
+    [input.duoId, input.momentoId, input.viewerUserId]
+  );
+
+  return readMomentoForViewer(client, input);
+}
+
+async function readMomentoForViewer(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    momentoId: string;
+    viewerUserId: string;
+  }
+): Promise<PlayMomentoRecord | null> {
+  const result = await client.query<MomentoRow>(
+    `
+      SELECT
+        momento.id,
+        momento.duo_id,
+        momento.library_game_id,
+        momento.session_id,
+        momento.author_user_id,
+        momento.body,
+        momento.is_spoiler,
+        (reveal.momento_id IS NOT NULL) AS revealed_for_viewer,
+        momento.created_at,
+        momento.updated_at
+      FROM app.play_momentos AS momento
+      LEFT JOIN app.play_spoiler_reveals AS reveal
+        ON reveal.momento_id = momento.id
+       AND reveal.user_id = $3
+      WHERE momento.duo_id = $1
+        AND momento.id = $2
+      LIMIT 1
+    `,
+    [input.duoId, input.momentoId, input.viewerUserId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapMomento(row) : null;
+}
+
 async function insertNotificationItem(
   client: QueueDbClient,
   input: PlayNotificationInput
@@ -1777,6 +2112,80 @@ function mapTerminalRequest(row: TerminalRequestRow): PlayTerminalRequestRecord 
     confirmedByUserId: row.confirmed_by_user_id,
     cancelledByUserId: row.cancelled_by_user_id,
     updatedAt: row.updated_at
+  };
+}
+
+function mapMomento(row: MomentoRow): PlayMomentoRecord {
+  return {
+    id: row.id,
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    sessionId: row.session_id,
+    authorUserId: row.author_user_id,
+    body: row.body,
+    isSpoiler: row.is_spoiler,
+    revealedForViewer: !row.is_spoiler || row.revealed_for_viewer,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function buildMilestoneEvents(input: {
+  sessions: PlaySessionDetailRecord[];
+  estimatedMinutes: number | null;
+  timezone: string;
+}): PlayTimelineEvent[] {
+  let accumulatedConfirmedSeconds = 0;
+  const events: PlayTimelineEvent[] = [];
+
+  input.sessions.forEach((session, index) => {
+    const durationSeconds = session.durationSeconds ?? 0;
+    const before = accumulatedConfirmedSeconds;
+    const after = before + durationSeconds;
+    const kinds = classifyTimelineMilestones({
+      accumulatedConfirmedSecondsAfter: after,
+      accumulatedConfirmedSecondsBefore: before,
+      confirmedSessionCountBefore: index,
+      durationSeconds,
+      estimatedMinutes: input.estimatedMinutes,
+      sessionStartedAt: session.startedAt,
+      timezone: input.timezone
+    });
+
+    accumulatedConfirmedSeconds = after;
+
+    for (const kind of kinds) {
+      const milestone = toTimelineMilestone({
+        kind,
+        occurredAt: session.endedAt ?? session.startedAt,
+        sessionId: session.id
+      });
+
+      events.push({
+        id: `milestone:${milestone.id}`,
+        type: "milestone",
+        occurredAt: milestone.occurredAt,
+        milestone
+      });
+    }
+  });
+
+  return events;
+}
+
+function toTimelineMilestone(input: {
+  kind: TimelineMilestoneKind;
+  occurredAt: Date;
+  sessionId: string;
+}): PlayTimelineMilestoneRecord {
+  const copy = getTimelineMilestoneCopy(input.kind);
+
+  return {
+    id: `${input.sessionId}:${input.kind}`,
+    kind: input.kind,
+    label: copy.label,
+    description: copy.description,
+    occurredAt: input.occurredAt
   };
 }
 

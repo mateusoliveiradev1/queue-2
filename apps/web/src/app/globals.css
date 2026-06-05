@@ -1262,6 +1262,97 @@ input {
   padding: 0;
 }
 
+.momento-form {
+  display: grid;
+  gap: 10px;
+}
+
+.momento-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.momento-form select,
+.momento-form textarea {
+  background: var(--bg);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 22%, transparent);
+  border-radius: 8px;
+  color: var(--ink);
+  padding: 12px;
+}
+
+.momento-form textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.checkbox-row {
+  align-items: center;
+  display: flex !important;
+  gap: 8px;
+}
+
+.checkbox-row input {
+  block-size: 18px;
+  inline-size: 18px;
+}
+
+.timeline-list {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timeline-entry {
+  background: color-mix(in oklch, var(--bg) 52%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(72px, 96px) minmax(0, 1fr);
+  padding: 14px;
+}
+
+.timeline-entry article {
+  display: grid;
+  gap: 6px;
+  min-inline-size: 0;
+}
+
+.timeline-date {
+  color: var(--ink-muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.milestone-badge {
+  background: color-mix(in oklch, var(--primary) 16%, transparent);
+  border: 1px solid color-mix(in oklch, var(--primary) 42%, transparent);
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.84rem;
+  font-weight: 800;
+  inline-size: fit-content;
+  padding: 4px 10px;
+}
+
+.spoiler-block {
+  align-items: center;
+  border: 1px dashed color-mix(in oklch, var(--ink-muted) 28%, transparent);
+  border-radius: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 12px;
+}
+
+.spoiler-block p {
+  margin: 0;
+}
+
 .catalog-grid {
   display: grid;
   gap: var(--space-4);
@@ -3301,8 +3392,10 @@ input {
   .play-pending-card,
   .terminal-request-card,
   .chapter-row,
+  .timeline-entry,
   .offline-custom-form,
   .chapter-create-form,
+  .momento-form,
   .progress-layer-grid,
   .progress-percent-form,
   .locked-status-grid,

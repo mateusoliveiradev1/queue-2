@@ -3,8 +3,10 @@ import type {
   PlayNotificationType,
   PlaySessionKind,
   PlaySessionStatus,
+  PlayTimelineMarker,
   TerminalTargetStatus
 } from "../domain/play-policy";
+import type { TimelineMilestoneKind } from "../domain/milestone-policy";
 
 export type PlayUserId = string;
 export type PlayDuoId = string;
@@ -242,6 +244,60 @@ export type PlayTerminalRequestRecord = {
   updatedAt: Date;
 };
 
+export type PlayMomentoRecord = {
+  id: string;
+  duoId: PlayDuoId;
+  libraryGameId: PlayLibraryGameId;
+  sessionId: string | null;
+  authorUserId: PlayUserId;
+  body: string;
+  isSpoiler: boolean;
+  revealedForViewer: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type PlayTimelineMilestoneRecord = {
+  id: string;
+  kind: TimelineMilestoneKind | PlayTimelineMarker;
+  label: string;
+  description: string;
+  occurredAt: Date;
+};
+
+export type PlayTimelineEvent =
+  | {
+      id: string;
+      type: "session";
+      occurredAt: Date;
+      session: PlaySessionDetailRecord;
+    }
+  | {
+      id: string;
+      type: "chapter";
+      occurredAt: Date;
+      chapter: PlayChapterRecord;
+    }
+  | {
+      id: string;
+      type: "milestone";
+      occurredAt: Date;
+      milestone: PlayTimelineMilestoneRecord;
+    }
+  | {
+      id: string;
+      type: "momento";
+      occurredAt: Date;
+      momento: PlayMomentoRecord;
+    };
+
+export type GameTimelineRecord = {
+  duoId: PlayDuoId;
+  libraryGameId: PlayLibraryGameId;
+  catalogGameId: PlayCatalogGameId;
+  events: PlayTimelineEvent[];
+};
+
 export type GamePlayDetailRecord = {
   duoId: PlayDuoId;
   libraryGameId: PlayLibraryGameId;
@@ -331,6 +387,12 @@ export type PlayRepositoryTransaction = {
     duoId: PlayDuoId;
     catalogGameId: PlayCatalogGameId;
   }): Promise<GamePlayDetailRecord | null>;
+  readGameTimeline(input: {
+    duoId: PlayDuoId;
+    catalogGameId: PlayCatalogGameId;
+    viewerUserId: PlayUserId;
+    estimatedMinutes: number | null;
+  }): Promise<GameTimelineRecord | null>;
   readActiveLiveSession(input: {
     duoId: PlayDuoId;
   }): Promise<PlaySessionRecord | null>;
@@ -391,6 +453,19 @@ export type PlayRepositoryTransaction = {
     requestId: string;
     actorUserId: PlayUserId;
   }): Promise<PlayTerminalRequestRecord | null>;
+  createMomento(input: {
+    duoId: PlayDuoId;
+    libraryGameId: PlayLibraryGameId;
+    sessionId: string | null;
+    body: string;
+    isSpoiler: boolean;
+    actorUserId: PlayUserId;
+  }): Promise<PlayMomentoRecord | null>;
+  revealMomento(input: {
+    duoId: PlayDuoId;
+    momentoId: string;
+    viewerUserId: PlayUserId;
+  }): Promise<PlayMomentoRecord | null>;
   insertNotificationItem(input: PlayNotificationInput): Promise<PlayNotificationRecord>;
   insertXpAward(input: PlayXpAwardInput): Promise<PlayXpAwardRecord | null>;
 };
@@ -408,6 +483,11 @@ export interface PlayRepository {
     userId: PlayUserId;
     catalogGameId: PlayCatalogGameId;
   }): Promise<GamePlayDetailRecord | null>;
+  readGameTimeline(input: {
+    userId: PlayUserId;
+    catalogGameId: PlayCatalogGameId;
+    estimatedMinutes: number | null;
+  }): Promise<GameTimelineRecord | null>;
   readActivePlayGames(input: {
     userId: PlayUserId;
   }): Promise<ActivePlayGameRecord[]>;

@@ -106,6 +106,10 @@ export const mutationPerformanceBudgets: Record<
   "play.terminal": {
     pendingFeedbackMs: 100,
     authoritativeSettledMs: 2_500
+  },
+  "play.timeline": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
   }
 };
 

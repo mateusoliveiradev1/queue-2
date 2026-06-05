@@ -6,6 +6,7 @@ import {
   cancelTerminalStatus,
   confirmPlaySession,
   confirmTerminalStatus,
+  createMomento,
   createPlayChapter,
   endLiveSession,
   logOfflineSession,
@@ -14,7 +15,8 @@ import {
   reorderPlayingGames,
   startLiveSession,
   setPlayChapterCompletion,
-  updatePlayProgress
+  updatePlayProgress,
+  revealMomentoSpoiler
 } from "../../modules/play";
 import { requireAuthoritativeVerifiedSession } from "../../platform/auth/session";
 import {
@@ -29,6 +31,7 @@ const sessionTimingContext = { action: "play.session" } as const;
 const progressTimingContext = { action: "play.progress" } as const;
 const chapterTimingContext = { action: "play.chapter" } as const;
 const terminalTimingContext = { action: "play.terminal" } as const;
+const timelineTimingContext = { action: "play.timeline" } as const;
 
 export type PlayOrderMutationResult =
   | {
@@ -156,6 +159,22 @@ export async function confirmTerminalStatusAction(
   );
 }
 
+export async function createMomentoAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(timelineTimingContext, () =>
+    playJourneyActionTimed(formData, "create-momento", timelineTimingContext)
+  );
+}
+
+export async function revealMomentoSpoilerAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(timelineTimingContext, () =>
+    playJourneyActionTimed(formData, "reveal-spoiler", timelineTimingContext)
+  );
+}
+
 async function reorderPlayingGamesActionTimed(
   formData: FormData
 ): Promise<PlayOrderMutationResult> {
@@ -272,10 +291,12 @@ async function playJourneyActionTimed(
     | "cancel-terminal"
     | "confirm-session"
     | "confirm-terminal"
+    | "create-momento"
     | "create-chapter"
     | "end-live"
     | "log-offline"
     | "request-terminal"
+    | "reveal-spoiler"
     | "set-chapter"
     | "start-live"
     | "update-progress",
@@ -343,6 +364,19 @@ async function playJourneyActionTimed(
         return confirmTerminalStatus({
           userId: session.user.id,
           requestId: getFormString(formData, "requestId")
+        });
+      case "create-momento":
+        return createMomento({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId"),
+          body: getFormString(formData, "body"),
+          isSpoiler: getFormString(formData, "isSpoiler") === "true",
+          sessionId: getFormString(formData, "sessionId") || null
+        });
+      case "reveal-spoiler":
+        return revealMomentoSpoiler({
+          userId: session.user.id,
+          momentoId: getFormString(formData, "momentoId")
         });
     }
   });
@@ -446,10 +480,12 @@ function playJourneySuccessState(
     | "cancel-terminal"
     | "confirm-session"
     | "confirm-terminal"
+    | "create-momento"
     | "create-chapter"
     | "end-live"
     | "log-offline"
     | "request-terminal"
+    | "reveal-spoiler"
     | "set-chapter"
     | "start-live"
     | "update-progress"
@@ -475,6 +511,10 @@ function playJourneySuccessState(
       return "pedido-terminal-cancelado";
     case "confirm-terminal":
       return "pedido-terminal-confirmado";
+    case "create-momento":
+      return "momento-criado";
+    case "reveal-spoiler":
+      return "spoiler-revelado";
   }
 }
 
@@ -488,6 +528,10 @@ function playJourneyReasonToState(reason: string): string {
       return "duracao-invalida";
     case "library-game-not-found":
       return "jogo-fora-da-biblioteca";
+    case "invalid-momento":
+      return "momento-invalido";
+    case "momento-not-found":
+      return "momento-nao-encontrado";
     case "not-playing":
       return "jogo-nao-esta-jogando";
     case "partner-confirmation-required":

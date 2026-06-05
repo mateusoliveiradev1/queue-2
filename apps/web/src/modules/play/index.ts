@@ -8,7 +8,12 @@ import { confirmPlaySessionUseCase } from "./application/confirm-play-session";
 import { endLiveSessionUseCase } from "./application/end-live-session";
 import { getCurrentPlayUseCase } from "./application/get-current-play";
 import { getGamePlayDetailUseCase } from "./application/get-game-play-detail";
+import { getGameTimelineUseCase } from "./application/get-game-timeline";
 import { logOfflineSessionUseCase } from "./application/log-offline-session";
+import {
+  createMomentoUseCase,
+  revealMomentoSpoilerUseCase
+} from "./application/manage-momentos";
 import {
   createPlayChapterUseCase,
   setPlayChapterCompletionUseCase
@@ -87,6 +92,14 @@ export {
   type TerminalTargetStatus,
   type XpAwardEligibility
 } from "./domain/play-policy";
+export {
+  TIMELINE_MILESTONE_KINDS,
+  classifyTimelineMilestones,
+  getTimelineMilestoneCopy,
+  type TimelineMilestoneInput,
+  type TimelineMilestoneKind,
+  type TimelineMilestoneCopy
+} from "./domain/milestone-policy";
 
 export type {
   ActivePlayGameRecord,
@@ -96,6 +109,7 @@ export type {
   CurrentPlayProgressRecord,
   CurrentPlayRecord,
   DeactivatePlayingGameResult,
+  GameTimelineRecord,
   GamePlayDetailRecord,
   PlayCatalogGameId,
   PlayChapterRecord,
@@ -103,6 +117,7 @@ export type {
   PlayDuoId,
   PlayLibraryGameId,
   PlayMembershipContext,
+  PlayMomentoRecord,
   PlayNotificationInput,
   PlayNotificationRecord,
   PlayProgressRecord,
@@ -110,6 +125,8 @@ export type {
   PlayRepository,
   PlayRepositoryTransaction,
   PlaySessionDetailRecord,
+  PlayTimelineEvent,
+  PlayTimelineMilestoneRecord,
   PromotePlayingGameResult,
   ReorderPlayingGamesResult,
   PlaySessionRecord,
@@ -131,6 +148,10 @@ export {
   getGamePlayDetailUseCase,
   type GetGamePlayDetailResult
 } from "./application/get-game-play-detail";
+export {
+  getGameTimelineUseCase,
+  type GetGameTimelineResult
+} from "./application/get-game-timeline";
 export {
   startLiveSessionUseCase,
   type StartLiveSessionResult
@@ -158,6 +179,12 @@ export {
   type SetPlayChapterCompletionResult
 } from "./application/manage-play-chapters";
 export {
+  createMomentoUseCase,
+  revealMomentoSpoilerUseCase,
+  type CreateMomentoResult,
+  type RevealMomentoSpoilerResult
+} from "./application/manage-momentos";
+export {
   cancelTerminalStatusUseCase,
   confirmTerminalStatusUseCase,
   requestTerminalStatusUseCase,
@@ -181,6 +208,14 @@ export function getGamePlayDetail(input: {
   catalogGameId: string;
 }) {
   return getGamePlayDetailUseCase(input, playRepository);
+}
+
+export function getGameTimeline(input: {
+  userId: string;
+  catalogGameId: string;
+  estimatedMinutes: number | null;
+}) {
+  return getGameTimelineUseCase(input, playRepository);
 }
 
 export function activatePlayingGame(input: {
@@ -287,6 +322,23 @@ export function confirmTerminalStatus(input: {
   return confirmTerminalStatusUseCase(input, playRepository);
 }
 
+export function createMomento(input: {
+  userId: string;
+  catalogGameId: string;
+  body: string;
+  isSpoiler: boolean;
+  sessionId?: string | null;
+}) {
+  return createMomentoUseCase(input, playRepository);
+}
+
+export function revealMomentoSpoiler(input: {
+  userId: string;
+  momentoId: string;
+}) {
+  return revealMomentoSpoilerUseCase(input, playRepository);
+}
+
 export { PlayingNowDashboard } from "./presentation/playing-now-dashboard";
 export { PlayingOrderControls } from "./presentation/playing-order-controls";
 export { ChapterList } from "./presentation/chapter-list";
@@ -294,6 +346,10 @@ export { JogamosHojeForm } from "./presentation/jogamos-hoje-form";
 export { LiveSessionPanel } from "./presentation/live-session-panel";
 export { ProgressPanel } from "./presentation/progress-panel";
 export { TerminalStatusPanel } from "./presentation/terminal-status-panel";
+export { MilestoneBadge } from "./presentation/milestone-badge";
+export { MomentoForm } from "./presentation/momento-form";
+export { SpoilerReveal } from "./presentation/spoiler-reveal";
+export { Timeline } from "./presentation/timeline";
 export {
   toPlayingNowView,
   type PlayingNowGameView,

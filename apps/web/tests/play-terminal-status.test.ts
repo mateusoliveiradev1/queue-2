@@ -8,6 +8,7 @@ import {
 import { confirmTerminalRequest } from "../src/modules/play/domain/play-policy";
 import type {
   ActivePlayGameRecord,
+  GameTimelineRecord,
   GamePlayDetailRecord,
   PlayMembershipContext,
   PlayNotificationRecord,
@@ -222,6 +223,7 @@ function makeTerminalRepository(input: {
     createSession: vi.fn(),
     confirmSession: vi.fn(),
     readGamePlayDetail: vi.fn(async () => gamePlayDetailRecord()),
+    readGameTimeline: vi.fn(async () => gameTimelineRecord()),
     readActiveLiveSession: vi.fn(async () => null),
     endLiveSession: vi.fn(async () => null),
     readSessionDetail: vi.fn(async () => null),
@@ -239,6 +241,8 @@ function makeTerminalRepository(input: {
     ),
     cancelTerminalRequest: vi.fn(async () => null),
     confirmTerminalRequest: vi.fn(async () => null),
+    createMomento: vi.fn(),
+    revealMomento: vi.fn(),
     insertNotificationItem: vi.fn(async (notificationInput) => notificationRecord(notificationInput)),
     insertXpAward: vi.fn(async (awardInput) => xpAwardRecord(awardInput)),
     ...input.transaction
@@ -248,6 +252,7 @@ function makeTerminalRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readCurrentPlay: vi.fn(async () => null),
     readGamePlayDetail: vi.fn(async () => gamePlayDetailRecord()),
+    readGameTimeline: vi.fn(async () => gameTimelineRecord()),
     readActivePlayGames: vi.fn(async () => [activeRecord()]),
     upsertActiveRoleRows: vi.fn(async () => []),
     createSessionConfirmation: vi.fn(),
@@ -293,6 +298,18 @@ function gamePlayDetailRecord(
     },
     chapters: [],
     terminalRequest: null,
+    ...overrides
+  };
+}
+
+function gameTimelineRecord(
+  overrides: Partial<GameTimelineRecord> = {}
+): GameTimelineRecord {
+  return {
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    catalogGameId: "game-1",
+    events: [],
     ...overrides
   };
 }

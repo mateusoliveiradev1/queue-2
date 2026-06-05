@@ -20,10 +20,12 @@ import {
 import {
   ChapterList,
   getGamePlayDetail,
+  getGameTimeline,
   JogamosHojeForm,
   LiveSessionPanel,
   ProgressPanel,
-  TerminalStatusPanel
+  TerminalStatusPanel,
+  Timeline
 } from "../../../../modules/play";
 import { requireVerifiedSession } from "../../../../platform/auth/session";
 import {
@@ -38,10 +40,12 @@ import {
   cancelTerminalStatusAction,
   confirmPlaySessionAction,
   confirmTerminalStatusAction,
+  createMomentoAction,
   createPlayChapterAction,
   endLiveSessionAction,
   logOfflineSessionAction,
   requestTerminalStatusAction,
+  revealMomentoSpoilerAction,
   setPlayChapterCompletionAction,
   startLiveSessionAction,
   updatePlayProgressAction
@@ -119,6 +123,16 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
       )
     : null;
   const playDetail = playDetailResult?.ok ? playDetailResult.detail : null;
+  const timelineResult = libraryResult.ok
+    ? await measureStage("database", gameTimingContext, () =>
+        getGameTimeline({
+          userId: session.user.id,
+          catalogGameId: catalog.id,
+          estimatedMinutes: catalog.estimatedMinutes
+        })
+      )
+    : null;
+  const timeline = timelineResult?.ok ? timelineResult.timeline : null;
   const returnTo = `/app/jogo/${catalog.slug}`;
   const state = getSearchParam(query?.estado);
   const statusMessage = getPhase2StatusMessage(state);
@@ -283,6 +297,13 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
             gameSlug={catalog.slug}
             playDetail={playDetail}
             requestAction={requestTerminalStatusAction}
+          />
+          <Timeline
+            catalogGameId={catalog.id}
+            createMomentoAction={createMomentoAction}
+            gameSlug={catalog.slug}
+            revealSpoilerAction={revealMomentoSpoilerAction}
+            timeline={timeline}
           />
         </>
       ) : (

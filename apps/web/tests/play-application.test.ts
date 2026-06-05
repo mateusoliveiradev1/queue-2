@@ -12,6 +12,7 @@ import {
 } from "../src/modules/play";
 import type {
   ActivePlayGameRecord,
+  GameTimelineRecord,
   GamePlayDetailRecord,
   PlayChapterRecord,
   PlayMembershipContext,
@@ -453,6 +454,9 @@ function fakePlayRepository(input: {
           })
         : null
     ),
+    readGameTimeline: vi.fn(async ({ catalogGameId }) =>
+      membership ? gameTimelineRecord({ catalogGameId }) : null
+    ),
     readActiveLiveSession: vi.fn(async () => null),
     endLiveSession: vi.fn(async () => null),
     readSessionDetail: vi.fn(async () => null),
@@ -523,6 +527,30 @@ function fakePlayRepository(input: {
     ),
     cancelTerminalRequest: vi.fn(async () => null),
     confirmTerminalRequest: vi.fn(async () => null),
+    createMomento: vi.fn(async (momentoInput) => ({
+      id: "momento-1",
+      duoId: momentoInput.duoId,
+      libraryGameId: momentoInput.libraryGameId,
+      sessionId: momentoInput.sessionId,
+      authorUserId: momentoInput.actorUserId,
+      body: momentoInput.body,
+      isSpoiler: momentoInput.isSpoiler,
+      revealedForViewer: !momentoInput.isSpoiler,
+      createdAt: new Date("2026-06-05T12:20:00.000Z"),
+      updatedAt: new Date("2026-06-05T12:20:00.000Z")
+    })),
+    revealMomento: vi.fn(async (momentoInput) => ({
+      id: momentoInput.momentoId,
+      duoId: momentoInput.duoId,
+      libraryGameId: "library-1",
+      sessionId: null,
+      authorUserId: "member-1",
+      body: "Virada memoravel",
+      isSpoiler: true,
+      revealedForViewer: true,
+      createdAt: new Date("2026-06-05T12:20:00.000Z"),
+      updatedAt: new Date("2026-06-05T12:20:00.000Z")
+    })),
     insertNotificationItem: vi.fn(),
     insertXpAward: vi.fn()
   };
@@ -554,6 +582,9 @@ function fakePlayRepository(input: {
             libraryStatus: input.libraryGame?.status ?? "jogando"
           })
         : null
+    ),
+    readGameTimeline: vi.fn(async ({ catalogGameId }) =>
+      membership ? gameTimelineRecord({ catalogGameId }) : null
     ),
     readActivePlayGames: vi.fn(async () => input.activeGames),
     upsertActiveRoleRows: vi.fn(async () => input.activeGames),
@@ -674,6 +705,18 @@ function gamePlayDetailRecord(
     progress: playProgressRecord({ libraryGameId }),
     chapters: [],
     terminalRequest: null,
+    ...overrides
+  };
+}
+
+function gameTimelineRecord(
+  overrides: Partial<GameTimelineRecord> = {}
+): GameTimelineRecord {
+  return {
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    catalogGameId: "game-1",
+    events: [],
     ...overrides
   };
 }
