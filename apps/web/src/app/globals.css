@@ -441,14 +441,97 @@ input {
   display: inline-block;
 }
 
+.action-feedback {
+  align-items: center;
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink-muted);
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  line-height: 1.35;
+  min-height: 44px;
+  min-width: min(100%, 18rem);
+  padding: var(--space-2) var(--space-3);
+}
+
+.action-feedback[data-state="syncing"],
+.action-feedback[data-state="retrying"] {
+  border-color: color-mix(in oklch, var(--primary) 44%, transparent);
+  color: var(--ink);
+}
+
+.action-feedback[data-state="confirmed"] {
+  border-color: color-mix(in oklch, var(--primary) 58%, transparent);
+  color: var(--primary);
+}
+
+.action-feedback[data-state="failed"] {
+  border-color: color-mix(in oklch, var(--danger) 48%, transparent);
+  color: color-mix(in oklch, var(--ink) 84%, var(--danger));
+}
+
+.action-feedback__mark,
+.action-feedback-button__mark {
+  align-items: center;
+  border: 1px solid currentColor;
+  border-radius: var(--radius-sharp);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  height: 1.8rem;
+  justify-content: center;
+  line-height: 1;
+  width: 1.8rem;
+}
+
+.action-feedback[data-state="syncing"] .action-feedback__mark,
+.action-feedback[data-state="retrying"] .action-feedback__mark,
+.action-feedback-button[data-action-state="syncing"] .action-feedback-button__mark,
+.action-feedback-button[data-action-state="retrying"] .action-feedback-button__mark {
+  animation: queue2-feedback-pulse 900ms ease-in-out infinite;
+}
+
+.action-feedback__copy,
+.action-feedback-button__label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.action-feedback-button {
+  align-items: center;
+  display: inline-grid;
+  gap: var(--space-2);
+  grid-template-columns: 1.8rem minmax(13ch, 1fr);
+  justify-items: center;
+  min-height: 48px;
+  min-width: 168px;
+}
+
 @keyframes queue2-spin {
   to {
     transform: rotate(1turn);
   }
 }
 
+@keyframes queue2-feedback-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .pending-submit-button[data-pending="true"] .pending-submit-button__spinner {
+  .pending-submit-button[data-pending="true"] .pending-submit-button__spinner,
+  .action-feedback[data-state="syncing"] .action-feedback__mark,
+  .action-feedback[data-state="retrying"] .action-feedback__mark,
+  .action-feedback-button[data-action-state="syncing"] .action-feedback-button__mark,
+  .action-feedback-button[data-action-state="retrying"] .action-feedback-button__mark {
     animation: none;
   }
 }

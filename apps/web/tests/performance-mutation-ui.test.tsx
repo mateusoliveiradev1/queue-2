@@ -1,0 +1,204 @@
+import { readFileSync } from "node:fs";
+import { useState, type FormEvent } from "react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+import {
+  ActionFeedback,
+  ActionFeedbackButton,
+  getActionFeedbackCopy,
+  type ActionFeedbackState
+} from "../src/components/action-feedback";
+
+type Deferred = {
+  promise: Promise<void>;
+  resolve: () => void;
+  reject: (error: Error) => void;
+};
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("action feedback primitives", () => {
+  it("shows local syncing feedback before the server action resolves", async () => {
+    const deferred = createDeferred();
+    const action = vi.fn(() => deferred.promise);
+
+    render(<FeedbackActionHarness action={action} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /adicionar a wishlist/i }));
+
+    expect(action).toHaveBeenCalledOnce();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /salvo aqui, sincronizando/i
+    );
+    expect(
+      screen.getByRole("button", { name: /sincronizando com a fila/i })
+    ).toBeDisabled();
+    expect(screen.queryByText(/confirmado pela fila/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      deferred.resolve();
+      await deferred.promise;
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(/confirmado pela fila/i);
+  });
+
+  it("keeps failure feedback visible with retry copy", async () => {
+    const action = vi.fn(async () => {
+      throw new Error("server unavailable");
+    });
+
+    render(<FeedbackActionHarness action={action} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /adicionar a wishlist/i }));
+
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      /nao sincronizou\. tente de novo/i
+    );
+    expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
+    expect(screen.queryByText(/confirmado pela fila/i)).not.toBeInTheDocument();
+  });
+
+  it("announces only non-idle states while preserving the local slot", () => {
+    const { container, rerender } = render(<ActionFeedback state="idle" />);
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    expect(container.querySelector(".action-feedback")).toHaveAttribute(
+      "data-state",
+      "idle"
+    );
+    expect(container.querySelector(".action-feedback__mark")).toHaveTextContent("/2");
+
+    rerender(<ActionFeedback state="retrying" />);
+
+    expect(screen.getByRole("status")).toHaveTextContent(/tentando de novo/i);
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
+
+    rerender(<ActionFeedback state="failed" />);
+
+    expect(screen.getByRole("status")).toHaveAttribute("aria-live", "assertive");
+  });
+
+  it("keeps syncing copy honest until the server result is known", () => {
+    expect(getActionFeedbackCopy("syncing")).toMatch(/sincronizando/i);
+    expect(getActionFeedbackCopy("syncing")).not.toMatch(
+      /confirmado|concluido|sucesso/i
+    );
+    expect(getActionFeedbackCopy("confirmed")).toMatch(/confirmado/i);
+    expect(getActionFeedbackCopy("failed")).toMatch(/tente de novo/i);
+  });
+
+  it("maps button state to stable labels, busy state and retry availability", () => {
+    const labels = {
+      idle: "Adicionar a Wishlist",
+      syncing: "Sincronizando com a fila",
+      confirmed: "Confirmado",
+      failed: "Tentar de novo",
+      retrying: "Tentando de novo"
+    };
+    const { rerender } = render(
+      <ActionFeedbackButton labels={labels} state="idle" />
+    );
+
+    expect(screen.getByRole("button", { name: /adicionar a wishlist/i })).toHaveAttribute(
+      "aria-busy",
+      "false"
+    );
+
+    rerender(<ActionFeedbackButton labels={labels} state="syncing" />);
+
+    expect(
+      screen.getByRole("button", { name: /sincronizando com a fila/i })
+    ).toBeDisabled();
+    expect(screen.getByRole("button")).toHaveAttribute("data-action-state", "syncing");
+
+    rerender(<ActionFeedbackButton labels={labels} state="failed" />);
+
+    expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
+    expect(screen.getByRole("button")).toHaveAttribute("data-action-state", "failed");
+  });
+
+  it("has stable dimensions and reduced-motion CSS for action-local feedback", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const reducedMotionBlock = css.slice(
+      css.indexOf("@media (prefers-reduced-motion: reduce)")
+    );
+
+    expect(css).toContain(".action-feedback-button");
+    expect(css).toContain("grid-template-columns: 1.8rem minmax(13ch, 1fr)");
+    expect(css).toContain("min-height: 48px");
+    expect(css).toContain("min-width: 168px");
+    expect(css).toContain(".action-feedback");
+    expect(css).toContain("min-height: 44px");
+    expect(css).toContain("queue2-feedback-pulse");
+    expect(reducedMotionBlock).toContain(
+      '.action-feedback-button[data-action-state="syncing"]'
+    );
+    expect(reducedMotionBlock).toContain(
+      '.action-feedback-button[data-action-state="retrying"]'
+    );
+    expect(reducedMotionBlock).toContain("animation: none");
+  });
+});
+
+function FeedbackActionHarness({
+  action
+}: {
+  action: () => Promise<void>;
+}) {
+  const [state, setState] = useState<ActionFeedbackState>("idle");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    try {
+      await action();
+      setState("confirmed");
+    } catch {
+      setState("failed");
+    }
+  }
+
+  return (
+    <form className="form-actions" onSubmit={handleSubmit}>
+      <ActionFeedbackButton
+        labels={{
+          idle: "Adicionar a Wishlist",
+          syncing: "Sincronizando com a fila",
+          confirmed: "Confirmado",
+          failed: "Tentar de novo",
+          retrying: "Tentando de novo"
+        }}
+        state={state}
+      />
+      <ActionFeedback
+        copy={{
+          syncing: "Salvo aqui, sincronizando...",
+          confirmed: "Confirmado pela fila.",
+          failed: "Nao sincronizou. Tente de novo.",
+          retrying: "Tentando de novo..."
+        }}
+        state={state}
+      />
+    </form>
+  );
+}
+
+function createDeferred(): Deferred {
+  let resolve!: () => void;
+  let reject!: (error: Error) => void;
+  const promise = new Promise<void>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+
+  return {
+    promise,
+    resolve,
+    reject
+  };
+}
