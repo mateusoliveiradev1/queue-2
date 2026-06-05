@@ -110,6 +110,32 @@ export type DeactivatePlayingGameResult =
         | "membership-required";
     };
 
+export type ReorderPlayingGamesResult =
+  | {
+      ok: true;
+      currentPlay: CurrentPlayRecord;
+    }
+  | {
+      ok: false;
+      reason:
+        | "invalid-active-layout"
+        | "invalid-order"
+        | "membership-required";
+    };
+
+export type PromotePlayingGameResult =
+  | {
+      ok: true;
+      currentPlay: CurrentPlayRecord;
+    }
+  | {
+      ok: false;
+      reason:
+        | "invalid-active-layout"
+        | "membership-required"
+        | "not-secondary-game";
+    };
+
 export type PlaySessionRecord = {
   id: string;
   duoId: PlayDuoId;
@@ -226,6 +252,15 @@ export type PlayRepositoryTransaction = {
     nextStatus: "wishlist" | "pausado";
   }): Promise<ActivePlayGameRecord[]>;
   upsertActiveRoleRows(input: {
+    duoId: PlayDuoId;
+    actorUserId: PlayUserId;
+    games: Array<{
+      libraryGameId: PlayLibraryGameId;
+      role: PlayGameRole;
+      position: number;
+    }>;
+  }): Promise<ActivePlayGameRecord[]>;
+  replaceActiveRoleRows(input: {
     duoId: PlayDuoId;
     actorUserId: PlayUserId;
     games: Array<{

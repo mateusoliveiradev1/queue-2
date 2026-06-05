@@ -155,7 +155,14 @@ describe.skipIf(!testDatabaseUrl)("play migration foundation", () => {
       ) AS expected(table_name)
     `);
 
-    expect(privileges.rows.every((row) => row.can_delete === false)).toBe(true);
+    expect(
+      privileges.rows.filter((row) => row.table_name === "app.play_active_games")
+    ).toEqual([expect.objectContaining({ can_delete: true })]);
+    expect(
+      privileges.rows
+        .filter((row) => row.table_name !== "app.play_active_games")
+        .every((row) => row.can_delete === false)
+    ).toBe(true);
     expect(privileges.rows.every((row) => row.runtime_can_update_jobs === false)).toBe(true);
     expect(privileges.rows.every((row) => row.worker_can_update_jobs === true)).toBe(true);
   });

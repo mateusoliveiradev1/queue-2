@@ -206,6 +206,7 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     deactivatePlayingLibraryGame: (input) =>
       deactivatePlayingLibraryGame(client, input),
     upsertActiveRoleRows: (input) => upsertActiveRoleRows(client, input),
+    replaceActiveRoleRows: (input) => replaceActiveRoleRows(client, input),
     createSession: (input) => createSession(client, input),
     confirmSession: (input) =>
       createSessionConfirmation(client, {
@@ -488,6 +489,47 @@ async function upsertActiveRoleRows(
             position = excluded.position,
             updated_by_user_id = excluded.updated_by_user_id,
             updated_at = now()
+      `,
+      [input.duoId, game.libraryGameId, game.role, game.position, input.actorUserId]
+    );
+  }
+
+  return readActivePlayGames(client, input.duoId);
+}
+
+async function replaceActiveRoleRows(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    actorUserId: string;
+    games: Array<{
+      libraryGameId: string;
+      role: PlayGameRole;
+      position: number;
+    }>;
+  }
+): Promise<ActivePlayGameRecord[]> {
+  await client.query(
+    `
+      DELETE FROM app.play_active_games
+      WHERE duo_id = $1
+    `,
+    [input.duoId]
+  );
+
+  for (const game of input.games) {
+    await client.query(
+      `
+        INSERT INTO app.play_active_games (
+          duo_id,
+          library_game_id,
+          role,
+          position,
+          added_by_user_id,
+          updated_by_user_id,
+          updated_at
+        )
+        VALUES ($1, $2, $3, $4, $5, $5, now())
       `,
       [input.duoId, game.libraryGameId, game.role, game.position, input.actorUserId]
     );

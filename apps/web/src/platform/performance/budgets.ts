@@ -82,6 +82,14 @@ export const mutationPerformanceBudgets: Record<
   "discovery.surprise": {
     pendingFeedbackMs: 100,
     authoritativeSettledMs: 2_000
+  },
+  "play.order.promote": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
+  },
+  "play.order.reorder": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
   }
 };
 

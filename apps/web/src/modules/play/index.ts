@@ -5,6 +5,8 @@ import {
   deactivatePlayingGameUseCase
 } from "./application/activate-playing-game";
 import { getCurrentPlayUseCase } from "./application/get-current-play";
+import { promotePlayingGameUseCase } from "./application/promote-playing-game";
+import { reorderPlayingGamesUseCase } from "./application/reorder-playing-games";
 import { playRepository } from "./infrastructure/play-repository";
 
 export {
@@ -89,6 +91,8 @@ export type {
   PlayReminderJobRecord,
   PlayRepository,
   PlayRepositoryTransaction,
+  PromotePlayingGameResult,
+  ReorderPlayingGamesResult,
   PlaySessionRecord,
   PlayTerminalRequestRecord,
   PlayUserId,
@@ -104,6 +108,12 @@ export {
   getCurrentPlayUseCase,
   type GetCurrentPlayResult
 } from "./application/get-current-play";
+export {
+  promotePlayingGameUseCase
+} from "./application/promote-playing-game";
+export {
+  reorderPlayingGamesUseCase
+} from "./application/reorder-playing-games";
 
 export function getCurrentPlay(userId: string) {
   return getCurrentPlayUseCase(userId, playRepository);
@@ -122,4 +132,18 @@ export function deactivatePlayingGame(input: {
   nextStatus: "wishlist" | "pausado";
 }) {
   return deactivatePlayingGameUseCase(input, playRepository);
+}
+
+export function reorderPlayingGames(input: {
+  userId: string;
+  orderedLibraryGameIds: string[];
+}) {
+  return reorderPlayingGamesUseCase(input, playRepository);
+}
+
+export function promotePlayingGame(input: {
+  userId: string;
+  libraryGameId: string;
+}) {
+  return promotePlayingGameUseCase(input, playRepository);
 }

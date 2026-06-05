@@ -1,5 +1,6 @@
--- Default-deny RLS policies for QUEUE/2 Phase 1.
--- Table privileges grant only the operations below; DELETE remains denied for duo-scoped tables.
+-- Default-deny RLS policies for QUEUE/2.
+-- Table privileges grant only the operations below; DELETE remains denied for
+-- duo-scoped tables except narrow owner-module cases such as active play reorder.
 
 ALTER TABLE app.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.profiles FORCE ROW LEVEL SECURITY;
@@ -317,6 +318,7 @@ ALTER TABLE app.play_active_games FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_play_active_games_select_members ON app.play_active_games;
 DROP POLICY IF EXISTS app_play_active_games_insert_members ON app.play_active_games;
 DROP POLICY IF EXISTS app_play_active_games_update_members ON app.play_active_games;
+DROP POLICY IF EXISTS app_play_active_games_delete_members ON app.play_active_games;
 CREATE POLICY app_play_active_games_select_members ON app.play_active_games
   FOR SELECT TO PUBLIC
   USING (app.has_duo_membership(app.current_user_id(), duo_id));
@@ -334,6 +336,9 @@ CREATE POLICY app_play_active_games_update_members ON app.play_active_games
     updated_by_user_id = app.current_user_id()
     AND app.has_duo_membership(app.current_user_id(), duo_id)
   );
+CREATE POLICY app_play_active_games_delete_members ON app.play_active_games
+  FOR DELETE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
 
 ALTER TABLE app.play_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.play_sessions FORCE ROW LEVEL SECURITY;

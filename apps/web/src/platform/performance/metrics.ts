@@ -48,6 +48,8 @@ export const performanceActionKeys = [
   "discovery.live.start",
   "discovery.quiz.answer",
   "discovery.surprise",
+  "play.order.promote",
+  "play.order.reorder",
   "unknown"
 ] as const;
 

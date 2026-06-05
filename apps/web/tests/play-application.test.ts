@@ -6,6 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
   activatePlayingGameUseCase,
   getCurrentPlayUseCase,
+  promotePlayingGameUseCase,
+  reorderPlayingGamesUseCase,
   type CurrentPlayGameRecord
 } from "../src/modules/play";
 import type {
@@ -224,6 +226,112 @@ describe("play application contract", () => {
       }
     });
   });
+
+  it("reorders the exact active set with first position as Principal", async () => {
+    const replaceActiveRoleRows = vi.fn<PlayRepositoryTransaction["replaceActiveRoleRows"]>(async (input) =>
+      input.games.map((game, index) =>
+        activeRecord({
+          id: `active-${index + 1}`,
+          libraryGameId: game.libraryGameId,
+          role: game.role,
+          position: game.position
+        })
+      )
+    );
+    const repository = fakePlayRepository({
+      activeGames: [],
+      currentGames: [
+        currentPlayRecord({ libraryGameId: "library-1", role: "principal", position: 1 }),
+        currentPlayRecord({ id: "active-2", libraryGameId: "library-2", role: "secondary", position: 2 }),
+        currentPlayRecord({ id: "active-3", libraryGameId: "library-3", role: "secondary", position: 3 })
+      ],
+      replaceActiveRoleRows
+    });
+
+    await expect(
+      reorderPlayingGamesUseCase(
+        {
+          userId: "member-1",
+          orderedLibraryGameIds: ["library-3", "library-1", "library-2"]
+        },
+        repository
+      )
+    ).resolves.toEqual(expect.objectContaining({ ok: true }));
+    expect(replaceActiveRoleRows).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      actorUserId: "member-1",
+      games: [
+        { libraryGameId: "library-3", role: "principal", position: 1 },
+        { libraryGameId: "library-1", role: "secondary", position: 2 },
+        { libraryGameId: "library-2", role: "secondary", position: 3 }
+      ]
+    });
+  });
+
+  it("rejects reorder proposals with duplicate or missing active games", async () => {
+    const replaceActiveRoleRows = vi.fn();
+    const repository = fakePlayRepository({
+      activeGames: [],
+      currentGames: [
+        currentPlayRecord({ libraryGameId: "library-1", role: "principal", position: 1 }),
+        currentPlayRecord({ id: "active-2", libraryGameId: "library-2", role: "secondary", position: 2 })
+      ],
+      replaceActiveRoleRows
+    });
+
+    await expect(
+      reorderPlayingGamesUseCase(
+        {
+          userId: "member-1",
+          orderedLibraryGameIds: ["library-2", "library-2"]
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "invalid-order"
+    });
+    expect(replaceActiveRoleRows).not.toHaveBeenCalled();
+  });
+
+  it("promotes a secondary game and demotes the previous Principal", async () => {
+    const replaceActiveRoleRows = vi.fn<PlayRepositoryTransaction["replaceActiveRoleRows"]>(async (input) =>
+      input.games.map((game, index) =>
+        activeRecord({
+          id: `active-${index + 1}`,
+          libraryGameId: game.libraryGameId,
+          role: game.role,
+          position: game.position
+        })
+      )
+    );
+    const repository = fakePlayRepository({
+      activeGames: [],
+      currentGames: [
+        currentPlayRecord({ libraryGameId: "library-1", role: "principal", position: 1 }),
+        currentPlayRecord({ id: "active-2", libraryGameId: "library-2", role: "secondary", position: 2 })
+      ],
+      replaceActiveRoleRows
+    });
+
+    await expect(
+      promotePlayingGameUseCase(
+        {
+          userId: "member-1",
+          libraryGameId: "library-2"
+        },
+        repository
+      )
+    ).resolves.toEqual(expect.objectContaining({ ok: true }));
+    expect(replaceActiveRoleRows).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      actorUserId: "member-1",
+      games: [
+        { libraryGameId: "library-1", role: "secondary", position: 2 },
+        { libraryGameId: "library-2", role: "principal", position: 1 }
+      ]
+    });
+  });
 });
 
 describe("play repository skeleton", () => {
@@ -280,6 +388,7 @@ function fakePlayRepository(input: {
   activatePlayingLibraryGame?: PlayRepositoryTransaction["activatePlayingLibraryGame"];
   deactivatePlayingLibraryGame?: PlayRepositoryTransaction["deactivatePlayingLibraryGame"];
   upsertActiveRoleRows?: PlayRepositoryTransaction["upsertActiveRoleRows"];
+  replaceActiveRoleRows?: PlayRepositoryTransaction["replaceActiveRoleRows"];
 }): PlayRepository {
   const membership =
     input.membership === undefined
@@ -306,6 +415,8 @@ function fakePlayRepository(input: {
       input.deactivatePlayingLibraryGame ?? vi.fn(async () => input.activeGames),
     upsertActiveRoleRows:
       input.upsertActiveRoleRows ?? vi.fn(async () => input.activeGames),
+    replaceActiveRoleRows:
+      input.replaceActiveRoleRows ?? vi.fn(async () => input.activeGames),
     createSession: vi.fn(),
     confirmSession: vi.fn(),
     insertNotificationItem: vi.fn(),

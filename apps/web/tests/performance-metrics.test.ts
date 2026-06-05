@@ -157,6 +157,7 @@ describe("server timing helpers", () => {
     const libraryPage = readFileSync("src/app/app/biblioteca/page.tsx", "utf8");
     const discoveryPage = readFileSync("src/app/app/descobrir/page.tsx", "utf8");
     const libraryActions = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
+    const playActions = readFileSync("src/app/app/phase-4-actions.ts", "utf8");
     const discoveryActions = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
     const discoverySearchRoute = readFileSync("src/app/api/discovery/search/route.ts", "utf8");
 
@@ -171,6 +172,8 @@ describe("server timing helpers", () => {
     expect(discoveryPage).toContain('route: "app.descobrir"');
     expect(libraryActions).toContain('action: "catalog.wishlist.add"');
     expect(libraryActions).toContain('action: "library.status.move"');
+    expect(playActions).toContain('action: "play.order.promote"');
+    expect(playActions).toContain('action: "play.order.reorder"');
     expect(discoveryActions).toContain('action: "discovery.decision"');
     expect(discoveryActions).toContain('action: "discovery.handoff"');
     expect(discoveryActions).toContain('action: "discovery.live.start"');
@@ -202,7 +205,9 @@ describe("performance budgets", () => {
       "discovery.live.start",
       "discovery.quiz.answer",
       "discovery.surprise",
-      "library.status.move"
+      "library.status.move",
+      "play.order.promote",
+      "play.order.reorder"
     ]);
   });
 });
