@@ -1,4 +1,6 @@
 import type {
+  LibraryQueueSort,
+  LibraryQueueView,
   LibraryStatus,
   Phase2LibraryStatus
 } from "../domain/library-policy";
@@ -47,6 +49,51 @@ export type LibraryOverviewRecord = {
   lockedStatuses: Array<"zerado" | "dropado">;
 };
 
+export type LibraryStatusCounts = Record<Phase2LibraryStatus, number>;
+
+export type LibraryQueueInput = {
+  userId: string;
+  view: string | null | undefined;
+  query: string | null | undefined;
+  commonPlatformOnly: boolean | string | null | undefined;
+  platform: string | null | undefined;
+  sort: string | null | undefined;
+  page?: number | string | null | undefined;
+  limit: number | string | null | undefined;
+  offset: number | string | null | undefined;
+};
+
+export type LibraryQueueRepositoryInput = {
+  userId: string;
+  view: LibraryQueueView;
+  statuses: LibraryStatus[];
+  query: string | null;
+  commonPlatformOnly: boolean;
+  platform: PlatformKey | null;
+  sort: LibraryQueueSort;
+  limit: 12 | 24;
+  offset: number;
+};
+
+export type LibraryQueuePageRecord = {
+  items: LibraryGameDetailRecord[];
+  total: number;
+  limit: 12 | 24;
+  offset: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};
+
+export type LibraryQueueRecord = {
+  memberPlatforms: LibraryMemberPlatformRecord[];
+  commonPlatforms: PlatformKey[];
+  statusCounts: LibraryStatusCounts;
+  archiveCount: number;
+  nextQueue: LibraryGameDetailRecord[];
+  playing: LibraryGameDetailRecord[];
+  page: LibraryQueuePageRecord;
+};
+
 export type UpdateMemberPlatformsResult =
   | { ok: true; platforms: PlatformKey[] }
   | { ok: false; reason: "invalid-platform" | "membership-required" };
@@ -70,6 +117,7 @@ export type MoveLibraryGameResult =
 
 export interface LibraryRepository {
   getOverview(userId: string): Promise<LibraryOverviewRecord | null>;
+  getQueue(input: LibraryQueueRepositoryInput): Promise<LibraryQueueRecord | null>;
   updateMemberPlatforms(input: {
     userId: string;
     platforms: PlatformKey[];

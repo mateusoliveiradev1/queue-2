@@ -203,6 +203,7 @@ function createRepository(): LibraryRepository {
 
   return {
     getOverview: async () => null,
+    getQueue: async () => null,
     updateMemberPlatforms: async (input) => ({ ok: true, platforms: input.platforms }),
     addGameToWishlist: async () => ({ ok: true, game }),
     getJogandoCount: async () => 0,

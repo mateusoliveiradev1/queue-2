@@ -25,6 +25,8 @@ import type {
   LibraryGameRecord,
   LibraryMemberPlatformRecord,
   LibraryOverviewRecord,
+  LibraryQueueRecord,
+  LibraryQueueRepositoryInput,
   LibraryRepository,
   MoveLibraryGameResult,
   UpdateMemberPlatformsResult
@@ -68,6 +70,7 @@ export const libraryRepository: LibraryRepository = createLibraryRepository();
 export function createLibraryRepository(pool: QueueDbPool = getRuntimePool()): LibraryRepository {
   return {
     getOverview: (userId) => getOverview(pool, userId),
+    getQueue: (input) => getQueue(pool, input),
     updateMemberPlatforms: (input) => updateMemberPlatforms(pool, input),
     addGameToWishlist: (input) => addGameToWishlist(pool, input),
     getJogandoCount: (userId) => getJogandoCount(pool, userId),
@@ -110,6 +113,36 @@ async function getOverview(
       commonPlatforms: calculateCommonMemberPlatforms(memberPlatforms),
       groups,
       lockedStatuses: ["zerado", "dropado"]
+    };
+  });
+}
+
+async function getQueue(
+  pool: QueueDbPool,
+  input: LibraryQueueRepositoryInput
+): Promise<LibraryQueueRecord | null> {
+  return asUser(pool, input.userId, async (client) => {
+    const membership = await getMembership(client, input.userId);
+
+    if (!membership) {
+      return null;
+    }
+
+    return {
+      memberPlatforms: [],
+      commonPlatforms: [],
+      statusCounts: createEmptyCounts(),
+      archiveCount: 0,
+      nextQueue: [],
+      playing: [],
+      page: {
+        items: [],
+        total: 0,
+        limit: input.limit,
+        offset: input.offset,
+        hasNextPage: false,
+        hasPreviousPage: input.offset > 0
+      }
     };
   });
 }
@@ -602,6 +635,14 @@ function createEmptyGroups(): Record<Phase2LibraryStatus, LibraryGameDetailRecor
     wishlist: [],
     jogando: [],
     pausado: []
+  };
+}
+
+function createEmptyCounts(): Record<Phase2LibraryStatus, number> {
+  return {
+    wishlist: 0,
+    jogando: 0,
+    pausado: 0
   };
 }
 
