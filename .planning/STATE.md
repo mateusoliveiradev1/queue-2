@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 03.3-01-PLAN.md
-last_updated: "2026-06-05T01:50:37.297Z"
+stopped_at: Completed 03.3-02-PLAN.md
+last_updated: "2026-06-05T02:12:55.941Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
   completed_phases: 7
   total_plans: 29
-  completed_plans: 26
-  percent: 90
+  completed_plans: 27
+  percent: 93
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 03.3 (performance-de-producao-e-ux-de-latencia) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 Status: Ready to execute
 Last activity: 2026-06-05
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -80,6 +80,7 @@ Progress: [█████████░] 90%
 | Phase 03.2 P03 | 12 min | 3 tasks | 7 files |
 | Phase 03.2 P04 | 8 min | 3 tasks | 6 files |
 | Phase 03.3 P01 | 10 min | 3 tasks | 12 files |
+| Phase 03.3 P02 | 25 min | 3 tasks | 18 files |
 
 ## Quick Tasks Completed
 
@@ -172,6 +173,9 @@ Recent decisions affecting current work:
 - [Phase 03.3-01]: Performance telemetry accepts only allowlisted labels and numeric values. — Rejecting arbitrary client strings avoids leaking emails, tokens, SQL, URLs or duo-private data into logs.
 - [Phase 03.3-01]: Web Vitals sends only `window.location.pathname`, never full URLs or search params. — Route keys remain useful for budgets without preserving private query values.
 - [Phase 03.3-01]: Production baseline evidence remains blocked until real E2E_BASE_URL and ready-user fixtures exist. — Missing fixtures are named in `03.3-PERFORMANCE-BASELINE.md` and `03.3-USER-SETUP.md`.
+- [Phase 03.3-02]: Query review uses ANALYZE/BUFFERS for reads and static EXPLAIN for mutations. — Data-changing hot-path shapes are reviewed without persisting benchmark mutations.
+- [Phase 03.3-02]: Critical routes and actions use static timing labels. — Discovery search measures rate-limit and search stages without logging query text.
+- [Phase 03.3-02]: Catalog and library list hydration batch related rows by game/catalog IDs. — Visible cards no longer issue avoidable per-row relation queries.
 
 ### Pending Todos
 
@@ -200,6 +204,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T01:50:37.290Z
-Stopped at: Completed 03.3-01-PLAN.md
+Last session: 2026-06-05T02:12:49.958Z
+Stopped at: Completed 03.3-02-PLAN.md
 Resume file: None

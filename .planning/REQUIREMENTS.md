@@ -119,8 +119,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [ ] **PERF-01**: Critical authenticated routes have production or preview latency baselines for TTFB, time to useful content, hydration and first interaction
 - [ ] **PERF-02**: Primary mutations provide visible local feedback in approximately 100ms and do not require full-page redirects before the user sees progress
-- [ ] **PERF-03**: Catalog, Biblioteca and Descobrir hot paths have measured database query counts, reviewed query plans and no avoidable N+1 list reads
-- [ ] **PERF-04**: Server Actions and route handlers record safe duration telemetry for auth, database, external/cache, render and revalidation steps
+- [x] **PERF-03**: Catalog, Biblioteca and Descobrir hot paths have measured database query counts, reviewed query plans and no avoidable N+1 list reads
+- [x] **PERF-04**: Server Actions and route handlers record safe duration telemetry for auth, database, external/cache, render and revalidation steps
 - [ ] **PERF-05**: Browser performance gates cover desktop, mobile, slow network, reduced motion, loading states and double-submit prevention
 
 ### Playing Now And Progress
