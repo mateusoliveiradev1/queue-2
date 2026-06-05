@@ -368,7 +368,7 @@ describe("discovery application deck", () => {
   });
 
   it("derives discovery server action user identity from the verified session", () => {
-    expect(discoveryActionsSource).toContain("requireVerifiedSession()");
+    expect(discoveryActionsSource).toContain("requireAuthoritativeVerifiedSession()");
     expect(discoveryActionsSource).toContain("userId: session.user.id");
     expect(discoveryActionsSource).toContain("z.string().uuid()");
     expect(discoveryActionsSource).toContain("getSafeReturnTo");

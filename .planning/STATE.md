@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: blocked
-stopped_at: Quick 260605-1g4 complete - Phase 03.3 remains blocked pending production performance/security evidence
-last_updated: "2026-06-05T04:10:31.363Z"
+stopped_at: Quick 260605-1p7 complete - local performance/security hardening executed; Phase 03.3 still blocked on production evidence
+last_updated: "2026-06-05T04:19:59.937Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
@@ -102,6 +102,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260605-acx | Add close behavior to Biblioteca Mais acoes action sheet | 2026-06-05 | pending | [260605-acx-close-library-action-sheet](./quick/260605-acx-close-library-action-sheet/) |
 | 260605-hrd | Redirect authenticated users from public home to app | 2026-06-05 | pending | [260605-hrd-home-redirect-auth-session](./quick/260605-hrd-home-redirect-auth-session/) |
 | 260605-1g4 | Research maximum production performance and security hardening for the QUEUE/2 stack | 2026-06-05 | pending | [260605-1g4-research-maximum-production-performance-](./quick/260605-1g4-research-maximum-production-performance-/) |
+| 260605-1p7 | Execute P0 and local P1 performance/security hardening from quick 260605-1g4 | 2026-06-05 | pending | [260605-1p7-execute-p0-and-local-p1-performance-secu](./quick/260605-1p7-execute-p0-and-local-p1-performance-secu/) |
 
 ## Accumulated Context
 
@@ -202,12 +203,16 @@ Recent decisions affecting current work:
 - [Quick 260605-1g4]: Phase 03.3 remains blocked until production/preview performance evidence runs with authenticated ready-duo fixtures. - Local query review, unit checks and non-skipped setup are not enough to mark production performance as passed.
 - [Quick 260605-1g4]: Maximum performance cannot trade away server authorization, RLS or duo-private cache boundaries. - Shared caching is allowed only for public/catalog-safe data; duo-scoped pages need private or no shared cache.
 - [Quick 260605-1g4]: Auth/session latency is a first-class optimization target. - Normal page rendering may use a short Better Auth cookie cache only if sensitive mutations and security screens keep authoritative no-cache checks.
+- [Quick 260605-1p7]: Normal authenticated page reads use the Better Auth short cookie cache path by default, while mutations and security-sensitive flows call `requireAuthoritativeVerifiedSession()`. - Reduces repeated auth DB session lookups without weakening server-authoritative writes.
+- [Quick 260605-1p7]: Better Auth trusted IP headers are limited to Vercel's `x-forwarded-for` request header. - The app is deployed on Vercel, so Cloudflare-specific headers are not trusted unless the proxy architecture changes.
+- [Quick 260605-1p7]: `/app` and `/app/jogo/[slug]` now emit server timing metrics for auth, database and render stages. - Production traces can isolate the dashboard and game-detail latency path instead of treating them as opaque server time.
+- [Quick 260605-1p7]: Phase 03.3 gate reran after local hardening and remains `BLOCKED - missing fixture evidence`. - Architecture, typecheck, focused tests, baseline generation and query review passed; browser performance/accessibility still skipped due missing production fixtures.
 
 ### Pending Todos
 
 - Discovery evidence follow-up: provide `E2E_BASE_URL`, ready-duo/partner/other-duo credentials, `E2E_PHASE3_DISCOVERY_QUERY` and `TEST_DATABASE_URL`, then rerun the Phase 03.1 browser and database gates.
 - Phase 03.3 performance follow-up: provide production/preview `E2E_BASE_URL`, `E2E_READY_USER_EMAIL`, `E2E_READY_USER_PASSWORD`, `E2E_READY_PARTNER_EMAIL`, `E2E_READY_PARTNER_PASSWORD`, `E2E_OTHER_DUO_USER_EMAIL`, `E2E_OTHER_DUO_USER_PASSWORD`, `E2E_PHASE3_3_CATALOG_QUERY` and `E2E_PHASE3_3_GAME_SLUG`, then rerun `pnpm phase:03.3:gate`.
-- Performance/security hardening follow-up: execute quick 260605-1g4 P0 plan, starting with documented Phase 03.3 fixtures, Vercel/Neon region evidence, scale-to-zero policy and production/preview baselines.
+- Performance/security hardening follow-up: capture remaining external evidence from quick 260605-1p7 `EVIDENCE.md`, especially Vercel/Neon region, scale-to-zero policy, pooled production `DATABASE_URL`, Speed Insights/Observability and Firewall/WAF status.
 - Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
@@ -233,6 +238,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T04:10:31.363Z
-Stopped at: Quick 260605-1g4 complete; Phase 03.3 remains blocked pending production performance/security evidence
+Last session: 2026-06-05T04:19:59.937Z
+Stopped at: Quick 260605-1p7 complete; local performance/security hardening executed and Phase 03.3 remains blocked pending production evidence
 Resume file: None

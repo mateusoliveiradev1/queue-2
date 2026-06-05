@@ -13,7 +13,7 @@ import {
   recordDiscoveryDecision,
   startLiveSession
 } from "../../../modules/discovery";
-import { requireVerifiedSession } from "../../../platform/auth/session";
+import { requireAuthoritativeVerifiedSession } from "../../../platform/auth/session";
 import {
   measureStage,
   withServerTiming
@@ -48,7 +48,7 @@ export async function recordDiscoveryDecisionAction(formData: FormData): Promise
 
 async function recordDiscoveryDecisionActionTimed(formData: FormData): Promise<void> {
   const session = await measureStage("auth", decisionTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, decision, sourceMode, returnTo } = await measureStage(
     "validation",
@@ -97,7 +97,7 @@ async function recordDiscoveryDecisionEnhancedActionTimed(
   formData: FormData
 ): Promise<EnhancedDiscoveryMutationResult> {
   const session = await measureStage("auth", decisionTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, decision, sourceMode, returnTo } = await measureStage(
     "validation",
@@ -164,7 +164,7 @@ async function handoffDiscoveryMatchToLibraryActionTimed(
   formData: FormData
 ): Promise<void> {
   const session = await measureStage("auth", handoffTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, status, returnTo } = await measureStage(
     "validation",
@@ -207,7 +207,7 @@ async function handoffDiscoveryMatchToLibraryEnhancedActionTimed(
   formData: FormData
 ): Promise<EnhancedDiscoveryMutationResult> {
   const session = await measureStage("auth", handoffTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, status, returnTo } = await measureStage(
     "validation",
@@ -269,7 +269,7 @@ async function startDiscoveryLiveSessionActionTimed(
   formData: FormData
 ): Promise<void> {
   const session = await measureStage("auth", liveTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const returnTo = await measureStage("validation", liveTimingContext, async () =>
     getSafeReturnTo(formData, "/app/descobrir")
@@ -299,7 +299,7 @@ async function startDiscoveryLiveSessionEnhancedActionTimed(
   formData: FormData
 ): Promise<EnhancedDiscoveryMutationResult> {
   const session = await measureStage("auth", liveTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const returnTo = await measureStage("validation", liveTimingContext, async () =>
     getSafeReturnTo(formData, "/app/descobrir")
@@ -336,7 +336,7 @@ export async function answerMoodQuizAction(formData: FormData): Promise<void> {
 
 async function answerMoodQuizActionTimed(formData: FormData): Promise<void> {
   const session = await measureStage("auth", quizTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { returnTo, energy, commitment, vibe } = await measureStage(
     "validation",
@@ -384,7 +384,7 @@ async function answerMoodQuizEnhancedActionTimed(
   formData: FormData
 ): Promise<EnhancedDiscoveryMutationResult> {
   const session = await measureStage("auth", quizTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { returnTo, energy, commitment, vibe } = await measureStage(
     "validation",
@@ -433,7 +433,7 @@ async function getSurpriseRecommendationActionTimed(
   formData: FormData
 ): Promise<void> {
   const session = await measureStage("auth", surpriseTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { returnTo, filters } = await measureStage(
     "validation",

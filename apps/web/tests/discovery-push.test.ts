@@ -157,6 +157,7 @@ describe("discovery push subscriptions", () => {
 
   it("keeps the browser boundary public-key only and permission opt-in explicit", () => {
     expect(pushRouteSource).toContain("requireVerifiedSession()");
+    expect(pushRouteSource).toContain("requireAuthoritativeVerifiedSession()");
     expect(pushRouteSource).toContain("z.object");
     expect(pushRouteSource).toContain('"Cache-Control": "no-store"');
     expect(pushRouteSource).not.toContain("VAPID_PRIVATE_KEY");

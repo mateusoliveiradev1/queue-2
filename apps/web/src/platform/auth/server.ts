@@ -66,6 +66,7 @@ export const authRuntimePolicy = {
     updateAgeHours: 24,
     cookieCache: {
       enabled: true,
+      maxAgeSeconds: 60 * 5,
       strategy: "jwe"
     }
   },
@@ -149,7 +150,7 @@ export function createBetterAuthOptions(
         path: "/"
       },
       ipAddress: {
-        ipAddressHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"]
+        ipAddressHeaders: ["x-forwarded-for"]
       }
     },
     plugins: [nextCookies()]

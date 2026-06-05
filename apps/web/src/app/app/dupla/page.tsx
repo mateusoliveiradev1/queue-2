@@ -12,7 +12,10 @@ import {
   getDuoStatusMessage,
   updateDuoSettings
 } from "../../../modules/duo";
-import { requireVerifiedSession } from "../../../platform/auth/session";
+import {
+  requireAuthoritativeVerifiedSession,
+  requireVerifiedSession
+} from "../../../platform/auth/session";
 
 export const metadata: Metadata = {
   description:
@@ -179,7 +182,7 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
 async function updateDuoSettingsAction(formData: FormData) {
   "use server";
 
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const result = await updateDuoSettings({
     userId: session.user.id,
     name: getFormString(formData, "duoName"),

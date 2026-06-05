@@ -9,7 +9,10 @@ import {
   getDiscoveryPushPublicConfig,
   registerDiscoveryPushSubscription
 } from "../../../../modules/discovery";
-import { requireVerifiedSession } from "../../../../platform/auth/session";
+import {
+  requireAuthoritativeVerifiedSession,
+  requireVerifiedSession
+} from "../../../../platform/auth/session";
 
 const pushKeySchema = (maxLength: number) =>
   z.string().trim().min(8).max(maxLength).regex(/^[A-Za-z0-9_-]+$/);
@@ -59,7 +62,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const body = await readJson(request);
   const parsed = registerSchema.safeParse(body);
 
@@ -106,7 +109,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const body = await readJson(request);
   const parsed = disableSchema.safeParse(body);
 

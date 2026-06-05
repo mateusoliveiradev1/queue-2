@@ -18,23 +18,37 @@ type VerifiedProfileAuthContext = {
   activeSessions: QueueActiveSession[];
 };
 
+type SessionReadOptions = {
+  authoritative?: boolean;
+};
+
 const AUTH_LOGIN_PATH = "/login";
 const AUTH_VERIFY_EMAIL_PATH = "/verificar-email";
 const PROFILE_PATH = "/app/perfil";
 
 let authSessionPool: QueueDbPool | undefined;
 
-export async function getCurrentSession(): Promise<QueueSession> {
+export async function getCurrentSession(
+  options: SessionReadOptions = {}
+): Promise<QueueSession> {
   return auth.api.getSession({
     headers: await headers(),
-    query: {
-      disableCookieCache: true
-    }
+    query: options.authoritative
+      ? {
+          disableCookieCache: true
+        }
+      : undefined
   });
 }
 
-export async function requireVerifiedSession(): Promise<NonNullable<QueueSession>> {
-  const session = await getCurrentSession();
+export async function getAuthoritativeSession(): Promise<QueueSession> {
+  return getCurrentSession({ authoritative: true });
+}
+
+export async function requireVerifiedSession(
+  options: SessionReadOptions = {}
+): Promise<NonNullable<QueueSession>> {
+  const session = await getCurrentSession(options);
 
   if (!session) {
     redirect(AUTH_LOGIN_PATH);
@@ -52,8 +66,12 @@ export async function requireVerifiedSession(): Promise<NonNullable<QueueSession
   return session;
 }
 
+export async function requireAuthoritativeVerifiedSession(): Promise<NonNullable<QueueSession>> {
+  return requireVerifiedSession({ authoritative: true });
+}
+
 export async function getVerifiedProfileAuthContext(): Promise<VerifiedProfileAuthContext> {
-  const currentSession = await requireVerifiedSession();
+  const currentSession = await requireAuthoritativeVerifiedSession();
   const activeSessions = await auth.api.listSessions({
     headers: await headers()
   });
@@ -72,7 +90,7 @@ export async function revokeSessionAction(formData: FormData) {
   const targetSessionUpdatedAt = getFormString(formData, "sessionUpdatedAt");
 
   if (targetSessionId) {
-    const currentSession = await requireVerifiedSession();
+    const currentSession = await requireAuthoritativeVerifiedSession();
 
     const activeSessions = await auth.api.listSessions({
       headers: await headers()

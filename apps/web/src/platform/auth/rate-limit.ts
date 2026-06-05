@@ -42,7 +42,7 @@ export const authRateLimitAudit = {
   keyScope: AUTH_RATE_LIMIT_KEY_SCOPE,
   serverlessSafe: true,
   table: 'auth.rate_limit',
-  ipHeaders: ["x-forwarded-for", "x-real-ip", "cf-connecting-ip"],
+  ipHeaders: ["x-forwarded-for"],
   rules: authRateLimitRules,
   protects: [
     "login",

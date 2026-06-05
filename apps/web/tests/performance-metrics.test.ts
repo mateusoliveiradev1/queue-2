@@ -152,13 +152,21 @@ describe("server timing helpers", () => {
 
   it("wires server timing to critical routes, actions and discovery search", () => {
     const catalogPage = readFileSync("src/app/app/catalogo/page.tsx", "utf8");
+    const dashboardPage = readFileSync("src/app/app/page.tsx", "utf8");
+    const gamePage = readFileSync("src/app/app/jogo/[slug]/page.tsx", "utf8");
     const libraryPage = readFileSync("src/app/app/biblioteca/page.tsx", "utf8");
     const discoveryPage = readFileSync("src/app/app/descobrir/page.tsx", "utf8");
     const libraryActions = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
     const discoveryActions = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
     const discoverySearchRoute = readFileSync("src/app/api/discovery/search/route.ts", "utf8");
 
+    expect(dashboardPage).toContain('route: "app.home"');
+    expect(dashboardPage).toContain('measureStage("auth"');
+    expect(dashboardPage).toContain('measureStage("database"');
     expect(catalogPage).toContain('route: "app.catalogo"');
+    expect(gamePage).toContain('route: "app.jogo"');
+    expect(gamePage).toContain('measureStage("auth"');
+    expect(gamePage).toContain('measureStage("database"');
     expect(libraryPage).toContain('route: "app.biblioteca"');
     expect(discoveryPage).toContain('route: "app.descobrir"');
     expect(libraryActions).toContain('action: "catalog.wishlist.add"');

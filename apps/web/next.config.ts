@@ -8,14 +8,16 @@ const workspaceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ["image/avif", "image/webp"],
+    maximumRedirects: 0,
+    minimumCacheTTL: 60 * 60 * 24 * 7,
+    qualities: [75],
     remotePatterns: [
       {
         hostname: "media.rawg.io",
-        protocol: "https"
-      },
-      {
-        hostname: "rawg.io",
-        protocol: "https"
+        pathname: "/media/**",
+        protocol: "https",
+        search: ""
       }
     ]
   },

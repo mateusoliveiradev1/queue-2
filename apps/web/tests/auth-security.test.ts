@@ -44,11 +44,30 @@ describe("protected auth gates", () => {
   it("validates sessions through Better Auth on the server", () => {
     expect(sessionSource).toContain('import "server-only"');
     expect(sessionSource).toMatch(/export async function getCurrentSession[\s\S]*auth\.api\.getSession/);
-    expect(sessionSource).toMatch(/export async function getCurrentSession[\s\S]*disableCookieCache: true/);
-    expect(sessionSource).toMatch(/export async function requireVerifiedSession[\s\S]*getCurrentSession\(\)/);
+    expect(sessionSource).toMatch(/export async function getCurrentSession[\s\S]*options\.authoritative/);
+    expect(sessionSource).toMatch(/export async function getAuthoritativeSession[\s\S]*authoritative: true/);
+    expect(sessionSource).toMatch(/export async function requireVerifiedSession[\s\S]*getCurrentSession\(options\)/);
+    expect(sessionSource).toMatch(/export async function requireAuthoritativeVerifiedSession[\s\S]*authoritative: true/);
+    expect(sessionSource).toMatch(/disableCookieCache: true/);
     expect(sessionSource).toContain("session.user.emailVerified");
     expect(sessionSource).toContain("/verificar-email");
     expect(sessionSource).toContain("/login");
+  });
+
+  it("keeps sensitive mutations on authoritative session checks while page reads can use cookie cache", () => {
+    const libraryActionsSource = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
+    const discoveryActionsSource = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
+    const duoSettingsSource = readFileSync("src/app/app/dupla/page.tsx", "utf8");
+    const pairingSource = readFileSync("src/app/(public)/parear/page.tsx", "utf8");
+    const pushRouteSource = readFileSync("src/app/api/discovery/push/route.ts", "utf8");
+
+    expect(libraryActionsSource).toContain("requireAuthoritativeVerifiedSession()");
+    expect(discoveryActionsSource).toContain("requireAuthoritativeVerifiedSession()");
+    expect(duoSettingsSource).toContain("requireAuthoritativeVerifiedSession()");
+    expect(pairingSource).toContain("requireAuthoritativeVerifiedSession()");
+    expect(pushRouteSource).toContain("requireAuthoritativeVerifiedSession()");
+    expect(sessionSource).toMatch(/export async function getVerifiedProfileAuthContext[\s\S]*requireAuthoritativeVerifiedSession/);
+    expect(sessionSource).toMatch(/export async function revokeSessionAction[\s\S]*requireAuthoritativeVerifiedSession/);
   });
 
   it("ties authenticated pages to server authorization instead of proxy-only checks", () => {
@@ -79,6 +98,7 @@ describe("session management controls", () => {
     expect(authRuntimePolicy.session.updateAgeHours).toBe(24);
     expect(authRuntimePolicy.session.cookieCache).toEqual({
       enabled: true,
+      maxAgeSeconds: 300,
       strategy: "jwe"
     });
     expect(serverSource).toContain("cookieCache");
@@ -111,11 +131,8 @@ describe("auth runtime security policy", () => {
     expect(authRateLimitAudit.storage).toBe("database");
     expect(authRateLimitAudit.keyScope).toBe("client-ip-and-auth-path");
     expect(authRateLimitAudit.serverlessSafe).toBe(true);
-    expect(authRateLimitAudit.ipHeaders).toEqual([
-      "x-forwarded-for",
-      "x-real-ip",
-      "cf-connecting-ip"
-    ]);
+    expect(authRateLimitAudit.ipHeaders).toEqual(["x-forwarded-for"]);
+    expect(serverSource).toContain('ipAddressHeaders: ["x-forwarded-for"]');
     expect(authRateLimitAudit.rules["/sign-up/email"]).toEqual({
       window: 300,
       max: 5

@@ -8,7 +8,7 @@ import {
   moveLibraryGame,
   updateMemberPlatforms
 } from "../../modules/library";
-import { requireVerifiedSession } from "../../platform/auth/session";
+import { requireAuthoritativeVerifiedSession } from "../../platform/auth/session";
 import {
   measureStage,
   withServerTiming
@@ -49,7 +49,7 @@ export async function addGameToWishlistEnhancedAction(
 
 async function addGameToWishlistActionTimed(formData: FormData): Promise<void> {
   const session = await measureStage("auth", addWishlistTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, returnTo } = await measureStage(
     "validation",
@@ -91,7 +91,7 @@ async function addGameToWishlistEnhancedActionTimed(
   formData: FormData
 ): Promise<EnhancedLibraryMutationResult> {
   const session = await measureStage("auth", addWishlistTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId } = await measureStage(
     "validation",
@@ -152,7 +152,7 @@ export async function moveLibraryGameEnhancedAction(
 
 async function moveLibraryGameActionTimed(formData: FormData): Promise<void> {
   const session = await measureStage("auth", moveLibraryTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, status, returnTo } = await measureStage(
     "validation",
@@ -191,7 +191,7 @@ async function moveLibraryGameEnhancedActionTimed(
   formData: FormData
 ): Promise<EnhancedLibraryMutationResult> {
   const session = await measureStage("auth", moveLibraryTimingContext, () =>
-    requireVerifiedSession()
+    requireAuthoritativeVerifiedSession()
   );
   const { catalogGameId, status, returnTo } = await measureStage(
     "validation",
@@ -240,7 +240,7 @@ async function moveLibraryGameEnhancedActionTimed(
 }
 
 export async function updateMemberPlatformsAction(formData: FormData): Promise<void> {
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const returnTo = getSafeReturnTo(formData, "/app/biblioteca");
   const result = await updateMemberPlatforms({
     userId: session.user.id,

@@ -19,6 +19,10 @@ import {
 } from "../../../../modules/library";
 import { requireVerifiedSession } from "../../../../platform/auth/session";
 import {
+  measureStage,
+  withServerTiming
+} from "../../../../platform/performance/server-timing";
+import {
   addGameToWishlistAction,
   moveLibraryGameAction
 } from "../../phase-2-actions";
@@ -38,13 +42,28 @@ type GamePageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+const gameTimingContext = { route: "app.jogo" } as const;
+
 export default async function GamePage({ params, searchParams }: GamePageProps) {
-  const session = await requireVerifiedSession();
-  const [{ slug }, dashboard, query] = await Promise.all([
-    params,
-    getDuoDashboard(session.user.id),
-    searchParams
-  ]);
+  return withServerTiming(gameTimingContext, () =>
+    renderGamePage({ params, searchParams })
+  );
+}
+
+async function renderGamePage({ params, searchParams }: GamePageProps) {
+  const session = await measureStage("auth", gameTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const [{ slug }, dashboard, query] = await measureStage(
+    "database",
+    gameTimingContext,
+    () =>
+      Promise.all([
+        params,
+        getDuoDashboard(session.user.id),
+        searchParams
+      ])
+  );
 
   if (dashboard.routeState === "pairing") {
     redirect("/parear");
@@ -54,16 +73,20 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
     redirect("/app/dupla?estado=dupla-formada");
   }
 
-  const catalog = await getCatalogGameDetail(slug);
+  const catalog = await measureStage("database", gameTimingContext, () =>
+    getCatalogGameDetail(slug)
+  );
 
   if (!catalog) {
     notFound();
   }
 
-  const libraryResult = await getLibraryGameDetail({
-    userId: session.user.id,
-    catalogGameId: catalog.id
-  });
+  const libraryResult = await measureStage("database", gameTimingContext, () =>
+    getLibraryGameDetail({
+      userId: session.user.id,
+      catalogGameId: catalog.id
+    })
+  );
   const libraryView = libraryResult.ok
     ? toLibraryGameDetailView(libraryResult.detail)
     : null;
@@ -71,7 +94,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
   const state = getSearchParam(query?.estado);
   const statusMessage = getPhase2StatusMessage(state);
 
-  return (
+  return measureStage("render", gameTimingContext, async () => (
     <AppShell currentPage="catalogo">
       <header className="game-detail-hero">
         <div className="game-detail-cover">
@@ -212,7 +235,7 @@ export default async function GamePage({ params, searchParams }: GamePageProps) 
         </p>
       </section>
     </AppShell>
-  );
+  ));
 }
 
 function FactBlock({

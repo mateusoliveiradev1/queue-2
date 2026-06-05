@@ -6,6 +6,10 @@ import { AppShell } from "../../components/app-shell";
 import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
 import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library";
 import { requireVerifiedSession } from "../../platform/auth/session";
+import {
+  measureStage,
+  withServerTiming
+} from "../../platform/performance/server-timing";
 
 export const metadata: Metadata = {
   description:
@@ -50,9 +54,19 @@ const nextActions = [
   }
 ] as const;
 
+const dashboardTimingContext = { route: "app.home" } as const;
+
 export default async function DashboardPage() {
-  const session = await requireVerifiedSession();
-  const dashboard = await getDuoDashboard(session.user.id);
+  return withServerTiming(dashboardTimingContext, renderDashboardPage);
+}
+
+async function renderDashboardPage() {
+  const session = await measureStage("auth", dashboardTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const dashboard = await measureStage("database", dashboardTimingContext, () =>
+    getDuoDashboard(session.user.id)
+  );
 
   if (dashboard.routeState === "pairing") {
     redirect("/parear");
@@ -68,13 +82,16 @@ export default async function DashboardPage() {
     redirect("/parear");
   }
 
-  const libraryResult = await getLibraryOverview(session.user.id);
+  const pairedAt = duo.pairedAt;
+  const libraryResult = await measureStage("database", dashboardTimingContext, () =>
+    getLibraryOverview(session.user.id)
+  );
   const library = libraryResult.ok ? toLibraryOverviewView(libraryResult.overview) : null;
   const totalGames = library
     ? library.counts.wishlist + library.counts.jogando + library.counts.pausado
     : 0;
 
-  return (
+  return measureStage("render", dashboardTimingContext, async () => (
     <AppShell currentPage="dashboard">
       <header className="app-header">
         <div>
@@ -100,7 +117,7 @@ export default async function DashboardPage() {
             <span className="muted">Dupla</span>
             <strong>{duo.name}</strong>
             <span className="muted">
-              Pareados em {formatPairingDate(duo.pairedAt, duo.timezone)}.
+              Pareados em {formatPairingDate(pairedAt, duo.timezone)}.
             </span>
           </div>
           <div className="metric">
@@ -168,5 +185,5 @@ export default async function DashboardPage() {
         </div>
       </section>
     </AppShell>
-  );
+  ));
 }

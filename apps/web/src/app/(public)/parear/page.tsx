@@ -19,7 +19,10 @@ import {
   joinResultToStatus,
   revokePairingCode
 } from "../../../modules/duo";
-import { requireVerifiedSession } from "../../../platform/auth/session";
+import {
+  requireAuthoritativeVerifiedSession,
+  requireVerifiedSession
+} from "../../../platform/auth/session";
 import { recordSecurityAuditEvent } from "../../../platform/security/audit";
 
 export const metadata: Metadata = {
@@ -227,7 +230,7 @@ function JoinCodePanel({ disabled }: { disabled: boolean }) {
 async function createPairingCodeAction(formData: FormData) {
   "use server";
 
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const result = await createPairingCode({
     userId: session.user.id,
     displayName: session.user.name,
@@ -248,7 +251,7 @@ async function createPairingCodeAction(formData: FormData) {
 async function revokePairingCodeAction(formData: FormData) {
   "use server";
 
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const result = await revokePairingCode({
     userId: session.user.id,
     pairingCodeId: getFormString(formData, "pairingCodeId")
@@ -265,7 +268,7 @@ async function revokePairingCodeAction(formData: FormData) {
 async function joinDuoAction(formData: FormData) {
   "use server";
 
-  const session = await requireVerifiedSession();
+  const session = await requireAuthoritativeVerifiedSession();
   const result = await joinDuo({
     userId: session.user.id,
     displayName: session.user.name,
