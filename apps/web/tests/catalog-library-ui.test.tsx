@@ -248,6 +248,14 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "src/app/app/biblioteca/page.tsx",
       "utf8"
     );
+    const cardSource = readFileSync(
+      "src/modules/library/presentation/library-card.tsx",
+      "utf8"
+    );
+    const statusControlsSource = readFileSync(
+      "src/modules/library/presentation/library-status-controls.tsx",
+      "utf8"
+    );
     const css = readFileSync("src/app/globals.css", "utf8");
 
     expect(source).toContain("library-operational-shell");
@@ -259,10 +267,15 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(source).not.toContain("locked-status");
     expect(source).not.toContain("Zerado bloqueado");
     expect(source).not.toContain("Dropado bloqueado");
+    expect(cardSource).toContain("LibraryStatusControls");
+    expect(statusControlsSource).toContain("library-action-sheet");
+    expect(statusControlsSource).not.toContain("Zerado bloqueado");
+    expect(statusControlsSource).not.toContain("Dropado bloqueado");
     expect(css).toContain(".library-operational-shell");
     expect(css).toContain(".library-priority-strip");
     expect(css).toContain(".library-playing-strip");
     expect(css).toContain(".library-results");
+    expect(css).toContain(".library-action-sheet");
     expect(css).toContain(".library-pagination");
     expect(css).not.toContain(".library-board");
 
@@ -335,7 +348,31 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     );
     expect(screen.queryByRole("button", { name: /zerado bloqueado/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /dropado bloqueado/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^wishlist$/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Mais acoes").length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /voltar para wishlist/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("button", { name: /mover para pausado/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/coop campanha 2p confirmado/i).length).toBeGreaterThan(0);
+    const libraryCards = Array.from(container.querySelectorAll<HTMLElement>(".library-game"));
+    expect(libraryCards.length).toBeGreaterThan(0);
+
+    for (const card of libraryCards) {
+      const alwaysVisibleStatusSubmits = Array.from(
+        card.querySelectorAll<HTMLButtonElement>("button[type='submit']")
+      ).filter((button) => !button.closest(".library-action-sheet"));
+
+      expect(alwaysVisibleStatusSubmits.length).toBeLessThanOrEqual(1);
+      expect(card.querySelector(".library-action-sheet")).toBeInTheDocument();
+    }
+
+    const primaryAction = screen.getAllByRole("button", { name: /comecar em jogando/i })[0];
+    if (!primaryAction) {
+      throw new Error("Expected a primary Biblioteca status action.");
+    }
+    const primaryForm = primaryAction.closest("form");
+    expect(primaryForm?.querySelector("input[name='catalogGameId']")).toHaveValue("game-1");
+    expect(primaryForm?.querySelector("input[name='status']")).toHaveValue("jogando");
+    expect(primaryForm?.querySelector("input[name='returnTo']")).toHaveValue("/app/biblioteca");
     expect(
       container.textContent?.indexOf("Proximos da fila") ?? -1
     ).toBeLessThan(container.textContent?.indexOf("Toda a fila ativa") ?? -1);

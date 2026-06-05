@@ -113,22 +113,33 @@ vi.mock("../src/modules/library", () => ({
     returnTo?: string;
   }) => (
     <div className="status-controls" aria-label="Mudar status na biblioteca">
-      {(["wishlist", "jogando", "pausado"] as const).map((status) => (
-        <form action={action} key={status}>
-          <input name="catalogGameId" type="hidden" value={catalogGameId} />
-          <input name="status" type="hidden" value={status} />
-          {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
-          <button aria-pressed={currentStatus === status} type="submit">
-            {status === "wishlist" ? "Wishlist" : status === "jogando" ? "Jogando" : "Pausado"}
-          </button>
-        </form>
-      ))}
-      <button disabled type="button">
-        Zerado bloqueado
-      </button>
-      <button disabled type="button">
-        Dropado bloqueado
-      </button>
+      <form action={action}>
+        <input name="catalogGameId" type="hidden" value={catalogGameId} />
+        <input
+          name="status"
+          type="hidden"
+          value={currentStatus === "pausado" ? "jogando" : "wishlist"}
+        />
+        {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
+        <button type="submit">
+          {currentStatus === "pausado" ? "Retomar em Jogando" : "Adicionar a Wishlist"}
+        </button>
+      </form>
+      <details className="library-action-sheet">
+        <summary>Mais acoes</summary>
+        {(["wishlist", "jogando", "pausado"] as const).map((status) => (
+          status === currentStatus ? null : (
+            <form action={action} key={status}>
+              <input name="catalogGameId" type="hidden" value={catalogGameId} />
+              <input name="status" type="hidden" value={status} />
+              {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
+              <button type="submit">
+                {status === "wishlist" ? "Wishlist" : status === "jogando" ? "Jogando" : "Pausado"}
+              </button>
+            </form>
+          )
+        ))}
+      </details>
     </div>
   ),
   toLibraryOverviewView: libraryModuleMock.toLibraryOverviewView

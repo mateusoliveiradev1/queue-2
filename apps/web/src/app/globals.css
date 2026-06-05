@@ -1181,7 +1181,58 @@ input {
 }
 
 .status-controls form {
-  display: contents;
+  display: flex;
+  min-width: 0;
+}
+
+.status-controls .queue2-button {
+  min-height: 44px;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+  width: 100%;
+}
+
+.library-action-sheet {
+  min-width: min(100%, 152px);
+  position: relative;
+}
+
+.library-action-sheet > summary {
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  list-style: none;
+  min-width: 100%;
+}
+
+.library-action-sheet > summary::-webkit-details-marker {
+  display: none;
+}
+
+.library-action-sheet[open] > summary {
+  background: color-mix(in oklch, var(--primary) 11%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 64%, var(--ink));
+}
+
+.library-action-sheet-panel {
+  background: color-mix(in oklch, var(--surface-raised) 92%, black);
+  border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+  border-radius: var(--radius-sharp);
+  box-shadow: 0 18px 40px color-mix(in oklch, black 34%, transparent);
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  min-width: 220px;
+  padding: var(--space-3);
+  position: absolute;
+  right: 0;
+  z-index: 20;
+}
+
+.status-controls :where(.queue2-button, summary):focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 2px solid transparent;
 }
 
 .locked-status-grid {
@@ -2651,6 +2702,34 @@ input {
   .discovery-decision-actions .queue2-button,
   .discovery-handoff-actions .queue2-button {
     width: 100%;
+  }
+
+  .library-action-sheet {
+    width: 100%;
+  }
+
+  .library-action-sheet[open]::before {
+    background: color-mix(in oklch, black 44%, transparent);
+    content: "";
+    inset: 0;
+    pointer-events: none;
+    position: fixed;
+    z-index: 55;
+  }
+
+  .library-action-sheet[open] > summary {
+    position: relative;
+    z-index: 61;
+  }
+
+  .library-action-sheet-panel {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    left: var(--space-4);
+    margin: 0;
+    min-width: 0;
+    position: fixed;
+    right: var(--space-4);
+    z-index: 60;
   }
 
   .match-history-card .status-controls .queue2-button {
