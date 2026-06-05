@@ -7,12 +7,11 @@ import { MatchScoreBlock } from "../../../components/match-score-block";
 import { StatusToast } from "../../../components/status-toast";
 import { getDuoDashboard } from "../../../modules/duo";
 import {
-  getLibraryOverview,
-  isPhase2LibraryStatus,
-  LibraryStatusControls,
+  getLibraryQueue,
   PlatformPicker,
-  toLibraryOverviewView,
+  toLibraryQueueView,
   type LibraryGameDetailView,
+  type LibraryQueueView,
   type Phase2LibraryStatus,
   type PlatformKey
 } from "../../../modules/library";
@@ -25,10 +24,14 @@ import {
   getPhase2StatusMessage,
   getSearchParam
 } from "../phase-2-status";
+import {
+  buildLibraryPath,
+  parseLibraryRouteParams
+} from "./library-route-params";
 
 export const metadata: Metadata = {
   description:
-    "Biblioteca compartilhada do QUEUE/2 para organizar Wishlist, Jogando e Pausado da dupla.",
+    "Biblioteca compartilhada do QUEUE/2 para organizar a fila ativa da dupla com busca, filtros e paginacao.",
   title: "Biblioteca da dupla"
 };
 
@@ -36,33 +39,17 @@ type LibraryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const statusSections: Array<{
-  status: Phase2LibraryStatus;
-  title: string;
-  empty: string;
-}> = [
-  {
-    status: "wishlist",
-    title: "Wishlist",
-    empty: "A Wishlist ainda esta vazia. Puxem o primeiro jogo pelo Catalogo."
-  },
-  {
-    status: "jogando",
-    title: "Jogando",
-    empty: "Nenhum jogo em Jogando. A fila segura no maximo tres ativos por vez."
-  },
-  {
-    status: "pausado",
-    title: "Pausado",
-    empty: "Nada pausado. Quando a dupla quiser respirar, o jogo aparece aqui."
-  }
+const viewTabs: Array<{ view: LibraryQueueView; label: string }> = [
+  { view: "todas", label: "Todas" },
+  { view: "wishlist", label: "Wishlist" },
+  { view: "jogando", label: "Jogando" },
+  { view: "pausado", label: "Pausado" }
 ];
 
 export default async function LibraryPage({ searchParams }: LibraryPageProps = {}) {
   const session = await requireVerifiedSession();
-  const [dashboard, libraryResult, params] = await Promise.all([
+  const [dashboard, params] = await Promise.all([
     getDuoDashboard(session.user.id),
-    getLibraryOverview(session.user.id),
     searchParams
   ]);
 
@@ -74,32 +61,39 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
     redirect("/app/dupla?estado=dupla-formada");
   }
 
+  const routeParams = parseLibraryRouteParams(params);
+  const libraryResult = await getLibraryQueue({
+    userId: session.user.id,
+    view: routeParams.view,
+    query: routeParams.query,
+    commonPlatformOnly: routeParams.commonPlatformOnly,
+    platform: routeParams.platform,
+    sort: routeParams.sort,
+    limit: routeParams.limit,
+    offset: routeParams.offset
+  });
+
   if (!libraryResult.ok) {
     redirect("/parear");
   }
 
-  const activeFilter = parseLibraryFilter(getSearchParam(params?.status));
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
-  const overview = libraryResult.overview;
-  const view = toLibraryOverviewView(overview);
+  const view = toLibraryQueueView(libraryResult.queue);
   const selectedPlatforms =
-    overview.memberPlatforms.find((member) => member.userId === session.user.id)?.platforms ?? [];
-  const sections =
-    activeFilter === "todas"
-      ? statusSections
-      : statusSections.filter((section) => section.status === activeFilter);
-  const returnTo = buildLibraryPath(activeFilter);
+    libraryResult.queue.memberPlatforms.find((member) => member.userId === session.user.id)
+      ?.platforms ?? [];
+  const returnTo = buildLibraryPath(routeParams);
 
   return (
     <AppShell currentPage="biblioteca">
       <header className="app-header">
         <div>
           <p className="eyebrow">Biblioteca da dupla</p>
-          <h1 className="page-title">A fila compartilhada</h1>
+          <h1 className="page-title">A fila operacional</h1>
           <p className="lede">
-            Wishlist, Jogando e Pausado ja movem os dois. Zerado e Dropado ficam
-            bloqueados ate a dupla confirmar conclusao ou abandono em conjunto.
+            A biblioteca agora mostra o que a dupla pode decidir, pausar ou retomar sem
+            transformar a fila em um quadro infinito.
           </p>
         </div>
         <a className="queue2-button" data-tone="quiet" href="/app/catalogo">
@@ -116,128 +110,206 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
         </>
       ) : null}
 
-      <section className="surface-band app-section" aria-labelledby="platforms-title">
-        <div className="section-heading">
-          <h2 className="eyebrow" id="platforms-title">
-            Plataformas da dupla
-          </h2>
-          <p className="support-copy">
-            Cada pessoa registra as proprias plataformas. A intersecao guia a
-            compatibilidade sem virar competicao individual.
-          </p>
-        </div>
-        <div className="library-overview-grid">
-          <PlatformPicker
-            action={updateMemberPlatformsAction}
-            returnTo={returnTo}
-            selected={selectedPlatforms as PlatformKey[]}
-          />
-          <div className="common-platforms">
-            <span className="eyebrow">Em comum</span>
-            <strong>
-              {view.commonPlatformLabels.length
-                ? view.commonPlatformLabels.join(", ")
-                : "Nenhuma plataforma em comum ainda"}
-            </strong>
+      <main className="library-operational-shell">
+        <section className="surface-band app-section library-priority-strip" aria-labelledby="next-queue-title">
+          <div className="section-heading">
+            <h2 className="eyebrow" id="next-queue-title">
+              Proximos da fila
+            </h2>
             <p className="support-copy">
-              Jogos sem plataforma comum podem ficar na Wishlist, mas nao viram
-              recomendacao forte.
+              Um recorte curto para a dupla escolher o que merece conversa agora.
             </p>
           </div>
-        </div>
-      </section>
-
-      <section className="surface-band app-section" aria-labelledby="library-filter-title">
-        <div className="section-heading">
-          <h2 className="eyebrow" id="library-filter-title">
-            Estados da fila
-          </h2>
-          <p className="support-copy">
-            Use os filtros para focar uma etapa ou veja a biblioteca inteira.
-          </p>
-        </div>
-        <nav className="library-tabs" aria-label="Filtrar biblioteca por status">
-          <a aria-current={activeFilter === "todas" ? "page" : undefined} href="/app/biblioteca">
-            Todas
-          </a>
-          {statusSections.map((section) => (
-            <a
-              aria-current={activeFilter === section.status ? "page" : undefined}
-              href={buildLibraryPath(section.status)}
-              key={section.status}
-            >
-              {section.title}
-              <span>{view.counts[section.status]}</span>
-            </a>
-          ))}
-        </nav>
-      </section>
-
-      <div className="library-board">
-        {sections.map((section) => (
-          <section
-            aria-labelledby={`library-${section.status}`}
-            className="surface-band app-section"
-            key={section.status}
-          >
-            <div className="section-heading">
-              <h2 className="eyebrow" id={`library-${section.status}`}>
-                {section.title}
-              </h2>
-              <p className="support-copy">{view.counts[section.status]} jogos neste estado.</p>
+          {view.nextQueue.length > 0 ? (
+            <div className="library-list" data-library-slice="next-queue">
+              {view.nextQueue.map((game) => (
+                <LibraryGameCard game={game} key={game.id} returnTo={returnTo} />
+              ))}
             </div>
-            {view.groups[section.status].length > 0 ? (
-              <div className="library-list">
-                {view.groups[section.status].map((game) => (
-                  <LibraryGameCard
-                    game={game}
-                    key={game.id}
-                    returnTo={returnTo}
-                    status={section.status}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state">
-                <strong>{section.empty}</strong>
-              </div>
-            )}
-          </section>
-        ))}
-      </div>
-
-      <section className="surface-band app-section" aria-labelledby="locked-statuses">
-        <div className="section-heading">
-          <h2 className="eyebrow" id="locked-statuses">
-            Estados futuros
-          </h2>
-          <p className="support-copy">
-            Estes estados ja aparecem no contrato da fila, mas so liberam com
-            confirmacao dos dois.
-          </p>
-        </div>
-        <div className="locked-status-grid">
-          {view.lockedStatuses.map((item) => (
-            <div aria-disabled="true" className="locked-step" key={item.status}>
-              <strong>{item.status}</strong>
-              <span className="muted">{item.label}</span>
+          ) : (
+            <div className="empty-state">
+              <strong>A fila ainda precisa de materia-prima</strong>
+              <span>Busquem jogos no Catalogo para criar os proximos combinados da dupla.</span>
             </div>
-          ))}
-        </div>
-      </section>
+          )}
+        </section>
+
+        <section className="surface-band app-section library-playing-strip" aria-labelledby="playing-title">
+          <div className="section-heading">
+            <h2 className="eyebrow" id="playing-title">
+              Jogando
+            </h2>
+            <p className="support-copy">
+              {view.playingLimitLabel}; use este espaco so para compromissos ativos.
+            </p>
+          </div>
+          {view.playing.length > 0 ? (
+            <div className="library-list" data-library-slice="playing">
+              {view.playing.map((game) => (
+                <LibraryGameCard game={game} key={game.id} returnTo={returnTo} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <strong>Nada em Jogando</strong>
+              <span>Quando a dupla assumir um jogo, ele aparece aqui sem virar painel de progresso.</span>
+            </div>
+          )}
+        </section>
+
+        <section className="surface-band app-section" aria-labelledby="platforms-title">
+          <div className="section-heading">
+            <h2 className="eyebrow" id="platforms-title">
+              Plataformas da dupla
+            </h2>
+            <p className="support-copy">
+              Cada pessoa registra as proprias plataformas. A intersecao guia a
+              compatibilidade sem virar competicao individual.
+            </p>
+          </div>
+          <div className="library-overview-grid">
+            <PlatformPicker
+              action={updateMemberPlatformsAction}
+              returnTo={returnTo}
+              selected={selectedPlatforms as PlatformKey[]}
+            />
+            <div className="common-platforms">
+              <span className="eyebrow">Em comum</span>
+              <strong>
+                {view.commonPlatformLabels.length
+                  ? view.commonPlatformLabels.join(", ")
+                  : "Nenhuma plataforma em comum ainda"}
+              </strong>
+              <p className="support-copy">
+                O filtro de plataforma comum usa este encontro da dupla sem revelar nada fora dela.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="surface-band app-section" aria-labelledby="library-filter-title">
+          <div className="section-heading">
+            <h2 className="eyebrow" id="library-filter-title">
+              Filtrar fila ativa
+            </h2>
+            <p className="support-copy">
+              A URL guarda visao, busca, plataforma, ordem e pagina para a dupla voltar ao mesmo recorte.
+            </p>
+          </div>
+          <nav className="library-tabs" aria-label="Filtrar biblioteca por status">
+            {viewTabs.map((tab) => (
+              <a
+                aria-current={routeParams.view === tab.view ? "page" : undefined}
+                href={buildLibraryPath(routeParams, { view: tab.view })}
+                key={tab.view}
+              >
+                {tab.label}
+                {tab.view !== "todas" ? (
+                  <span>{view.counts[tab.view as Phase2LibraryStatus]}</span>
+                ) : null}
+              </a>
+            ))}
+          </nav>
+          <form action="/app/biblioteca" className="search-form">
+            {routeParams.view !== "todas" ? (
+              <input name="visao" type="hidden" value={routeParams.view} />
+            ) : null}
+            {routeParams.commonPlatformOnly ? (
+              <input name="plataforma" type="hidden" value="comum" />
+            ) : routeParams.platform ? (
+              <input name="plataforma" type="hidden" value={routeParams.platform} />
+            ) : null}
+            {routeParams.limit !== 12 ? (
+              <input name="tamanho" type="hidden" value={routeParams.limit} />
+            ) : null}
+            <label className="field">
+              <span>Buscar jogo na fila</span>
+              <input
+                className="queue2-input"
+                defaultValue={routeParams.query}
+                name="q"
+                placeholder="It Takes Two, Overcooked..."
+                type="search"
+              />
+            </label>
+            <label className="field">
+              <span>Ordenar</span>
+              <select className="queue2-input" defaultValue={routeParams.sort} name="ordenar">
+                <option value="recentes">Mais recentes</option>
+                <option value="match">Melhor match</option>
+                <option value="nome">Nome</option>
+              </select>
+            </label>
+            <button className="queue2-button" data-tone="primary" type="submit">
+              Aplicar
+            </button>
+          </form>
+        </section>
+
+        <section className="app-section library-results" aria-labelledby="library-results-title">
+          <div className="section-heading">
+            <h2 className="eyebrow" id="library-results-title">
+              {getViewTitle(routeParams.view)}
+            </h2>
+            <p className="support-copy">{view.page.resultLabel}</p>
+          </div>
+          {view.archiveSummary ? (
+            <p className="support-copy">{view.archiveSummary}</p>
+          ) : null}
+          {view.page.items.length > 0 ? (
+            <div className="library-list" data-library-slice="page">
+              {view.page.items.map((game) => (
+                <LibraryGameCard game={game} key={game.id} returnTo={returnTo} />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state">
+              <strong>{routeParams.query ? "Nada nesse recorte" : "Fila ativa vazia"}</strong>
+              <span>
+                {routeParams.query
+                  ? "Tentem outro nome ou limpem os filtros para voltar ao combinado da dupla."
+                  : "Adicionem jogos pelo Catalogo para a Biblioteca virar uma fila compartilhada."}
+              </span>
+            </div>
+          )}
+          <nav className="library-pagination" aria-label="Paginas da biblioteca">
+            <span>
+              Pagina {view.page.currentPage} de {view.page.totalPages}
+            </span>
+            {view.page.hasPreviousPage ? (
+              <a
+                className="queue2-button"
+                data-tone="quiet"
+                href={buildLibraryPath(routeParams, { page: routeParams.page - 1 })}
+              >
+                Anterior
+              </a>
+            ) : null}
+            {view.page.hasNextPage ? (
+              <a
+                className="queue2-button"
+                data-tone="quiet"
+                href={buildLibraryPath(routeParams, { page: routeParams.page + 1 })}
+              >
+                Proxima
+              </a>
+            ) : null}
+          </nav>
+        </section>
+      </main>
     </AppShell>
   );
 }
 
 function LibraryGameCard({
   game,
-  returnTo,
-  status
+  returnTo
 }: {
   game: LibraryGameDetailView;
   returnTo: string;
-  status: Phase2LibraryStatus;
 }) {
+  const primaryAction = getPrimaryStatusAction(game.status);
+
   return (
     <article className="library-game">
       <a className="library-cover queue2-focusable" href={`/app/jogo/${game.slug}`}>
@@ -256,7 +328,11 @@ function LibraryGameCard({
       <div className="library-game-body">
         <div>
           <p className="eyebrow">{game.status}</p>
-          <h3>{game.name}</h3>
+          <h3>
+            <a className="queue2-focusable" href={`/app/jogo/${game.slug}`}>
+              {game.name}
+            </a>
+          </h3>
           <p className="support-copy">
             {game.commonPlatformLabels.length
               ? `Em comum: ${game.commonPlatformLabels.join(", ")}`
@@ -272,27 +348,44 @@ function LibraryGameCard({
           <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${game.slug}`}>
             Abrir detalhe
           </a>
-          <LibraryStatusControls
-            action={moveLibraryGameAction}
-            catalogGameId={game.catalogGameId}
-            currentStatus={status}
-            returnTo={returnTo}
-          />
+          {primaryAction ? (
+            <form action={moveLibraryGameAction}>
+              <input name="catalogGameId" type="hidden" value={game.catalogGameId} />
+              <input name="status" type="hidden" value={primaryAction.status} />
+              <input name="returnTo" type="hidden" value={returnTo} />
+              <button className="queue2-button" data-tone="primary" type="submit">
+                {primaryAction.label}
+              </button>
+            </form>
+          ) : null}
         </div>
       </div>
     </article>
   );
 }
 
-function buildLibraryPath(filter: Phase2LibraryStatus | "todas"): string {
-  if (filter === "todas") {
-    return "/app/biblioteca";
+function getPrimaryStatusAction(statusLabel: string): { status: Phase2LibraryStatus; label: string } | null {
+  switch (statusLabel) {
+    case "Wishlist":
+      return { status: "jogando", label: "Comecar em Jogando" };
+    case "Jogando":
+      return { status: "pausado", label: "Pausar" };
+    case "Pausado":
+      return { status: "jogando", label: "Retomar em Jogando" };
+    default:
+      return null;
   }
-
-  const params = new URLSearchParams({ status: filter });
-  return `/app/biblioteca?${params.toString()}`;
 }
 
-function parseLibraryFilter(value: string | null): Phase2LibraryStatus | "todas" {
-  return value && isPhase2LibraryStatus(value) ? value : "todas";
+function getViewTitle(view: LibraryQueueView): string {
+  switch (view) {
+    case "wishlist":
+      return "Wishlist";
+    case "jogando":
+      return "Jogando";
+    case "pausado":
+      return "Pausado";
+    default:
+      return "Toda a fila ativa";
+  }
 }

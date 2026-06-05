@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -61,6 +62,7 @@ const catalogModuleMock = vi.hoisted(() => ({
 
 const libraryModuleMock = vi.hoisted(() => ({
   getLibraryOverview: vi.fn(),
+  getLibraryQueue: vi.fn(),
   getLibraryGameDetail: vi.fn(),
   addGameToWishlist: vi.fn(async () => ({ ok: true, game: {} })),
   moveLibraryGame: vi.fn(async () => ({ ok: true, game: {} })),
@@ -130,6 +132,7 @@ vi.mock("../src/modules/library", async () => {
     addGameToWishlist: libraryModuleMock.addGameToWishlist,
     getLibraryGameDetail: libraryModuleMock.getLibraryGameDetail,
     getLibraryOverview: libraryModuleMock.getLibraryOverview,
+    getLibraryQueue: libraryModuleMock.getLibraryQueue,
     isPhase2LibraryStatus: policy.isPhase2LibraryStatus,
     normalizeLibraryLimit: policy.normalizeLibraryLimit,
     normalizeLibraryPage: policy.normalizeLibraryPage,
@@ -178,6 +181,10 @@ beforeEach(() => {
   libraryModuleMock.getLibraryOverview.mockResolvedValue({
     ok: true,
     overview: libraryOverview()
+  });
+  libraryModuleMock.getLibraryQueue.mockResolvedValue({
+    ok: true,
+    queue: libraryQueue()
   });
   libraryModuleMock.getLibraryGameDetail.mockResolvedValue({
     ok: true,
@@ -232,6 +239,33 @@ describe("Biblioteca route params", () => {
 });
 
 describe("Phase 2 authenticated catalog and library UI", () => {
+  it("keeps the Biblioteca route on the bounded queue contract", () => {
+    const source = readFileSync(
+      "src/app/app/biblioteca/page.tsx",
+      "utf8"
+    );
+
+    expect(source).toContain("library-operational-shell");
+    expect(source).toContain("getLibraryQueue");
+    expect(source).not.toContain("getLibraryOverview");
+    expect(source).not.toContain("library-board");
+    expect(source).not.toContain("locked-status");
+    expect(source).not.toContain("Zerado bloqueado");
+    expect(source).not.toContain("Dropado bloqueado");
+
+    for (const futureOnlyWord of [
+      "Principal",
+      "secundario",
+      "sessao",
+      "timer",
+      "capitulo",
+      "porcentagem",
+      "milestone"
+    ]) {
+      expect(source).not.toContain(futureOnlyWord);
+    }
+  });
+
   it("renders dashboard navigation and real library entry points", async () => {
     render(await DashboardPage());
     const navigation = within(
@@ -260,21 +294,38 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.getByRole("heading", { name: /garimpar coops com prova/i })).toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: /buscar no catalogo/i })).toHaveValue("take");
     expect(screen.getAllByRole("link", { name: /dados e imagens: rawg/i }).length).toBeGreaterThan(1);
-    expect(screen.getByText(/coop campanha 2p confirmado/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/coop campanha 2p confirmado/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/fora do fluxo principal/i).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
   });
 
-  it("renders platform editing, common platforms and locked future statuses", async () => {
+  it("renders the operational Biblioteca queue without dead archive controls", async () => {
     const { container } = render(await LibraryPage());
 
-    expect(screen.getByRole("heading", { name: /a fila compartilhada/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /a fila operacional/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /proximos da fila/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /^jogando$/i })).toBeInTheDocument();
+    expect(screen.getByText(/ate 3 ativos/i)).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: /buscar jogo na fila/i })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /ordenar/i })).toHaveValue("recentes");
     expect(screen.getByLabelText("PC")).toBeChecked();
     expect(screen.getAllByText(/em comum/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText("PC").length).toBeGreaterThan(1);
-    expect(screen.getByRole("button", { name: /zerado bloqueado/i })).toBeDisabled();
-    expect(screen.getByRole("button", { name: /dropado bloqueado/i })).toBeDisabled();
-    expect(screen.getByText(/coop campanha 2p confirmado/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /zerado bloqueado/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /dropado bloqueado/i })).not.toBeInTheDocument();
+    expect(screen.getAllByText(/coop campanha 2p confirmado/i).length).toBeGreaterThan(0);
+    expect(
+      container.textContent?.indexOf("Proximos da fila") ?? -1
+    ).toBeLessThan(container.textContent?.indexOf("Toda a fila ativa") ?? -1);
+    expect(libraryModuleMock.getLibraryQueue).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        view: "todas",
+        sort: "recentes",
+        limit: 12,
+        offset: 0
+      })
+    );
     expectEveryVisibleFormControlHasName(container);
   });
 
@@ -472,6 +523,38 @@ function libraryOverview() {
       pausado: []
     },
     lockedStatuses: ["zerado", "dropado"]
+  };
+}
+
+function libraryQueue() {
+  return {
+    memberPlatforms: [
+      {
+        userId: "user-1",
+        platforms: ["pc", "switch"]
+      },
+      {
+        userId: "user-2",
+        platforms: ["pc", "xbox"]
+      }
+    ],
+    commonPlatforms: ["pc"],
+    statusCounts: {
+      wishlist: 1,
+      jogando: 1,
+      pausado: 1
+    },
+    archiveCount: 1,
+    nextQueue: [libraryDetail("wishlist")],
+    playing: [libraryDetail("jogando")],
+    page: {
+      items: [libraryDetail("wishlist"), libraryDetail("pausado")],
+      total: 2,
+      limit: 12 as const,
+      offset: 0,
+      hasNextPage: false,
+      hasPreviousPage: false
+    }
   };
 }
 
