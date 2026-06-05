@@ -1,5 +1,5 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 type E2EActor = {
   email: string;
@@ -39,6 +39,17 @@ const phase32LibraryMissingEnv = missingEnv([
   "E2E_OTHER_DUO_USER_PASSWORD",
   "E2E_PHASE3_2_LIBRARY_QUERY"
 ]);
+const phase33PerformanceMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD",
+  "E2E_READY_PARTNER_EMAIL",
+  "E2E_READY_PARTNER_PASSWORD",
+  "E2E_OTHER_DUO_USER_EMAIL",
+  "E2E_OTHER_DUO_USER_PASSWORD",
+  "E2E_PHASE3_3_CATALOG_QUERY",
+  "E2E_PHASE3_3_GAME_SLUG"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -47,6 +58,7 @@ reportMissingEnv("Pairing accessibility", pairingMissingEnv);
 reportMissingEnv("Authenticated accessibility", readyMissingEnv);
 reportMissingEnv("Phase 2 detail accessibility", phase2DetailMissingEnv);
 reportMissingEnv("Phase 03.2 Biblioteca accessibility", phase32LibraryMissingEnv);
+reportMissingEnv("Phase 03.3 performance feedback accessibility", phase33PerformanceMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -248,6 +260,36 @@ test.describe("Phase 03.2 Biblioteca accessibility", () => {
   });
 });
 
+test.describe("Phase 03.3 performance feedback accessibility", () => {
+  test.skip(
+    phase33PerformanceMissingEnv.length > 0,
+    `Missing Phase 03.3 performance accessibility fixture: ${phase33PerformanceMissingEnv.join(", ")}`
+  );
+
+  test("pending Discovery feedback remains announced, focused and non-overlapping", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await delayNextServerAction(page, "**/app/descobrir**", 1_200);
+    await page.goto("/app/descobrir");
+
+    const button = page.getByRole("button", { name: /quero jogar/i }).first();
+    await expect(button).toBeVisible();
+    await button.focus();
+    await expect(button).toBeFocused();
+    await button.click();
+
+    const status = page.getByRole("status").filter({
+      hasText: /decisao salva aqui, sincronizando/i
+    }).first();
+    await expect(status).toBeVisible();
+    await expect(button).toBeDisabled();
+    await expectStaticFeedbackMark(page.locator(".action-feedback-button__mark").first());
+    await expectNoOverlap(button, status, "Pending Discovery button overlaps feedback copy");
+    await expectNoAxeViolations(page);
+  });
+});
+
 test.describe("Phase 2 detail accessibility", () => {
   test.skip(
     phase2DetailMissingEnv.length > 0,
@@ -282,6 +324,55 @@ async function expectNoAxeViolations(page: Page): Promise<void> {
     .analyze();
 
   expect(results.violations).toEqual([]);
+}
+
+async function delayNextServerAction(
+  page: Page,
+  url: string,
+  delayMs: number
+): Promise<void> {
+  let hasDelayed = false;
+
+  await page.route(url, async (route) => {
+    if (route.request().method() !== "POST" || hasDelayed) {
+      await route.continue();
+      return;
+    }
+
+    hasDelayed = true;
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await route.continue();
+  });
+}
+
+async function expectStaticFeedbackMark(mark: Locator): Promise<void> {
+  await expect(mark).toBeVisible();
+
+  const animationName = await mark.evaluate((element) => {
+    return window.getComputedStyle(element).animationName;
+  });
+
+  expect(animationName).toBe("none");
+}
+
+async function expectNoOverlap(
+  first: Locator,
+  second: Locator,
+  message: string
+): Promise<void> {
+  const firstBox = await first.boundingBox();
+  const secondBox = await second.boundingBox();
+
+  expect(firstBox, `${message}: first boundingBox missing`).not.toBeNull();
+  expect(secondBox, `${message}: second boundingBox missing`).not.toBeNull();
+
+  const overlaps =
+    firstBox!.x < secondBox!.x + secondBox!.width &&
+    firstBox!.x + firstBox!.width > secondBox!.x &&
+    firstBox!.y < secondBox!.y + secondBox!.height &&
+    firstBox!.y + firstBox!.height > secondBox!.y;
+
+  expect(overlaps, message).toBe(false);
 }
 
 async function login(page: Page, actor: E2EActor): Promise<void> {

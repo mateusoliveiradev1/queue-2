@@ -420,6 +420,29 @@ describe("enhanced discovery mutation forms", () => {
   });
 });
 
+describe("phase performance regression guards", () => {
+  it("keeps telemetry and feedback primitives wired into primary surfaces", () => {
+    const layoutSource = readFileSync("src/app/layout.tsx", "utf8");
+    const feedbackSource = readFileSync("src/components/action-feedback.tsx", "utf8");
+    const libraryActionsSource = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
+    const discoveryActionsSource = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
+
+    expect(layoutSource).toContain("WebVitalsReporter");
+    expect(feedbackSource).toContain("ActionFeedbackState");
+    expect(feedbackSource).toContain('"syncing"');
+    expect(feedbackSource).toContain('"failed"');
+    expect(feedbackSource).toContain('"retrying"');
+    expect(libraryActionsSource).toContain("withServerTiming");
+    expect(libraryActionsSource).toContain("addGameToWishlistEnhancedAction");
+    expect(libraryActionsSource).toContain("moveLibraryGameEnhancedAction");
+    expect(discoveryActionsSource).toContain("withServerTiming");
+    expect(discoveryActionsSource).toContain("recordDiscoveryDecisionEnhancedAction");
+    expect(discoveryActionsSource).toContain("handoffDiscoveryMatchToLibraryEnhancedAction");
+    expect(discoveryActionsSource).toContain("startDiscoveryLiveSessionEnhancedAction");
+    expect(discoveryActionsSource).toContain("answerMoodQuizEnhancedAction");
+  });
+});
+
 function FeedbackActionHarness({
   action
 }: {
