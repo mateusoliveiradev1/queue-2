@@ -9,26 +9,51 @@ import {
   updateMemberPlatforms
 } from "../../modules/library";
 import { requireVerifiedSession } from "../../platform/auth/session";
+import {
+  measureStage,
+  withServerTiming
+} from "../../platform/performance/server-timing";
+
+const addWishlistTimingContext = { action: "catalog.wishlist.add" } as const;
+const moveLibraryTimingContext = { action: "library.status.move" } as const;
 
 export async function addGameToWishlistAction(formData: FormData): Promise<void> {
-  const session = await requireVerifiedSession();
-  const catalogGameId = getFormString(formData, "catalogGameId");
-  const returnTo = getSafeReturnTo(formData, "/app/biblioteca");
+  return withServerTiming(addWishlistTimingContext, () =>
+    addGameToWishlistActionTimed(formData)
+  );
+}
+
+async function addGameToWishlistActionTimed(formData: FormData): Promise<void> {
+  const session = await measureStage("auth", addWishlistTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, returnTo } = await measureStage(
+    "validation",
+    addWishlistTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      returnTo: getSafeReturnTo(formData, "/app/biblioteca")
+    })
+  );
 
   if (!catalogGameId) {
     redirect(withState(returnTo, "acao-invalida"));
   }
 
-  const result = await addGameToWishlist({
-    userId: session.user.id,
-    catalogGameId
-  });
+  const result = await measureStage("database", addWishlistTimingContext, () =>
+    addGameToWishlist({
+      userId: session.user.id,
+      catalogGameId
+    })
+  );
 
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");
   }
 
-  revalidateLibrarySurfaces(returnTo);
+  await measureStage("revalidation", addWishlistTimingContext, async () => {
+    revalidateLibrarySurfaces(returnTo);
+  });
 
   redirect(
     withState(
@@ -39,26 +64,44 @@ export async function addGameToWishlistAction(formData: FormData): Promise<void>
 }
 
 export async function moveLibraryGameAction(formData: FormData): Promise<void> {
-  const session = await requireVerifiedSession();
-  const catalogGameId = getFormString(formData, "catalogGameId");
-  const status = getFormString(formData, "status");
-  const returnTo = getSafeReturnTo(formData, "/app/biblioteca");
+  return withServerTiming(moveLibraryTimingContext, () =>
+    moveLibraryGameActionTimed(formData)
+  );
+}
+
+async function moveLibraryGameActionTimed(formData: FormData): Promise<void> {
+  const session = await measureStage("auth", moveLibraryTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, status, returnTo } = await measureStage(
+    "validation",
+    moveLibraryTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      status: getFormString(formData, "status"),
+      returnTo: getSafeReturnTo(formData, "/app/biblioteca")
+    })
+  );
 
   if (!catalogGameId || !status) {
     redirect(withState(returnTo, "acao-invalida"));
   }
 
-  const result = await moveLibraryGame({
-    userId: session.user.id,
-    catalogGameId,
-    status
-  });
+  const result = await measureStage("database", moveLibraryTimingContext, () =>
+    moveLibraryGame({
+      userId: session.user.id,
+      catalogGameId,
+      status
+    })
+  );
 
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");
   }
 
-  revalidateLibrarySurfaces(returnTo);
+  await measureStage("revalidation", moveLibraryTimingContext, async () => {
+    revalidateLibrarySurfaces(returnTo);
+  });
 
   redirect(withState(returnTo, moveResultToState(result)));
 }

@@ -30,8 +30,11 @@ describe("performance metric contract", () => {
         "first-interaction",
         "server-total",
         "auth",
+        "validation",
         "database",
         "external-cache",
+        "rate-limit",
+        "search",
         "render",
         "revalidation"
       ])
@@ -41,6 +44,7 @@ describe("performance metric contract", () => {
   it("normalizes known route paths and unknown labels to safe keys", () => {
     expect(normalizeRouteKey("/app/catalogo?busca=private")).toBe("app.catalogo");
     expect(normalizeRouteKey("/app/jogo/it-takes-two?duo=private")).toBe("app.jogo");
+    expect(normalizeRouteKey("/api/discovery/search?q=private")).toBe("api.discovery.search");
     expect(normalizeRouteKey("/app/perfil?email=dupla@example.com")).toBe("unknown");
   });
 
@@ -145,11 +149,35 @@ describe("server timing helpers", () => {
     expect(info).toHaveBeenCalledWith(expect.stringContaining('"name":"database"'));
     info.mockRestore();
   });
+
+  it("wires server timing to critical routes, actions and discovery search", () => {
+    const catalogPage = readFileSync("src/app/app/catalogo/page.tsx", "utf8");
+    const libraryPage = readFileSync("src/app/app/biblioteca/page.tsx", "utf8");
+    const discoveryPage = readFileSync("src/app/app/descobrir/page.tsx", "utf8");
+    const libraryActions = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
+    const discoveryActions = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
+    const discoverySearchRoute = readFileSync("src/app/api/discovery/search/route.ts", "utf8");
+
+    expect(catalogPage).toContain('route: "app.catalogo"');
+    expect(libraryPage).toContain('route: "app.biblioteca"');
+    expect(discoveryPage).toContain('route: "app.descobrir"');
+    expect(libraryActions).toContain('action: "catalog.wishlist.add"');
+    expect(libraryActions).toContain('action: "library.status.move"');
+    expect(discoveryActions).toContain('action: "discovery.decision"');
+    expect(discoveryActions).toContain('action: "discovery.handoff"');
+    expect(discoveryActions).toContain('action: "discovery.live.start"');
+    expect(discoveryActions).toContain('action: "discovery.quiz.answer"');
+    expect(discoveryActions).toContain('action: "discovery.surprise"');
+    expect(discoverySearchRoute).toContain('route: "api.discovery.search"');
+    expect(discoverySearchRoute).toContain('measureStage("rate-limit"');
+    expect(discoverySearchRoute).toContain('measureStage("search"');
+  });
 });
 
 describe("performance budgets", () => {
-  it("defines route budgets for the five critical routes", () => {
+  it("defines route budgets for critical routes and discovery search", () => {
     expect(Object.keys(routePerformanceBudgets).sort()).toEqual([
+      "api.discovery.search",
       "app.biblioteca",
       "app.catalogo",
       "app.descobrir",
@@ -165,6 +193,7 @@ describe("performance budgets", () => {
       "discovery.handoff",
       "discovery.live.start",
       "discovery.quiz.answer",
+      "discovery.surprise",
       "library.status.move"
     ]);
   });

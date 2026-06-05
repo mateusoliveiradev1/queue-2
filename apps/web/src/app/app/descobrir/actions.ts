@@ -13,16 +13,39 @@ import {
   startLiveSession
 } from "../../../modules/discovery";
 import { requireVerifiedSession } from "../../../platform/auth/session";
+import {
+  measureStage,
+  withServerTiming
+} from "../../../platform/performance/server-timing";
 import { getDiscoveryFiltersFromPath } from "./discovery-route-params";
 
 const uuidSchema = z.string().uuid();
+const decisionTimingContext = { action: "discovery.decision" } as const;
+const handoffTimingContext = { action: "discovery.handoff" } as const;
+const liveTimingContext = { action: "discovery.live.start" } as const;
+const quizTimingContext = { action: "discovery.quiz.answer" } as const;
+const surpriseTimingContext = { action: "discovery.surprise" } as const;
 
 export async function recordDiscoveryDecisionAction(formData: FormData): Promise<void> {
-  const session = await requireVerifiedSession();
-  const catalogGameId = getFormString(formData, "catalogGameId");
-  const decision = getFormString(formData, "decision");
-  const sourceMode = getFormString(formData, "sourceMode") || "deck";
-  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
+  return withServerTiming(decisionTimingContext, () =>
+    recordDiscoveryDecisionActionTimed(formData)
+  );
+}
+
+async function recordDiscoveryDecisionActionTimed(formData: FormData): Promise<void> {
+  const session = await measureStage("auth", decisionTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, decision, sourceMode, returnTo } = await measureStage(
+    "validation",
+    decisionTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      decision: getFormString(formData, "decision"),
+      sourceMode: getFormString(formData, "sourceMode") || "deck",
+      returnTo: getSafeReturnTo(formData, "/app/descobrir")
+    })
+  );
 
   if (
     !isUuid(catalogGameId) ||
@@ -32,12 +55,14 @@ export async function recordDiscoveryDecisionAction(formData: FormData): Promise
     redirect(withState(returnTo, "acao-invalida"));
   }
 
-  const result = await recordDiscoveryDecision({
-    userId: session.user.id,
-    catalogGameId,
-    decision,
-    sourceMode
-  });
+  const result = await measureStage("database", decisionTimingContext, () =>
+    recordDiscoveryDecision({
+      userId: session.user.id,
+      catalogGameId,
+      decision,
+      sourceMode
+    })
+  );
 
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");
@@ -49,20 +74,38 @@ export async function recordDiscoveryDecisionAction(formData: FormData): Promise
 export async function handoffDiscoveryMatchToLibraryAction(
   formData: FormData
 ): Promise<void> {
-  const session = await requireVerifiedSession();
-  const catalogGameId = getFormString(formData, "catalogGameId");
-  const status = getFormString(formData, "status");
-  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
+  return withServerTiming(handoffTimingContext, () =>
+    handoffDiscoveryMatchToLibraryActionTimed(formData)
+  );
+}
+
+async function handoffDiscoveryMatchToLibraryActionTimed(
+  formData: FormData
+): Promise<void> {
+  const session = await measureStage("auth", handoffTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, status, returnTo } = await measureStage(
+    "validation",
+    handoffTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      status: getFormString(formData, "status"),
+      returnTo: getSafeReturnTo(formData, "/app/descobrir")
+    })
+  );
 
   if (!isUuid(catalogGameId) || !status) {
     redirect(withState(returnTo, "acao-invalida"));
   }
 
-  const result = await handoffDiscoveryMatchToLibrary({
-    userId: session.user.id,
-    catalogGameId,
-    status
-  });
+  const result = await measureStage("database", handoffTimingContext, () =>
+    handoffDiscoveryMatchToLibrary({
+      userId: session.user.id,
+      catalogGameId,
+      status
+    })
+  );
 
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");
@@ -74,11 +117,25 @@ export async function handoffDiscoveryMatchToLibraryAction(
 export async function startDiscoveryLiveSessionAction(
   formData: FormData
 ): Promise<void> {
-  const session = await requireVerifiedSession();
-  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
-  const result = await startLiveSession({
-    userId: session.user.id
-  });
+  return withServerTiming(liveTimingContext, () =>
+    startDiscoveryLiveSessionActionTimed(formData)
+  );
+}
+
+async function startDiscoveryLiveSessionActionTimed(
+  formData: FormData
+): Promise<void> {
+  const session = await measureStage("auth", liveTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const returnTo = await measureStage("validation", liveTimingContext, async () =>
+    getSafeReturnTo(formData, "/app/descobrir")
+  );
+  const result = await measureStage("database", liveTimingContext, () =>
+    startLiveSession({
+      userId: session.user.id
+    })
+  );
 
   if (!result.ok) {
     redirect(result.reason === "membership-required" ? "/parear" : withState(returnTo, "acao-invalida"));
@@ -88,24 +145,40 @@ export async function startDiscoveryLiveSessionAction(
 }
 
 export async function answerMoodQuizAction(formData: FormData): Promise<void> {
-  const session = await requireVerifiedSession();
-  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
-  const energy = getFormString(formData, "energy");
-  const commitment = getFormString(formData, "commitment");
-  const vibe = getFormString(formData, "vibe");
+  return withServerTiming(quizTimingContext, () =>
+    answerMoodQuizActionTimed(formData)
+  );
+}
+
+async function answerMoodQuizActionTimed(formData: FormData): Promise<void> {
+  const session = await measureStage("auth", quizTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { returnTo, energy, commitment, vibe } = await measureStage(
+    "validation",
+    quizTimingContext,
+    async () => ({
+      returnTo: getSafeReturnTo(formData, "/app/descobrir"),
+      energy: getFormString(formData, "energy"),
+      commitment: getFormString(formData, "commitment"),
+      vibe: getFormString(formData, "vibe")
+    })
+  );
 
   if (!isMoodEnergyAnswer(energy) || !isMoodCommitmentAnswer(commitment) || !isMoodVibeAnswer(vibe)) {
     redirect(withState(returnTo, "quiz-invalido"));
   }
 
-  const result = await answerMoodQuiz({
-    userId: session.user.id,
-    answers: {
-      energy,
-      commitment,
-      vibe
-    }
-  });
+  const result = await measureStage("database", quizTimingContext, () =>
+    answerMoodQuiz({
+      userId: session.user.id,
+      answers: {
+        energy,
+        commitment,
+        vibe
+      }
+    })
+  );
 
   redirect(
     withState(
@@ -118,12 +191,35 @@ export async function answerMoodQuizAction(formData: FormData): Promise<void> {
 export async function getSurpriseRecommendationAction(
   formData: FormData
 ): Promise<void> {
-  const session = await requireVerifiedSession();
-  const returnTo = getSafeReturnTo(formData, "/app/descobrir");
-  const result = await getSurpriseRecommendation({
-    userId: session.user.id,
-    filters: getDiscoveryFiltersFromPath(returnTo)
-  });
+  return withServerTiming(surpriseTimingContext, () =>
+    getSurpriseRecommendationActionTimed(formData)
+  );
+}
+
+async function getSurpriseRecommendationActionTimed(
+  formData: FormData
+): Promise<void> {
+  const session = await measureStage("auth", surpriseTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { returnTo, filters } = await measureStage(
+    "validation",
+    surpriseTimingContext,
+    async () => {
+      const returnTo = getSafeReturnTo(formData, "/app/descobrir");
+
+      return {
+        returnTo,
+        filters: getDiscoveryFiltersFromPath(returnTo)
+      };
+    }
+  );
+  const result = await measureStage("database", surpriseTimingContext, () =>
+    getSurpriseRecommendation({
+      userId: session.user.id,
+      filters
+    })
+  );
 
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");

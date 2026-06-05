@@ -15,6 +15,10 @@ import {
 } from "../../../modules/library";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 import {
+  measureStage,
+  withServerTiming
+} from "../../../platform/performance/server-timing";
+import {
   moveLibraryGameAction,
   updateMemberPlatformsAction
 } from "../phase-2-actions";
@@ -37,12 +41,24 @@ type LibraryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+const libraryTimingContext = { route: "app.biblioteca" } as const;
+
 export default async function LibraryPage({ searchParams }: LibraryPageProps = {}) {
-  const session = await requireVerifiedSession();
-  const [dashboard, params] = await Promise.all([
-    getDuoDashboard(session.user.id),
-    searchParams
-  ]);
+  return withServerTiming(libraryTimingContext, () =>
+    renderLibraryPage({ searchParams })
+  );
+}
+
+async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
+  const session = await measureStage("auth", libraryTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const [dashboard, params] = await measureStage("database", libraryTimingContext, () =>
+    Promise.all([
+      getDuoDashboard(session.user.id),
+      searchParams
+    ])
+  );
 
   if (dashboard.routeState === "pairing") {
     redirect("/parear");
@@ -53,16 +69,18 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
   }
 
   const routeParams = parseLibraryRouteParams(params);
-  const libraryResult = await getLibraryQueue({
-    userId: session.user.id,
-    view: routeParams.view,
-    query: routeParams.query,
-    commonPlatformOnly: routeParams.commonPlatformOnly,
-    platform: routeParams.platform,
-    sort: routeParams.sort,
-    limit: routeParams.limit,
-    offset: routeParams.offset
-  });
+  const libraryResult = await measureStage("database", libraryTimingContext, () =>
+    getLibraryQueue({
+      userId: session.user.id,
+      view: routeParams.view,
+      query: routeParams.query,
+      commonPlatformOnly: routeParams.commonPlatformOnly,
+      platform: routeParams.platform,
+      sort: routeParams.sort,
+      limit: routeParams.limit,
+      offset: routeParams.offset
+    })
+  );
 
   if (!libraryResult.ok) {
     redirect("/parear");
@@ -76,7 +94,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
       ?.platforms ?? [];
   const returnTo = buildLibraryPath(routeParams);
 
-  return (
+  return measureStage("render", libraryTimingContext, async () => (
     <AppShell currentPage="biblioteca">
       <header className="app-header">
         <div>
@@ -252,7 +270,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
         </section>
       </main>
     </AppShell>
-  );
+  ));
 }
 
 function getViewTitle(view: LibraryQueueView): string {

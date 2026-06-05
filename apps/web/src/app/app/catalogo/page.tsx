@@ -13,6 +13,10 @@ import {
   type LibraryStatus
 } from "../../../modules/library";
 import { requireVerifiedSession } from "../../../platform/auth/session";
+import {
+  measureStage,
+  withServerTiming
+} from "../../../platform/performance/server-timing";
 import { addGameToWishlistAction } from "../phase-2-actions";
 import {
   getPhase2StatusMessage,
@@ -27,17 +31,28 @@ export const metadata: Metadata = {
 
 const CATALOG_PAGE_SIZE = 18;
 const CATALOG_SUGGESTION_CANDIDATES = 8;
+const catalogTimingContext = { route: "app.catalogo" } as const;
 
 type CatalogPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps = {}) {
-  const session = await requireVerifiedSession();
-  const [dashboard, params] = await Promise.all([
-    getDuoDashboard(session.user.id),
-    searchParams
-  ]);
+  return withServerTiming(catalogTimingContext, () =>
+    renderCatalogPage({ searchParams })
+  );
+}
+
+async function renderCatalogPage({ searchParams }: CatalogPageProps = {}) {
+  const session = await measureStage("auth", catalogTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const [dashboard, params] = await measureStage("database", catalogTimingContext, () =>
+    Promise.all([
+      getDuoDashboard(session.user.id),
+      searchParams
+    ])
+  );
 
   if (dashboard.routeState === "pairing") {
     redirect("/parear");
@@ -52,15 +67,20 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
   const returnTo = buildCatalogPath(query, page);
-  const [suggestedCandidates, browseGames] = await Promise.all([
-    searchCatalogGames({ limit: CATALOG_SUGGESTION_CANDIDATES }),
-    searchCatalogGames({
-      includeNonEligible: true,
-      limit: CATALOG_PAGE_SIZE + 1,
-      offset: (page - 1) * CATALOG_PAGE_SIZE,
-      query: query || undefined
-    })
-  ]);
+  const [suggestedCandidates, browseGames] = await measureStage(
+    "database",
+    catalogTimingContext,
+    () =>
+      Promise.all([
+        searchCatalogGames({ limit: CATALOG_SUGGESTION_CANDIDATES }),
+        searchCatalogGames({
+          includeNonEligible: true,
+          limit: CATALOG_PAGE_SIZE + 1,
+          offset: (page - 1) * CATALOG_PAGE_SIZE,
+          query: query || undefined
+        })
+      ])
+  );
   const hasNextPage = browseGames.length > CATALOG_PAGE_SIZE;
   const visibleCatalogIds = [
     ...new Set([
@@ -68,10 +88,15 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
       ...browseGames.slice(0, CATALOG_PAGE_SIZE).map((game) => game.id)
     ])
   ];
-  const libraryStatusesResult = await getLibraryGameStatuses({
-    userId: session.user.id,
-    catalogGameIds: visibleCatalogIds
-  });
+  const libraryStatusesResult = await measureStage(
+    "database",
+    catalogTimingContext,
+    () =>
+      getLibraryGameStatuses({
+        userId: session.user.id,
+        catalogGameIds: visibleCatalogIds
+      })
+  );
   const libraryStatuses = libraryStatusesResult.ok
     ? libraryStatusesResult.statuses
     : {};
@@ -83,7 +108,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
     .slice(0, CATALOG_PAGE_SIZE)
     .filter((game) => game.id !== suggestedGame?.id);
 
-  return (
+  return measureStage("render", catalogTimingContext, async () => (
     <AppShell currentPage="catalogo">
       <header className="app-header">
         <div>
@@ -194,7 +219,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
         </nav>
       </section>
     </AppShell>
-  );
+  ));
 }
 
 function parsePositivePage(value: string | null): number {

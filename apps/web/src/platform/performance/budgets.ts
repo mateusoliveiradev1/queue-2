@@ -42,6 +42,12 @@ export const routePerformanceBudgets: Record<Exclude<PerformanceRouteKey, "unkno
     usefulContentMs: 2_200,
     firstInteractionMs: 2_500,
     hydrationMs: 2_800
+  },
+  "api.discovery.search": {
+    ttfbMs: 700,
+    usefulContentMs: 1_200,
+    firstInteractionMs: 1_200,
+    hydrationMs: 0
   }
 };
 
@@ -72,6 +78,10 @@ export const mutationPerformanceBudgets: Record<
   "discovery.quiz.answer": {
     pendingFeedbackMs: 100,
     authoritativeSettledMs: 2_000
+  },
+  "discovery.surprise": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_000
   }
 };
 
@@ -80,5 +90,6 @@ export const criticalRoutePaths: Record<Exclude<PerformanceRouteKey, "unknown">,
   "app.catalogo": "/app/catalogo",
   "app.biblioteca": "/app/biblioteca",
   "app.descobrir": "/app/descobrir",
-  "app.jogo": "/app/jogo/[slug]"
+  "app.jogo": "/app/jogo/[slug]",
+  "api.discovery.search": "/api/discovery/search"
 };

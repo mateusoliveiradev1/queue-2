@@ -19,6 +19,10 @@ import {
 import { getDuoDashboard } from "../../../modules/duo";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 import {
+  measureStage,
+  withServerTiming
+} from "../../../platform/performance/server-timing";
+import {
   answerMoodQuizAction,
   getSurpriseRecommendationAction,
   handoffDiscoveryMatchToLibraryAction,
@@ -43,14 +47,28 @@ type DiscoveryPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+const discoveryTimingContext = { route: "app.descobrir" } as const;
+
 export default async function DiscoveryPage({
   searchParams
 }: DiscoveryPageProps = {}) {
-  const session = await requireVerifiedSession();
-  const [dashboard, params] = await Promise.all([
-    getDuoDashboard(session.user.id),
-    searchParams
-  ]);
+  return withServerTiming(discoveryTimingContext, () =>
+    renderDiscoveryPage({ searchParams })
+  );
+}
+
+async function renderDiscoveryPage({
+  searchParams
+}: DiscoveryPageProps = {}) {
+  const session = await measureStage("auth", discoveryTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const [dashboard, params] = await measureStage("database", discoveryTimingContext, () =>
+    Promise.all([
+      getDuoDashboard(session.user.id),
+      searchParams
+    ])
+  );
 
   if (dashboard.routeState === "pairing") {
     redirect("/parear");
@@ -73,26 +91,31 @@ export default async function DiscoveryPage({
   const filters = getDiscoveryFilters(params);
   const deckPage = parsePositivePage(getSearchParam(params?.pagina));
   const returnTo = buildDiscoveryPath(params);
-  const [deck, matchHistory, liveSession, moodQuizStatus] = await Promise.all([
-    getDiscoveryDeck({
-      userId: session.user.id,
-      filters,
-      limit: 6,
-      page: deckPage,
-      preferredCatalogGameId: surpriseId ?? undefined
-    }),
-    getMatchHistory({
-      userId: session.user.id,
-      limit: 6
-    }),
-    getLiveSession({
-      userId: session.user.id,
-      sessionId: liveId
-    }),
-    getMoodQuizStatus({
-      userId: session.user.id
-    })
-  ]);
+  const [deck, matchHistory, liveSession, moodQuizStatus] = await measureStage(
+    "database",
+    discoveryTimingContext,
+    () =>
+      Promise.all([
+        getDiscoveryDeck({
+          userId: session.user.id,
+          filters,
+          limit: 6,
+          page: deckPage,
+          preferredCatalogGameId: surpriseId ?? undefined
+        }),
+        getMatchHistory({
+          userId: session.user.id,
+          limit: 6
+        }),
+        getLiveSession({
+          userId: session.user.id,
+          sessionId: liveId
+        }),
+        getMoodQuizStatus({
+          userId: session.user.id
+        })
+      ])
+  );
   const hasActiveLive = liveSession.ok;
   const livePanelHref = getLivePanelHref(returnTo, liveSession);
   const shouldShowMoodQuiz =
@@ -103,7 +126,7 @@ export default async function DiscoveryPage({
       ? matchHistory[0] ?? null
       : null;
 
-  return (
+  return measureStage("render", discoveryTimingContext, async () => (
     <AppShell currentPage="descobrir">
       <section className="discovery-stage" aria-labelledby="discovery-stage-title">
         <header className="discovery-stage-top">
@@ -246,7 +269,7 @@ export default async function DiscoveryPage({
         </section>
       </section>
     </AppShell>
-  );
+  ));
 }
 
 function parsePositivePage(value: string | null): number {

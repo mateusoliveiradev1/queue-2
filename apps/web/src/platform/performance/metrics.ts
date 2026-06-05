@@ -9,8 +9,11 @@ export const performanceMetricNames = [
   "first-interaction",
   "server-total",
   "auth",
+  "validation",
   "database",
   "external-cache",
+  "rate-limit",
+  "search",
   "render",
   "revalidation"
 ] as const;
@@ -18,8 +21,11 @@ export const performanceMetricNames = [
 export const performanceStageNames = [
   "server-total",
   "auth",
+  "validation",
   "database",
   "external-cache",
+  "rate-limit",
+  "search",
   "render",
   "revalidation"
 ] as const;
@@ -30,6 +36,7 @@ export const performanceRouteKeys = [
   "app.biblioteca",
   "app.descobrir",
   "app.jogo",
+  "api.discovery.search",
   "unknown"
 ] as const;
 
@@ -40,6 +47,7 @@ export const performanceActionKeys = [
   "discovery.handoff",
   "discovery.live.start",
   "discovery.quiz.answer",
+  "discovery.surprise",
   "unknown"
 ] as const;
 
@@ -179,6 +187,10 @@ export function normalizeRouteKey(input: unknown): PerformanceRouteKey {
 
   if (path.startsWith("/app/jogo/")) {
     return "app.jogo";
+  }
+
+  if (path === "/api/discovery/search") {
+    return "api.discovery.search";
   }
 
   return "unknown";
