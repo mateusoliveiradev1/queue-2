@@ -13,6 +13,8 @@
     "check:architecture": "node ../../scripts/check-architecture.mjs"
   },
   "dependencies": {
+    "@dnd-kit/core": "6.3.1",
+    "@dnd-kit/sortable": "10.0.0",
     "@queue/db": "workspace:*",
     "@queue/ui": "workspace:*",
     "better-auth": "1.6.14",

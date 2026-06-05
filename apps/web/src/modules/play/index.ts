@@ -147,3 +147,11 @@ export function promotePlayingGame(input: {
 }) {
   return promotePlayingGameUseCase(input, playRepository);
 }
+
+export { PlayingNowDashboard } from "./presentation/playing-now-dashboard";
+export { PlayingOrderControls } from "./presentation/playing-order-controls";
+export {
+  toPlayingNowView,
+  type PlayingNowGameView,
+  type PlayingNowViewModel
+} from "./presentation/view-models";

@@ -1,0 +1,180 @@
+import Image from "next/image";
+
+import { PlayingOrderControls } from "./playing-order-controls";
+import type {
+  PlayingNowGameView,
+  PlayingNowViewModel
+} from "./view-models";
+
+type PlayOrderMutationResult =
+  | {
+      ok: true;
+      state: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+      state: string;
+      redirectTo?: string;
+    };
+
+type PlayOrderAction = (formData: FormData) => Promise<PlayOrderMutationResult>;
+
+export function PlayingNowDashboard({
+  promoteAction,
+  reorderAction,
+  view
+}: {
+  promoteAction: PlayOrderAction;
+  reorderAction: PlayOrderAction;
+  view: PlayingNowViewModel;
+}) {
+  if (!view.principal) {
+    return (
+      <section className="playing-now app-section" aria-labelledby="playing-now-title">
+        <div className="section-heading">
+          <p className="eyebrow">Jogando Agora</p>
+          <h2 id="playing-now-title">Nenhum Principal definido</h2>
+          <p className="support-copy">
+            Escolham ate tres jogos em Jogando. O primeiro vira Principal automaticamente.
+          </p>
+        </div>
+        <div className="playing-empty-actions">
+          <a className="queue2-button" data-tone="primary" href="/app/biblioteca">
+            Abrir Biblioteca
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="/app/descobrir">
+            Descobrir matches
+          </a>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="playing-now app-section" aria-labelledby="playing-now-title">
+      <div className="section-heading playing-now-heading">
+        <div>
+          <p className="eyebrow">Jogando Agora</p>
+          <h2 id="playing-now-title">A fila e nossa</h2>
+        </div>
+        <span className="playing-now-count">{view.activeCountLabel}</span>
+      </div>
+
+      <div className="playing-now-layout">
+        <PrincipalHero game={view.principal} />
+        <aside className="playing-secondary-panel" aria-label="Jogos secundarios">
+          <div className="playing-secondary-list">
+            {view.secondaries.length ? (
+              view.secondaries.map((game) => (
+                <SecondaryGameCard game={game} key={game.libraryGameId} />
+              ))
+            ) : (
+              <p className="playing-secondary-empty">
+                Sem secundarios. A dupla pode manter foco total no Principal.
+              </p>
+            )}
+          </div>
+          <PlayingOrderControls
+            games={view.games}
+            promoteAction={promoteAction}
+            reorderAction={reorderAction}
+          />
+        </aside>
+      </div>
+    </section>
+  );
+}
+
+function PrincipalHero({ game }: { game: PlayingNowGameView }) {
+  return (
+    <article className="playing-principal" data-has-cover={game.coverUrl ? "true" : "false"}>
+      {game.coverUrl ? (
+        <Image
+          alt=""
+          aria-hidden="true"
+          className="playing-principal-backdrop"
+          fill
+          priority
+          sizes="(max-width: 820px) 100vw, 64vw"
+          src={game.coverUrl}
+        />
+      ) : null}
+      <div className="playing-principal-content">
+        <div className="playing-cover-frame">
+          {game.coverUrl ? (
+            <Image
+              alt={`Capa de ${game.name}`}
+              fill
+              sizes="(max-width: 560px) 42vw, 220px"
+              src={game.coverUrl}
+            />
+          ) : (
+            <span aria-hidden="true">/2</span>
+          )}
+        </div>
+        <div className="playing-principal-copy">
+          <p className="eyebrow">{game.roleLabel}</p>
+          <h3>{game.name}</h3>
+          <p className="support-copy">
+            {game.progress.coopTimeLabel}. {game.progress.subjectiveLabel}.
+          </p>
+          <dl className="playing-facts">
+            <div>
+              <dt>Fonte</dt>
+              <dd>{game.sourceLabel}</dd>
+            </div>
+            <div>
+              <dt>Frescor</dt>
+              <dd>{game.freshnessLabel}</dd>
+            </div>
+            <div>
+              <dt>Estimativa</dt>
+              <dd>{game.progress.estimateLabel}</dd>
+            </div>
+          </dl>
+          <div className="playing-primary-actions">
+            <a className="queue2-button" data-tone="primary" href={`/app/jogo/${game.slug}`}>
+              Abrir jornada
+            </a>
+            <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${game.slug}?acao=sessao-live`}>
+              Iniciar sessao
+            </a>
+            <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${game.slug}?acao=jogamos-hoje`}>
+              Jogamos Hoje
+            </a>
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function SecondaryGameCard({ game }: { game: PlayingNowGameView }) {
+  return (
+    <article className="playing-secondary-card">
+      <div className="playing-secondary-cover">
+        {game.coverUrl ? (
+          <Image
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="96px"
+            src={game.coverUrl}
+          />
+        ) : (
+          <span aria-hidden="true">/2</span>
+        )}
+      </div>
+      <div>
+        <p className="eyebrow">{game.roleLabel}</p>
+        <h3>
+          <a className="queue2-focusable" href={`/app/jogo/${game.slug}`}>
+            {game.name}
+          </a>
+        </h3>
+        <p className="support-copy">{game.progress.coopTimeLabel}</p>
+      </div>
+    </article>
+  );
+}

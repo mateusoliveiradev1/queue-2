@@ -5,11 +5,20 @@ import { RoulettePointer } from "@queue/ui";
 import { AppShell } from "../../components/app-shell";
 import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
 import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library";
+import {
+  getCurrentPlay,
+  PlayingNowDashboard,
+  toPlayingNowView
+} from "../../modules/play";
 import { requireVerifiedSession } from "../../platform/auth/session";
 import {
   measureStage,
   withServerTiming
 } from "../../platform/performance/server-timing";
+import {
+  promotePlayingGameAction,
+  reorderPlayingGamesAction
+} from "./phase-4-actions";
 
 export const metadata: Metadata = {
   description:
@@ -32,28 +41,6 @@ const ritual = [
   }
 ] as const;
 
-const nextActions = [
-  {
-    title: "Catalogo",
-    text: "Busquem jogos com fonte visivel e coop campanha confirmado.",
-    href: "/app/catalogo"
-  },
-  {
-    title: "Descobrir",
-    text: "Aprovem, pulem e encontrem matches antes do jogo entrar na fila.",
-    href: "/app/descobrir"
-  },
-  {
-    title: "Biblioteca",
-    text: "Separem vontade, prioridade e pausa sem perder o combinado.",
-    href: "/app/biblioteca"
-  },
-  {
-    title: "Roleta depois",
-    text: "O sorteio so entra quando a fila ja tiver jogos reais."
-  }
-] as const;
-
 const dashboardTimingContext = { route: "app.home" } as const;
 
 export default async function DashboardPage() {
@@ -64,8 +51,15 @@ async function renderDashboardPage() {
   const session = await measureStage("auth", dashboardTimingContext, () =>
     requireVerifiedSession()
   );
-  const [dashboard, libraryResult] = await measureStage("database", dashboardTimingContext, () =>
-    Promise.all([getDuoDashboard(session.user.id), getLibraryOverview(session.user.id)])
+  const [dashboard, libraryResult, currentPlayResult] = await measureStage(
+    "database",
+    dashboardTimingContext,
+    () =>
+      Promise.all([
+        getDuoDashboard(session.user.id),
+        getLibraryOverview(session.user.id),
+        getCurrentPlay(session.user.id)
+      ])
   );
 
   if (dashboard.routeState === "pairing") {
@@ -84,6 +78,14 @@ async function renderDashboardPage() {
 
   const pairedAt = duo.pairedAt;
   const library = libraryResult.ok ? toLibraryOverviewView(libraryResult.overview) : null;
+  const playingNow = currentPlayResult.ok
+    ? toPlayingNowView(currentPlayResult.currentPlay)
+    : toPlayingNowView({
+        games: [],
+        principal: null,
+        secondaries: [],
+        limit: 3
+      });
   const totalGames = library
     ? library.counts.wishlist + library.counts.jogando + library.counts.pausado
     : 0;
@@ -93,14 +95,19 @@ async function renderDashboardPage() {
       <header className="app-header">
         <div>
           <p className="eyebrow">Dupla formada</p>
-          <h1 className="page-title">A fila ja tem dono</h1>
+          <h1 className="page-title">Jogando Agora</h1>
           <p className="lede">
-            Catalogo, Descobrir e Biblioteca transformam vontade em backlog
-            compartilhado. Roleta e sessoes entram depois que a fila tiver jogos
-            reais.
+            A dupla escolhe um Principal, mantem ate dois secundarios e organiza
+            a ordem sem perder o combinado.
           </p>
         </div>
       </header>
+
+      <PlayingNowDashboard
+        promoteAction={promotePlayingGameAction}
+        reorderAction={reorderPlayingGamesAction}
+        view={playingNow}
+      />
 
       <section className="surface-band app-section" aria-labelledby="duo-context">
         <div className="section-heading">
@@ -138,29 +145,6 @@ async function renderDashboardPage() {
             <strong>{library?.commonPlatformLabels.length ? library.commonPlatformLabels.join(", ") : "A definir"}</strong>
             <span className="muted">Cada membro registra as suas na Biblioteca.</span>
           </div>
-        </div>
-      </section>
-
-      <section className="surface-band app-section" aria-labelledby="actions-title">
-        <div className="section-heading">
-          <h2 className="eyebrow" id="actions-title">
-            Proximas acoes
-          </h2>
-          <p className="support-copy">Organizacao real agora. Sorteio e sessoes so entram quando houver base.</p>
-        </div>
-        <div className="ritual-grid">
-          {nextActions.map((step) => (
-            <article className="ritual-step" key={step.title}>
-              <RoulettePointer aria-hidden="true" label="" />
-              <strong>{step.title}</strong>
-              <span className="muted">{step.text}</span>
-              {"href" in step ? (
-                <a className="text-link" href={step.href}>
-                  Abrir {step.title.toLowerCase()}
-                </a>
-              ) : null}
-            </article>
-          ))}
         </div>
       </section>
 
