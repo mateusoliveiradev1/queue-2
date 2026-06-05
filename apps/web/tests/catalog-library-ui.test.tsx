@@ -64,6 +64,7 @@ const libraryModuleMock = vi.hoisted(() => ({
   getLibraryOverview: vi.fn(),
   getLibraryQueue: vi.fn(),
   getLibraryGameDetail: vi.fn(),
+  getLibraryGameStatuses: vi.fn(),
   addGameToWishlist: vi.fn(async () => ({ ok: true, game: {} })),
   moveLibraryGame: vi.fn(async () => ({ ok: true, game: {} })),
   updateMemberPlatforms: vi.fn(async () => ({ ok: true, platforms: ["pc"] }))
@@ -139,6 +140,7 @@ vi.mock("../src/modules/library", async () => {
     PlatformPicker: platformPicker.PlatformPicker,
     addGameToWishlist: libraryModuleMock.addGameToWishlist,
     getLibraryGameDetail: libraryModuleMock.getLibraryGameDetail,
+    getLibraryGameStatuses: libraryModuleMock.getLibraryGameStatuses,
     getLibraryOverview: libraryModuleMock.getLibraryOverview,
     getLibraryQueue: libraryModuleMock.getLibraryQueue,
     isPhase2LibraryStatus: policy.isPhase2LibraryStatus,
@@ -168,8 +170,15 @@ afterEach(() => {
 beforeEach(() => {
   duoModuleMock.getDuoDashboard.mockResolvedValue(duoModuleMock.ready);
   catalogModuleMock.searchCatalogGames.mockImplementation(async (input = {}) => {
-    if ("limit" in input && input.limit === 1 && !input.includeNonEligible) {
-      return [catalogCard()];
+    if (!input.includeNonEligible) {
+      return [
+        catalogCard(),
+        catalogCard({
+          id: "game-3",
+          slug: "moving-out",
+          name: "Moving Out"
+        })
+      ];
     }
 
     return [
@@ -198,6 +207,10 @@ beforeEach(() => {
     ok: true,
     detail: libraryDetail("wishlist"),
     catalog: catalogDetail()
+  });
+  libraryModuleMock.getLibraryGameStatuses.mockResolvedValue({
+    ok: true,
+    statuses: {}
   });
 });
 
@@ -252,8 +265,16 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "src/app/app/biblioteca/page.tsx",
       "utf8"
     );
+    const catalogSource = readFileSync(
+      "src/app/app/catalogo/page.tsx",
+      "utf8"
+    );
     const cardSource = readFileSync(
       "src/modules/library/presentation/library-card.tsx",
+      "utf8"
+    );
+    const catalogCardSource = readFileSync(
+      "src/modules/catalog/presentation/catalog-card.tsx",
       "utf8"
     );
     const statusControlsSource = readFileSync(
@@ -278,6 +299,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(source).toContain("getLibraryQueue");
     expect(source).toContain("LibraryFilterBar");
     expect(source).toContain("LibraryQueueCard");
+    expect(catalogSource).toContain("getLibraryGameStatuses");
     expect(source).not.toContain("getLibraryOverview");
     expect(source).not.toContain("function LibraryGameCard");
     expect(source).not.toContain("search-form");
@@ -286,6 +308,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(source).not.toContain("Zerado bloqueado");
     expect(source).not.toContain("Dropado bloqueado");
     expect(cardSource).toContain("LibraryStatusControls");
+    expect(catalogCardSource).toContain("catalog-library-state");
     expect(statusControlsSource).toContain("library-action-sheet");
     expect(statusControlsSource).not.toContain("Zerado bloqueado");
     expect(statusControlsSource).not.toContain("Dropado bloqueado");
@@ -351,6 +374,38 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.getAllByText(/coop campanha 2p confirmado/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/fora do fluxo principal/i).length).toBeGreaterThan(0);
     expectEveryVisibleFormControlHasName(container);
+  });
+
+  it("rotates the main catalog suggestion and marks games already in Biblioteca", async () => {
+    libraryModuleMock.getLibraryGameStatuses.mockResolvedValue({
+      ok: true,
+      statuses: {
+        "game-1": "wishlist"
+      }
+    });
+
+    render(await CatalogPage());
+
+    const suggestedSection = screen.getByRole("region", { name: /carta para discutir/i });
+    const gridSection = screen.getByRole("region", { name: /mais jogos para avaliar/i });
+    const queuedCard = within(gridSection).getByText("It Takes Two").closest("article");
+
+    expect(within(suggestedSection).getByRole("heading", { name: /moving out/i })).toBeInTheDocument();
+    expect(queuedCard).not.toBeNull();
+    expect(within(queuedCard as HTMLElement).getByText("Ja na Biblioteca")).toBeInTheDocument();
+    expect(within(queuedCard as HTMLElement).getByText("Wishlist")).toBeInTheDocument();
+    expect(
+      within(queuedCard as HTMLElement).queryByRole("button", { name: /adicionar a wishlist/i })
+    ).not.toBeInTheDocument();
+    expect(
+      within(queuedCard as HTMLElement).getByRole("link", { name: /abrir biblioteca/i })
+    ).toHaveAttribute("href", "/app/biblioteca?visao=wishlist");
+    expect(libraryModuleMock.getLibraryGameStatuses).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        catalogGameIds: expect.arrayContaining(["game-1", "game-2", "game-3"])
+      })
+    );
   });
 
   it("renders the operational Biblioteca queue without dead archive controls", async () => {

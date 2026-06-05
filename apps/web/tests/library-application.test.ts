@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  getLibraryGameStatusesUseCase
+} from "../src/modules/library/application/get-library-game-statuses";
+import {
   getLibraryQueueUseCase
 } from "../src/modules/library/application/get-library-queue";
 import type {
@@ -11,6 +14,33 @@ import type {
 } from "../src/modules/library/application/ports";
 
 describe("library queue use case", () => {
+  it("deduplicates catalog ids before reading current library statuses", async () => {
+    const getLibraryGameStatuses = vi.fn(async () => ({
+      "game-1": "wishlist" as const
+    }));
+    const repository = createRepository({ getLibraryGameStatuses });
+
+    await expect(
+      getLibraryGameStatusesUseCase(
+        {
+          userId: "user-1",
+          catalogGameIds: ["game-1", " game-1 ", "", "game-2"]
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: true,
+      statuses: {
+        "game-1": "wishlist"
+      }
+    });
+
+    expect(getLibraryGameStatuses).toHaveBeenCalledWith({
+      userId: "user-1",
+      catalogGameIds: ["game-1", "game-2"]
+    });
+  });
+
   it("normalizes raw route-like inputs before calling the repository", async () => {
     const getQueue = vi.fn(async (input) => queueRecord(input.limit, input.offset));
     const repository = createRepository({ getQueue });
@@ -138,6 +168,7 @@ function createRepository(overrides: Partial<LibraryRepository> = {}): LibraryRe
     addGameToWishlist: async () => ({ ok: true, game }),
     getJogandoCount: async () => 0,
     getLibraryGame: async () => game,
+    getLibraryGameStatuses: async () => ({}),
     moveLibraryGame: async (input) => ({
       ok: true,
       game: {

@@ -921,6 +921,34 @@ input {
   flex: 1 1 150px;
 }
 
+.catalog-library-state {
+  align-items: stretch;
+  border: 1px solid color-mix(in oklch, var(--accent) 48%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  flex: 1 1 190px;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-3);
+}
+
+.catalog-library-state span {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.catalog-library-state strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
 .catalog-card .form-actions .queue2-button {
   min-height: 48px;
   overflow-wrap: anywhere;

@@ -2,6 +2,7 @@ import "server-only";
 
 import { addGameToWishlistUseCase } from "./application/add-game-to-wishlist";
 import { getLibraryGameDetailUseCase } from "./application/get-library-game-detail";
+import { getLibraryGameStatusesUseCase } from "./application/get-library-game-statuses";
 import { getLibraryOverviewUseCase } from "./application/get-library-overview";
 import { getLibraryQueueUseCase } from "./application/get-library-queue";
 import { moveLibraryGameUseCase } from "./application/move-library-game";
@@ -71,6 +72,7 @@ export {
   getLibraryGameDetailUseCase,
   type GetLibraryGameDetailResult
 } from "./application/get-library-game-detail";
+export { getLibraryGameStatusesUseCase } from "./application/get-library-game-statuses";
 
 export type {
   AddGameToWishlistResult,
@@ -84,6 +86,7 @@ export type {
   LibraryQueueRecord,
   LibraryQueueRepositoryInput,
   LibraryRepository,
+  LibraryGameStatusesResult,
   LibraryStatusCounts,
   MoveLibraryGameResult,
   UpdateMemberPlatformsResult
@@ -148,4 +151,11 @@ export function getLibraryGameDetail(input: {
   catalogGameId: string;
 }) {
   return getLibraryGameDetailUseCase(input, libraryRepository);
+}
+
+export function getLibraryGameStatuses(input: {
+  userId: string;
+  catalogGameIds: string[];
+}) {
+  return getLibraryGameStatusesUseCase(input, libraryRepository);
 }

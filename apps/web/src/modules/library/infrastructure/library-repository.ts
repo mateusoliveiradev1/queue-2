@@ -70,6 +70,11 @@ type StatusCountRow = {
   count: string;
 };
 
+type LibraryGameStatusRow = {
+  catalog_game_id: string;
+  status: LibraryStatus;
+};
+
 type CountRow = {
   count: string;
 };
@@ -87,6 +92,7 @@ export function createLibraryRepository(pool: QueueDbPool = getRuntimePool()): L
     addGameToWishlist: (input) => addGameToWishlist(pool, input),
     getJogandoCount: (userId) => getJogandoCount(pool, userId),
     getLibraryGame: (input) => getLibraryGame(pool, input),
+    getLibraryGameStatuses: (input) => getLibraryGameStatuses(pool, input),
     moveLibraryGame: (input) => moveLibraryGame(pool, input),
     getGameDetail: (input) => getGameDetail(pool, input)
   };
@@ -383,6 +389,36 @@ async function getLibraryGame(
     }
 
     return getLibraryGameByCatalogId(client, membership.duoId, input.catalogGameId);
+  });
+}
+
+async function getLibraryGameStatuses(
+  pool: QueueDbPool,
+  input: {
+    userId: string;
+    catalogGameIds: string[];
+  }
+): Promise<Record<string, LibraryStatus> | null> {
+  return asUser(pool, input.userId, async (client) => {
+    const membership = await getMembership(client, input.userId);
+
+    if (!membership) {
+      return null;
+    }
+
+    const result = await client.query<LibraryGameStatusRow>(
+      `
+        SELECT catalog_game_id, status
+        FROM app.duo_library_games
+        WHERE duo_id = $1
+          AND catalog_game_id = ANY($2::uuid[])
+      `,
+      [membership.duoId, input.catalogGameIds]
+    );
+
+    return Object.fromEntries(
+      result.rows.map((row) => [row.catalog_game_id, row.status])
+    );
   });
 }
 

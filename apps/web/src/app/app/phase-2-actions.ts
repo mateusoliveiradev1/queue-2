@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import {
@@ -26,6 +27,8 @@ export async function addGameToWishlistAction(formData: FormData): Promise<void>
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");
   }
+
+  revalidateLibrarySurfaces(returnTo);
 
   redirect(
     withState(
@@ -54,6 +57,8 @@ export async function moveLibraryGameAction(formData: FormData): Promise<void> {
   if (!result.ok && result.reason === "membership-required") {
     redirect("/parear");
   }
+
+  revalidateLibrarySurfaces(returnTo);
 
   redirect(withState(returnTo, moveResultToState(result)));
 }
@@ -118,4 +123,11 @@ function withState(path: string, state: string): string {
   const url = new URL(path, "https://queue.local");
   url.searchParams.set("estado", state);
   return `${url.pathname}${url.search}`;
+}
+
+function revalidateLibrarySurfaces(returnTo: string): void {
+  revalidatePath("/app");
+  revalidatePath("/app/biblioteca");
+  revalidatePath("/app/catalogo");
+  revalidatePath(new URL(returnTo, "https://queue.local").pathname);
 }

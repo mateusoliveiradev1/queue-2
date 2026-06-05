@@ -208,6 +208,7 @@ function createRepository(): LibraryRepository {
     addGameToWishlist: async () => ({ ok: true, game }),
     getJogandoCount: async () => 0,
     getLibraryGame: async () => game,
+    getLibraryGameStatuses: async () => ({}),
     moveLibraryGame: async (input) => ({
       ok: true,
       game: {

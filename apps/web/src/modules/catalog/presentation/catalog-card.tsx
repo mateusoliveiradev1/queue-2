@@ -1,17 +1,23 @@
 import Image from "next/image";
 
 import type { CatalogGameCardView } from "./view-models";
+import { CatalogWishlistSubmitButton } from "./catalog-wishlist-submit-button";
 import { SourceMetadata } from "./source-metadata";
 import { MatchScoreBlock } from "../../../components/match-score-block";
 
 export function CatalogCard({
   addAction,
   game,
+  libraryState,
   priority = false,
   returnTo
 }: {
   addAction: (formData: FormData) => Promise<void>;
   game: CatalogGameCardView;
+  libraryState?: {
+    href: string;
+    label: string;
+  } | null;
   priority?: boolean;
   returnTo?: string;
 }) {
@@ -57,13 +63,21 @@ export function CatalogCard({
           <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${game.slug}`}>
             Abrir detalhe
           </a>
-          <form action={addAction}>
-            <input name="catalogGameId" type="hidden" value={game.id} />
-            {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
-            <button className="queue2-button" data-tone="primary" type="submit">
-              Adicionar a Wishlist
-            </button>
-          </form>
+          {libraryState ? (
+            <div className="catalog-library-state">
+              <span>Ja na Biblioteca</span>
+              <strong>{libraryState.label}</strong>
+              <a className="queue2-button" data-tone="primary" href={libraryState.href}>
+                Abrir Biblioteca
+              </a>
+            </div>
+          ) : (
+            <form action={addAction}>
+              <input name="catalogGameId" type="hidden" value={game.id} />
+              {returnTo ? <input name="returnTo" type="hidden" value={returnTo} /> : null}
+              <CatalogWishlistSubmitButton />
+            </form>
+          )}
         </div>
       </div>
     </article>

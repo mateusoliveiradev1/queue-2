@@ -102,6 +102,10 @@ export type AddGameToWishlistResult =
   | { ok: true; game: LibraryGameRecord }
   | { ok: false; reason: "catalog-game-not-found" | "membership-required" };
 
+export type LibraryGameStatusesResult =
+  | { ok: true; statuses: Record<string, LibraryStatus> }
+  | { ok: false; reason: "membership-required" };
+
 export type MoveLibraryGameResult =
   | { ok: true; game: LibraryGameRecord }
   | {
@@ -131,6 +135,10 @@ export interface LibraryRepository {
     userId: string;
     catalogGameId: string;
   }): Promise<LibraryGameRecord | null>;
+  getLibraryGameStatuses(input: {
+    userId: string;
+    catalogGameIds: string[];
+  }): Promise<Record<string, LibraryStatus> | null>;
   moveLibraryGame(input: {
     userId: string;
     catalogGameId: string;

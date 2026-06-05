@@ -8,6 +8,10 @@ import {
   searchCatalogGames
 } from "../../../modules/catalog";
 import { getDuoDashboard } from "../../../modules/duo";
+import {
+  getLibraryGameStatuses,
+  type LibraryStatus
+} from "../../../modules/library";
 import { requireVerifiedSession } from "../../../platform/auth/session";
 import { addGameToWishlistAction } from "../phase-2-actions";
 import {
@@ -22,6 +26,7 @@ export const metadata: Metadata = {
 };
 
 const CATALOG_PAGE_SIZE = 18;
+const CATALOG_SUGGESTION_CANDIDATES = 8;
 
 type CatalogPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -47,8 +52,8 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
   const returnTo = buildCatalogPath(query, page);
-  const [suggestedGames, browseGames] = await Promise.all([
-    searchCatalogGames({ limit: 1 }),
+  const [suggestedCandidates, browseGames] = await Promise.all([
+    searchCatalogGames({ limit: CATALOG_SUGGESTION_CANDIDATES }),
     searchCatalogGames({
       includeNonEligible: true,
       limit: CATALOG_PAGE_SIZE + 1,
@@ -56,8 +61,24 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
       query: query || undefined
     })
   ]);
-  const suggestedGame = suggestedGames[0] ?? null;
   const hasNextPage = browseGames.length > CATALOG_PAGE_SIZE;
+  const visibleCatalogIds = [
+    ...new Set([
+      ...suggestedCandidates.map((game) => game.id),
+      ...browseGames.slice(0, CATALOG_PAGE_SIZE).map((game) => game.id)
+    ])
+  ];
+  const libraryStatusesResult = await getLibraryGameStatuses({
+    userId: session.user.id,
+    catalogGameIds: visibleCatalogIds
+  });
+  const libraryStatuses = libraryStatusesResult.ok
+    ? libraryStatusesResult.statuses
+    : {};
+  const suggestedGame =
+    suggestedCandidates.find((game) => !libraryStatuses[game.id]) ??
+    suggestedCandidates[0] ??
+    null;
   const supportingGames = browseGames
     .slice(0, CATALOG_PAGE_SIZE)
     .filter((game) => game.id !== suggestedGame?.id);
@@ -112,6 +133,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
           <CatalogCard
             addAction={addGameToWishlistAction}
             game={suggestedGame}
+            libraryState={getCatalogLibraryState(libraryStatuses[suggestedGame.id])}
             priority
             returnTo={returnTo}
           />
@@ -143,6 +165,7 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps = {
                 addAction={addGameToWishlistAction}
                 game={game}
                 key={game.id}
+                libraryState={getCatalogLibraryState(libraryStatuses[game.id])}
                 returnTo={returnTo}
               />
             ))}
@@ -196,4 +219,40 @@ function buildCatalogPath(query: string, page = 1): string {
 
   const serialized = params.toString();
   return serialized ? `/app/catalogo?${serialized}` : "/app/catalogo";
+}
+
+function getCatalogLibraryState(status: LibraryStatus | undefined) {
+  if (!status) {
+    return null;
+  }
+
+  return {
+    href: `/app/biblioteca?visao=${getLibraryViewForStatus(status)}`,
+    label: formatLibraryStatus(status)
+  };
+}
+
+function getLibraryViewForStatus(status: LibraryStatus): string {
+  if (status === "zerado" || status === "dropado") {
+    return "arquivo";
+  }
+
+  return status;
+}
+
+function formatLibraryStatus(status: LibraryStatus): string {
+  switch (status) {
+    case "wishlist":
+      return "Wishlist";
+    case "jogando":
+      return "Jogando";
+    case "pausado":
+      return "Pausado";
+    case "zerado":
+      return "Zerado";
+    case "dropado":
+      return "Dropado";
+    default:
+      return status;
+  }
 }
