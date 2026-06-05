@@ -41,7 +41,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [ ] **BRND-07**: User experiences calm utility screens and heightened spectacle only for meaningful moments
 - [x] **BRND-08**: User gets the same product capabilities on mobile and desktop with an adaptive composition
 - [x] **BRND-09**: User can navigate core flows with keyboard, visible focus, readable contrast and adequate touch targets
-- [ ] **BRND-10**: User with reduced-motion preference receives an equivalent low-motion experience
+- [x] **BRND-10**: User with reduced-motion preference receives an equivalent low-motion experience
 - [x] **BRND-11**: User sees appropriate single-line and stacked QUEUE/2 logo variants on dark and light backgrounds
 - [ ] **BRND-12**: User sees global grain, sharp 4px or pill radii, and scanlines only inside the roulette experience
 - [x] **BRND-13**: User receives accessible QUEUE/2-styled toast feedback for important actions, with high-impact variants reserved for matches, achievements and level-ups
@@ -271,7 +271,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRND-07 | Phase 7 | Pending |
 | BRND-08 | Phase 7 | Complete |
 | BRND-09 | Phase 7 | Complete |
-| BRND-10 | Phase 7 | Pending |
+| BRND-10 | Phase 7 | Complete |
 | BRND-11 | Phase 1 | Complete |
 | BRND-12 | Phase 7 | Pending |
 | BRND-13 | Phase 1 | Complete |
