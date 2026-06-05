@@ -29,6 +29,16 @@ const phase2DetailMissingEnv = missingEnv([
   "E2E_READY_USER_PASSWORD",
   "E2E_PHASE2_CATALOG_SLUG"
 ]);
+const phase32LibraryMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD",
+  "E2E_READY_PARTNER_EMAIL",
+  "E2E_READY_PARTNER_PASSWORD",
+  "E2E_OTHER_DUO_USER_EMAIL",
+  "E2E_OTHER_DUO_USER_PASSWORD",
+  "E2E_PHASE3_2_LIBRARY_QUERY"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -36,6 +46,7 @@ reportMissingEnv("Public accessibility", baseMissingEnv);
 reportMissingEnv("Pairing accessibility", pairingMissingEnv);
 reportMissingEnv("Authenticated accessibility", readyMissingEnv);
 reportMissingEnv("Phase 2 detail accessibility", phase2DetailMissingEnv);
+reportMissingEnv("Phase 03.2 Biblioteca accessibility", phase32LibraryMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -187,6 +198,52 @@ test.describe("Phase 3 discovery accessibility", () => {
       await expect(pushOptInButton.first()).toBeVisible();
     }
     await expect(page.getByText(/live ativa|atualizando a live|sessao curta/i).first()).toBeVisible();
+    await expectNoAxeViolations(page);
+  });
+});
+
+test.describe("Phase 03.2 Biblioteca accessibility", () => {
+  test.skip(
+    phase32LibraryMissingEnv.length > 0,
+    `Missing Phase 03.2 Biblioteca accessibility fixture: ${phase32LibraryMissingEnv.join(", ")}`
+  );
+
+  test("Biblioteca has axe-clean compact filters, focusable cards and reachable sheets", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/biblioteca");
+
+    await expect(page.locator(".library-operational-shell")).toBeVisible();
+    await expect(page.locator(".library-filter-bar")).toBeVisible();
+    await expect(page.locator(".library-filter-sheet")).toBeVisible();
+    await expect(page.locator(".library-game").first()).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+
+    const searchControl = page.getByRole("searchbox", { name: /buscar jogo na fila/i });
+    await expect(searchControl).toBeVisible();
+    await searchControl.focus();
+    await expect(searchControl).toBeFocused();
+
+    const firstCard = page.locator(".library-game").first();
+    const titleLink = firstCard.locator("h3 a").first();
+    await expect(titleLink).toBeVisible();
+    await titleLink.focus();
+    await expect(titleLink).toBeFocused();
+
+    const primaryAction = firstCard.getByRole("button").first();
+    await expect(primaryAction).toBeVisible();
+    await primaryAction.focus();
+    await expect(primaryAction).toBeFocused();
+
+    await page.getByText("Filtros").click();
+    await expect(page.getByRole("combobox", { name: /ordenar fila/i })).toBeVisible();
+    await firstCard.getByText("Mais acoes").click();
+    await expect(firstCard.locator(".library-action-sheet[open]")).toBeVisible();
+    await expect(page.getByRole("button", { name: /zerado bloqueado/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /dropado bloqueado/i })).toHaveCount(0);
     await expectNoAxeViolations(page);
   });
 });
