@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-01-PLAN.md
-last_updated: "2026-06-05T12:19:56.540Z"
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-06-05T16:10:42.032Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 35
-  completed_plans: 30
-  percent: 86
+  completed_plans: 31
+  percent: 89
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 04 (jogando-agora-sessoes-e-agendamento) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-06-05
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 89%
 
 ## Performance Metrics
 
@@ -84,6 +84,7 @@ Progress: [█████████░] 86%
 | Phase 03.3 P03 | 22 min | 3 tasks | 20 files |
 | Phase 03.3 P04 | 38 min | 3 tasks | 11 files |
 | Phase 04 P01 | 35 min | 3 tasks | 13 files |
+| Phase 04 P02 | 3h 45m | 3 tasks | 30 files |
 
 ## Quick Tasks Completed
 
@@ -213,6 +214,9 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Play owns Phase 4 persistence for active queue, sessions, scheduling, notifications, push subscriptions and XP awards. — Keeps Jogando Agora and sessions behind the play module boundary instead of embedding rules in routes or library UI.
 - [Phase 04-01]: Missing TEST_DATABASE_URL remains explicit missing DB evidence for play integration tests. — Skipped Neon/Postgres integration checks are blockers to evidence, not proof that RLS/concurrency behavior passed.
 - [Phase 04-01]: Play repository user paths use withAppUserTransaction rather than bypassing RLS. — Preserves least-privilege runtime access and prevents cross-duo leakage on pooled Neon connections.
+- [Phase 04-02]: Phase 4 dashboard E2E requires real active-game fixtures. — The browser suite records missing fixture variables as blocked evidence instead of bypassing auth or duo state.
+- [Phase 04-02]: Dashboard reorder and promotion treat client order as a proposal, not authority. — Server use cases validate membership, exact active set and unique IDs before writing role/position.
+- [Phase 04-02]: Library status moves coordinate with play activation for Jogando role assignment. — Library remains the status owner, while play assigns Principal/secondary roles after the server-authoritative move.
 
 ### Pending Todos
 
@@ -242,6 +246,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T12:19:24.647Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-06-05T16:10:31.744Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None

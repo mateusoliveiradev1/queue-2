@@ -125,10 +125,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Playing Now And Progress
 
-- [ ] **PLAY-01**: Duo sees a dashboard hero for the Principal game with high-resolution cover, blur and gradient treatment
+- [x] **PLAY-01**: Duo sees a dashboard hero for the Principal game with high-resolution cover, blur and gradient treatment
 - [x] **PLAY-02**: Duo can keep up to three games in Jogando at the same time
 - [x] **PLAY-03**: Duo can designate exactly one Jogando game as Principal and up to two as secondary
-- [ ] **PLAY-04**: Duo can drag to reorder the Principal and secondary games
+- [x] **PLAY-04**: Duo can drag to reorder the Principal and secondary games
 - [ ] **PLAY-05**: Dashboard shows the duo XP, level, streak, active quests and recent achievements
 - [x] **PLAY-06**: Duo can compare accumulated coop time with the game's estimated completion time
 - [ ] **PLAY-07**: Duo can create and complete manual chapters for a game
@@ -342,10 +342,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-03 | Phase 03.3 | Complete |
 | PERF-04 | Phase 03.3 | Complete |
 | PERF-05 | Phase 03.3 | Complete |
-| PLAY-01 | Phase 4 | Pending |
+| PLAY-01 | Phase 4 | Complete |
 | PLAY-02 | Phase 4 | Complete |
 | PLAY-03 | Phase 4 | Complete |
-| PLAY-04 | Phase 4 | Pending |
+| PLAY-04 | Phase 4 | Complete |
 | PLAY-05 | Phase 5 | Pending |
 | PLAY-06 | Phase 4 | Complete |
 | PLAY-07 | Phase 4 | Pending |
