@@ -168,7 +168,7 @@ describe("discovery push subscriptions", () => {
     expect(pushButtonSource).toContain("/api/discovery/push");
     expect(pushButtonSource).toContain("useState<boolean | null>(null)");
     expect(pushButtonSource).toContain("setSupported(isPushSupported())");
-    expect(pushButtonSource).toContain('disabled={supported !== true || state === "enabling"}');
+    expect(pushButtonSource).toContain('disabled={!mounted || supported !== true || state === "enabling"}');
   });
 });
 

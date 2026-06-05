@@ -426,6 +426,8 @@ describe("phase performance regression guards", () => {
     const feedbackSource = readFileSync("src/components/action-feedback.tsx", "utf8");
     const libraryActionsSource = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
     const discoveryActionsSource = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
+    const rootPackageSource = readFileSync("../../package.json", "utf8");
+    const phaseGateSource = readFileSync("../../scripts/phase-03-3-gate.mjs", "utf8");
 
     expect(layoutSource).toContain("WebVitalsReporter");
     expect(feedbackSource).toContain("ActionFeedbackState");
@@ -440,6 +442,9 @@ describe("phase performance regression guards", () => {
     expect(discoveryActionsSource).toContain("handoffDiscoveryMatchToLibraryEnhancedAction");
     expect(discoveryActionsSource).toContain("startDiscoveryLiveSessionEnhancedAction");
     expect(discoveryActionsSource).toContain("answerMoodQuizEnhancedAction");
+    expect(rootPackageSource).toContain("phase:03.3:gate");
+    expect(phaseGateSource).toContain("03.3-PERFORMANCE-REVIEW.md");
+    expect(phaseGateSource).toContain("phase-03-3-performance.spec.ts");
   });
 });
 

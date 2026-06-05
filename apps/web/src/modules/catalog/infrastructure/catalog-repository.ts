@@ -308,10 +308,6 @@ async function hydrateGames(
   }));
 }
 
-async function loadPlatforms(pool: QueueDbPool, gameId: string): Promise<CatalogPlatformRecord[]> {
-  return loadSingleMapValue(await loadPlatformsByGameIds(pool, [gameId]), gameId, []);
-}
-
 async function loadPlatformsByGameIds(
   pool: QueueDbPool,
   gameIds: string[]
@@ -333,10 +329,6 @@ async function loadPlatformsByGameIds(
   }));
 }
 
-async function loadGenres(pool: QueueDbPool, gameId: string): Promise<CatalogGenreRecord[]> {
-  return loadSingleMapValue(await loadGenresByGameIds(pool, [gameId]), gameId, []);
-}
-
 async function loadGenresByGameIds(
   pool: QueueDbPool,
   gameIds: string[]
@@ -356,13 +348,6 @@ async function loadGenresByGameIds(
     slug: row.slug,
     name: row.name
   }));
-}
-
-async function loadTimeEstimate(
-  pool: QueueDbPool,
-  gameId: string
-): Promise<CatalogTimeEstimateRecord | null> {
-  return loadSingleMapValue(await loadTimeEstimatesByGameIds(pool, [gameId]), gameId, null);
 }
 
 async function loadTimeEstimatesByGameIds(
@@ -393,13 +378,6 @@ async function loadTimeEstimatesByGameIds(
   }));
 }
 
-async function loadAvailability(
-  pool: QueueDbPool,
-  gameId: string
-): Promise<CatalogAvailabilityRecord[]> {
-  return loadSingleMapValue(await loadAvailabilityByGameIds(pool, [gameId]), gameId, []);
-}
-
 async function loadAvailabilityByGameIds(
   pool: QueueDbPool,
   gameIds: string[]
@@ -422,17 +400,6 @@ async function loadAvailabilityByGameIds(
     checkedAt: coerceDate(row.checked_at),
     status: row.status
   }));
-}
-
-async function loadPublishedLocalization(
-  pool: QueueDbPool,
-  gameId: string
-): Promise<CatalogLocalizationRecord | null> {
-  return loadSingleMapValue(
-    await loadPublishedLocalizationsByGameIds(pool, [gameId]),
-    gameId,
-    null
-  );
 }
 
 async function loadPublishedLocalizationsByGameIds(
@@ -878,10 +845,6 @@ function mapByGameId<T extends RowWithGameId, U>(
   }
 
   return byGameId;
-}
-
-function loadSingleMapValue<T>(map: Map<string, T>, gameId: string, fallback: T): T {
-  return map.get(gameId) ?? fallback;
 }
 
 function hasPatch<T extends object, K extends PropertyKey>(

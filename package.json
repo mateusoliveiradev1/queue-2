@@ -22,6 +22,7 @@
     "check:secrets": "node scripts/check-secrets.mjs",
     "audit:dependencies": "pnpm audit --prod --audit-level high",
     "phase:1:gate": "node scripts/phase-1-gate.mjs",
+    "phase:03.3:gate": "node scripts/phase-03-3-gate.mjs",
     "verify": "pnpm check:secrets && pnpm lint && turbo run check:architecture typecheck test test:integration"
   },
   "devDependencies": {
