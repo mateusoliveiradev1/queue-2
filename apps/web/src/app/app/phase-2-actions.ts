@@ -93,12 +93,11 @@ async function addGameToWishlistEnhancedActionTimed(
   const session = await measureStage("auth", addWishlistTimingContext, () =>
     requireVerifiedSession()
   );
-  const { catalogGameId, returnTo } = await measureStage(
+  const { catalogGameId } = await measureStage(
     "validation",
     addWishlistTimingContext,
     async () => ({
-      catalogGameId: getFormString(formData, "catalogGameId"),
-      returnTo: getSafeReturnTo(formData, "/app/biblioteca")
+      catalogGameId: getFormString(formData, "catalogGameId")
     })
   );
 
@@ -124,7 +123,7 @@ async function addGameToWishlistEnhancedActionTimed(
 
   if (result.ok) {
     await measureStage("revalidation", addWishlistTimingContext, async () => {
-      revalidateEnhancedLibrarySurfaces(returnTo);
+      revalidateEnhancedWishlistSurfaces();
     });
 
     return { ok: true, state: "wishlist-adicionada" };
@@ -312,4 +311,9 @@ function revalidateLibrarySurfaces(returnTo: string): void {
 function revalidateEnhancedLibrarySurfaces(returnTo: string): void {
   revalidatePath("/app/biblioteca");
   revalidatePath(new URL(returnTo, "https://queue.local").pathname);
+}
+
+function revalidateEnhancedWishlistSurfaces(): void {
+  revalidatePath("/app");
+  revalidatePath("/app/biblioteca");
 }

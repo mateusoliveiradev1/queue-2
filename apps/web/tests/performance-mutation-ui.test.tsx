@@ -428,6 +428,10 @@ describe("phase performance regression guards", () => {
     const discoveryActionsSource = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
     const rootPackageSource = readFileSync("../../package.json", "utf8");
     const phaseGateSource = readFileSync("../../scripts/phase-03-3-gate.mjs", "utf8");
+    const enhancedWishlistActionSource = libraryActionsSource.slice(
+      libraryActionsSource.indexOf("async function addGameToWishlistEnhancedActionTimed"),
+      libraryActionsSource.indexOf("export async function moveLibraryGameAction")
+    );
 
     expect(layoutSource).toContain("WebVitalsReporter");
     expect(feedbackSource).toContain("ActionFeedbackState");
@@ -436,6 +440,10 @@ describe("phase performance regression guards", () => {
     expect(feedbackSource).toContain('"retrying"');
     expect(libraryActionsSource).toContain("withServerTiming");
     expect(libraryActionsSource).toContain("addGameToWishlistEnhancedAction");
+    expect(libraryActionsSource).toContain("revalidateEnhancedWishlistSurfaces");
+    expect(enhancedWishlistActionSource).toContain("revalidateEnhancedWishlistSurfaces();");
+    expect(enhancedWishlistActionSource).not.toContain("returnTo");
+    expect(enhancedWishlistActionSource).not.toContain("revalidateEnhancedLibrarySurfaces");
     expect(libraryActionsSource).toContain("moveLibraryGameEnhancedAction");
     expect(discoveryActionsSource).toContain("withServerTiming");
     expect(discoveryActionsSource).toContain("recordDiscoveryDecisionEnhancedAction");

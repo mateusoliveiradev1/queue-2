@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: blocked
 stopped_at: Completed 03.3-04-PLAN.md - performance review blocked on missing fixture evidence
-last_updated: "2026-06-05T03:08:10.000Z"
+last_updated: "2026-06-05T03:22:00.000Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
@@ -97,6 +97,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260604-uc4 | Add explicit Vercel ignore rules so local cache/build artifacts are not uploaded during deploy | 2026-06-05 | pending | [260604-uc4-add-explicit-vercel-ignore-rules-so-loca](./quick/260604-uc4-add-explicit-vercel-ignore-rules-so-loca/) |
 | 260605-rdb | Make `pnpm verify` run DB integration tests with configured `TEST_DATABASE_URL` | 2026-06-05 | pending | [260605-rdb-finalize-db-integration-verify-deploy](./quick/260605-rdb-finalize-db-integration-verify-deploy/) |
 | 260605-vfx | Fix Catalogo and match-history card overflow before deploy | 2026-06-05 | pending | [260605-vfx-fix-card-overflow-before-deploy](./quick/260605-vfx-fix-card-overflow-before-deploy/) |
+| 260605-mbf | Fix mobile Biblioteca overlap and Catalogo Wishlist loading feedback | 2026-06-05 | pending | [260605-mbf-fix-mobile-library-filter-overlap](./quick/260605-mbf-fix-mobile-library-filter-overlap/) |
 
 ## Accumulated Context
 
@@ -187,6 +188,9 @@ Recent decisions affecting current work:
 - [Phase 03.3]: Phase 4 remains blocked by default until performance evidence is configured or explicitly accepted. — Plan execution is complete, but release-grade browser proof for PERF-01 and PERF-05 is still missing.
 - [Quick 260605-rdb]: `pnpm verify` now wraps Turbo with `scripts/with-env-local.mjs`. — Root verification loads `.env.local` so `@queue/db` integration tests receive `TEST_DATABASE_URL` and run instead of skipping.
 - [Quick 260605-vfx]: Catalogo and match-history cards clamp generated long names and hide idle feedback rows. — Compact cards no longer show stray `/2` boxes or overflow action/title text before deploy.
+- [Quick 260605-mbf]: Mobile Biblioteca filters stay in normal flow and result cards reserve bottom navigation scroll space. — Prevents filters and list content from sitting underneath the fixed mobile nav.
+- [Quick 260605-mbf]: Enhanced Catalogo Wishlist mutations revalidate only the dashboard and Biblioteca surfaces. — Keeps the card-level syncing feedback visible instead of triggering a full Catalogo route refresh after add-to-Wishlist.
+- [Quick 260605-mbf]: Catalogo owns a route-local loading shell inside AppShell. — Route waits keep the authenticated navigation and skeleton context instead of showing the global full-screen loader.
 
 ### Pending Todos
 
@@ -217,6 +221,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T03:08:10.000Z
-Stopped at: Quick 260605-vfx complete; ready to push/deploy visual overflow fix
+Last session: 2026-06-05T03:22:00.000Z
+Stopped at: Quick 260605-mbf complete; ready to commit, push and deploy mobile/loading fixes
 Resume file: None

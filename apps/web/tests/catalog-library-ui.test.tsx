@@ -269,6 +269,10 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "src/app/app/catalogo/page.tsx",
       "utf8"
     );
+    const catalogLoadingSource = readFileSync(
+      "src/app/app/catalogo/loading.tsx",
+      "utf8"
+    );
     const cardSource = readFileSync(
       "src/modules/library/presentation/library-card.tsx",
       "utf8"
@@ -300,6 +304,9 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(source).toContain("LibraryFilterBar");
     expect(source).toContain("LibraryQueueCard");
     expect(catalogSource).toContain("getLibraryGameStatuses");
+    expect(catalogLoadingSource).toContain("function CatalogLoading");
+    expect(catalogLoadingSource).toContain('currentPage="catalogo"');
+    expect(catalogLoadingSource).toContain("catalog-loading-shell");
     expect(source).not.toContain("getLibraryOverview");
     expect(source).not.toContain("function LibraryGameCard");
     expect(source).not.toContain("search-form");
@@ -332,6 +339,14 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(css).toContain('.action-feedback[data-state="idle"]');
     expect(css).toContain("-webkit-line-clamp: 3");
     expect(css).toContain("@container (max-width: 420px)");
+    expect(css).toContain("scroll-margin-bottom: calc(112px + env(safe-area-inset-bottom))");
+    expect(css).toContain("max-height: min(68svh, 420px)");
+    expect(css).toContain(".catalog-card .form-actions .action-feedback-form");
+    expect(css).toContain(".catalog-card .action-feedback");
+    expect(css).toContain(".catalog-loading-shell");
+    expect(css).toContain(".catalog-loading-grid");
+    expect(css).toContain("grid-template-columns: 88px minmax(0, 1fr)");
+    expect(css).not.toContain("position: sticky;\n    top: var(--space-3);");
     expect(css).not.toContain(".library-board");
 
     for (const futureOnlyWord of [
