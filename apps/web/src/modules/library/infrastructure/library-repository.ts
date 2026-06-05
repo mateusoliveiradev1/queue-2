@@ -82,9 +82,19 @@ type CountRow = {
 let runtimePool: QueueDbPool | undefined;
 const NEXT_QUEUE_LIMIT = 4;
 
-export const libraryRepository: LibraryRepository = createLibraryRepository();
+export const libraryRepository: LibraryRepository = {
+  getOverview: (userId) => getOverview(getRuntimePool(), userId),
+  getQueue: (input) => getQueue(getRuntimePool(), input),
+  updateMemberPlatforms: (input) => updateMemberPlatforms(getRuntimePool(), input),
+  addGameToWishlist: (input) => addGameToWishlist(getRuntimePool(), input),
+  getJogandoCount: (userId) => getJogandoCount(getRuntimePool(), userId),
+  getLibraryGame: (input) => getLibraryGame(getRuntimePool(), input),
+  getLibraryGameStatuses: (input) => getLibraryGameStatuses(getRuntimePool(), input),
+  moveLibraryGame: (input) => moveLibraryGame(getRuntimePool(), input),
+  getGameDetail: (input) => getGameDetail(getRuntimePool(), input)
+};
 
-export function createLibraryRepository(pool: QueueDbPool = getRuntimePool()): LibraryRepository {
+export function createLibraryRepository(pool: QueueDbPool): LibraryRepository {
   return {
     getOverview: (userId) => getOverview(pool, userId),
     getQueue: (input) => getQueue(pool, input),
@@ -113,11 +123,7 @@ async function getOverview(
       getMemberPlatforms(client, membership.duoId),
       getLibraryGames(client, membership.duoId)
     ]);
-    const details = await Promise.all(
-      libraryGames.map((game) =>
-        hydrateLibraryGame(client, game, memberPlatforms)
-      )
-    );
+    const details = await hydrateLibraryRows(client, libraryGames, memberPlatforms);
     const groups = createEmptyGroups();
 
     for (const detail of details) {
@@ -184,16 +190,24 @@ async function getQueue(
       limit: input.limit,
       offset: input.offset
     });
+    const hydratedDetails = await hydrateLibraryRows(
+      client,
+      dedupeLibraryRows([...nextQueueRows, ...playingRows, ...pageRows]),
+      memberPlatforms
+    );
+    const hydratedByLibraryGameId = new Map(
+      hydratedDetails.map((detail) => [detail.libraryGame.id, detail])
+    );
 
     return {
       memberPlatforms,
       commonPlatforms,
       statusCounts,
       archiveCount,
-      nextQueue: await hydrateLibraryRows(client, nextQueueRows, memberPlatforms),
-      playing: await hydrateLibraryRows(client, playingRows, memberPlatforms),
+      nextQueue: mapHydratedLibraryRows(nextQueueRows, hydratedByLibraryGameId),
+      playing: mapHydratedLibraryRows(playingRows, hydratedByLibraryGameId),
       page: {
-        items: await hydrateLibraryRows(client, pageRows, memberPlatforms),
+        items: mapHydratedLibraryRows(pageRows, hydratedByLibraryGameId),
         total,
         limit: input.limit,
         offset: input.offset,
@@ -515,6 +529,19 @@ async function hydrateLibraryGame(
   memberPlatforms: LibraryMemberPlatformRecord[]
 ): Promise<LibraryGameDetailRecord> {
   const catalogGame = await getCatalogFacts(client, libraryGame.catalogGameId);
+
+  return hydrateLibraryGameFromFacts(libraryGame, memberPlatforms, catalogGame);
+}
+
+function hydrateLibraryGameFromFacts(
+  libraryGame: LibraryGameRecord,
+  memberPlatforms: LibraryMemberPlatformRecord[],
+  catalogGame: LibraryCatalogGameFacts | undefined
+): LibraryGameDetailRecord {
+  if (!catalogGame) {
+    throw new Error("catalog_game_not_found");
+  }
+
   const [first, second] = memberPlatforms;
   const matchScore = calculateMatchScore({
     mainFlowEligible: catalogGame.mainFlowEligible,
@@ -691,9 +718,53 @@ async function hydrateLibraryRows(
   rows: LibraryGameRecord[],
   memberPlatforms: LibraryMemberPlatformRecord[]
 ): Promise<LibraryGameDetailRecord[]> {
-  return Promise.all(
-    rows.map((row) => hydrateLibraryGame(client, row, memberPlatforms))
+  if (rows.length === 0) {
+    return [];
+  }
+
+  const catalogFacts = await getCatalogFactsByIds(
+    client,
+    dedupeCatalogGameIds(rows.map((row) => row.catalogGameId))
   );
+
+  return rows.map((row) =>
+    hydrateLibraryGameFromFacts(
+      row,
+      memberPlatforms,
+      catalogFacts.get(row.catalogGameId)
+    )
+  );
+}
+
+function dedupeLibraryRows(rows: LibraryGameRecord[]): LibraryGameRecord[] {
+  const byId = new Map<string, LibraryGameRecord>();
+
+  for (const row of rows) {
+    if (!byId.has(row.id)) {
+      byId.set(row.id, row);
+    }
+  }
+
+  return [...byId.values()];
+}
+
+function dedupeCatalogGameIds(catalogGameIds: string[]): string[] {
+  return [...new Set(catalogGameIds)];
+}
+
+function mapHydratedLibraryRows(
+  rows: LibraryGameRecord[],
+  hydratedByLibraryGameId: Map<string, LibraryGameDetailRecord>
+): LibraryGameDetailRecord[] {
+  return rows.map((row) => {
+    const detail = hydratedByLibraryGameId.get(row.id);
+
+    if (!detail) {
+      throw new Error("library_game_hydration_failed");
+    }
+
+    return detail;
+  });
 }
 
 function getLibraryOrderBy(sort: "recentes" | "match" | "nome"): string {
@@ -821,70 +892,89 @@ async function getCatalogFacts(
   client: QueueDbClient,
   catalogGameId: string
 ): Promise<LibraryCatalogGameFacts> {
-  const result = await client.query<CatalogGameRow>(
-    `
-      SELECT
-        game.id,
-        game.slug,
-        game.name,
-        game.background_image_url,
-        game.main_flow_eligible,
-        game.coop_campaign_confirmed,
-        EXISTS (
-          SELECT 1
-          FROM catalog.game_time_estimates AS estimate
-          WHERE estimate.game_id = game.id
-            AND estimate.minutes IS NOT NULL
-            AND estimate.confidence IN ('verified', 'estimated')
-        ) AS has_reliable_time_estimate,
-        EXISTS (
-          SELECT 1
-          FROM catalog.game_availability AS availability
-          WHERE availability.game_id = game.id
-            AND availability.status = 'available'
-        ) AS has_verified_availability
-      FROM catalog.games AS game
-      WHERE game.id = $1
-      LIMIT 1
-    `,
-    [catalogGameId]
-  );
-  const row = result.rows[0];
+  const facts = await getCatalogFactsByIds(client, [catalogGameId]);
+  const catalogGame = facts.get(catalogGameId);
 
-  if (!row) {
+  if (!catalogGame) {
     throw new Error("catalog_game_not_found");
   }
 
-  return {
-    id: row.id,
-    slug: row.slug,
-    name: row.name,
-    coverUrl: row.background_image_url,
-    platforms: await getCatalogPlatformKeys(client, row.id),
-    mainFlowEligible: row.main_flow_eligible,
-    coopCampaignConfirmed: row.coop_campaign_confirmed,
-    hasReliableTimeEstimate: row.has_reliable_time_estimate,
-    hasVerifiedAvailability: row.has_verified_availability
-  };
+  return catalogGame;
 }
 
-async function getCatalogPlatformKeys(
+async function getCatalogFactsByIds(
   client: QueueDbClient,
-  catalogGameId: string
-): Promise<PlatformKey[]> {
-  const result = await client.query<{ platform_key: string }>(
-    `
-      SELECT platform_key
-      FROM catalog.game_platforms
-      WHERE game_id = $1
-      ORDER BY platform_key
-    `,
-    [catalogGameId]
-  );
+  catalogGameIds: string[]
+): Promise<Map<string, LibraryCatalogGameFacts>> {
+  if (catalogGameIds.length === 0) {
+    return new Map();
+  }
 
-  return result.rows
-    .map((row) => row.platform_key)
-    .filter(isPlatformKey);
+  const [gamesResult, platformResult] = await Promise.all([
+    client.query<CatalogGameRow>(
+      `
+        SELECT
+          game.id,
+          game.slug,
+          game.name,
+          game.background_image_url,
+          game.main_flow_eligible,
+          game.coop_campaign_confirmed,
+          EXISTS (
+            SELECT 1
+            FROM catalog.game_time_estimates AS estimate
+            WHERE estimate.game_id = game.id
+              AND estimate.minutes IS NOT NULL
+              AND estimate.confidence IN ('verified', 'estimated')
+          ) AS has_reliable_time_estimate,
+          EXISTS (
+            SELECT 1
+            FROM catalog.game_availability AS availability
+            WHERE availability.game_id = game.id
+              AND availability.status = 'available'
+          ) AS has_verified_availability
+        FROM catalog.games AS game
+        WHERE game.id = ANY($1::uuid[])
+        ORDER BY game.name ASC
+      `,
+      [catalogGameIds]
+    ),
+    client.query<{ game_id: string; platform_key: string }>(
+      `
+        SELECT game_id, platform_key
+        FROM catalog.game_platforms
+        WHERE game_id = ANY($1::uuid[])
+        ORDER BY game_id ASC, platform_key ASC
+      `,
+      [catalogGameIds]
+    )
+  ]);
+  const platformsByGameId = new Map<string, PlatformKey[]>();
+
+  for (const row of platformResult.rows) {
+    const platforms = platformsByGameId.get(row.game_id) ?? [];
+    if (isPlatformKey(row.platform_key)) {
+      platforms.push(row.platform_key);
+    }
+    platformsByGameId.set(row.game_id, platforms);
+  }
+
+  return new Map(
+    gamesResult.rows.map((row) => [
+      row.id,
+      {
+        id: row.id,
+        slug: row.slug,
+        name: row.name,
+        coverUrl: row.background_image_url,
+        platforms: platformsByGameId.get(row.id) ?? [],
+        mainFlowEligible: row.main_flow_eligible,
+        coopCampaignConfirmed: row.coop_campaign_confirmed,
+        hasReliableTimeEstimate: row.has_reliable_time_estimate,
+        hasVerifiedAvailability: row.has_verified_availability
+      }
+    ])
+  );
 }
 
 async function recordLibraryEvent(

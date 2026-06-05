@@ -1,3 +1,4 @@
+import type { QueueDbClient, QueueDbPool } from "@queue/db";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -12,6 +13,12 @@ import type {
   LibraryQueueRecord,
   LibraryRepository
 } from "../src/modules/library/application/ports";
+import { createLibraryRepository } from "../src/modules/library/infrastructure/library-repository";
+
+type QueryCall = {
+  sql: string;
+  values: unknown[];
+};
 
 describe("library queue use case", () => {
   it("deduplicates catalog ids before reading current library statuses", async () => {
@@ -158,6 +165,180 @@ describe("library queue use case", () => {
   });
 });
 
+describe("library repository performance", () => {
+  it("hydrates all queue sections with one catalog fact batch", async () => {
+    const { pool, calls } = fakeLibraryQueuePool();
+    const repository = createLibraryRepository(pool);
+
+    const result = await repository.getQueue({
+      userId: "user-1",
+      view: "todas",
+      statuses: ["wishlist", "jogando", "pausado"],
+      query: null,
+      commonPlatformOnly: false,
+      platform: null,
+      sort: "match",
+      limit: 12,
+      offset: 0
+    });
+
+    expect(result).toMatchObject({
+      nextQueue: [
+        { catalogGame: { id: "game-next" } },
+        { catalogGame: { id: "game-playing" } }
+      ],
+      playing: [{ catalogGame: { id: "game-playing" } }],
+      page: {
+        items: [
+          { catalogGame: { id: "game-next" } },
+          { catalogGame: { id: "game-page" } }
+        ]
+      }
+    });
+
+    const catalogFactCalls = calls.filter(
+      (call) =>
+        call.sql.includes("FROM catalog.games AS game") &&
+        call.sql.includes("game.id = ANY($1::uuid[])")
+    );
+    const platformCalls = calls.filter(
+      (call) =>
+        call.sql.includes("SELECT game_id, platform_key") &&
+        call.sql.includes("FROM catalog.game_platforms") &&
+        call.sql.includes("game_id = ANY($1::uuid[])")
+    );
+
+    expect(catalogFactCalls).toHaveLength(1);
+    expect(platformCalls).toHaveLength(1);
+    expect(catalogFactCalls[0]?.values[0]).toEqual([
+      "game-next",
+      "game-playing",
+      "game-page"
+    ]);
+    expect(platformCalls[0]?.values[0]).toEqual([
+      "game-next",
+      "game-playing",
+      "game-page"
+    ]);
+  });
+});
+
+function fakeLibraryQueuePool(): { pool: QueueDbPool; calls: QueryCall[] } {
+  const calls: QueryCall[] = [];
+  const client = {
+    query: vi.fn(async (sql: string, values: unknown[] = []) => {
+      calls.push({ sql, values });
+
+      if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") {
+        return { rows: [] };
+      }
+
+      if (sql.includes("set_config('queue2.user_id'")) {
+        return { rows: [] };
+      }
+
+      if (sql.includes("FROM app.duo_members") && sql.includes("LIMIT 1")) {
+        return { rows: [{ duo_id: "duo-1" }] };
+      }
+
+      if (sql.includes("LEFT JOIN app.member_platforms")) {
+        return {
+          rows: [
+            { user_id: "user-1", platform: "pc" },
+            { user_id: "user-1", platform: "switch" },
+            { user_id: "user-2", platform: "pc" }
+          ]
+        };
+      }
+
+      if (sql.includes("SELECT status, count(*) AS count")) {
+        return {
+          rows: [
+            { status: "wishlist", count: "2" },
+            { status: "jogando", count: "1" },
+            { status: "pausado", count: "1" }
+          ]
+        };
+      }
+
+      if (sql.includes("SELECT count(*) AS count") && sql.includes("AS library_game")) {
+        return { rows: [{ count: "2" }] };
+      }
+
+      if (sql.includes("SELECT count(*) AS count")) {
+        return { rows: [{ count: "0" }] };
+      }
+
+      if (
+        sql.includes("FROM app.duo_library_games AS library_game") &&
+        sql.includes("SELECT") &&
+        sql.includes("library_game.id")
+      ) {
+        const statuses = values[1] as string[];
+        const limit = values[4] as number;
+
+        if (statuses.length === 1 && statuses[0] === "jogando") {
+          return { rows: [libraryRow("library-playing", "game-playing", "jogando")] };
+        }
+
+        if (limit === 4) {
+          return {
+            rows: [
+              libraryRow("library-next", "game-next", "wishlist"),
+              libraryRow("library-playing", "game-playing", "jogando")
+            ]
+          };
+        }
+
+        return {
+          rows: [
+            libraryRow("library-next", "game-next", "wishlist"),
+            libraryRow("library-page", "game-page", "pausado")
+          ]
+        };
+      }
+
+      if (
+        sql.includes("FROM catalog.games AS game") &&
+        sql.includes("game.id = ANY($1::uuid[])")
+      ) {
+        return {
+          rows: (values[0] as string[]).map((id) => ({
+            id,
+            slug: id,
+            name: labelForCatalogGame(id),
+            background_image_url: `https://media.rawg.io/media/games/${id}.jpg`,
+            main_flow_eligible: true,
+            coop_campaign_confirmed: true,
+            has_reliable_time_estimate: true,
+            has_verified_availability: id !== "game-page"
+          }))
+        };
+      }
+
+      if (
+        sql.includes("SELECT game_id, platform_key") &&
+        sql.includes("FROM catalog.game_platforms")
+      ) {
+        return {
+          rows: (values[0] as string[]).map((game_id) => ({
+            game_id,
+            platform_key: "pc"
+          }))
+        };
+      }
+
+      throw new Error(`Unexpected SQL: ${sql}`);
+    }),
+    release: vi.fn()
+  } as unknown as QueueDbClient;
+  const pool = {
+    connect: vi.fn(async () => client)
+  } as unknown as QueueDbPool;
+
+  return { pool, calls };
+}
+
 function createRepository(overrides: Partial<LibraryRepository> = {}): LibraryRepository {
   const game = libraryGame();
 
@@ -253,4 +434,33 @@ function libraryGame(): LibraryGameRecord {
     createdAt: new Date("2026-06-03T12:00:00.000Z"),
     updatedAt: new Date("2026-06-03T12:00:00.000Z")
   };
+}
+
+function libraryRow(
+  id: string,
+  catalogGameId: string,
+  status: "wishlist" | "jogando" | "pausado"
+) {
+  return {
+    id,
+    duo_id: "duo-1",
+    catalog_game_id: catalogGameId,
+    status,
+    added_by_user_id: "user-1",
+    status_updated_by_user_id: "user-1",
+    created_at: new Date("2026-06-03T12:00:00.000Z"),
+    updated_at: new Date("2026-06-03T12:00:00.000Z")
+  };
+}
+
+function labelForCatalogGame(id: string): string {
+  if (id === "game-next") {
+    return "Next Game";
+  }
+
+  if (id === "game-playing") {
+    return "Playing Game";
+  }
+
+  return "Page Game";
 }

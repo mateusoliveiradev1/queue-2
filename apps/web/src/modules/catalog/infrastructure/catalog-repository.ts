@@ -44,18 +44,21 @@ type GameRow = {
 };
 
 type PlatformRow = {
+  game_id?: string;
   rawg_platform_id: number | null;
   platform_key: CatalogPlatformKey;
   platform_name: string;
 };
 
 type GenreRow = {
+  game_id?: string;
   rawg_genre_id: number | null;
   slug: string;
   name: string;
 };
 
 type TimeEstimateRow = {
+  game_id?: string;
   minutes: number | null;
   source: string;
   source_url: string | null;
@@ -64,6 +67,7 @@ type TimeEstimateRow = {
 };
 
 type AvailabilityRow = {
+  game_id?: string;
   availability_type: "free" | "game-pass";
   platform_key: CatalogPlatformKey | null;
   source: string;
@@ -73,6 +77,7 @@ type AvailabilityRow = {
 };
 
 type LocalizationRow = {
+  game_id?: string;
   locale: "pt-BR";
   version: number;
   description: string;
@@ -80,6 +85,10 @@ type LocalizationRow = {
   source_url: string | null;
   published_at: Date | string;
   reviewed_at: Date | string;
+};
+
+type RowWithGameId = {
+  game_id: string;
 };
 
 let runtimePool: QueueDbPool | undefined;
@@ -159,7 +168,7 @@ async function searchGames(
     [ids, query, onlyMainFlow, platformKeys, limit, offset]
   );
 
-  return Promise.all(result.rows.map((row) => hydrateGame(pool, row)));
+  return hydrateGames(pool, result.rows);
 }
 
 async function getGameBySlug(
@@ -262,36 +271,62 @@ async function hydrateGame(
   pool: QueueDbPool,
   row: GameRow
 ): Promise<CatalogGameDetailRecord> {
-  const [platforms, genres, localization, timeEstimate, availability] = await Promise.all([
-    loadPlatforms(pool, row.id),
-    loadGenres(pool, row.id),
-    loadPublishedLocalization(pool, row.id),
-    loadTimeEstimate(pool, row.id),
-    loadAvailability(pool, row.id)
+  const [game] = await hydrateGames(pool, [row]);
+
+  if (!game) {
+    throw new Error("catalog_game_hydration_failed");
+  }
+
+  return game;
+}
+
+async function hydrateGames(
+  pool: QueueDbPool,
+  rows: GameRow[]
+): Promise<CatalogGameDetailRecord[]> {
+  const gameIds = rows.map((row) => row.id);
+
+  if (gameIds.length === 0) {
+    return [];
+  }
+
+  const [platforms, genres, localizations, timeEstimates, availability] = await Promise.all([
+    loadPlatformsByGameIds(pool, gameIds),
+    loadGenresByGameIds(pool, gameIds),
+    loadPublishedLocalizationsByGameIds(pool, gameIds),
+    loadTimeEstimatesByGameIds(pool, gameIds),
+    loadAvailabilityByGameIds(pool, gameIds)
   ]);
 
-  return {
+  return rows.map((row) => ({
     ...mapGame(row),
-    platforms,
-    genres,
-    localization,
-    timeEstimate,
-    availability
-  };
+    platforms: platforms.get(row.id) ?? [],
+    genres: genres.get(row.id) ?? [],
+    localization: localizations.get(row.id) ?? null,
+    timeEstimate: timeEstimates.get(row.id) ?? null,
+    availability: availability.get(row.id) ?? []
+  }));
 }
 
 async function loadPlatforms(pool: QueueDbPool, gameId: string): Promise<CatalogPlatformRecord[]> {
-  const result = await pool.query<PlatformRow>(
+  return loadSingleMapValue(await loadPlatformsByGameIds(pool, [gameId]), gameId, []);
+}
+
+async function loadPlatformsByGameIds(
+  pool: QueueDbPool,
+  gameIds: string[]
+): Promise<Map<string, CatalogPlatformRecord[]>> {
+  const result = await pool.query<Required<PlatformRow>>(
     `
-      SELECT rawg_platform_id, platform_key, platform_name
+      SELECT game_id, rawg_platform_id, platform_key, platform_name
       FROM catalog.game_platforms
-      WHERE game_id = $1
-      ORDER BY platform_name ASC
+      WHERE game_id = ANY($1::uuid[])
+      ORDER BY game_id ASC, platform_name ASC
     `,
-    [gameId]
+    [gameIds]
   );
 
-  return result.rows.map((row) => ({
+  return groupByGameId(result.rows, (row) => ({
     key: row.platform_key,
     name: row.platform_name,
     rawgPlatformId: row.rawg_platform_id
@@ -299,17 +334,24 @@ async function loadPlatforms(pool: QueueDbPool, gameId: string): Promise<Catalog
 }
 
 async function loadGenres(pool: QueueDbPool, gameId: string): Promise<CatalogGenreRecord[]> {
-  const result = await pool.query<GenreRow>(
+  return loadSingleMapValue(await loadGenresByGameIds(pool, [gameId]), gameId, []);
+}
+
+async function loadGenresByGameIds(
+  pool: QueueDbPool,
+  gameIds: string[]
+): Promise<Map<string, CatalogGenreRecord[]>> {
+  const result = await pool.query<Required<GenreRow>>(
     `
-      SELECT rawg_genre_id, slug, name
+      SELECT game_id, rawg_genre_id, slug, name
       FROM catalog.game_genres
-      WHERE game_id = $1
-      ORDER BY name ASC
+      WHERE game_id = ANY($1::uuid[])
+      ORDER BY game_id ASC, name ASC
     `,
-    [gameId]
+    [gameIds]
   );
 
-  return result.rows.map((row) => ({
+  return groupByGameId(result.rows, (row) => ({
     rawgGenreId: row.rawg_genre_id,
     slug: row.slug,
     name: row.name
@@ -320,46 +362,59 @@ async function loadTimeEstimate(
   pool: QueueDbPool,
   gameId: string
 ): Promise<CatalogTimeEstimateRecord | null> {
-  const result = await pool.query<TimeEstimateRow>(
+  return loadSingleMapValue(await loadTimeEstimatesByGameIds(pool, [gameId]), gameId, null);
+}
+
+async function loadTimeEstimatesByGameIds(
+  pool: QueueDbPool,
+  gameIds: string[]
+): Promise<Map<string, CatalogTimeEstimateRecord>> {
+  const result = await pool.query<Required<TimeEstimateRow>>(
     `
-      SELECT minutes, source, source_url, checked_at, confidence
+      SELECT DISTINCT ON (game_id)
+        game_id,
+        minutes,
+        source,
+        source_url,
+        checked_at,
+        confidence
       FROM catalog.game_time_estimates
-      WHERE game_id = $1
-      ORDER BY checked_at DESC
-      LIMIT 1
+      WHERE game_id = ANY($1::uuid[])
+      ORDER BY game_id ASC, checked_at DESC
     `,
-    [gameId]
+    [gameIds]
   );
-  const row = result.rows[0];
-
-  if (!row) {
-    return null;
-  }
-
-  return {
+  return mapByGameId(result.rows, (row) => ({
     minutes: row.minutes,
     source: row.source,
     sourceUrl: row.source_url,
     checkedAt: coerceDate(row.checked_at),
     confidence: row.confidence
-  };
+  }));
 }
 
 async function loadAvailability(
   pool: QueueDbPool,
   gameId: string
 ): Promise<CatalogAvailabilityRecord[]> {
-  const result = await pool.query<AvailabilityRow>(
+  return loadSingleMapValue(await loadAvailabilityByGameIds(pool, [gameId]), gameId, []);
+}
+
+async function loadAvailabilityByGameIds(
+  pool: QueueDbPool,
+  gameIds: string[]
+): Promise<Map<string, CatalogAvailabilityRecord[]>> {
+  const result = await pool.query<Required<AvailabilityRow>>(
     `
-      SELECT availability_type, platform_key, source, source_url, checked_at, status
+      SELECT game_id, availability_type, platform_key, source, source_url, checked_at, status
       FROM catalog.game_availability
-      WHERE game_id = $1
-      ORDER BY checked_at DESC, availability_type ASC
+      WHERE game_id = ANY($1::uuid[])
+      ORDER BY game_id ASC, checked_at DESC, availability_type ASC
     `,
-    [gameId]
+    [gameIds]
   );
 
-  return result.rows.map((row) => ({
+  return groupByGameId(result.rows, (row) => ({
     type: row.availability_type,
     platformKey: row.platform_key,
     source: row.source,
@@ -373,9 +428,21 @@ async function loadPublishedLocalization(
   pool: QueueDbPool,
   gameId: string
 ): Promise<CatalogLocalizationRecord | null> {
-  const result = await pool.query<LocalizationRow>(
+  return loadSingleMapValue(
+    await loadPublishedLocalizationsByGameIds(pool, [gameId]),
+    gameId,
+    null
+  );
+}
+
+async function loadPublishedLocalizationsByGameIds(
+  pool: QueueDbPool,
+  gameIds: string[]
+): Promise<Map<string, CatalogLocalizationRecord>> {
+  const result = await pool.query<Required<LocalizationRow>>(
     `
-      SELECT
+      SELECT DISTINCT ON (game_id)
+        game_id,
         locale,
         version,
         description,
@@ -384,24 +451,17 @@ async function loadPublishedLocalization(
         published_at,
         reviewed_at
       FROM catalog.game_localizations
-      WHERE game_id = $1
+      WHERE game_id = ANY($1::uuid[])
         AND locale = 'pt-BR'
         AND status = 'published'
         AND description IS NOT NULL
         AND published_at IS NOT NULL
         AND reviewed_at IS NOT NULL
-      ORDER BY published_at DESC NULLS LAST, version DESC
-      LIMIT 1
+      ORDER BY game_id ASC, published_at DESC NULLS LAST, version DESC
     `,
-    [gameId]
+    [gameIds]
   );
-  const row = result.rows[0];
-
-  if (!row) {
-    return null;
-  }
-
-  return {
+  return mapByGameId(result.rows, (row) => ({
     locale: row.locale,
     version: row.version,
     description: row.description,
@@ -409,7 +469,7 @@ async function loadPublishedLocalization(
     sourceUrl: row.source_url,
     publishedAt: coerceDate(row.published_at),
     reviewedAt: coerceDate(row.reviewed_at)
-  };
+  }));
 }
 
 async function upsertCatalogGame(
@@ -790,6 +850,38 @@ function dedupeBy<T>(values: T[], getKey: (value: T) => string): T[] {
   }
 
   return result;
+}
+
+function groupByGameId<T extends RowWithGameId, U>(
+  rows: T[],
+  mapRow: (row: T) => U
+): Map<string, U[]> {
+  const byGameId = new Map<string, U[]>();
+
+  for (const row of rows) {
+    const values = byGameId.get(row.game_id) ?? [];
+    values.push(mapRow(row));
+    byGameId.set(row.game_id, values);
+  }
+
+  return byGameId;
+}
+
+function mapByGameId<T extends RowWithGameId, U>(
+  rows: T[],
+  mapRow: (row: T) => U
+): Map<string, U> {
+  const byGameId = new Map<string, U>();
+
+  for (const row of rows) {
+    byGameId.set(row.game_id, mapRow(row));
+  }
+
+  return byGameId;
+}
+
+function loadSingleMapValue<T>(map: Map<string, T>, gameId: string, fallback: T): T {
+  return map.get(gameId) ?? fallback;
 }
 
 function hasPatch<T extends object, K extends PropertyKey>(
