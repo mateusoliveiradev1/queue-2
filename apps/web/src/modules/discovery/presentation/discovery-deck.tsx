@@ -8,6 +8,9 @@ import { DiscoveryCard } from "./discovery-card";
 
 type DiscoveryDecisionAction = (formData: FormData) => Promise<void>;
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
+type EnhancedDiscoveryAction = (
+  formData: FormData
+) => Promise<{ ok: boolean; state?: string; redirectTo?: string }>;
 type Reaction = "want" | "not_now" | "skip";
 type DiscoveryDeckPagination = {
   currentPage: number;
@@ -24,6 +27,8 @@ const reactionStatus: Record<Reaction, string> = {
 export function DiscoveryDeck({
   cards,
   decisionAction,
+  enhancedDecisionAction,
+  enhancedHandoffAction,
   handoffAction,
   pagination,
   returnTo,
@@ -31,6 +36,8 @@ export function DiscoveryDeck({
 }: {
   cards: DiscoveryDeckCard[];
   decisionAction: DiscoveryDecisionAction;
+  enhancedDecisionAction?: EnhancedDiscoveryAction;
+  enhancedHandoffAction?: EnhancedDiscoveryAction;
   handoffAction: DiscoveryHandoffAction;
   pagination: DiscoveryDeckPagination;
   returnTo: string;
@@ -180,12 +187,15 @@ export function DiscoveryDeck({
           <DiscoveryCard
             card={activeCard}
             decisionAction={decisionAction}
+            enhancedDecisionAction={enhancedDecisionAction}
+            enhancedHandoffAction={enhancedHandoffAction}
             formRefs={{
               want: wantFormRef,
               not_now: notNowFormRef,
               skip: skipFormRef
             }}
             handoffAction={handoffAction}
+            onLocalReaction={setReaction}
             priority
             reaction={reaction}
             returnTo={returnTo}

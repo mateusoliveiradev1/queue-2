@@ -79,9 +79,20 @@ vi.mock("../src/modules/duo", () => ({
 
 vi.mock("../src/app/app/descobrir/actions", () => ({
   answerMoodQuizAction: vi.fn(async () => undefined),
+  answerMoodQuizEnhancedAction: vi.fn(async () => ({ ok: true, state: "quiz-preview" })),
   getSurpriseRecommendationAction: vi.fn(async () => undefined),
   handoffDiscoveryMatchToLibraryAction: vi.fn(async () => undefined),
+  handoffDiscoveryMatchToLibraryEnhancedAction: vi.fn(async () => ({
+    ok: true,
+    state: "biblioteca-atualizada"
+  })),
   recordDiscoveryDecisionAction: vi.fn(async () => undefined),
+  recordDiscoveryDecisionEnhancedAction: vi.fn(async () => ({ ok: true, state: "card-avancado" })),
+  startDiscoveryLiveSessionEnhancedAction: vi.fn(async () => ({
+    ok: true,
+    liveId: "00000000-0000-4000-8000-000000000003",
+    state: "live-iniciado"
+  })),
   startDiscoveryLiveSessionAction: vi.fn(async () => undefined)
 }));
 

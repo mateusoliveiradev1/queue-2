@@ -4,13 +4,18 @@ import { LibraryStatusControls } from "../../library";
 import type { DiscoveryMatchHistoryItem } from "../application/ports";
 
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
+type EnhancedDiscoveryAction = (
+  formData: FormData
+) => Promise<{ ok: boolean; state?: string; redirectTo?: string }>;
 
 export function MatchHistory({
   action,
+  enhancedAction,
   items,
   returnTo
 }: {
   action: DiscoveryHandoffAction;
+  enhancedAction?: EnhancedDiscoveryAction;
   items: DiscoveryMatchHistoryItem[];
   returnTo: string;
 }) {
@@ -78,6 +83,7 @@ export function MatchHistory({
                     action={action}
                     catalogGameId={item.match.catalogGameId}
                     currentStatus={item.libraryStatus ?? ""}
+                    enhancedAction={enhancedAction}
                     returnTo={returnTo}
                   />
                 </div>

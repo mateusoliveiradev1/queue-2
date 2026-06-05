@@ -7,6 +7,9 @@ import { DiscoveryCard } from "./discovery-card";
 
 type DiscoveryDecisionAction = (formData: FormData) => Promise<void>;
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
+type EnhancedDiscoveryAction = (
+  formData: FormData
+) => Promise<{ ok: boolean; state?: string; redirectTo?: string }>;
 
 type SearchResponse =
   | {
@@ -20,10 +23,14 @@ type SearchResponse =
 
 export function DiscoverySearch({
   decisionAction,
+  enhancedDecisionAction,
+  enhancedHandoffAction,
   handoffAction,
   returnTo
 }: {
   decisionAction: DiscoveryDecisionAction;
+  enhancedDecisionAction?: EnhancedDiscoveryAction;
+  enhancedHandoffAction?: EnhancedDiscoveryAction;
   handoffAction: DiscoveryHandoffAction;
   returnTo: string;
 }) {
@@ -160,6 +167,8 @@ export function DiscoverySearch({
           <DiscoveryCard
             card={selectedCard}
             decisionAction={decisionAction}
+            enhancedDecisionAction={enhancedDecisionAction}
+            enhancedHandoffAction={enhancedHandoffAction}
             handoffAction={handoffAction}
             reaction={null}
             returnTo={returnTo}

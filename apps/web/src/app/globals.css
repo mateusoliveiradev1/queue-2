@@ -1685,7 +1685,7 @@ input {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.mood-quiz-form > .queue2-button {
+.mood-quiz-submit {
   grid-column: 1 / -1;
   justify-self: stretch;
 }
@@ -2062,10 +2062,10 @@ input {
   gap: var(--space-3);
 }
 
-.discovery-decision-actions form,
-.discovery-handoff-actions form {
-  display: flex;
-  flex: 1 1 132px;
+.discovery-decision-actions .action-feedback-form,
+.discovery-handoff-actions .action-feedback-form {
+  display: grid;
+  flex: 1 1 168px;
   min-width: 0;
 }
 
@@ -2077,6 +2077,11 @@ input {
   min-height: 48px;
   overflow-wrap: anywhere;
   white-space: normal;
+  width: 100%;
+}
+
+.discovery-decision-actions .action-feedback,
+.discovery-handoff-actions .action-feedback {
   width: 100%;
 }
 
@@ -2236,8 +2241,9 @@ input {
   grid-template-columns: repeat(auto-fit, minmax(156px, 1fr));
 }
 
-.match-celebration-actions form {
-  display: flex;
+.match-celebration-actions .action-feedback-form {
+  display: grid;
+  min-width: 0;
 }
 
 .match-celebration-actions .queue2-button,
@@ -2407,7 +2413,7 @@ input {
 }
 
 .live-panel-action {
-  display: flex;
+  display: grid;
 }
 
 .live-panel-active {

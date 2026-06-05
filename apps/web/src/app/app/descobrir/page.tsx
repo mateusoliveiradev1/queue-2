@@ -24,9 +24,13 @@ import {
 } from "../../../platform/performance/server-timing";
 import {
   answerMoodQuizAction,
+  answerMoodQuizEnhancedAction,
   getSurpriseRecommendationAction,
   handoffDiscoveryMatchToLibraryAction,
+  handoffDiscoveryMatchToLibraryEnhancedAction,
   recordDiscoveryDecisionAction,
+  recordDiscoveryDecisionEnhancedAction,
+  startDiscoveryLiveSessionEnhancedAction,
   startDiscoveryLiveSessionAction
 } from "./actions";
 import {
@@ -182,6 +186,7 @@ async function renderDiscoveryPage({
 
         <section className="discovery-card-stage" aria-labelledby="discovery-deck-title">
           <MatchCelebration
+            enhancedHandoffAction={handoffDiscoveryMatchToLibraryEnhancedAction}
             handoffAction={handoffDiscoveryMatchToLibraryAction}
             match={celebrationMatch}
             returnTo={returnTo}
@@ -199,6 +204,8 @@ async function renderDiscoveryPage({
           <DiscoveryDeck
             cards={deck.cards}
             decisionAction={recordDiscoveryDecisionAction}
+            enhancedDecisionAction={recordDiscoveryDecisionEnhancedAction}
+            enhancedHandoffAction={handoffDiscoveryMatchToLibraryEnhancedAction}
             handoffAction={handoffDiscoveryMatchToLibraryAction}
             pagination={getDeckPagination(returnTo, deck.pageInfo)}
             returnTo={returnTo}
@@ -224,6 +231,7 @@ async function renderDiscoveryPage({
           >
             <LivePanel
               action={startDiscoveryLiveSessionAction}
+              enhancedAction={startDiscoveryLiveSessionEnhancedAction}
               liveSession={liveSession}
               returnTo={returnTo}
             />
@@ -236,6 +244,8 @@ async function renderDiscoveryPage({
           >
             <DiscoverySearch
               decisionAction={recordDiscoveryDecisionAction}
+              enhancedDecisionAction={recordDiscoveryDecisionEnhancedAction}
+              enhancedHandoffAction={handoffDiscoveryMatchToLibraryEnhancedAction}
               handoffAction={handoffDiscoveryMatchToLibraryAction}
               returnTo={returnTo}
             />
@@ -249,6 +259,7 @@ async function renderDiscoveryPage({
             >
               <MoodQuiz
                 action={answerMoodQuizAction}
+                enhancedAction={answerMoodQuizEnhancedAction}
                 resultState={state}
                 returnTo={returnTo}
               />
@@ -262,6 +273,7 @@ async function renderDiscoveryPage({
           >
             <MatchHistory
               action={handoffDiscoveryMatchToLibraryAction}
+              enhancedAction={handoffDiscoveryMatchToLibraryEnhancedAction}
               items={matchHistory}
               returnTo={returnTo}
             />

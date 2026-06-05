@@ -10,6 +10,10 @@ import {
   type ActionFeedbackState
 } from "../src/components/action-feedback";
 import { CatalogWishlistSubmitButton } from "../src/modules/catalog/presentation/catalog-wishlist-submit-button";
+import { DiscoveryCard } from "../src/modules/discovery/presentation/discovery-card";
+import { LivePanel } from "../src/modules/discovery/presentation/live-panel";
+import { MatchCelebration } from "../src/modules/discovery/presentation/match-celebration";
+import { MoodQuiz } from "../src/modules/discovery/presentation/mood-quiz";
 import { LibraryStatusControls } from "../src/modules/library/presentation/library-status-controls";
 
 type Deferred = {
@@ -220,6 +224,202 @@ describe("enhanced catalog and library mutation forms", () => {
   });
 });
 
+describe("enhanced discovery mutation forms", () => {
+  it("shows immediate local feedback for each deck decision and blocks duplicate submits", async () => {
+    const cases = [
+      {
+        buttonName: /quero jogar/i,
+        decision: "want",
+        syncingCopy: /decisao salva aqui, sincronizando/i
+      },
+      {
+        buttonName: /agora nao/i,
+        decision: "not_now",
+        syncingCopy: /decisao salva aqui, sincronizando/i
+      },
+      {
+        buttonName: /pular/i,
+        decision: "skip",
+        syncingCopy: /decisao salva aqui, sincronizando/i
+      }
+    ] as const;
+
+    for (const item of cases) {
+      const deferred = createDeferred();
+      const fallbackAction = vi.fn(async () => undefined);
+      const enhancedAction = vi.fn(async () => {
+        await deferred.promise;
+        return {
+          ok: true,
+          state: item.decision === "want" ? "match-criado" : "card-avancado"
+        };
+      });
+      const { container, unmount } = render(
+        <DiscoveryCard
+          card={{ ...discoveryCard(), allowedLibraryActions: [] }}
+          decisionAction={fallbackAction}
+          enhancedDecisionAction={enhancedAction}
+          handoffAction={fallbackAction}
+          reaction={null}
+          returnTo="/app/descobrir"
+        />
+      );
+
+      const button = screen.getByRole("button", { name: item.buttonName });
+      const form = button.closest("form");
+
+      expect(form).toHaveAttribute("action");
+      expect(form?.querySelector("input[name='catalogGameId']")).toHaveValue(
+        DISCOVERY_TEST_CARD_ID
+      );
+      expect(form?.querySelector("input[name='decision']")).toHaveValue(item.decision);
+
+      fireEvent.click(button);
+      fireEvent.click(button);
+
+      expect(enhancedAction).toHaveBeenCalledOnce();
+      expect(screen.getByRole("status")).toHaveTextContent(item.syncingCopy);
+      expect(button).toBeDisabled();
+
+      await act(async () => {
+        deferred.resolve();
+        await deferred.promise;
+      });
+
+      expect(screen.getByRole("status")).toHaveTextContent(
+        item.decision === "want"
+          ? /match confirmado pelo servidor/i
+          : /confirmado pelo servidor/i
+      );
+      expect(container.querySelector(".action-feedback-form")).not.toBeNull();
+      unmount();
+    }
+  });
+
+  it("keeps match handoff honest with syncing and retry feedback", async () => {
+    const deferred = createDeferred();
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => {
+      await deferred.promise;
+      return { ok: false, state: "limite-jogando" };
+    });
+
+    render(
+      <MatchCelebration
+        enhancedHandoffAction={enhancedAction}
+        handoffAction={fallbackAction}
+        match={discoveryMatch()}
+        returnTo="/app/descobrir"
+      />
+    );
+
+    const button = screen.getByRole("button", { name: /mandar para wishlist/i });
+
+    fireEvent.click(button);
+    fireEvent.click(button);
+
+    expect(enhancedAction).toHaveBeenCalledOnce();
+    expect(screen.getByText(/match salvo aqui, sincronizando/i)).toBeInTheDocument();
+    expect(button).toBeDisabled();
+
+    await act(async () => {
+      deferred.resolve();
+      await deferred.promise;
+    });
+
+    expect(screen.getByText(/nao deu para enviar o match/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
+  });
+
+  it("confirms Live start from the server before final copy appears", async () => {
+    const deferred = createDeferred();
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => {
+      await deferred.promise;
+      return {
+        ok: true,
+        liveId: "00000000-0000-4000-8000-000000000099",
+        state: "live-iniciado"
+      };
+    });
+
+    render(
+      <LivePanel
+        action={fallbackAction}
+        enhancedAction={enhancedAction}
+        liveSession={null}
+        returnTo="/app/descobrir"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /comecar live/i }));
+
+    expect(enhancedAction).toHaveBeenCalledOnce();
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /live salva aqui, sincronizando/i
+    );
+    expect(screen.queryByText(/live confirmada pelo servidor/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      deferred.resolve();
+      await deferred.promise;
+    });
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /live confirmada pelo servidor/i
+    );
+  });
+
+  it("shows Quiz submit progress and then the authoritative duo/preview result", async () => {
+    const deferred = createDeferred();
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => {
+      await deferred.promise;
+      return { ok: true, state: "quiz-completo" };
+    });
+
+    render(
+      <MoodQuiz
+        action={fallbackAction}
+        enhancedAction={enhancedAction}
+        resultState={null}
+        returnTo="/app/descobrir#mood-quiz"
+      />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /salvar mood/i }));
+
+    expect(enhancedAction).toHaveBeenCalledOnce();
+    expect(screen.getByText(/mood salvo aqui, sincronizando/i)).toBeInTheDocument();
+    expect(screen.queryByText(/resultado completo da dupla aplicado/i)).not.toBeInTheDocument();
+
+    await act(async () => {
+      deferred.resolve();
+      await deferred.promise;
+    });
+
+    expect(screen.getAllByText(/resultado completo da dupla aplicado/i).length).toBeGreaterThan(0);
+  });
+
+  it("keeps reduced-motion discovery feedback on static /2 states", () => {
+    const css = readFileSync("src/app/globals.css", "utf8");
+    const discoveryDeckSource = readFileSync(
+      "src/modules/discovery/presentation/discovery-deck.tsx",
+      "utf8"
+    );
+    const reducedMotionBlock = css.slice(
+      css.indexOf("@media (prefers-reduced-motion: reduce)")
+    );
+
+    expect(discoveryDeckSource).toContain("useReducedMotion");
+    expect(discoveryDeckSource).toContain("Movimento reduzido ativo");
+    expect(reducedMotionBlock).toContain(
+      '.action-feedback-button[data-action-state="syncing"]'
+    );
+    expect(reducedMotionBlock).toContain("animation: none");
+  });
+});
+
 function FeedbackActionHarness({
   action
 }: {
@@ -262,6 +462,54 @@ function FeedbackActionHarness({
       />
     </form>
   );
+}
+
+const DISCOVERY_TEST_CARD_ID = "00000000-0000-4000-8000-000000000021";
+
+function discoveryCard() {
+  return {
+    catalogGameId: DISCOVERY_TEST_CARD_ID,
+    slug: "it-takes-two",
+    title: "It Takes Two",
+    coverUrl: null,
+    releaseLabel: "26 de mar. de 2021",
+    platformLabels: ["PC", "PlayStation", "Xbox"],
+    genreLabels: ["Aventura", "Puzzle"],
+    sourceMeta: {
+      attributionLabel: "Dados e imagens: RAWG",
+      attributionHref: "https://rawg.io/games/it-takes-two",
+      freshnessLabel: "Atualizado hoje",
+      freshnessTone: "fresh" as const
+    },
+    timeEstimateLabel: "Cerca de 14 horas",
+    availabilityLabel: "Nao verificado",
+    reasons: ["PC em comum", "campanha 2p"],
+    libraryStatus: null,
+    libraryActionState: "can-add" as const,
+    allowedLibraryActions: ["wishlist", "jogando", "pausado"]
+  };
+}
+
+function discoveryMatch() {
+  return {
+    match: {
+      id: "match-1",
+      duoId: "duo-1",
+      userId: "user-1",
+      catalogGameId: DISCOVERY_TEST_CARD_ID,
+      matchedAt: new Date("2026-06-04T09:30:00.000Z"),
+      createdFrom: "deck" as const,
+      firstUserId: "user-1",
+      secondUserId: "user-2",
+      reasonSnapshot: ["PC em comum"],
+      libraryHandoffStatus: null
+    },
+    slug: "it-takes-two",
+    title: "It Takes Two",
+    coverUrl: null,
+    libraryStatus: null,
+    reasons: ["PC em comum"]
+  };
 }
 
 function createDeferred(): Deferred {

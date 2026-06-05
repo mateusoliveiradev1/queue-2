@@ -1,11 +1,22 @@
-import Image from "next/image";
+"use client";
 
+import Image from "next/image";
+import { useRef, useState, type FormEvent } from "react";
+
+import {
+  ActionFeedback,
+  ActionFeedbackButton,
+  type ActionFeedbackState
+} from "../../../components/action-feedback";
 import type {
   DiscoveryMatchHistoryItem
 } from "../application/ports";
 import type { DiscoveryLibraryHandoffStatus } from "../domain/discovery-policy";
 
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
+type EnhancedDiscoveryAction = (
+  formData: FormData
+) => Promise<{ ok: boolean; state?: string; redirectTo?: string }>;
 
 const handoffLabels: Record<DiscoveryLibraryHandoffStatus, string> = {
   wishlist: "Mandar para Wishlist",
@@ -20,10 +31,12 @@ const handoffStatuses: DiscoveryLibraryHandoffStatus[] = [
 ];
 
 export function MatchCelebration({
+  enhancedHandoffAction,
   handoffAction,
   match,
   returnTo
 }: {
+  enhancedHandoffAction?: EnhancedDiscoveryAction;
   handoffAction: DiscoveryHandoffAction;
   match: DiscoveryMatchHistoryItem | null;
   returnTo: string;
@@ -89,14 +102,15 @@ export function MatchCelebration({
         ) : null}
         <div className="form-actions match-celebration-actions">
           {handoffStatuses.map((status) => (
-            <form action={handoffAction} key={status}>
-              <input name="catalogGameId" type="hidden" value={match.match.catalogGameId} />
-              <input name="returnTo" type="hidden" value={returnTo} />
-              <input name="status" type="hidden" value={status} />
-              <button className="queue2-button" data-tone="primary" type="submit">
-                {handoffLabels[status]}
-              </button>
-            </form>
+            <MatchHandoffForm
+              action={handoffAction}
+              catalogGameId={match.match.catalogGameId}
+              enhancedAction={enhancedHandoffAction}
+              key={status}
+              label={handoffLabels[status]}
+              returnTo={returnTo}
+              status={status}
+            />
           ))}
           <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
             Zerado bloqueado
@@ -113,6 +127,82 @@ export function MatchCelebration({
         </div>
       </div>
     </section>
+  );
+}
+
+function MatchHandoffForm({
+  action,
+  catalogGameId,
+  enhancedAction,
+  label,
+  returnTo,
+  status
+}: {
+  action: DiscoveryHandoffAction;
+  catalogGameId: string;
+  enhancedAction?: EnhancedDiscoveryAction;
+  label: string;
+  returnTo: string;
+  status: DiscoveryLibraryHandoffStatus;
+}) {
+  const pendingRef = useRef(false);
+  const [state, setState] = useState<ActionFeedbackState>("idle");
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!enhancedAction) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (pendingRef.current) {
+      return;
+    }
+
+    pendingRef.current = true;
+    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    try {
+      const result = await enhancedAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        window.location.assign(result.redirectTo);
+        return;
+      }
+
+      setState(result.ok ? "confirmed" : "failed");
+    } catch {
+      setState("failed");
+    } finally {
+      pendingRef.current = false;
+    }
+  }
+
+  return (
+    <form action={action} className="action-feedback-form" onSubmit={handleSubmit}>
+      <input name="catalogGameId" type="hidden" value={catalogGameId} />
+      <input name="returnTo" type="hidden" value={returnTo} />
+      <input name="status" type="hidden" value={status} />
+      <ActionFeedbackButton
+        labels={{
+          idle: label,
+          syncing: "Enviando para a fila",
+          confirmed: "Confirmado",
+          failed: "Tentar de novo",
+          retrying: "Tentando de novo"
+        }}
+        state={state}
+      />
+      <ActionFeedback
+        copy={{
+          syncing: "Match salvo aqui, sincronizando...",
+          confirmed: "Biblioteca confirmada pelo servidor.",
+          failed: "Nao deu para enviar o match. Tente de novo.",
+          retrying: "Tentando enviar o match de novo..."
+        }}
+        state={state}
+      />
+    </form>
   );
 }
 

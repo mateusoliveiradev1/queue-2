@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -25,6 +26,19 @@ const handoffTimingContext = { action: "discovery.handoff" } as const;
 const liveTimingContext = { action: "discovery.live.start" } as const;
 const quizTimingContext = { action: "discovery.quiz.answer" } as const;
 const surpriseTimingContext = { action: "discovery.surprise" } as const;
+
+export type EnhancedDiscoveryMutationResult =
+  | {
+      ok: true;
+      state: string;
+      liveId?: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+      state: string;
+      redirectTo?: string;
+    };
 
 export async function recordDiscoveryDecisionAction(formData: FormData): Promise<void> {
   return withServerTiming(decisionTimingContext, () =>
@@ -71,6 +85,73 @@ async function recordDiscoveryDecisionActionTimed(formData: FormData): Promise<v
   redirect(withState(returnTo, decisionResultToState(result)));
 }
 
+export async function recordDiscoveryDecisionEnhancedAction(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  return withServerTiming(decisionTimingContext, () =>
+    recordDiscoveryDecisionEnhancedActionTimed(formData)
+  );
+}
+
+async function recordDiscoveryDecisionEnhancedActionTimed(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  const session = await measureStage("auth", decisionTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, decision, sourceMode, returnTo } = await measureStage(
+    "validation",
+    decisionTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      decision: getFormString(formData, "decision"),
+      sourceMode: getFormString(formData, "sourceMode") || "deck",
+      returnTo: getSafeReturnTo(formData, "/app/descobrir")
+    })
+  );
+
+  if (
+    !isUuid(catalogGameId) ||
+    !isDiscoveryDecision(decision) ||
+    !isDiscoverySourceMode(sourceMode)
+  ) {
+    return { ok: false, reason: "invalid-input", state: "acao-invalida" };
+  }
+
+  const result = await measureStage("database", decisionTimingContext, () =>
+    recordDiscoveryDecision({
+      userId: session.user.id,
+      catalogGameId,
+      decision,
+      sourceMode
+    })
+  );
+
+  if (!result.ok && result.reason === "membership-required") {
+    return {
+      ok: false,
+      reason: "membership-required",
+      redirectTo: "/parear",
+      state: "membership-required"
+    };
+  }
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: result.reason,
+      state: decisionResultToState(result)
+    };
+  }
+
+  revalidateDiscoverySurfaces(returnTo);
+
+  return {
+    ok: true,
+    state: decisionResultToState(result)
+  };
+}
+
 export async function handoffDiscoveryMatchToLibraryAction(
   formData: FormData
 ): Promise<void> {
@@ -114,6 +195,68 @@ async function handoffDiscoveryMatchToLibraryActionTimed(
   redirect(withState(returnTo, handoffResultToState(result)));
 }
 
+export async function handoffDiscoveryMatchToLibraryEnhancedAction(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  return withServerTiming(handoffTimingContext, () =>
+    handoffDiscoveryMatchToLibraryEnhancedActionTimed(formData)
+  );
+}
+
+async function handoffDiscoveryMatchToLibraryEnhancedActionTimed(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  const session = await measureStage("auth", handoffTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { catalogGameId, status, returnTo } = await measureStage(
+    "validation",
+    handoffTimingContext,
+    async () => ({
+      catalogGameId: getFormString(formData, "catalogGameId"),
+      status: getFormString(formData, "status"),
+      returnTo: getSafeReturnTo(formData, "/app/descobrir")
+    })
+  );
+
+  if (!isUuid(catalogGameId) || !status) {
+    return { ok: false, reason: "invalid-input", state: "acao-invalida" };
+  }
+
+  const result = await measureStage("database", handoffTimingContext, () =>
+    handoffDiscoveryMatchToLibrary({
+      userId: session.user.id,
+      catalogGameId,
+      status
+    })
+  );
+
+  if (!result.ok && result.reason === "membership-required") {
+    return {
+      ok: false,
+      reason: "membership-required",
+      redirectTo: "/parear",
+      state: "membership-required"
+    };
+  }
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: result.reason,
+      state: handoffResultToState(result)
+    };
+  }
+
+  revalidateDiscoverySurfaces(returnTo);
+  revalidatePath("/app/biblioteca");
+
+  return {
+    ok: true,
+    state: handoffResultToState(result)
+  };
+}
+
 export async function startDiscoveryLiveSessionAction(
   formData: FormData
 ): Promise<void> {
@@ -142,6 +285,47 @@ async function startDiscoveryLiveSessionActionTimed(
   }
 
   redirect(withState(withParam(returnTo, "live", result.session.id), "live-iniciado"));
+}
+
+export async function startDiscoveryLiveSessionEnhancedAction(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  return withServerTiming(liveTimingContext, () =>
+    startDiscoveryLiveSessionEnhancedActionTimed(formData)
+  );
+}
+
+async function startDiscoveryLiveSessionEnhancedActionTimed(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  const session = await measureStage("auth", liveTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const returnTo = await measureStage("validation", liveTimingContext, async () =>
+    getSafeReturnTo(formData, "/app/descobrir")
+  );
+  const result = await measureStage("database", liveTimingContext, () =>
+    startLiveSession({
+      userId: session.user.id
+    })
+  );
+
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: result.reason,
+      redirectTo: result.reason === "membership-required" ? "/parear" : undefined,
+      state: "acao-invalida"
+    };
+  }
+
+  revalidateDiscoverySurfaces(returnTo);
+
+  return {
+    ok: true,
+    liveId: result.session.id,
+    state: "live-iniciado"
+  };
 }
 
 export async function answerMoodQuizAction(formData: FormData): Promise<void> {
@@ -186,6 +370,55 @@ async function answerMoodQuizActionTimed(formData: FormData): Promise<void> {
       result.mood.kind === "duo" ? "quiz-completo" : "quiz-preview"
     )
   );
+}
+
+export async function answerMoodQuizEnhancedAction(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  return withServerTiming(quizTimingContext, () =>
+    answerMoodQuizEnhancedActionTimed(formData)
+  );
+}
+
+async function answerMoodQuizEnhancedActionTimed(
+  formData: FormData
+): Promise<EnhancedDiscoveryMutationResult> {
+  const session = await measureStage("auth", quizTimingContext, () =>
+    requireVerifiedSession()
+  );
+  const { returnTo, energy, commitment, vibe } = await measureStage(
+    "validation",
+    quizTimingContext,
+    async () => ({
+      returnTo: getSafeReturnTo(formData, "/app/descobrir"),
+      energy: getFormString(formData, "energy"),
+      commitment: getFormString(formData, "commitment"),
+      vibe: getFormString(formData, "vibe")
+    })
+  );
+
+  if (!isMoodEnergyAnswer(energy) || !isMoodCommitmentAnswer(commitment) || !isMoodVibeAnswer(vibe)) {
+    return { ok: false, reason: "invalid-input", state: "quiz-invalido" };
+  }
+
+  const result = await measureStage("database", quizTimingContext, () =>
+    answerMoodQuiz({
+      userId: session.user.id,
+      answers: {
+        energy,
+        commitment,
+        vibe
+      }
+    })
+  );
+  const state = result.mood.kind === "duo" ? "quiz-completo" : "quiz-preview";
+
+  revalidateDiscoverySurfaces(returnTo);
+
+  return {
+    ok: true,
+    state
+  };
 }
 
 export async function getSurpriseRecommendationAction(
@@ -304,6 +537,15 @@ function withParam(path: string, key: string, value: string): string {
   const url = new URL(path, "https://queue.local");
   url.searchParams.set(key, value);
   return `${url.pathname}${url.search}`;
+}
+
+function revalidateDiscoverySurfaces(returnTo: string): void {
+  const url = new URL(returnTo, "https://queue.local");
+  revalidatePath("/app/descobrir");
+
+  if (url.pathname !== "/app/descobrir") {
+    revalidatePath(url.pathname);
+  }
 }
 
 function isUuid(value: string): boolean {

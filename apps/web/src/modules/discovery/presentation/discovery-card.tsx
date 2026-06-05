@@ -1,11 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import type { RefObject } from "react";
-import { useFormStatus } from "react-dom";
+import { useRef, useState, type FormEvent, type RefObject } from "react";
 
+import {
+  ActionFeedback,
+  ActionFeedbackButton,
+  type ActionFeedbackState
+} from "../../../components/action-feedback";
 import type { DiscoveryDeckCard } from "../application/ports";
 import type {
+  DiscoveryDecision,
   DiscoveryLibraryHandoffStatus,
   DiscoverySourceMode
 } from "../domain/discovery-policy";
@@ -13,6 +18,9 @@ import { DiscoverySourceMetadata } from "./discovery-source-metadata";
 
 type DiscoveryDecisionAction = (formData: FormData) => Promise<void>;
 type DiscoveryHandoffAction = (formData: FormData) => Promise<void>;
+type EnhancedDiscoveryAction = (
+  formData: FormData
+) => Promise<{ ok: boolean; state?: string; redirectTo?: string }>;
 
 const libraryStatusLabels: Record<string, string> = {
   wishlist: "Wishlist",
@@ -40,11 +48,26 @@ const decisionPendingLabels = {
   skip: "Pulando carta"
 } as const;
 
+const decisionFeedbackCopy = {
+  syncing: "Decisao salva aqui, sincronizando...",
+  failed: "Nao deu para decidir. Tente de novo.",
+  retrying: "Tentando decidir de novo..."
+} as const;
+
+const handoffFeedbackCopy = {
+  syncing: "Envio salvo aqui, sincronizando...",
+  failed: "Nao deu para enviar. Tente de novo.",
+  retrying: "Tentando enviar de novo..."
+} as const;
+
 export function DiscoveryCard({
   card,
   decisionAction,
+  enhancedDecisionAction,
+  enhancedHandoffAction,
   formRefs,
   handoffAction,
+  onLocalReaction,
   priority = false,
   reaction,
   returnTo,
@@ -52,8 +75,11 @@ export function DiscoveryCard({
 }: {
   card: DiscoveryDeckCard;
   decisionAction: DiscoveryDecisionAction;
+  enhancedDecisionAction?: EnhancedDiscoveryAction;
+  enhancedHandoffAction?: EnhancedDiscoveryAction;
   formRefs?: Partial<Record<"want" | "not_now" | "skip", RefObject<HTMLFormElement | null>>>;
   handoffAction: DiscoveryHandoffAction;
+  onLocalReaction?: (reaction: "want" | "not_now" | "skip") => void;
   priority?: boolean;
   reaction: "want" | "not_now" | "skip" | null;
   returnTo: string;
@@ -98,8 +124,10 @@ export function DiscoveryCard({
             action={decisionAction}
             catalogGameId={card.catalogGameId}
             decision="want"
+            enhancedAction={enhancedDecisionAction}
             formRef={formRefs?.want}
             label="Quero jogar"
+            onLocalReaction={onLocalReaction}
             returnTo={returnTo}
             sourceMode={sourceMode}
           />
@@ -107,8 +135,10 @@ export function DiscoveryCard({
             action={decisionAction}
             catalogGameId={card.catalogGameId}
             decision="not_now"
+            enhancedAction={enhancedDecisionAction}
             formRef={formRefs?.not_now}
             label="Agora nao"
+            onLocalReaction={onLocalReaction}
             returnTo={returnTo}
             sourceMode={sourceMode}
           />
@@ -116,8 +146,10 @@ export function DiscoveryCard({
             action={decisionAction}
             catalogGameId={card.catalogGameId}
             decision="skip"
+            enhancedAction={enhancedDecisionAction}
             formRef={formRefs?.skip}
             label="Pular"
+            onLocalReaction={onLocalReaction}
             returnTo={returnTo}
             sourceMode={sourceMode}
           />
@@ -156,14 +188,15 @@ export function DiscoveryCard({
           {card.allowedLibraryActions.length > 0 ? (
             <div className="discovery-handoff-actions" aria-label="Enviar para a biblioteca">
               {card.allowedLibraryActions.map((status) => (
-                <form action={handoffAction} key={status}>
-                  <input name="catalogGameId" type="hidden" value={card.catalogGameId} />
-                  <input name="returnTo" type="hidden" value={returnTo} />
-                  <input name="status" type="hidden" value={status} />
-                  <button className="queue2-button" data-tone="quiet" type="submit">
-                    {card.libraryStatus ? handoffMoveLabels[status] : handoffLabels[status]}
-                  </button>
-                </form>
+                <HandoffForm
+                  action={handoffAction}
+                  catalogGameId={card.catalogGameId}
+                  enhancedAction={enhancedHandoffAction}
+                  key={status}
+                  label={card.libraryStatus ? handoffMoveLabels[status] : handoffLabels[status]}
+                  returnTo={returnTo}
+                  status={status}
+                />
               ))}
               <button aria-disabled="true" className="queue2-button" data-tone="quiet" disabled type="button">
                 Zerado bloqueado
@@ -187,64 +220,199 @@ function DecisionForm({
   action,
   catalogGameId,
   decision,
+  enhancedAction,
   formRef,
   label,
+  onLocalReaction,
   returnTo,
   sourceMode
 }: {
   action: DiscoveryDecisionAction;
   catalogGameId: string;
-  decision: "want" | "not_now" | "skip";
+  decision: DiscoveryDecision;
+  enhancedAction?: EnhancedDiscoveryAction;
   formRef?: RefObject<HTMLFormElement | null>;
   label: string;
+  onLocalReaction?: (reaction: DiscoveryDecision) => void;
   returnTo: string;
   sourceMode: DiscoverySourceMode;
 }) {
   const tone = decision === "want" ? "primary" : "quiet";
+  const pendingRef = useRef(false);
+  const [state, setState] = useState<ActionFeedbackState>("idle");
+  const [serverState, setServerState] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    onLocalReaction?.(decision);
+
+    if (!enhancedAction) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (pendingRef.current) {
+      return;
+    }
+
+    pendingRef.current = true;
+    setServerState(null);
+    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    try {
+      const result = await enhancedAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        window.location.assign(result.redirectTo);
+        return;
+      }
+
+      setServerState(result.state ?? null);
+      setState(result.ok ? "confirmed" : "failed");
+    } catch {
+      setState("failed");
+    } finally {
+      pendingRef.current = false;
+    }
+  }
 
   return (
-    <form action={action} ref={formRef}>
+    <form action={action} className="action-feedback-form" onSubmit={handleSubmit} ref={formRef}>
       <input name="catalogGameId" type="hidden" value={catalogGameId} />
       <input name="decision" type="hidden" value={decision} />
       <input name="sourceMode" type="hidden" value={sourceMode} />
       <input name="returnTo" type="hidden" value={returnTo} />
-      <DecisionSubmitButton
-        decision={decision}
-        label={label}
-        pendingLabel={decisionPendingLabels[decision]}
+      <ActionFeedbackButton
+        className="discovery-decision-button"
+        data-decision={decision}
+        labels={{
+          idle: label,
+          syncing: decisionPendingLabels[decision],
+          confirmed: "Confirmado",
+          failed: "Tentar de novo",
+          retrying: "Tentando de novo"
+        }}
+        state={state}
         tone={tone}
+      />
+      <ActionFeedback
+        copy={{
+          ...decisionFeedbackCopy,
+          confirmed: getDecisionConfirmedCopy(decision, serverState)
+        }}
+        state={state}
       />
     </form>
   );
 }
 
-function DecisionSubmitButton({
-  decision,
+function HandoffForm({
+  action,
+  catalogGameId,
+  enhancedAction,
   label,
-  pendingLabel,
-  tone
+  returnTo,
+  status
 }: {
-  decision: "want" | "not_now" | "skip";
+  action: DiscoveryHandoffAction;
+  catalogGameId: string;
+  enhancedAction?: EnhancedDiscoveryAction;
   label: string;
-  pendingLabel: string;
-  tone: "primary" | "quiet";
+  returnTo: string;
+  status: DiscoveryLibraryHandoffStatus;
 }) {
-  const { pending } = useFormStatus();
+  const pendingRef = useRef(false);
+  const [state, setState] = useState<ActionFeedbackState>("idle");
+  const [serverState, setServerState] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!enhancedAction) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (pendingRef.current) {
+      return;
+    }
+
+    pendingRef.current = true;
+    setServerState(null);
+    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    try {
+      const result = await enhancedAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        window.location.assign(result.redirectTo);
+        return;
+      }
+
+      setServerState(result.state ?? null);
+      setState(result.ok ? "confirmed" : "failed");
+    } catch {
+      setState("failed");
+    } finally {
+      pendingRef.current = false;
+    }
+  }
 
   return (
-    <button
-      aria-busy={pending}
-      className="queue2-button pending-submit-button"
-      data-decision={decision}
-      data-pending={pending ? "true" : "false"}
-      data-tone={tone}
-      disabled={pending}
-      type="submit"
-    >
-      <span aria-hidden="true" className="pending-submit-button__spinner" />
-      <span>{pending ? pendingLabel : label}</span>
-    </button>
+    <form action={action} className="action-feedback-form" onSubmit={handleSubmit}>
+      <input name="catalogGameId" type="hidden" value={catalogGameId} />
+      <input name="returnTo" type="hidden" value={returnTo} />
+      <input name="status" type="hidden" value={status} />
+      <ActionFeedbackButton
+        labels={{
+          idle: label,
+          syncing: "Enviando para a fila",
+          confirmed: "Confirmado",
+          failed: "Tentar de novo",
+          retrying: "Tentando de novo"
+        }}
+        state={state}
+        tone="quiet"
+      />
+      <ActionFeedback
+        copy={{
+          ...handoffFeedbackCopy,
+          confirmed: getHandoffConfirmedCopy(serverState)
+        }}
+        state={state}
+      />
+    </form>
   );
+}
+
+function getDecisionConfirmedCopy(
+  decision: DiscoveryDecision,
+  serverState: string | null
+): string {
+  if (serverState === "match-criado") {
+    return "Match confirmado pelo servidor.";
+  }
+
+  if (serverState === "match-ja-existe") {
+    return "Match ja confirmado pelo servidor.";
+  }
+
+  if (decision === "want") {
+    return "Quero jogar confirmado pelo servidor.";
+  }
+
+  if (decision === "not_now") {
+    return "Agora nao confirmado pelo servidor.";
+  }
+
+  return "Pulo confirmado pelo servidor.";
+}
+
+function getHandoffConfirmedCopy(serverState: string | null): string {
+  if (serverState === "biblioteca-atualizada") {
+    return "Biblioteca confirmada pelo servidor.";
+  }
+
+  return "Envio confirmado pelo servidor.";
 }
 
 function formatLibraryStatus(status: string): string {

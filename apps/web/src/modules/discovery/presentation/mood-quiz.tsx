@@ -1,6 +1,18 @@
+"use client";
+
+import { useRef, useState, type FormEvent } from "react";
+
+import {
+  ActionFeedback,
+  ActionFeedbackButton,
+  type ActionFeedbackState
+} from "../../../components/action-feedback";
 import { MOOD_QUIZ_QUESTIONS } from "../domain/mood-quiz";
 
 type MoodQuizAction = (formData: FormData) => Promise<void>;
+type EnhancedMoodQuizAction = (
+  formData: FormData
+) => Promise<{ ok: boolean; state?: string; redirectTo?: string }>;
 
 const answerOptions = {
   energy: [
@@ -23,13 +35,50 @@ const answerOptions = {
 
 export function MoodQuiz({
   action,
+  enhancedAction,
   resultState,
   returnTo
 }: {
   action: MoodQuizAction;
+  enhancedAction?: EnhancedMoodQuizAction;
   resultState: string | null;
   returnTo: string;
 }) {
+  const pendingRef = useRef(false);
+  const [feedbackState, setFeedbackState] = useState<ActionFeedbackState>("idle");
+  const [serverState, setServerState] = useState<string | null>(resultState);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    if (!enhancedAction) {
+      return;
+    }
+
+    event.preventDefault();
+
+    if (pendingRef.current) {
+      return;
+    }
+
+    pendingRef.current = true;
+    setFeedbackState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    try {
+      const result = await enhancedAction(new FormData(event.currentTarget));
+
+      if (result.redirectTo) {
+        window.location.assign(result.redirectTo);
+        return;
+      }
+
+      setServerState(result.state ?? null);
+      setFeedbackState(result.ok ? "confirmed" : "failed");
+    } catch {
+      setFeedbackState("failed");
+    } finally {
+      pendingRef.current = false;
+    }
+  }
+
   return (
     <section
       className="mood-quiz discovery-orbit-tray"
@@ -45,7 +94,7 @@ export function MoodQuiz({
           preview; as duas juntas liberam resultado da dupla.
         </p>
       </div>
-      <form action={action} className="mood-quiz-form">
+      <form action={action} className="mood-quiz-form" onSubmit={handleSubmit}>
         {MOOD_QUIZ_QUESTIONS.map((question) => (
           <fieldset className="mood-question" key={question.key}>
             <legend>{question.prompt}</legend>
@@ -71,12 +120,30 @@ export function MoodQuiz({
           </fieldset>
         ))}
         <input name="returnTo" type="hidden" value={returnTo} />
-        <button className="queue2-button" data-tone="primary" type="submit">
-          Salvar mood
-        </button>
+        <div className="mood-quiz-submit action-feedback-form">
+          <ActionFeedbackButton
+            labels={{
+              idle: "Salvar mood",
+              syncing: "Salvando mood",
+              confirmed: "Mood confirmado",
+              failed: "Tentar de novo",
+              retrying: "Tentando de novo"
+            }}
+            state={feedbackState}
+          />
+          <ActionFeedback
+            copy={{
+              syncing: "Mood salvo aqui, sincronizando...",
+              confirmed: formatMoodState(serverState),
+              failed: "Nao deu para salvar o mood. Tente de novo.",
+              retrying: "Tentando salvar o mood de novo..."
+            }}
+            state={feedbackState}
+          />
+        </div>
       </form>
       <p className="mood-quiz-state" role="status">
-        {formatMoodState(resultState)}
+        {formatMoodState(serverState)}
       </p>
     </section>
   );
