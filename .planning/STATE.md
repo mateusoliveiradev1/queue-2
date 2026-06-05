@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: blocked
 stopped_at: Completed 03.3-04-PLAN.md - performance review blocked on missing fixture evidence
-last_updated: "2026-06-05T02:51:36.000Z"
+last_updated: "2026-06-05T03:01:30.000Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
@@ -95,6 +95,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260604-p00 | Remove redundant Discovery controls and match history overlap | 2026-06-04 | 1613fa8 | [260604-p00-remove-redundant-nonfunctional-discovery](./quick/260604-p00-remove-redundant-nonfunctional-discovery/) |
 | 260604-p91 | Tighten Discovery quiz completion and Match Live active-state flow | 2026-06-04 | 9117076 | [260604-p91-tighten-discovery-quiz-completion-and-ma](./quick/260604-p91-tighten-discovery-quiz-completion-and-ma/) |
 | 260604-uc4 | Add explicit Vercel ignore rules so local cache/build artifacts are not uploaded during deploy | 2026-06-05 | pending | [260604-uc4-add-explicit-vercel-ignore-rules-so-loca](./quick/260604-uc4-add-explicit-vercel-ignore-rules-so-loca/) |
+| 260605-rdb | Make `pnpm verify` run DB integration tests with configured `TEST_DATABASE_URL` | 2026-06-05 | pending | [260605-rdb-finalize-db-integration-verify-deploy](./quick/260605-rdb-finalize-db-integration-verify-deploy/) |
 
 ## Accumulated Context
 
@@ -183,11 +184,12 @@ Recent decisions affecting current work:
 - [Phase 03.3-04]: Missing authenticated E2E fixtures make the final performance review BLOCKED, not PASSED. — `03.3-PERFORMANCE-REVIEW.md` records exact missing variables and keeps production/preview evidence separate from local checks.
 - [Phase 03.3-04]: The root Phase 03.3 gate skips browser E2E only when required fixtures are absent. — Architecture, typecheck, focused unit/UI tests, baseline generation and query review still run through `pnpm phase:03.3:gate`.
 - [Phase 03.3]: Phase 4 remains blocked by default until performance evidence is configured or explicitly accepted. — Plan execution is complete, but release-grade browser proof for PERF-01 and PERF-05 is still missing.
+- [Quick 260605-rdb]: `pnpm verify` now wraps Turbo with `scripts/with-env-local.mjs`. — Root verification loads `.env.local` so `@queue/db` integration tests receive `TEST_DATABASE_URL` and run instead of skipping.
 
 ### Pending Todos
 
 - Discovery evidence follow-up: provide `E2E_BASE_URL`, ready-duo/partner/other-duo credentials, `E2E_PHASE3_DISCOVERY_QUERY` and `TEST_DATABASE_URL`, then rerun the Phase 03.1 browser and database gates.
-- Phase 03.3 performance follow-up: provide production/preview `E2E_BASE_URL`, `E2E_READY_USER_EMAIL`, `E2E_READY_USER_PASSWORD`, `E2E_READY_PARTNER_EMAIL`, `E2E_READY_PARTNER_PASSWORD`, `E2E_OTHER_DUO_USER_EMAIL`, `E2E_OTHER_DUO_USER_PASSWORD`, `E2E_PHASE3_3_CATALOG_QUERY`, `E2E_PHASE3_3_GAME_SLUG` and isolated `TEST_DATABASE_URL`, then rerun `pnpm phase:03.3:gate`.
+- Phase 03.3 performance follow-up: provide production/preview `E2E_BASE_URL`, `E2E_READY_USER_EMAIL`, `E2E_READY_USER_PASSWORD`, `E2E_READY_PARTNER_EMAIL`, `E2E_READY_PARTNER_PASSWORD`, `E2E_OTHER_DUO_USER_EMAIL`, `E2E_OTHER_DUO_USER_PASSWORD`, `E2E_PHASE3_3_CATALOG_QUERY` and `E2E_PHASE3_3_GAME_SLUG`, then rerun `pnpm phase:03.3:gate`.
 - Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
@@ -213,6 +215,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T02:51:36.000Z
-Stopped at: Completed 03.3-04-PLAN.md - blocked on fixture evidence
+Last session: 2026-06-05T03:01:30.000Z
+Stopped at: Quick 260605-rdb complete; Phase 03.3 remains blocked on browser fixture evidence
 Resume file: None
