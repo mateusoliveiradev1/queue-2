@@ -90,6 +90,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260604-l8d | Restore global loading screen for Discovery route | 2026-06-04 | 9ea4ee2 | [260604-l8d-restore-global-loading-screen-for-discov](./quick/260604-l8d-restore-global-loading-screen-for-discov/) |
 | 260604-p00 | Remove redundant Discovery controls and match history overlap | 2026-06-04 | 1613fa8 | [260604-p00-remove-redundant-nonfunctional-discovery](./quick/260604-p00-remove-redundant-nonfunctional-discovery/) |
 | 260604-p91 | Tighten Discovery quiz completion and Match Live active-state flow | 2026-06-04 | 9117076 | [260604-p91-tighten-discovery-quiz-completion-and-ma](./quick/260604-p91-tighten-discovery-quiz-completion-and-ma/) |
+| 260604-uc4 | Add explicit Vercel ignore rules so local cache/build artifacts are not uploaded during deploy | 2026-06-05 | pending | [260604-uc4-add-explicit-vercel-ignore-rules-so-loca](./quick/260604-uc4-add-explicit-vercel-ignore-rules-so-loca/) |
 
 ## Accumulated Context
 
