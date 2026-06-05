@@ -337,6 +337,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISC-10 | Phase 3 | Complete |
 | DISC-11 | Phase 3 | Complete |
 | DISC-12 | Phase 3 | Complete |
+| PERF-01 | Phase 03.3 | Pending |
+| PERF-02 | Phase 03.3 | Complete |
+| PERF-03 | Phase 03.3 | Complete |
+| PERF-04 | Phase 03.3 | Complete |
+| PERF-05 | Phase 03.3 | Pending |
 | PLAY-01 | Phase 4 | Pending |
 | PLAY-02 | Phase 4 | Pending |
 | PLAY-03 | Phase 4 | Pending |
@@ -425,4 +430,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-03 after architecture and security hardening*
+*Last updated: 2026-06-05 after Phase 03.3 performance gate closeout*
