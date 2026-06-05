@@ -25,6 +25,7 @@ const sessionSource = readFileSync("src/platform/auth/session.ts", "utf8");
 const proxySource = readFileSync("proxy.ts", "utf8");
 const serverActionsSource = readFileSync("src/platform/auth/server-actions.ts", "utf8");
 const serverSource = readFileSync("src/platform/auth/server.ts", "utf8");
+const homeSource = readFileSync("src/app/page.tsx", "utf8");
 const persistentRateLimitSource = readFileSync(
   "src/platform/rate-limit/persistent.ts",
   "utf8"
@@ -54,6 +55,13 @@ describe("protected auth gates", () => {
     expect(dashboardSource).toContain("requireVerifiedSession");
     expect(duoSource).toContain("requireVerifiedSession");
     expect(profileSource).toContain("getVerifiedProfileAuthContext");
+  });
+
+  it("redirects signed-in users away from the public home route", () => {
+    expect(homeSource).toContain("redirectAuthenticatedUserToApp");
+    expect(sessionSource).toMatch(/export async function redirectAuthenticatedUserToApp[\s\S]*getCurrentSession\(\)/);
+    expect(sessionSource).toMatch(/export async function redirectAuthenticatedUserToApp[\s\S]*redirect\("\/app"\)/);
+    expect(sessionSource).toMatch(/export async function redirectAuthenticatedUserToApp[\s\S]*AUTH_VERIFY_EMAIL_PATH/);
   });
 
   it("keeps proxy scoped to UX-only redirects", () => {

@@ -26,6 +26,7 @@ const authSessionMock = vi.hoisted(() => {
 
   return {
     currentSession,
+    redirectAuthenticatedUserToApp: vi.fn(async () => undefined),
     activeSessions: [
       currentSession.session,
       {
@@ -115,6 +116,7 @@ vi.mock("../src/platform/auth/session", () => ({
   hashSessionToken: vi.fn((token: string | undefined) => (token ? `hashed-${token}` : "")),
   logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession),
+  redirectAuthenticatedUserToApp: authSessionMock.redirectAuthenticatedUserToApp,
   revokeSessionAction: vi.fn(async () => undefined)
 }));
 
@@ -180,6 +182,7 @@ afterEach(() => {
 
 beforeEach(() => {
   navigationMock.refresh.mockClear();
+  authSessionMock.redirectAuthenticatedUserToApp.mockClear();
   duoModuleMock.getDuoDashboard.mockResolvedValue(duoModuleMock.noDuo);
   libraryModuleMock.getLibraryOverview.mockResolvedValue({
     ok: true,
@@ -200,9 +203,10 @@ beforeEach(() => {
 });
 
 describe("public QUEUE/2 route surfaces", () => {
-  it("renders the interim home with brand, product promise and entry actions", () => {
-    render(<HomePage />);
+  it("renders the interim home with brand, product promise and entry actions", async () => {
+    render(await HomePage());
 
+    expect(authSessionMock.redirectAuthenticatedUserToApp).toHaveBeenCalledOnce();
     expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
     expect(screen.getByText(/backlog compartilhado/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^entrar$/i })).toHaveAttribute("href", "/login");

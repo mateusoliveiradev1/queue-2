@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { queue2Brand, RoulettePointer } from "@queue/ui";
 
+import { redirectAuthenticatedUserToApp } from "../platform/auth/session";
+
 export const metadata: Metadata = {
   alternates: {
     canonical: "/"
@@ -10,7 +12,9 @@ export const metadata: Metadata = {
   }
 };
 
-export default function Home() {
+export default async function Home() {
+  await redirectAuthenticatedUserToApp();
+
   return (
     <main className="home-shell">
       <section className="home-hero queue2-grain" aria-labelledby="home-title">

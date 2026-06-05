@@ -132,6 +132,25 @@ export async function redirectAuthenticatedUserToPairing() {
   }
 }
 
+export async function redirectAuthenticatedUserToApp() {
+  const session = await getCurrentSession();
+
+  if (!session) {
+    return;
+  }
+
+  if (shouldRequireEmailVerification() && !session.user.emailVerified) {
+    redirect(
+      buildPath(AUTH_VERIFY_EMAIL_PATH, {
+        email: session.user.email,
+        estado: "verifique-email"
+      })
+    );
+  }
+
+  redirect("/app");
+}
+
 export function hashSessionToken(token: string | undefined): string {
   return token ? createHash("sha256").update(token).digest("hex") : "";
 }
