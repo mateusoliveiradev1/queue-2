@@ -117,11 +117,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Production Performance
 
-- [ ] **PERF-01**: Critical authenticated routes have production or preview latency baselines for TTFB, time to useful content, hydration and first interaction
+- [x] **PERF-01**: Critical authenticated routes have production or preview latency baselines for TTFB, time to useful content, hydration and first interaction
 - [x] **PERF-02**: Primary mutations provide visible local feedback in approximately 100ms and do not require full-page redirects before the user sees progress
 - [x] **PERF-03**: Catalog, Biblioteca and Descobrir hot paths have measured database query counts, reviewed query plans and no avoidable N+1 list reads
 - [x] **PERF-04**: Server Actions and route handlers record safe duration telemetry for auth, database, external/cache, render and revalidation steps
-- [ ] **PERF-05**: Browser performance gates cover desktop, mobile, slow network, reduced motion, loading states and double-submit prevention
+- [x] **PERF-05**: Browser performance gates cover desktop, mobile, slow network, reduced motion, loading states and double-submit prevention
 
 ### Playing Now And Progress
 
@@ -337,11 +337,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DISC-10 | Phase 3 | Complete |
 | DISC-11 | Phase 3 | Complete |
 | DISC-12 | Phase 3 | Complete |
-| PERF-01 | Phase 03.3 | Pending |
+| PERF-01 | Phase 03.3 | Complete |
 | PERF-02 | Phase 03.3 | Complete |
 | PERF-03 | Phase 03.3 | Complete |
 | PERF-04 | Phase 03.3 | Complete |
-| PERF-05 | Phase 03.3 | Pending |
+| PERF-05 | Phase 03.3 | Complete |
 | PLAY-01 | Phase 4 | Pending |
 | PLAY-02 | Phase 4 | Pending |
 | PLAY-03 | Phase 4 | Pending |

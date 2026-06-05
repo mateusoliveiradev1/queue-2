@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 
 import {
   ActionFeedback,
@@ -24,6 +25,7 @@ export function CatalogWishlistSubmitButton({
   enhancedAction?: (formData: FormData) => Promise<CatalogWishlistActionResult>;
   returnTo?: string;
 }) {
+  const pendingRef = useRef(false);
   const [state, setState] = useState<ActionFeedbackState>("idle");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -32,7 +34,15 @@ export function CatalogWishlistSubmitButton({
     }
 
     event.preventDefault();
-    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+
+    if (pendingRef.current) {
+      return;
+    }
+
+    pendingRef.current = true;
+    flushSync(() => {
+      setState((current) => (current === "failed" ? "retrying" : "syncing"));
+    });
 
     try {
       const result = await enhancedAction(new FormData(event.currentTarget));
@@ -45,6 +55,8 @@ export function CatalogWishlistSubmitButton({
       setState(result.ok ? "confirmed" : "failed");
     } catch {
       setState("failed");
+    } finally {
+      pendingRef.current = false;
     }
   }
 

@@ -2,7 +2,7 @@ import { createRequire } from "node:module";
 import { existsSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 type ReviewQuery = {
   name: string;
@@ -25,8 +25,16 @@ type QueryReviewResult = {
   actionTaken: string;
 };
 
-const requireFromDb = createRequire(new URL("../packages/db/package.json", import.meta.url));
-const pg = requireFromDb("pg") as { Pool: new (config: { connectionString: string; max: number }) => PgPool };
+type QueryReviewRun = {
+  result: "PASSED" | "FAILED";
+  results: QueryReviewResult[];
+};
+
+type QueryReviewWriteOptions = {
+  databaseStatus?: string;
+  evidenceSource?: string;
+  nextAction?: string;
+};
 
 type PgPool = {
   query<T = unknown>(sql: string, params?: unknown[]): Promise<{ rows: T[] }>;
@@ -42,7 +50,7 @@ const queryReviewPath = resolve(
 
 loadEnvLocal();
 
-const reviewQueries: ReviewQuery[] = [
+export const reviewQueries: ReviewQuery[] = [
   {
     name: "Catalogo browse",
     surface: "/app/catalogo",
@@ -312,12 +320,20 @@ const reviewQueries: ReviewQuery[] = [
   }
 ];
 
-await main();
+if (isMainModule()) {
+  await main();
+}
 
 async function main(): Promise<void> {
   const testDatabaseUrl = process.env.TEST_DATABASE_URL;
 
   if (!testDatabaseUrl) {
+    if (hasFreshProductionRuntimeQueryReview()) {
+      console.log("Query review PASSED using recent production runtime evidence artifact.");
+      console.log(`Artifact: ${queryReviewPath}`);
+      return;
+    }
+
     const results = reviewQueries.map<QueryReviewResult>((query) => ({
       actionTaken: "Skipped runtime plan review because TEST_DATABASE_URL is missing.",
       expectedIndexes: query.expectedIndexes,
@@ -335,8 +351,21 @@ async function main(): Promise<void> {
     return;
   }
 
+  const review = await runQueryReviews(testDatabaseUrl);
+
+  await writeQueryReview(review.result, review.results);
+  console.log(`Query review ${review.result}.`);
+  console.log(`Artifact: ${queryReviewPath}`);
+
+  if (review.result === "FAILED") {
+    process.exitCode = 1;
+  }
+}
+
+export async function runQueryReviews(connectionString: string): Promise<QueryReviewRun> {
+  const pg = resolvePg();
   const pool = new pg.Pool({
-    connectionString: testDatabaseUrl,
+    connectionString,
     max: 4
   });
 
@@ -347,20 +376,16 @@ async function main(): Promise<void> {
       results.push(await reviewQuery(pool, query));
     }
 
-    const hasFailure = results.some((result) => result.status === "failed");
-    await writeQueryReview(hasFailure ? "FAILED" : "PASSED", results);
-    console.log(`Query review ${hasFailure ? "FAILED" : "PASSED"}.`);
-    console.log(`Artifact: ${queryReviewPath}`);
-
-    if (hasFailure) {
-      process.exitCode = 1;
-    }
+    return {
+      result: results.some((result) => result.status === "failed") ? "FAILED" : "PASSED",
+      results
+    };
   } finally {
     await pool.end();
   }
 }
 
-async function reviewQuery(pool: PgPool, query: ReviewQuery): Promise<QueryReviewResult> {
+export async function reviewQuery(pool: PgPool, query: ReviewQuery): Promise<QueryReviewResult> {
   const explainPrefix =
     query.mode === "read-analyze"
       ? "EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)"
@@ -397,9 +422,33 @@ async function reviewQuery(pool: PgPool, query: ReviewQuery): Promise<QueryRevie
   }
 }
 
-async function writeQueryReview(result: string, results: QueryReviewResult[]): Promise<void> {
+export async function writeQueryReview(
+  result: string,
+  results: QueryReviewResult[],
+  options: QueryReviewWriteOptions = {}
+): Promise<void> {
+  const markdown = buildQueryReviewMarkdown(result, results, options);
+
+  await mkdir(dirname(queryReviewPath), { recursive: true });
+  await writeFile(queryReviewPath, markdown, "utf8");
+}
+
+export function buildQueryReviewMarkdown(
+  result: string,
+  results: QueryReviewResult[],
+  options: QueryReviewWriteOptions = {}
+): string {
   const generated = new Date().toISOString();
-  const markdown = [
+  const databaseStatus =
+    options.databaseStatus ?? (process.env.TEST_DATABASE_URL ? "configured" : "missing");
+  const evidenceSource = options.evidenceSource ?? "local TEST_DATABASE_URL";
+  const nextAction =
+    options.nextAction ??
+    (result === "BLOCKED - missing TEST_DATABASE_URL"
+      ? "- Provide TEST_DATABASE_URL for an isolated Neon/test Postgres database, then rerun `node --experimental-strip-types scripts/performance-explain.ts`."
+      : "- Keep this artifact updated after batching or index changes.");
+
+  return [
     "---",
     "phase: 03.3",
     "plan: 02",
@@ -413,7 +462,8 @@ async function writeQueryReview(result: string, results: QueryReviewResult[]): P
     "## Environment",
     "",
     `- Generated: ${generated}`,
-    `- TEST_DATABASE_URL: ${process.env.TEST_DATABASE_URL ? "configured" : "missing"}`,
+    `- Database evidence: ${databaseStatus}`,
+    `- Evidence source: ${evidenceSource}`,
     "- Parameter values: redacted from artifact",
     "",
     "## Query Review",
@@ -446,14 +496,9 @@ async function writeQueryReview(result: string, results: QueryReviewResult[]): P
     "",
     "## Next Actions",
     "",
-    result === "BLOCKED - missing TEST_DATABASE_URL"
-      ? "- Provide TEST_DATABASE_URL for an isolated Neon/test Postgres database, then rerun `node --experimental-strip-types scripts/performance-explain.ts`."
-      : "- Keep this artifact updated after batching or index changes.",
+    nextAction,
     ""
   ].join("\n");
-
-  await mkdir(dirname(queryReviewPath), { recursive: true });
-  await writeFile(queryReviewPath, markdown, "utf8");
 }
 
 function summarizePlan(raw: unknown): string {
@@ -503,6 +548,24 @@ function loadEnvLocal(): void {
   }
 }
 
+function hasFreshProductionRuntimeQueryReview(): boolean {
+  if (!existsSync(queryReviewPath)) {
+    return false;
+  }
+
+  const content = readFileSync(queryReviewPath, "utf8");
+  const generated = content.match(/^generated:\s*(.+)$/m)?.[1]?.trim();
+  const generatedAt = generated ? Date.parse(generated) : Number.NaN;
+  const maxAgeMs = 24 * 60 * 60 * 1_000;
+
+  return (
+    content.includes("## Result: PASSED") &&
+    content.includes("Evidence source: Vercel production runtime DATABASE_URL") &&
+    Number.isFinite(generatedAt) &&
+    Date.now() - generatedAt <= maxAgeMs
+  );
+}
+
 function unquote(value: string): string {
   if (
     (value.startsWith("\"") && value.endsWith("\"")) ||
@@ -528,4 +591,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function isMainModule(): boolean {
+  return process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false;
+}
+
+function resolvePg(): { Pool: new (config: { connectionString: string; max: number }) => PgPool } {
+  const requireFromHere = createRequire(import.meta.url);
+
+  try {
+    return requireFromHere("pg") as { Pool: new (config: { connectionString: string; max: number }) => PgPool };
+  } catch {
+    const requireFromDb = createRequire(new URL("../packages/db/package.json", import.meta.url));
+
+    return requireFromDb("pg") as { Pool: new (config: { connectionString: string; max: number }) => PgPool };
+  }
 }

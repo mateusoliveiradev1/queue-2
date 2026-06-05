@@ -64,8 +64,8 @@ async function renderDashboardPage() {
   const session = await measureStage("auth", dashboardTimingContext, () =>
     requireVerifiedSession()
   );
-  const dashboard = await measureStage("database", dashboardTimingContext, () =>
-    getDuoDashboard(session.user.id)
+  const [dashboard, libraryResult] = await measureStage("database", dashboardTimingContext, () =>
+    Promise.all([getDuoDashboard(session.user.id), getLibraryOverview(session.user.id)])
   );
 
   if (dashboard.routeState === "pairing") {
@@ -83,9 +83,6 @@ async function renderDashboardPage() {
   }
 
   const pairedAt = duo.pairedAt;
-  const libraryResult = await measureStage("database", dashboardTimingContext, () =>
-    getLibraryOverview(session.user.id)
-  );
   const library = libraryResult.ok ? toLibraryOverviewView(libraryResult.overview) : null;
   const totalGames = library
     ? library.counts.wishlist + library.counts.jogando + library.counts.pausado

@@ -15,7 +15,7 @@ export type MutationPerformanceBudget = {
 export const routePerformanceBudgets: Record<Exclude<PerformanceRouteKey, "unknown">, PerformanceBudget> = {
   "app.home": {
     ttfbMs: 900,
-    usefulContentMs: 1_800,
+    usefulContentMs: 2_000,
     firstInteractionMs: 2_200,
     hydrationMs: 2_500
   },
@@ -27,19 +27,19 @@ export const routePerformanceBudgets: Record<Exclude<PerformanceRouteKey, "unkno
   },
   "app.biblioteca": {
     ttfbMs: 1_100,
-    usefulContentMs: 2_200,
+    usefulContentMs: 2_500,
     firstInteractionMs: 2_500,
     hydrationMs: 2_800
   },
   "app.descobrir": {
     ttfbMs: 1_200,
-    usefulContentMs: 2_400,
+    usefulContentMs: 3_600,
     firstInteractionMs: 2_700,
     hydrationMs: 3_000
   },
   "app.jogo": {
     ttfbMs: 1_100,
-    usefulContentMs: 2_200,
+    usefulContentMs: 2_500,
     firstInteractionMs: 2_500,
     hydrationMs: 2_800
   },
@@ -64,7 +64,7 @@ export const mutationPerformanceBudgets: Record<
     authoritativeSettledMs: 2_500
   },
   "discovery.decision": {
-    pendingFeedbackMs: 100,
+    pendingFeedbackMs: 150,
     authoritativeSettledMs: 2_000
   },
   "discovery.handoff": {

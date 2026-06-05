@@ -79,6 +79,10 @@ export function ActionFeedbackButton({
   ...buttonProps
 }: ActionFeedbackButtonProps) {
   const isPending = state === "syncing" || state === "retrying";
+  const isTerminalSuccess = state === "confirmed";
+  const label = getActionButtonLabel(state, labels);
+  const ariaLabel =
+    state === "idle" || labels.idle === label ? label : `${labels.idle}: ${label}`;
   const classNames = ["queue2-button", "action-feedback-button", className]
     .filter(Boolean)
     .join(" ");
@@ -87,17 +91,18 @@ export function ActionFeedbackButton({
     <button
       {...buttonProps}
       aria-busy={isPending}
+      aria-label={buttonProps["aria-label"] ?? ariaLabel}
       className={classNames}
       data-action-state={state}
       data-tone={tone}
-      disabled={disabled || isPending}
+      disabled={disabled || isPending || isTerminalSuccess}
       type={buttonProps.type ?? "submit"}
     >
       <span aria-hidden="true" className="action-feedback-button__mark">
         /2
       </span>
       <span className="action-feedback-button__label">
-        {getActionButtonLabel(state, labels)}
+        {label}
       </span>
     </button>
   );

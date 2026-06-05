@@ -80,9 +80,11 @@ describe("action feedback primitives", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /adicionar a wishlist/i }));
 
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      /nao sincronizou\. tente de novo/i
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        /nao sincronizou\. tente de novo/i
+      );
+    });
     expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
     expect(screen.queryByText(/confirmado pela fila/i)).not.toBeInTheDocument();
   });

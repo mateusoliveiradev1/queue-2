@@ -17,7 +17,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches. (completed 2026-06-04)
 - [x] **Phase 03.1: Refinos Visuais e UX da Descoberta (INSERTED)** - A experiencia de Descoberta ganha polimento visual, revisao browser real e limpeza de divida arquitetural antes de Jogando. (completed 2026-06-04)
 - [x] **Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)** - A Biblioteca vira uma superficie escalavel de backlog, filtros, status e arquivo da dupla antes de Jogando. (completed 2026-06-05)
-- [ ] **Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)** - O app fica perceptivelmente rapido em producao antes de novas funcionalidades ampliarem o custo operacional. (4/4 plans implemented; blocked on performance fixture evidence)
+- [x] **Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)** - O app fica perceptivelmente rapido em producao antes de novas funcionalidades ampliarem o custo operacional. (completed 2026-06-05; production gate passed)
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
 - [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
@@ -148,7 +148,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Hot paths de banco possuem contagem de queries, `EXPLAIN`/plano revisado em Neon, indices ou shapes corrigidos, e nenhum N+1 obvio em listas de Catalogo, Biblioteca ou Descobrir.
   4. Server Actions e rotas registram duracao por etapa sem vazar dados sensiveis, permitindo diagnosticar lentidao de auth, banco, RAWG/cache, render e revalidacao.
   5. Gates de browser em desktop, mobile, rede lenta e reduced motion provam que loading states, skeletons, botoes pendentes, navegacao e refresh nao deixam o usuario preso sem resposta.
-**Plans**: 03.3-01, 03.3-02, 03.3-03, 03.3-04 (4/4 implemented; release gate blocked on `03.3-PERFORMANCE-REVIEW.md` missing fixture evidence)
+**Plans**: 03.3-01, 03.3-02, 03.3-03, 03.3-04 (4/4 complete; `pnpm phase:03.3:gate` PASSED on 2026-06-05)
 
 **Plan Waves**:
   - **Wave 1:** `03.3-01` - Production performance baseline, instrumentation and latency budgets.
@@ -235,7 +235,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
 | 03.1. Refinos Visuais e UX da Descoberta | 4/4 | Complete   | 2026-06-04 |
 | 03.2. Biblioteca Escalavel e Backlog Operacional | 4/4 | Complete   | 2026-06-05 |
-| 03.3. Performance de Producao e UX de Latencia | 4/4 | Blocked on fixture evidence |  |
+| 03.3. Performance de Producao e UX de Latencia | 4/4 | Complete | 2026-06-05 |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |

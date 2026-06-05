@@ -2183,6 +2183,7 @@ input {
 .discovery-handoff-actions .action-feedback-form {
   display: grid;
   flex: 1 1 168px;
+  row-gap: var(--space-4);
   min-width: 0;
 }
 
@@ -2200,6 +2201,13 @@ input {
 .discovery-decision-actions .action-feedback,
 .discovery-handoff-actions .action-feedback {
   width: 100%;
+}
+
+.discovery-decision-actions .action-feedback-form[data-feedback-state="failed"],
+.discovery-decision-actions .action-feedback-form[data-feedback-state="retrying"],
+.discovery-handoff-actions .action-feedback-form[data-feedback-state="failed"],
+.discovery-handoff-actions .action-feedback-form[data-feedback-state="retrying"] {
+  flex-basis: 100%;
 }
 
 .discovery-library-state {

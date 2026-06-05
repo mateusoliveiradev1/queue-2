@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState, type FormEvent, type RefObject } from "react";
+import { useEffect, useRef, useState, type FormEvent, type RefObject } from "react";
+import { flushSync } from "react-dom";
 
 import {
   ActionFeedback,
@@ -238,14 +239,28 @@ function DecisionForm({
   sourceMode: DiscoverySourceMode;
 }) {
   const tone = decision === "want" ? "primary" : "quiet";
+  const ownFormRef = useRef<HTMLFormElement | null>(null);
   const pendingRef = useRef(false);
   const [state, setState] = useState<ActionFeedbackState>("idle");
   const [serverState, setServerState] = useState<string | null>(null);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    onLocalReaction?.(decision);
+  function setFormNode(node: HTMLFormElement | null) {
+    ownFormRef.current = node;
 
+    if (formRef) {
+      formRef.current = node;
+    }
+  }
+
+  useEffect(() => {
+    if (state === "failed" || state === "retrying") {
+      ownFormRef.current?.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+  }, [state]);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!enhancedAction) {
+      onLocalReaction?.(decision);
       return;
     }
 
@@ -257,7 +272,10 @@ function DecisionForm({
 
     pendingRef.current = true;
     setServerState(null);
-    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+    flushSync(() => {
+      setState((current) => (current === "failed" ? "retrying" : "syncing"));
+    });
+    onLocalReaction?.(decision);
 
     try {
       const result = await enhancedAction(new FormData(event.currentTarget));
@@ -277,7 +295,13 @@ function DecisionForm({
   }
 
   return (
-    <form action={action} className="action-feedback-form" onSubmit={handleSubmit} ref={formRef}>
+    <form
+      action={action}
+      className="action-feedback-form"
+      data-feedback-state={state}
+      onSubmit={handleSubmit}
+      ref={setFormNode}
+    >
       <input name="catalogGameId" type="hidden" value={catalogGameId} />
       <input name="decision" type="hidden" value={decision} />
       <input name="sourceMode" type="hidden" value={sourceMode} />
@@ -321,9 +345,16 @@ function HandoffForm({
   returnTo: string;
   status: DiscoveryLibraryHandoffStatus;
 }) {
+  const ownFormRef = useRef<HTMLFormElement | null>(null);
   const pendingRef = useRef(false);
   const [state, setState] = useState<ActionFeedbackState>("idle");
   const [serverState, setServerState] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (state === "failed" || state === "retrying") {
+      ownFormRef.current?.scrollIntoView({ block: "center", inline: "nearest" });
+    }
+  }, [state]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!enhancedAction) {
@@ -338,7 +369,9 @@ function HandoffForm({
 
     pendingRef.current = true;
     setServerState(null);
-    setState((current) => (current === "failed" ? "retrying" : "syncing"));
+    flushSync(() => {
+      setState((current) => (current === "failed" ? "retrying" : "syncing"));
+    });
 
     try {
       const result = await enhancedAction(new FormData(event.currentTarget));
@@ -358,7 +391,13 @@ function HandoffForm({
   }
 
   return (
-    <form action={action} className="action-feedback-form" onSubmit={handleSubmit}>
+    <form
+      action={action}
+      className="action-feedback-form"
+      data-feedback-state={state}
+      onSubmit={handleSubmit}
+      ref={ownFormRef}
+    >
       <input name="catalogGameId" type="hidden" value={catalogGameId} />
       <input name="returnTo" type="hidden" value={returnTo} />
       <input name="status" type="hidden" value={status} />

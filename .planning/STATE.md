@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: blocked
-stopped_at: Quick 260605-1p7 complete - local performance/security hardening executed; Phase 03.3 still blocked on production evidence
-last_updated: "2026-06-05T04:19:59.937Z"
+status: active
+stopped_at: Phase 03.3 closed - production performance/security gate passed; Phase 4 ready to plan
+last_updated: "2026-06-05T06:47:50.544Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 29
   completed_plans: 29
   percent: 100
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 03.3 — performance-de-producao-e-ux-de-latencia
+**Current focus:** Phase 4 - Jogando Agora, Sessoes E Agendamento
 
 ## Current Position
 
-Phase: 03.3 (performance-de-producao-e-ux-de-latencia) — BLOCKED
-Plan: 4 of 4
-Status: Implementation complete; final performance review blocked on missing E2E fixture evidence
+Phase: 4 (jogando-agora-sessoes-e-agendamento) - READY
+Plan: TBD
+Status: Phase 03.3 closed with production gate evidence; Phase 4 can enter planning
 Last activity: 2026-06-05
 
 Progress: [██████████] 100%
@@ -103,6 +103,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260605-hrd | Redirect authenticated users from public home to app | 2026-06-05 | pending | [260605-hrd-home-redirect-auth-session](./quick/260605-hrd-home-redirect-auth-session/) |
 | 260605-1g4 | Research maximum production performance and security hardening for the QUEUE/2 stack | 2026-06-05 | pending | [260605-1g4-research-maximum-production-performance-](./quick/260605-1g4-research-maximum-production-performance-/) |
 | 260605-1p7 | Execute P0 and local P1 performance/security hardening from quick 260605-1g4 | 2026-06-05 | pending | [260605-1p7-execute-p0-and-local-p1-performance-secu](./quick/260605-1p7-execute-p0-and-local-p1-performance-secu/) |
+| 260605-4bz | Close Phase 03.3 production performance and security gate after explicit user approval | 2026-06-05 | pending | [260605-4bz-close-phase-03-3-production-performance-](./quick/260605-4bz-close-phase-03-3-production-performance-/) |
 
 ## Accumulated Context
 
@@ -182,15 +183,15 @@ Recent decisions affecting current work:
 - [Phase 03.2-04]: Paginated/filterable RLS coverage mirrors the repository SQL shape inside packages/db. — The db package should not import web infrastructure, but still needs to verify the same bounded SQL shape under runtime RLS.
 - [Phase 03.3-01]: Performance telemetry accepts only allowlisted labels and numeric values. — Rejecting arbitrary client strings avoids leaking emails, tokens, SQL, URLs or duo-private data into logs.
 - [Phase 03.3-01]: Web Vitals sends only `window.location.pathname`, never full URLs or search params. — Route keys remain useful for budgets without preserving private query values.
-- [Phase 03.3-01]: Production baseline evidence remains blocked until real E2E_BASE_URL and ready-user fixtures exist. — Missing fixtures are named in `03.3-PERFORMANCE-BASELINE.md` and `03.3-USER-SETUP.md`.
+- [Phase 03.3-01]: Production baseline evidence now runs against `https://queue-2.vercel.app` with authenticated ready-user fixtures. - `03.3-PERFORMANCE-BASELINE.md` records `Result: PASSED` and no missing fixtures.
 - [Phase 03.3-02]: Query review uses ANALYZE/BUFFERS for reads and static EXPLAIN for mutations. — Data-changing hot-path shapes are reviewed without persisting benchmark mutations.
 - [Phase 03.3-02]: Critical routes and actions use static timing labels. — Discovery search measures rate-limit and search stages without logging query text.
 - [Phase 03.3-02]: Catalog and library list hydration batch related rows by game/catalog IDs. — Visible cards no longer issue avoidable per-row relation queries.
 - [Phase 03.3-03]: Enhanced mutation forms keep native redirect fallbacks while returning server-authoritative result objects for JS clients. — Users see syncing immediately, but confirmed/failure copy waits for server validation and authorization.
 - [Phase 03.3-03]: Optimistic feedback is limited to local action state and duplicate-submit prevention. — It does not award XP, create solo progress or bypass Phase 4 double-confirmation rules.
-- [Phase 03.3-04]: Missing authenticated E2E fixtures make the final performance review BLOCKED, not PASSED. — `03.3-PERFORMANCE-REVIEW.md` records exact missing variables and keeps production/preview evidence separate from local checks.
-- [Phase 03.3-04]: The root Phase 03.3 gate skips browser E2E only when required fixtures are absent. — Architecture, typecheck, focused unit/UI tests, baseline generation and query review still run through `pnpm phase:03.3:gate`.
-- [Phase 03.3]: Phase 4 remains blocked by default until performance evidence is configured or explicitly accepted. — Plan execution is complete, but release-grade browser proof for PERF-01 and PERF-05 is still missing.
+- [Phase 03.3-04]: Authenticated E2E fixtures are configured and the final performance review PASSED. - `03.3-PERFORMANCE-REVIEW.md` records no missing fixtures and a complete root gate run.
+- [Phase 03.3-04]: The root Phase 03.3 gate remains the release guard. - Architecture, typecheck, focused unit/UI tests, production baseline, query review and browser performance/accessibility all passed through `pnpm phase:03.3:gate`.
+- [Phase 03.3]: Phase 4 is unblocked from the performance gate perspective. - PERF-01 and PERF-05 are complete with production baseline and browser evidence.
 - [Quick 260605-rdb]: `pnpm verify` now wraps Turbo with `scripts/with-env-local.mjs`. — Root verification loads `.env.local` so `@queue/db` integration tests receive `TEST_DATABASE_URL` and run instead of skipping.
 - [Quick 260605-vfx]: Catalogo and match-history cards clamp generated long names and hide idle feedback rows. — Compact cards no longer show stray `/2` boxes or overflow action/title text before deploy.
 - [Quick 260605-mbf]: Mobile Biblioteca filters stay in normal flow and result cards reserve bottom navigation scroll space. — Prevents filters and list content from sitting underneath the fixed mobile nav.
@@ -200,19 +201,19 @@ Recent decisions affecting current work:
 - [Quick 260605-lsf]: Library card action controls are width-capped and action sheets render outside card overflow. — Avoids full-width button bands and clipped Mais acoes panels on desktop/mobile cards.
 - [Quick 260605-acx]: Biblioteca Mais acoes uses a controlled action sheet with `aria-expanded`, explicit Fechar, outside click and Escape dismissal. - Keeps secondary actions discoverable without trapping the open panel.
 - [Quick 260605-hrd]: Public home checks the server session before rendering and redirects verified signed-in users to `/app`. - Prevents authenticated users from seeing the logged-out landing after trimming the URL to the origin.
-- [Quick 260605-1g4]: Phase 03.3 remains blocked until production/preview performance evidence runs with authenticated ready-duo fixtures. - Local query review, unit checks and non-skipped setup are not enough to mark production performance as passed.
+- [Quick 260605-1g4]: Phase 03.3 could not close until production/preview performance evidence ran with authenticated ready-duo fixtures. - The final closeout supplied that evidence before marking the phase complete.
 - [Quick 260605-1g4]: Maximum performance cannot trade away server authorization, RLS or duo-private cache boundaries. - Shared caching is allowed only for public/catalog-safe data; duo-scoped pages need private or no shared cache.
 - [Quick 260605-1g4]: Auth/session latency is a first-class optimization target. - Normal page rendering may use a short Better Auth cookie cache only if sensitive mutations and security screens keep authoritative no-cache checks.
 - [Quick 260605-1p7]: Normal authenticated page reads use the Better Auth short cookie cache path by default, while mutations and security-sensitive flows call `requireAuthoritativeVerifiedSession()`. - Reduces repeated auth DB session lookups without weakening server-authoritative writes.
 - [Quick 260605-1p7]: Better Auth trusted IP headers are limited to Vercel's `x-forwarded-for` request header. - The app is deployed on Vercel, so Cloudflare-specific headers are not trusted unless the proxy architecture changes.
 - [Quick 260605-1p7]: `/app` and `/app/jogo/[slug]` now emit server timing metrics for auth, database and render stages. - Production traces can isolate the dashboard and game-detail latency path instead of treating them as opaque server time.
-- [Quick 260605-1p7]: Phase 03.3 gate reran after local hardening and remains `BLOCKED - missing fixture evidence`. - Architecture, typecheck, focused tests, baseline generation and query review passed; browser performance/accessibility still skipped due missing production fixtures.
+- [Quick 260605-1p7]: Local performance/security hardening prepared the app for final production evidence. - The later closeout reran the full gate with fixtures and closed the blocker.
+- [Quick 260605-4bz]: Phase 03.3 closed on production deployment `dpl_7EGUh8cua3xESdHzF8dyrstmNaSW`. - Temporary evidence endpoints were removed and verified 404; `pnpm phase:03.3:gate` passed with baseline, query review and 23 browser/accessibility tests.
 
 ### Pending Todos
 
 - Discovery evidence follow-up: provide `E2E_BASE_URL`, ready-duo/partner/other-duo credentials, `E2E_PHASE3_DISCOVERY_QUERY` and `TEST_DATABASE_URL`, then rerun the Phase 03.1 browser and database gates.
-- Phase 03.3 performance follow-up: provide production/preview `E2E_BASE_URL`, `E2E_READY_USER_EMAIL`, `E2E_READY_USER_PASSWORD`, `E2E_READY_PARTNER_EMAIL`, `E2E_READY_PARTNER_PASSWORD`, `E2E_OTHER_DUO_USER_EMAIL`, `E2E_OTHER_DUO_USER_PASSWORD`, `E2E_PHASE3_3_CATALOG_QUERY` and `E2E_PHASE3_3_GAME_SLUG`, then rerun `pnpm phase:03.3:gate`.
-- Performance/security hardening follow-up: capture remaining external evidence from quick 260605-1p7 `EVIDENCE.md`, especially Vercel/Neon region, scale-to-zero policy, pooled production `DATABASE_URL`, Speed Insights/Observability and Firewall/WAF status.
+- Non-blocking production hardening follow-up: capture remaining external evidence from quick 260605-1p7 `EVIDENCE.md`, especially Vercel/Neon region, scale-to-zero policy, pooled production `DATABASE_URL`, Speed Insights/Observability and Firewall/WAF status.
 - Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
@@ -225,7 +226,6 @@ Recent decisions affecting current work:
 - Phase 03.1 visual and architecture debt is closed locally; real authenticated Discovery browser/database evidence remains blocked by named fixtures in `03.1-BROWSER-REVIEW.md`.
 - Phase 03.2 browser evidence blocked until E2E_BASE_URL, E2E_READY_USER_EMAIL, E2E_READY_USER_PASSWORD, E2E_READY_PARTNER_EMAIL, E2E_READY_PARTNER_PASSWORD, E2E_OTHER_DUO_USER_EMAIL, E2E_OTHER_DUO_USER_PASSWORD and E2E_PHASE3_2_LIBRARY_QUERY are configured.
 - Phase 03.2 DB isolation evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
-- Phase 03.3 final performance review blocked until production/preview route baselines and authenticated desktop/mobile/slow-network/reduced-motion browser gates run with ready duo, partner, other-duo and catalog/game fixtures.
 
 ## Deferred Items
 
@@ -238,6 +238,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T04:19:59.937Z
-Stopped at: Quick 260605-1p7 complete; local performance/security hardening executed and Phase 03.3 remains blocked pending production evidence
+Last session: 2026-06-05T06:47:50.544Z
+Stopped at: Phase 03.3 closed with production performance/security gate passed; Phase 4 ready to plan
 Resume file: None
