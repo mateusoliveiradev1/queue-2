@@ -546,6 +546,9 @@ describe("Phase 3 Discovery route shell", () => {
     expect(globalCssSource).toContain('.discovery-tray:has([data-discovery-tray="matches"])');
     expect(globalCssSource).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr))");
     expect(globalCssSource).toContain("max-height: min(760px, 82svh)");
+    expect(globalCssSource).toContain('.action-feedback[data-state="idle"]');
+    expect(globalCssSource).toContain(".match-history-card h3");
+    expect(globalCssSource).toContain("-webkit-line-clamp: 2");
     expect(globalCssSource).toContain('.discovery-tray[data-discovery-tray-slot="quiz"]');
     expect(globalCssSource).toContain(".mood-quiz-form {\n  align-items: start;");
     expect(matchHistorySource).toContain("Status atual");

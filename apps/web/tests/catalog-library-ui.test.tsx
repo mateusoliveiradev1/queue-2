@@ -328,6 +328,10 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(css).toContain(".library-filter-sheet");
     expect(css).toContain(".library-action-sheet");
     expect(css).toContain(".library-pagination");
+    expect(css).toContain("grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr))");
+    expect(css).toContain('.action-feedback[data-state="idle"]');
+    expect(css).toContain("-webkit-line-clamp: 3");
+    expect(css).toContain("@container (max-width: 420px)");
     expect(css).not.toContain(".library-board");
 
     for (const futureOnlyWord of [

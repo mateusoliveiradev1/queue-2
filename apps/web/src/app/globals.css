@@ -455,6 +455,10 @@ input {
   padding: var(--space-2) var(--space-3);
 }
 
+.action-feedback[data-state="idle"] {
+  display: none;
+}
+
 .action-feedback[data-state="syncing"],
 .action-feedback[data-state="retrying"] {
   border-color: color-mix(in oklch, var(--primary) 44%, transparent);
@@ -503,7 +507,7 @@ input {
   align-items: center;
   display: inline-grid;
   gap: var(--space-2);
-  grid-template-columns: 1.8rem minmax(13ch, 1fr);
+  grid-template-columns: 1.8rem minmax(0, 1fr);
   justify-items: center;
   min-height: 48px;
   min-width: 168px;
@@ -870,7 +874,7 @@ input {
 .catalog-grid {
   display: grid;
   gap: var(--space-4);
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
 }
 
 .catalog-pagination,
@@ -955,17 +959,25 @@ input {
 .catalog-card h2,
 .library-game h3 {
   color: var(--ink);
+  display: -webkit-box;
   font-family: var(--font-display);
   font-size: 1.55rem;
   letter-spacing: 0;
   line-height: 1.08;
   margin: 0;
-  text-transform: uppercase;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
   overflow-wrap: anywhere;
+  text-transform: uppercase;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .catalog-card-featured h2 {
   font-size: 2.35rem;
+  -webkit-line-clamp: 2;
 }
 
 .library-game h3 {
@@ -1084,6 +1096,7 @@ input {
   border-left: 3px solid color-mix(in oklch, var(--accent) 70%, var(--primary));
   display: grid;
   gap: var(--space-2);
+  min-width: 0;
   padding-left: var(--space-4);
 }
 
@@ -2462,6 +2475,11 @@ input {
 .match-history-body {
   display: grid;
   gap: var(--space-4);
+  min-width: 0;
+}
+
+.match-history-body > * {
+  min-width: 0;
 }
 
 .match-history {
@@ -2533,14 +2551,20 @@ input {
 
 .match-history-card h3 {
   color: var(--ink);
+  display: -webkit-box;
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.2;
   margin: 0;
+  max-width: 100%;
+  overflow: hidden;
   overflow-wrap: anywhere;
   text-transform: uppercase;
+  word-break: break-word;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .match-history-status {
@@ -2598,14 +2622,19 @@ input {
   width: 100%;
 }
 
-@container (max-width: 360px) {
+@container (max-width: 420px) {
   .catalog-card {
     grid-template-columns: 1fr;
   }
 
   .catalog-cover,
   .catalog-card-featured .catalog-cover {
-    max-height: 320px;
+    max-height: 260px;
+    min-height: 0;
+  }
+
+  .catalog-card .form-actions {
+    flex-direction: column;
   }
 }
 

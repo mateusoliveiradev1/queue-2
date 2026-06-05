@@ -134,7 +134,7 @@ describe("action feedback primitives", () => {
     );
 
     expect(css).toContain(".action-feedback-button");
-    expect(css).toContain("grid-template-columns: 1.8rem minmax(13ch, 1fr)");
+    expect(css).toContain("grid-template-columns: 1.8rem minmax(0, 1fr)");
     expect(css).toContain("min-height: 48px");
     expect(css).toContain("min-width: 168px");
     expect(css).toContain(".action-feedback");
