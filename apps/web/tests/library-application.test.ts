@@ -74,6 +74,37 @@ describe("library queue use case", () => {
     expect(getQueue.mock.calls[0]?.[0].statuses).not.toContain("dropado");
   });
 
+  it("maps Arquivo to terminal statuses without expanding the active queue", async () => {
+    const getQueue = vi.fn(async (input) => queueRecord(input.limit, input.offset));
+    const repository = createRepository({ getQueue });
+
+    await getLibraryQueueUseCase(
+      {
+        userId: "user-1",
+        view: "arquivo",
+        query: "",
+        commonPlatformOnly: false,
+        platform: null,
+        sort: "nome",
+        page: "2",
+        limit: "99",
+        offset: null
+      },
+      repository
+    );
+
+    expect(getQueue.mock.calls[0]?.[0]).toMatchObject({
+      view: "arquivo",
+      statuses: ["zerado", "dropado"],
+      sort: "nome",
+      limit: 24,
+      offset: 24
+    });
+    expect(getQueue.mock.calls[0]?.[0].statuses).not.toContain("wishlist");
+    expect(getQueue.mock.calls[0]?.[0].statuses).not.toContain("jogando");
+    expect(getQueue.mock.calls[0]?.[0].statuses).not.toContain("pausado");
+  });
+
   it("returns membership-required when the repository cannot resolve a duo", async () => {
     const repository = createRepository({
       getQueue: vi.fn(async () => null)

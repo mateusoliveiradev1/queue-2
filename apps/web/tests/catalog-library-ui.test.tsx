@@ -264,6 +264,14 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "src/modules/library/presentation/library-filter-bar.tsx",
       "utf8"
     );
+    const repositorySource = readFileSync(
+      "src/modules/library/infrastructure/library-repository.ts",
+      "utf8"
+    );
+    const getQueueSource = repositorySource.slice(
+      repositorySource.indexOf("async function getQueue"),
+      repositorySource.indexOf("async function getActiveStatusCounts")
+    );
     const css = readFileSync("src/app/globals.css", "utf8");
 
     expect(source).toContain("library-operational-shell");
@@ -284,6 +292,11 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(filterSource).toContain("LibraryFilterBar");
     expect(filterSource).toContain("library-filter-sheet");
     expect(filterSource).not.toMatch(/mood|raridade|genero|ano|Game Pass/i);
+    expect(getQueueSource).toContain("countLibraryRows");
+    expect(getQueueSource).toContain("getLibraryRows");
+    expect(getQueueSource).toContain("limit: input.limit");
+    expect(getQueueSource).toContain("offset: input.offset");
+    expect(getQueueSource).not.toContain("getLibraryGames");
     expect(css).toContain(".library-operational-shell");
     expect(css).toContain(".library-priority-strip");
     expect(css).toContain(".library-playing-strip");
