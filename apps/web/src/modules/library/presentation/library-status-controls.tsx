@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -48,24 +48,110 @@ export function LibraryStatusControls({
         />
       ) : null}
       {secondaryActions.length > 0 ? (
-        <details className="library-action-sheet">
-          <summary className="queue2-button" data-tone="quiet">
-            Mais acoes
-          </summary>
-          <div className="library-action-sheet-panel" role="group" aria-label="Acoes secundarias">
-            {secondaryActions.map((item) => (
-              <StatusActionForm
-                action={action}
-                catalogGameId={catalogGameId}
-                enhancedAction={enhancedAction}
-                item={item}
-                key={item.status}
-                returnTo={returnTo}
-                tone="quiet"
-              />
-            ))}
-          </div>
-        </details>
+        <LibraryActionSheet
+          action={action}
+          catalogGameId={catalogGameId}
+          enhancedAction={enhancedAction}
+          items={secondaryActions}
+          returnTo={returnTo}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function LibraryActionSheet({
+  action,
+  catalogGameId,
+  enhancedAction,
+  items,
+  returnTo
+}: {
+  action: (formData: FormData) => Promise<void>;
+  catalogGameId: string;
+  enhancedAction?: (formData: FormData) => Promise<{ ok: boolean; redirectTo?: string }>;
+  items: StatusAction[];
+  returnTo?: string;
+}) {
+  const panelId = useId();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+
+      if (target instanceof Node && !sheetRef.current?.contains(target)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen]);
+
+  return (
+    <div
+      className="library-action-sheet"
+      data-open={isOpen ? "true" : "false"}
+      ref={sheetRef}
+    >
+      <button
+        aria-controls={isOpen ? panelId : undefined}
+        aria-expanded={isOpen}
+        className="queue2-button library-action-sheet__trigger"
+        data-tone="quiet"
+        onClick={() => {
+          setIsOpen((current) => !current);
+        }}
+        type="button"
+      >
+        Mais acoes
+      </button>
+      {isOpen ? (
+        <div
+          className="library-action-sheet-panel"
+          id={panelId}
+          role="group"
+          aria-label="Acoes secundarias"
+        >
+          {items.map((item) => (
+            <StatusActionForm
+              action={action}
+              catalogGameId={catalogGameId}
+              enhancedAction={enhancedAction}
+              item={item}
+              key={item.status}
+              returnTo={returnTo}
+              tone="quiet"
+            />
+          ))}
+          <button
+            className="queue2-button library-action-sheet-close"
+            data-tone="quiet"
+            onClick={() => {
+              setIsOpen(false);
+            }}
+            type="button"
+          >
+            Fechar
+          </button>
+        </div>
       ) : null}
     </div>
   );

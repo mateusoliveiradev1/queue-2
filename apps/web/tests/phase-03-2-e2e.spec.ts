@@ -100,7 +100,7 @@ test.describe("Phase 03.2 Biblioteca operational backlog", () => {
     const firstCard = page.locator(".library-game").first();
     await expect(firstCard).toBeVisible();
     await firstCard.getByText("Mais acoes").click();
-    await expect(firstCard.locator(".library-action-sheet[open]")).toBeVisible();
+    await expect(firstCard.locator(".library-action-sheet[data-open='true']")).toBeVisible();
     await expect(firstCard.getByRole("button", { name: /voltar para wishlist|mover para pausado/i }).first()).toBeVisible();
     await expectCardDoesNotOverlap(firstCard);
     expectNoHydrationErrors(hydrationErrors);

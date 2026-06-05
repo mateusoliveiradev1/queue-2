@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { useState, type FormEvent } from "react";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -234,9 +234,11 @@ describe("enhanced catalog and library mutation forms", () => {
     fireEvent.click(screen.getByRole("button", { name: /comecar em jogando/i }));
 
     expect(enhancedAction).toHaveBeenCalledOnce();
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      /nao deu para mover\. tente de novo/i
-    );
+    await waitFor(() => {
+      expect(screen.getByRole("status")).toHaveTextContent(
+        /nao deu para mover\. tente de novo/i
+      );
+    });
     expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
     expect(container.querySelector("input[name='status']")).toHaveValue("jogando");
     expect(container.querySelector("input[name='returnTo']")).toHaveValue("/app/biblioteca");
@@ -267,6 +269,50 @@ describe("enhanced catalog and library mutation forms", () => {
 
     expect(screen.getByRole("button", { name: /^pausar$/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^confirmado$/i })).not.toBeInTheDocument();
+  });
+
+  it("closes Biblioteca secondary actions through Fechar, outside click and Escape", async () => {
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => ({ ok: true }));
+    render(
+      <div>
+        <button type="button">Area fora</button>
+        <LibraryStatusControls
+          action={fallbackAction}
+          catalogGameId="game-1"
+          currentStatus="wishlist"
+          enhancedAction={enhancedAction}
+          returnTo="/app/biblioteca"
+        />
+      </div>
+    );
+    const trigger = screen.getByRole("button", { name: /mais acoes/i });
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("button", { name: /^fechar$/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /^fechar$/i }));
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
+    expect(screen.queryByRole("button", { name: /^fechar$/i })).not.toBeInTheDocument();
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.pointerDown(screen.getByRole("button", { name: /area fora/i }));
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
+
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => {
+      expect(trigger).toHaveAttribute("aria-expanded", "false");
+    });
   });
 });
 

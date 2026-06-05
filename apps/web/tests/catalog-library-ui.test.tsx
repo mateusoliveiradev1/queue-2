@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const authSessionMock = vi.hoisted(() => ({
@@ -334,6 +334,13 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(cardSource).toContain("LibraryStatusControls");
     expect(catalogCardSource).toContain("catalog-library-state");
     expect(statusControlsSource).toContain("library-action-sheet");
+    expect(statusControlsSource).toContain("LibraryActionSheet");
+    expect(statusControlsSource).toContain("useId");
+    expect(statusControlsSource).toContain("aria-expanded");
+    expect(statusControlsSource).toContain("data-open");
+    expect(statusControlsSource).toContain("pointerdown");
+    expect(statusControlsSource).toContain("Escape");
+    expect(statusControlsSource).toContain("Fechar");
     expect(statusControlsSource).toContain("useRouter");
     expect(statusControlsSource).toContain("router.refresh()");
     expect(statusControlsSource).toContain('setState("idle")');
@@ -371,6 +378,8 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(css).toContain("overflow: visible");
     expect(css).toContain("top: calc(100% + var(--space-2))");
     expect(css).toContain("max-height: min(60svh, 360px)");
+    expect(css).toContain(".library-action-sheet-close");
+    expect(css).toContain('.library-action-sheet[data-open="true"]');
     expect(css).not.toContain("position: sticky;\n    top: var(--space-3);");
     expect(css).not.toContain(".library-board");
 
@@ -480,8 +489,16 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(screen.queryByRole("button", { name: /dropado bloqueado/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^wishlist$/i })).not.toBeInTheDocument();
     expect(screen.getAllByText("Mais acoes").length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /voltar para wishlist/i }).length).toBeGreaterThan(0);
+    const secondaryActionButtons = screen.getAllByRole("button", { name: /mais acoes/i });
+    const wishlistSecondaryActions = secondaryActionButtons[0];
+    const playingSecondaryActions = secondaryActionButtons[1];
+    if (!wishlistSecondaryActions || !playingSecondaryActions) {
+      throw new Error("Expected Biblioteca secondary action buttons.");
+    }
+    fireEvent.click(wishlistSecondaryActions);
     expect(screen.getAllByRole("button", { name: /mover para pausado/i }).length).toBeGreaterThan(0);
+    fireEvent.click(playingSecondaryActions);
+    expect(screen.getAllByRole("button", { name: /voltar para wishlist/i }).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/coop campanha 2p confirmado/i).length).toBeGreaterThan(0);
     const libraryCards = Array.from(container.querySelectorAll<HTMLElement>(".library-game"));
     expect(libraryCards.length).toBeGreaterThan(0);

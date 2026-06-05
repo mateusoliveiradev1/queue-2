@@ -253,7 +253,7 @@ test.describe("Phase 03.2 Biblioteca accessibility", () => {
     await page.getByText("Filtros").click();
     await expect(page.getByRole("combobox", { name: /ordenar fila/i })).toBeVisible();
     await firstCard.getByText("Mais acoes").click();
-    await expect(firstCard.locator(".library-action-sheet[open]")).toBeVisible();
+    await expect(firstCard.locator(".library-action-sheet[data-open='true']")).toBeVisible();
     await expect(page.getByRole("button", { name: /zerado bloqueado/i })).toHaveCount(0);
     await expect(page.getByRole("button", { name: /dropado bloqueado/i })).toHaveCount(0);
     await expectNoAxeViolations(page);
