@@ -16,7 +16,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 02.1: Localizacao e Qualidade do Catalogo (INSERTED)** - O catalogo fica localizado em portugues brasileiro, sincronizavel e pronto para sustentar descoberta sem dados crus. (completed 2026-06-03)
 - [x] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches. (completed 2026-06-04)
 - [x] **Phase 03.1: Refinos Visuais e UX da Descoberta (INSERTED)** - A experiencia de Descoberta ganha polimento visual, revisao browser real e limpeza de divida arquitetural antes de Jogando. (completed 2026-06-04)
-- [ ] **Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)** - A Biblioteca vira uma superficie escalavel de backlog, filtros, status e arquivo da dupla antes de Jogando.
+- [x] **Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)** - A Biblioteca vira uma superficie escalavel de backlog, filtros, status e arquivo da dupla antes de Jogando. (completed 2026-06-05)
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
 - [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
@@ -127,7 +127,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 **Goal:** A Biblioteca deixa de ser uma lista crescente e vira uma superficie operacional escalavel para backlog, filtros, status, arquivo e retomada do fluxo da dupla.
 **Requirements**: LIB-02, LIB-03, LIB-04, DISC-12, BRND-08, BRND-09, BRND-10, DATA-11, SEC-02
 **Depends on:** Phase 03.1
-**Plans:** 3/4 plans executed
+**Plans:** 4/4 plans complete
 
 **Plan Waves**:
   - **Wave 1:** `03.2-01` - Scalable Biblioteca read contract, active/archive policy and bounded repository queries.
@@ -213,7 +213,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 4 -> 5 -
 | 02.1. Localizacao e Qualidade do Catalogo | 3/3 | Complete    | 2026-06-03 |
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
 | 03.1. Refinos Visuais e UX da Descoberta | 4/4 | Complete   | 2026-06-04 |
-| 03.2. Biblioteca Escalavel e Backlog Operacional | 3/4 | In Progress|  |
+| 03.2. Biblioteca Escalavel e Backlog Operacional | 4/4 | Complete   | 2026-06-05 |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |

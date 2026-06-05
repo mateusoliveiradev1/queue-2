@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 03.2-03-PLAN.md
-last_updated: "2026-06-05T00:29:20.308Z"
+status: verifying
+stopped_at: Completed 03.2-04-PLAN.md
+last_updated: "2026-06-05T00:36:57.803Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 11
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 25
-  completed_plans: 24
-  percent: 96
+  completed_plans: 25
+  percent: 100
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 Phase: 03.2 (Biblioteca Escalavel e Backlog Operacional) — EXECUTING
 Plan: 4 of 4
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-06-05
 
-Progress: [██████████] 96%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -78,6 +78,7 @@ Progress: [██████████] 96%
 | Phase 03.2 P01 | 8 min | 3 tasks | 8 files |
 | Phase 03.2 P02 | 8 min | 3 tasks | 4 files |
 | Phase 03.2 P03 | 12 min | 3 tasks | 7 files |
+| Phase 03.2 P04 | 8 min | 3 tasks | 6 files |
 
 ## Quick Tasks Completed
 
@@ -162,6 +163,9 @@ Recent decisions affecting current work:
 - [Phase 03.2-03]: Biblioteca detail navigation uses linked cover/title instead of a separate large detail button. — Preserves compact card action space for status movement while keeping game detail reachable.
 - [Phase 03.2-03]: Biblioteca status controls expose one visible primary action and move alternatives into library-action-sheet. — Keeps cards dense and accessible while removing dead terminal buttons before Phase 4 confirmation rules exist.
 - [Phase 03.2-03]: Biblioteca filtering is limited to view, search, common platform and ordering. — Separates operational backlog filtering from exploratory Discovery filters such as mood, rarity, genre, year and availability.
+- [Phase 03.2-04]: Missing browser and database fixtures are recorded as blockers, not passing evidence. — Authenticated private-route and RLS checks cannot honestly pass without real E2E users and TEST_DATABASE_URL.
+- [Phase 03.2-04]: Phase 03.2 E2E requires ready duo, partner, other-duo and known library query fixtures. — Biblioteca is duo-scoped, so visual, URL and isolation checks need product-authenticated fixture users rather than test-only session bypasses.
+- [Phase 03.2-04]: Paginated/filterable RLS coverage mirrors the repository SQL shape inside packages/db. — The db package should not import web infrastructure, but still needs to verify the same bounded SQL shape under runtime RLS.
 
 ### Pending Todos
 
@@ -176,6 +180,8 @@ Recent decisions affecting current work:
 - Economy balance for XP, pity, rarity and quests needs simulation during planning.
 - Restore capability and the applicable ASVS checklist must be validated before production launch.
 - Phase 03.1 visual and architecture debt is closed locally; real authenticated Discovery browser/database evidence remains blocked by named fixtures in `03.1-BROWSER-REVIEW.md`.
+- Phase 03.2 browser evidence blocked until E2E_BASE_URL, E2E_READY_USER_EMAIL, E2E_READY_USER_PASSWORD, E2E_READY_PARTNER_EMAIL, E2E_READY_PARTNER_PASSWORD, E2E_OTHER_DUO_USER_EMAIL, E2E_OTHER_DUO_USER_PASSWORD and E2E_PHASE3_2_LIBRARY_QUERY are configured.
+- Phase 03.2 DB isolation evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
 
 ## Deferred Items
 
@@ -188,6 +194,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T00:29:20.302Z
-Stopped at: Completed 03.2-03-PLAN.md
+Last session: 2026-06-05T00:36:41.992Z
+Stopped at: Completed 03.2-04-PLAN.md
 Resume file: None
