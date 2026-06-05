@@ -134,8 +134,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PLAY-07**: Duo can create and complete manual chapters for a game
 - [x] **PLAY-08**: Duo receives 25 XP once for each completed manual chapter
 - [x] **PLAY-09**: Duo can record a subjective completion percentage for a game
-- [ ] **PLAY-10**: Duo sees automatic milestones at 50% and 100% of the estimated completion time
-- [ ] **PLAY-11**: Duo can receive contextual milestones such as "Voces tao viciados" and a reminder to Pausar
+- [x] **PLAY-10**: Duo sees automatic milestones at 50% and 100% of the estimated completion time
+- [x] **PLAY-11**: Duo can receive contextual milestones such as "Voces tao viciados" and a reminder to Pausar
 - [x] **PLAY-12**: Moving a game to Zerado requires confirmation from both duo members
 - [x] **PLAY-13**: Moving a game to Dropado requires confirmation from both duo members
 
@@ -146,11 +146,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SESS-03**: Each duo member can confirm a completed live session
 - [x] **SESS-04**: Duo receives the 30 XP live-session bonus only once after both members confirm
 - [x] **SESS-05**: Duo can record an offline "Jogamos Hoje" session in approximately two clicks
-- [ ] **SESS-06**: User can view a chronological session timeline on each game
-- [ ] **SESS-07**: Session timeline marks a first session, night session and marathon when applicable
-- [ ] **SESS-08**: Duo can add inline Momentos to a game
-- [ ] **SESS-09**: User can mark an inline Momento as a spoiler
-- [ ] **SESS-10**: Spoiler Momentos remain hidden until the viewer explicitly reveals them
+- [x] **SESS-06**: User can view a chronological session timeline on each game
+- [x] **SESS-07**: Session timeline marks a first session, night session and marathon when applicable
+- [x] **SESS-08**: Duo can add inline Momentos to a game
+- [x] **SESS-09**: User can mark an inline Momento as a spoiler
+- [x] **SESS-10**: Spoiler Momentos remain hidden until the viewer explicitly reveals them
 - [x] **SESS-11**: Duo can schedule a future coop session
 - [x] **SESS-12**: Each duo member can confirm attendance for a scheduled session
 - [x] **SESS-13**: Duo receives 100 XP only once when both members confirm the scheduled session
@@ -351,8 +351,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAY-07 | Phase 4 | Complete |
 | PLAY-08 | Phase 4 | Complete |
 | PLAY-09 | Phase 4 | Complete |
-| PLAY-10 | Phase 4 | Pending |
-| PLAY-11 | Phase 4 | Pending |
+| PLAY-10 | Phase 4 | Complete |
+| PLAY-11 | Phase 4 | Complete |
 | PLAY-12 | Phase 4 | Complete |
 | PLAY-13 | Phase 4 | Complete |
 | SESS-01 | Phase 4 | Complete |
@@ -360,11 +360,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-03 | Phase 4 | Complete |
 | SESS-04 | Phase 4 | Complete |
 | SESS-05 | Phase 4 | Complete |
-| SESS-06 | Phase 4 | Pending |
-| SESS-07 | Phase 4 | Pending |
-| SESS-08 | Phase 4 | Pending |
-| SESS-09 | Phase 4 | Pending |
-| SESS-10 | Phase 4 | Pending |
+| SESS-06 | Phase 4 | Complete |
+| SESS-07 | Phase 4 | Complete |
+| SESS-08 | Phase 4 | Complete |
+| SESS-09 | Phase 4 | Complete |
+| SESS-10 | Phase 4 | Complete |
 | SESS-11 | Phase 4 | Complete |
 | SESS-12 | Phase 4 | Complete |
 | SESS-13 | Phase 4 | Complete |
@@ -430,4 +430,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-05 after Phase 04-03 sessions/progress completion*
+*Last updated: 2026-06-05 after Phase 04-04 timeline/momentos completion*

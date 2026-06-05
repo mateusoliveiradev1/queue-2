@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-03-PLAN.md
-last_updated: "2026-06-05T16:39:16.335Z"
+stopped_at: Completed 04-04-PLAN.md
+last_updated: "2026-06-05T16:59:37.971Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 35
-  completed_plans: 32
-  percent: 91
+  completed_plans: 33
+  percent: 94
 ---
 
 # Project State
@@ -26,17 +26,17 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 04 (jogando-agora-sessoes-e-agendamento) — EXECUTING
-Plan: 4 of 6
-Status: Ready to execute 04-04
+Plan: 5 of 6
+Status: Ready to execute 04-05
 Last activity: 2026-06-05
 
-Progress: [#########-] 91%
+Progress: [#########-] 94%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 18
+- Total plans completed: 33
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -86,6 +86,7 @@ Progress: [#########-] 91%
 | Phase 04 P01 | 35 min | 3 tasks | 13 files |
 | Phase 04 P02 | 3h 45m | 3 tasks | 30 files |
 | Phase 04 P03 | 30m | 4 tasks | 26 files |
+| Phase 04 P04 | 35m | 3 tasks | 22 files |
 
 ## Quick Tasks Completed
 
@@ -221,6 +222,9 @@ Recent decisions affecting current work:
 - [Phase 04-03]: Play owns live/offline sessions, progress effects, chapter awards and terminal confirmation. - Routes and UI call the play public entrypoint while server transactions keep confirmation-gated effects authoritative.
 - [Phase 04-03]: Raw library moves to `zerado`/`dropado` remain locked until the play terminal request is partner-confirmed. - The confirmed terminal transaction updates the archive status and removes active play roles atomically.
 - [Phase 04-03]: Missing TEST_DATABASE_URL and Phase 4 E2E fixtures remain explicit blockers. - Unit/UI/type/architecture gates pass, but DB isolation/concurrency and browser evidence still need configured fixtures.
+- [Phase 04-04]: Game timeline milestones are derived from confirmed sessions, chapters and Momentos instead of stored milestone rows. - Display stays deterministic and avoids duplicate milestone persistence.
+- [Phase 04-04]: Spoiler reveal state is per viewer, not a duo-global state. - `app.play_spoiler_reveals` records local intent and hidden spoiler text remains hidden for the partner until their own reveal.
+- [Phase 04-04]: Timeline remains Phase 4 operational history, not Hall/review/replay scope. - Game detail shows sessions, milestones, chapters and Momentos only.
 
 ### Pending Todos
 
@@ -240,6 +244,7 @@ Recent decisions affecting current work:
 - Phase 03.2 DB isolation evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
 - Phase 04.3 DB integration evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
 - Phase 04.3 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
+- Phase 04.4 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
 
 ## Deferred Items
 
@@ -252,6 +257,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T16:39:16.335Z
-Stopped at: Completed 04-03-PLAN.md
+Last session: 2026-06-05T16:59:37.971Z
+Stopped at: Completed 04-04-PLAN.md
 Resume file: None
