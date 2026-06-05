@@ -126,35 +126,35 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Playing Now And Progress
 
 - [ ] **PLAY-01**: Duo sees a dashboard hero for the Principal game with high-resolution cover, blur and gradient treatment
-- [ ] **PLAY-02**: Duo can keep up to three games in Jogando at the same time
-- [ ] **PLAY-03**: Duo can designate exactly one Jogando game as Principal and up to two as secondary
+- [x] **PLAY-02**: Duo can keep up to three games in Jogando at the same time
+- [x] **PLAY-03**: Duo can designate exactly one Jogando game as Principal and up to two as secondary
 - [ ] **PLAY-04**: Duo can drag to reorder the Principal and secondary games
 - [ ] **PLAY-05**: Dashboard shows the duo XP, level, streak, active quests and recent achievements
-- [ ] **PLAY-06**: Duo can compare accumulated coop time with the game's estimated completion time
+- [x] **PLAY-06**: Duo can compare accumulated coop time with the game's estimated completion time
 - [ ] **PLAY-07**: Duo can create and complete manual chapters for a game
-- [ ] **PLAY-08**: Duo receives 25 XP once for each completed manual chapter
+- [x] **PLAY-08**: Duo receives 25 XP once for each completed manual chapter
 - [ ] **PLAY-09**: Duo can record a subjective completion percentage for a game
 - [ ] **PLAY-10**: Duo sees automatic milestones at 50% and 100% of the estimated completion time
 - [ ] **PLAY-11**: Duo can receive contextual milestones such as "Voces tao viciados" and a reminder to Pausar
-- [ ] **PLAY-12**: Moving a game to Zerado requires confirmation from both duo members
-- [ ] **PLAY-13**: Moving a game to Dropado requires confirmation from both duo members
+- [x] **PLAY-12**: Moving a game to Zerado requires confirmation from both duo members
+- [x] **PLAY-13**: Moving a game to Dropado requires confirmation from both duo members
 
 ### Sessions, Notes And Scheduling
 
-- [ ] **SESS-01**: Duo can start a live coop session for a Jogando game
-- [ ] **SESS-02**: Live session timer is based on server timestamps and remains accurate after refresh
-- [ ] **SESS-03**: Each duo member can confirm a completed live session
-- [ ] **SESS-04**: Duo receives the 30 XP live-session bonus only once after both members confirm
+- [x] **SESS-01**: Duo can start a live coop session for a Jogando game
+- [x] **SESS-02**: Live session timer is based on server timestamps and remains accurate after refresh
+- [x] **SESS-03**: Each duo member can confirm a completed live session
+- [x] **SESS-04**: Duo receives the 30 XP live-session bonus only once after both members confirm
 - [ ] **SESS-05**: Duo can record an offline "Jogamos Hoje" session in approximately two clicks
 - [ ] **SESS-06**: User can view a chronological session timeline on each game
 - [ ] **SESS-07**: Session timeline marks a first session, night session and marathon when applicable
 - [ ] **SESS-08**: Duo can add inline Momentos to a game
 - [ ] **SESS-09**: User can mark an inline Momento as a spoiler
 - [ ] **SESS-10**: Spoiler Momentos remain hidden until the viewer explicitly reveals them
-- [ ] **SESS-11**: Duo can schedule a future coop session
-- [ ] **SESS-12**: Each duo member can confirm attendance for a scheduled session
-- [ ] **SESS-13**: Duo receives 100 XP only once when both members confirm the scheduled session
-- [ ] **SESS-14**: User can receive a push reminder 30 minutes before a scheduled session
+- [x] **SESS-11**: Duo can schedule a future coop session
+- [x] **SESS-12**: Each duo member can confirm attendance for a scheduled session
+- [x] **SESS-13**: Duo receives 100 XP only once when both members confirm the scheduled session
+- [x] **SESS-14**: User can receive a push reminder 30 minutes before a scheduled session
 
 ### Gamification
 
@@ -203,10 +203,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Notifications, Jobs And Reliability
 
-- [ ] **SAFE-01**: User is asked for push permission only after an action that explains its value
-- [ ] **SAFE-02**: User can disable product push notifications
+- [x] **SAFE-01**: User is asked for push permission only after an action that explains its value
+- [x] **SAFE-02**: User can disable product push notifications
 - [ ] **SAFE-03**: Catalog synchronization, streak checks, quest rotation and reminders continue through scheduled server jobs
-- [ ] **SAFE-04**: Failed scheduled work can be retried without duplicating user-visible effects
+- [x] **SAFE-04**: Failed scheduled work can be retried without duplicating user-visible effects
 - [x] **SAFE-05**: Secrets such as RAWG, email, auth and privileged database credentials never reach the browser
 - [ ] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
 - [x] **SAFE-07**: Authentication attempts are protected by persistent rate limiting suitable for a serverless runtime
@@ -343,32 +343,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-04 | Phase 03.3 | Complete |
 | PERF-05 | Phase 03.3 | Complete |
 | PLAY-01 | Phase 4 | Pending |
-| PLAY-02 | Phase 4 | Pending |
-| PLAY-03 | Phase 4 | Pending |
+| PLAY-02 | Phase 4 | Complete |
+| PLAY-03 | Phase 4 | Complete |
 | PLAY-04 | Phase 4 | Pending |
 | PLAY-05 | Phase 5 | Pending |
-| PLAY-06 | Phase 4 | Pending |
+| PLAY-06 | Phase 4 | Complete |
 | PLAY-07 | Phase 4 | Pending |
-| PLAY-08 | Phase 4 | Pending |
+| PLAY-08 | Phase 4 | Complete |
 | PLAY-09 | Phase 4 | Pending |
 | PLAY-10 | Phase 4 | Pending |
 | PLAY-11 | Phase 4 | Pending |
-| PLAY-12 | Phase 4 | Pending |
-| PLAY-13 | Phase 4 | Pending |
-| SESS-01 | Phase 4 | Pending |
-| SESS-02 | Phase 4 | Pending |
-| SESS-03 | Phase 4 | Pending |
-| SESS-04 | Phase 4 | Pending |
+| PLAY-12 | Phase 4 | Complete |
+| PLAY-13 | Phase 4 | Complete |
+| SESS-01 | Phase 4 | Complete |
+| SESS-02 | Phase 4 | Complete |
+| SESS-03 | Phase 4 | Complete |
+| SESS-04 | Phase 4 | Complete |
 | SESS-05 | Phase 4 | Pending |
 | SESS-06 | Phase 4 | Pending |
 | SESS-07 | Phase 4 | Pending |
 | SESS-08 | Phase 4 | Pending |
 | SESS-09 | Phase 4 | Pending |
 | SESS-10 | Phase 4 | Pending |
-| SESS-11 | Phase 4 | Pending |
-| SESS-12 | Phase 4 | Pending |
-| SESS-13 | Phase 4 | Pending |
-| SESS-14 | Phase 4 | Pending |
+| SESS-11 | Phase 4 | Complete |
+| SESS-12 | Phase 4 | Complete |
+| SESS-13 | Phase 4 | Complete |
+| SESS-14 | Phase 4 | Complete |
 | GAME-01 | Phase 5 | Pending |
 | GAME-02 | Phase 5 | Pending |
 | GAME-03 | Phase 5 | Pending |
@@ -405,10 +405,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HALL-07 | Phase 7 | Pending |
 | HALL-08 | Phase 7 | Pending |
 | HALL-09 | Phase 7 | Pending |
-| SAFE-01 | Phase 4 | Pending |
-| SAFE-02 | Phase 4 | Pending |
+| SAFE-01 | Phase 4 | Complete |
+| SAFE-02 | Phase 4 | Complete |
 | SAFE-03 | Phase 5 | Pending |
-| SAFE-04 | Phase 4 | Pending |
+| SAFE-04 | Phase 4 | Complete |
 | SAFE-05 | Phase 1 | Complete |
 | SAFE-06 | Phase 6 | Pending |
 | SAFE-07 | Phase 1 | Complete |

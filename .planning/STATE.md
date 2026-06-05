@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 4 context gathered
-last_updated: "2026-06-05T11:29:07.082Z"
-last_activity: 2026-06-05 -- Phase 04 planning complete
+stopped_at: Completed 04-01-PLAN.md
+last_updated: "2026-06-05T12:19:56.540Z"
+last_activity: 2026-06-05
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 35
-  completed_plans: 29
-  percent: 83
+  completed_plans: 30
+  percent: 86
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 4 - Jogando Agora, Sessoes E Agendamento
+**Current focus:** Phase 04 — jogando-agora-sessoes-e-agendamento
 
 ## Current Position
 
-Phase: 4 (jogando-agora-sessoes-e-agendamento) - READY
-Plan: TBD
+Phase: 04 (jogando-agora-sessoes-e-agendamento) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-05 -- Phase 04 planning complete
+Last activity: 2026-06-05
 
-Progress: [██████████] 100%
+Progress: [█████████░] 86%
 
 ## Performance Metrics
 
@@ -83,6 +83,7 @@ Progress: [██████████] 100%
 | Phase 03.3 P02 | 25 min | 3 tasks | 18 files |
 | Phase 03.3 P03 | 22 min | 3 tasks | 20 files |
 | Phase 03.3 P04 | 38 min | 3 tasks | 11 files |
+| Phase 04 P01 | 35 min | 3 tasks | 13 files |
 
 ## Quick Tasks Completed
 
@@ -209,6 +210,9 @@ Recent decisions affecting current work:
 - [Quick 260605-1p7]: `/app` and `/app/jogo/[slug]` now emit server timing metrics for auth, database and render stages. - Production traces can isolate the dashboard and game-detail latency path instead of treating them as opaque server time.
 - [Quick 260605-1p7]: Local performance/security hardening prepared the app for final production evidence. - The later closeout reran the full gate with fixtures and closed the blocker.
 - [Quick 260605-4bz]: Phase 03.3 closed on production deployment `dpl_7EGUh8cua3xESdHzF8dyrstmNaSW`. - Temporary evidence endpoints were removed and verified 404; `pnpm phase:03.3:gate` passed with baseline, query review and 23 browser/accessibility tests.
+- [Phase 04-01]: Play owns Phase 4 persistence for active queue, sessions, scheduling, notifications, push subscriptions and XP awards. — Keeps Jogando Agora and sessions behind the play module boundary instead of embedding rules in routes or library UI.
+- [Phase 04-01]: Missing TEST_DATABASE_URL remains explicit missing DB evidence for play integration tests. — Skipped Neon/Postgres integration checks are blockers to evidence, not proof that RLS/concurrency behavior passed.
+- [Phase 04-01]: Play repository user paths use withAppUserTransaction rather than bypassing RLS. — Preserves least-privilege runtime access and prevents cross-duo leakage on pooled Neon connections.
 
 ### Pending Todos
 
@@ -238,6 +242,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T11:14:03.125Z
-Stopped at: Phase 4 context gathered
-Resume file: .planning/phases/04-jogando-agora-sessoes-e-agendamento/04-CONTEXT.md
+Last session: 2026-06-05T12:19:24.647Z
+Stopped at: Completed 04-01-PLAN.md
+Resume file: None
