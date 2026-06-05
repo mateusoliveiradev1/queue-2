@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-04-PLAN.md
-last_updated: "2026-06-05T16:59:37.971Z"
+stopped_at: Completed 04-05-PLAN.md
+last_updated: "2026-06-05T17:31:36.461Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
   completed_phases: 8
   total_plans: 35
-  completed_plans: 33
-  percent: 94
+  completed_plans: 34
+  percent: 97
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 04 (jogando-agora-sessoes-e-agendamento) — EXECUTING
-Plan: 5 of 6
-Status: Ready to execute 04-05
+Plan: 6 of 6
+Status: Ready to execute 04-06
 Last activity: 2026-06-05
 
-Progress: [#########-] 94%
+Progress: [##########] 97%
 
 ## Performance Metrics
 
@@ -87,6 +87,7 @@ Progress: [#########-] 94%
 | Phase 04 P02 | 3h 45m | 3 tasks | 30 files |
 | Phase 04 P03 | 30m | 4 tasks | 26 files |
 | Phase 04 P04 | 35m | 3 tasks | 22 files |
+| Phase 04 P05 | 45m | 3 tasks | 32 files |
 
 ## Quick Tasks Completed
 
@@ -225,6 +226,13 @@ Recent decisions affecting current work:
 - [Phase 04-04]: Game timeline milestones are derived from confirmed sessions, chapters and Momentos instead of stored milestone rows. - Display stays deterministic and avoids duplicate milestone persistence.
 - [Phase 04-04]: Spoiler reveal state is per viewer, not a duo-global state. - `app.play_spoiler_reveals` records local intent and hidden spoiler text remains hidden for the partner until their own reveal.
 - [Phase 04-04]: Timeline remains Phase 4 operational history, not Hall/review/replay scope. - Game detail shows sessions, milestones, chapters and Momentos only.
+- [Phase 04-05]: Scheduled sessions use duo timezone input with UTC persistence and a timezone snapshot. - The first schedule form now shows the server-read duo timezone even before sessions exist.
+- [Phase 04-05]: Reminder jobs include scheduled session id and exact due timestamp in the job key. - Rescheduled/cancelled stale jobs complete silently instead of sending old reminders.
+- [Phase 04-05]: The play reminder runner claims only `play-session-reminder` jobs. - Future scheduled job types cannot be accidentally completed by the play endpoint.
+- [Phase 04-05]: Exact 30-minute delivery is an operations readiness item, not a UI promise. - `vercel.json` was not changed without a compatible scheduler frequency; `/api/jobs/play/reminders` and `pnpm play:reminders` are guarded by `CRON_SECRET`.
+- [Phase 04-05]: Push failures create Central da Dupla notices and keep the reminder job retryable without duplicating first-attempt visible effects. - Central remains durable while push delivery can recover after configuration/browser issues.
+- [Phase 04-05]: Product push opt-in is explicit per browser and disabling it does not disable schedules or Central da Dupla. - `Notification.requestPermission` is never called on initial render.
+- [Phase 04-05]: Central da Dupla is an operational Phase 4 surface, not chat/social feed/preferences matrix. - It lists scheduled sessions, reminders and push/confirmation events only.
 
 ### Pending Todos
 
@@ -245,6 +253,9 @@ Recent decisions affecting current work:
 - Phase 04.3 DB integration evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
 - Phase 04.3 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
 - Phase 04.4 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
+- Phase 04.5 DB integration evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
+- Phase 04.5 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
+- Phase 04.5 real push delivery requires VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT; exact reminders require CRON_SECRET plus a scheduler/runner with compatible frequency.
 
 ## Deferred Items
 
@@ -257,6 +268,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T16:59:37.971Z
-Stopped at: Completed 04-04-PLAN.md
+Last session: 2026-06-05T17:31:36.461Z
+Stopped at: Completed 04-05-PLAN.md
 Resume file: None
