@@ -145,3 +145,48 @@ export const catalogSyncRunItems = opsSchema.table(
     )
   ]
 );
+
+export const scheduledJobs = opsSchema.table(
+  "scheduled_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    jobKey: text("job_key").notNull(),
+    jobType: varchar("job_type", { length: 60 }).notNull(),
+    runAt: timestamp("run_at", { withTimezone: true }).notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    lockedAt: timestamp("locked_at", { withTimezone: true }),
+    lockedBy: text("locked_by"),
+    processedAt: timestamp("processed_at", { withTimezone: true }),
+    lastError: text("last_error"),
+    payload: jsonb("payload").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("ops_scheduled_jobs_key_uidx").on(table.jobKey),
+    index("ops_scheduled_jobs_due_idx")
+      .on(table.status, table.runAt, table.id)
+      .where(sql`${table.status} IN ('pending', 'failed')`),
+    index("ops_scheduled_jobs_duo_type_idx").on(
+      table.duoId,
+      table.jobType,
+      table.runAt
+    ),
+    check(
+      "ops_scheduled_jobs_status_chk",
+      sql`${table.status} IN ('pending', 'claimed', 'completed', 'failed', 'cancelled')`
+    ),
+    check("ops_scheduled_jobs_attempts_non_negative_chk", sql`${table.attempts} >= 0`),
+    check(
+      "ops_scheduled_jobs_claim_state_chk",
+      sql`
+        (${table.status} = 'claimed' AND ${table.lockedAt} IS NOT NULL)
+        OR (${table.status} <> 'claimed')
+      `
+    )
+  ]
+);

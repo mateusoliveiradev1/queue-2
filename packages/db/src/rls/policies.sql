@@ -311,3 +311,307 @@ CREATE POLICY app_discovery_push_subscriptions_update_own ON app.discovery_push_
     user_id = app.current_user_id()
     AND app.has_duo_membership(app.current_user_id(), duo_id)
   );
+
+ALTER TABLE app.play_active_games ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_active_games FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_active_games_select_members ON app.play_active_games;
+DROP POLICY IF EXISTS app_play_active_games_insert_members ON app.play_active_games;
+DROP POLICY IF EXISTS app_play_active_games_update_members ON app.play_active_games;
+CREATE POLICY app_play_active_games_select_members ON app.play_active_games
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_active_games_insert_members ON app.play_active_games
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    added_by_user_id = app.current_user_id()
+    AND updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_active_games_update_members ON app.play_active_games
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_sessions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_sessions_select_members ON app.play_sessions;
+DROP POLICY IF EXISTS app_play_sessions_insert_members ON app.play_sessions;
+DROP POLICY IF EXISTS app_play_sessions_update_members ON app.play_sessions;
+CREATE POLICY app_play_sessions_select_members ON app.play_sessions
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_sessions_insert_members ON app.play_sessions
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    created_by_user_id = app.current_user_id()
+    AND updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_sessions_update_members ON app.play_sessions
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_session_confirmations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_session_confirmations FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_session_confirmations_select_members ON app.play_session_confirmations;
+DROP POLICY IF EXISTS app_play_session_confirmations_insert_own ON app.play_session_confirmations;
+CREATE POLICY app_play_session_confirmations_select_members ON app.play_session_confirmations
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_session_confirmations_insert_own ON app.play_session_confirmations
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_progress FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_progress_select_members ON app.play_progress;
+DROP POLICY IF EXISTS app_play_progress_insert_members ON app.play_progress;
+DROP POLICY IF EXISTS app_play_progress_update_members ON app.play_progress;
+CREATE POLICY app_play_progress_select_members ON app.play_progress
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_progress_insert_members ON app.play_progress
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_progress_update_members ON app.play_progress
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_chapters ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_chapters FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_chapters_select_members ON app.play_chapters;
+DROP POLICY IF EXISTS app_play_chapters_insert_members ON app.play_chapters;
+DROP POLICY IF EXISTS app_play_chapters_update_members ON app.play_chapters;
+CREATE POLICY app_play_chapters_select_members ON app.play_chapters
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_chapters_insert_members ON app.play_chapters
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    created_by_user_id = app.current_user_id()
+    AND updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_chapters_update_members ON app.play_chapters
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND (
+      completed_by_user_id IS NULL
+      OR app.has_duo_membership(completed_by_user_id, duo_id)
+    )
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_momentos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_momentos FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_momentos_select_members ON app.play_momentos;
+DROP POLICY IF EXISTS app_play_momentos_insert_members ON app.play_momentos;
+DROP POLICY IF EXISTS app_play_momentos_update_author ON app.play_momentos;
+CREATE POLICY app_play_momentos_select_members ON app.play_momentos
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_momentos_insert_members ON app.play_momentos
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    author_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_momentos_update_author ON app.play_momentos
+  FOR UPDATE TO PUBLIC
+  USING (
+    author_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  )
+  WITH CHECK (
+    author_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_spoiler_reveals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_spoiler_reveals FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_spoiler_reveals_select_own ON app.play_spoiler_reveals;
+DROP POLICY IF EXISTS app_play_spoiler_reveals_insert_own ON app.play_spoiler_reveals;
+CREATE POLICY app_play_spoiler_reveals_select_own ON app.play_spoiler_reveals
+  FOR SELECT TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_spoiler_reveals_insert_own ON app.play_spoiler_reveals
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_terminal_requests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_terminal_requests FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_terminal_requests_select_members ON app.play_terminal_requests;
+DROP POLICY IF EXISTS app_play_terminal_requests_insert_members ON app.play_terminal_requests;
+DROP POLICY IF EXISTS app_play_terminal_requests_update_members ON app.play_terminal_requests;
+CREATE POLICY app_play_terminal_requests_select_members ON app.play_terminal_requests
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_terminal_requests_insert_members ON app.play_terminal_requests
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    requested_by_user_id = app.current_user_id()
+    AND updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_terminal_requests_update_members ON app.play_terminal_requests
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND (confirmed_by_user_id IS NULL OR confirmed_by_user_id = app.current_user_id())
+    AND (cancelled_by_user_id IS NULL OR cancelled_by_user_id = app.current_user_id())
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_scheduled_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_scheduled_sessions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_scheduled_sessions_select_members ON app.play_scheduled_sessions;
+DROP POLICY IF EXISTS app_play_scheduled_sessions_insert_members ON app.play_scheduled_sessions;
+DROP POLICY IF EXISTS app_play_scheduled_sessions_update_members ON app.play_scheduled_sessions;
+CREATE POLICY app_play_scheduled_sessions_select_members ON app.play_scheduled_sessions
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_scheduled_sessions_insert_members ON app.play_scheduled_sessions
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    created_by_user_id = app.current_user_id()
+    AND updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_play_scheduled_sessions_update_members ON app.play_scheduled_sessions
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (
+    updated_by_user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_scheduled_attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_scheduled_attendance FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_scheduled_attendance_select_members ON app.play_scheduled_attendance;
+DROP POLICY IF EXISTS app_play_scheduled_attendance_insert_own ON app.play_scheduled_attendance;
+CREATE POLICY app_play_scheduled_attendance_select_members ON app.play_scheduled_attendance
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_scheduled_attendance_insert_own ON app.play_scheduled_attendance
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.play_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.play_notifications FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_play_notifications_select_members ON app.play_notifications;
+DROP POLICY IF EXISTS app_play_notifications_insert_members ON app.play_notifications;
+DROP POLICY IF EXISTS app_play_notifications_update_members ON app.play_notifications;
+CREATE POLICY app_play_notifications_select_members ON app.play_notifications
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_play_notifications_insert_members ON app.play_notifications
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      actor_user_id IS NULL
+      OR actor_user_id = app.current_user_id()
+    )
+    AND (
+      recipient_user_id IS NULL
+      OR app.has_duo_membership(recipient_user_id, duo_id)
+    )
+  );
+CREATE POLICY app_play_notifications_update_members ON app.play_notifications
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.push_subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.push_subscriptions FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_push_subscriptions_select_own ON app.push_subscriptions;
+DROP POLICY IF EXISTS app_push_subscriptions_insert_own ON app.push_subscriptions;
+DROP POLICY IF EXISTS app_push_subscriptions_update_own ON app.push_subscriptions;
+CREATE POLICY app_push_subscriptions_select_own ON app.push_subscriptions
+  FOR SELECT TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_push_subscriptions_insert_own ON app.push_subscriptions
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+CREATE POLICY app_push_subscriptions_update_own ON app.push_subscriptions
+  FOR UPDATE TO PUBLIC
+  USING (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  )
+  WITH CHECK (
+    user_id = app.current_user_id()
+    AND app.has_duo_membership(app.current_user_id(), duo_id)
+  );
+
+ALTER TABLE app.duo_xp_awards ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.duo_xp_awards FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_duo_xp_awards_select_members ON app.duo_xp_awards;
+DROP POLICY IF EXISTS app_duo_xp_awards_insert_members ON app.duo_xp_awards;
+CREATE POLICY app_duo_xp_awards_select_members ON app.duo_xp_awards
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_duo_xp_awards_insert_members ON app.duo_xp_awards
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      awarded_by_user_id IS NULL
+      OR awarded_by_user_id = app.current_user_id()
+    )
+  );
+
+ALTER TABLE ops.scheduled_jobs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.scheduled_jobs FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ops_scheduled_jobs_select_members ON ops.scheduled_jobs;
+DROP POLICY IF EXISTS ops_scheduled_jobs_insert_members ON ops.scheduled_jobs;
+DROP POLICY IF EXISTS ops_scheduled_jobs_select_worker ON ops.scheduled_jobs;
+DROP POLICY IF EXISTS ops_scheduled_jobs_update_worker ON ops.scheduled_jobs;
+CREATE POLICY ops_scheduled_jobs_select_members ON ops.scheduled_jobs
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_scheduled_jobs_insert_members ON ops.scheduled_jobs
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_scheduled_jobs_select_worker ON ops.scheduled_jobs
+  FOR SELECT TO queue2_worker
+  USING (true);
+CREATE POLICY ops_scheduled_jobs_update_worker ON ops.scheduled_jobs
+  FOR UPDATE TO queue2_worker
+  USING (true)
+  WITH CHECK (true);
