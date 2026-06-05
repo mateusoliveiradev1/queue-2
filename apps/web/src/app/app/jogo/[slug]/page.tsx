@@ -19,11 +19,15 @@ import {
 } from "../../../../modules/library";
 import {
   ChapterList,
+  getDuoNotifications,
   getGamePlayDetail,
   getGameTimeline,
   JogamosHojeForm,
   LiveSessionPanel,
+  NotificationCenter,
   ProgressPanel,
+  PushPreferences,
+  ScheduleSessionForm,
   TerminalStatusPanel,
   Timeline
 } from "../../../../modules/play";
@@ -38,7 +42,9 @@ import {
 } from "../../phase-2-actions";
 import {
   cancelTerminalStatusAction,
+  cancelScheduledSessionAction,
   confirmPlaySessionAction,
+  confirmScheduledSessionAction,
   confirmTerminalStatusAction,
   createMomentoAction,
   createPlayChapterAction,
@@ -46,6 +52,7 @@ import {
   logOfflineSessionAction,
   requestTerminalStatusAction,
   revealMomentoSpoilerAction,
+  schedulePlaySessionAction,
   setPlayChapterCompletionAction,
   startLiveSessionAction,
   updatePlayProgressAction
@@ -78,14 +85,15 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
   const session = await measureStage("auth", gameTimingContext, () =>
     requireVerifiedSession()
   );
-  const [{ slug }, dashboard, query] = await measureStage(
+  const [{ slug }, dashboard, query, notificationsResult] = await measureStage(
     "database",
     gameTimingContext,
     () =>
       Promise.all([
         params,
         getDuoDashboard(session.user.id),
-        searchParams
+        searchParams,
+        getDuoNotifications({ userId: session.user.id })
       ])
   );
 
@@ -138,7 +146,12 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
   const statusMessage = getPhase2StatusMessage(state);
 
   return measureStage("render", gameTimingContext, async () => (
-    <AppShell currentPage="catalogo">
+    <AppShell
+      currentPage="catalogo"
+      notificationCenter={
+        <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
+      }
+    >
       <header className="game-detail-hero">
         <div className="game-detail-cover">
           {catalog.coverUrl ? (
@@ -298,6 +311,25 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
             playDetail={playDetail}
             requestAction={requestTerminalStatusAction}
           />
+          <ScheduleSessionForm
+            cancelAction={cancelScheduledSessionAction}
+            catalogGameId={catalog.id}
+            confirmAction={confirmScheduledSessionAction}
+            gameSlug={catalog.slug}
+            playDetail={playDetail}
+            scheduleAction={schedulePlaySessionAction}
+          />
+          <section className="surface-band app-section play-panel" aria-labelledby="push-title">
+            <div className="section-heading">
+              <h2 className="eyebrow" id="push-title">
+                Push de sessoes
+              </h2>
+              <p className="support-copy">
+                Opcional depois de combinar horario. Desativar push nao cancela agenda nem Central.
+              </p>
+            </div>
+            <PushPreferences />
+          </section>
           <Timeline
             catalogGameId={catalog.id}
             createMomentoAction={createMomentoAction}

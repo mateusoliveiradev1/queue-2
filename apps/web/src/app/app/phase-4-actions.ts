@@ -4,7 +4,9 @@ import { revalidatePath } from "next/cache";
 
 import {
   cancelTerminalStatus,
+  cancelScheduledSession,
   confirmPlaySession,
+  confirmScheduledSession,
   confirmTerminalStatus,
   createMomento,
   createPlayChapter,
@@ -13,6 +15,7 @@ import {
   promotePlayingGame,
   requestTerminalStatus,
   reorderPlayingGames,
+  schedulePlaySession,
   startLiveSession,
   setPlayChapterCompletion,
   updatePlayProgress,
@@ -159,6 +162,30 @@ export async function confirmTerminalStatusAction(
   );
 }
 
+export async function schedulePlaySessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "schedule-session", sessionTimingContext)
+  );
+}
+
+export async function cancelScheduledSessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "cancel-scheduled", sessionTimingContext)
+  );
+}
+
+export async function confirmScheduledSessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "confirm-scheduled", sessionTimingContext)
+  );
+}
+
 export async function createMomentoAction(
   formData: FormData
 ): Promise<void> {
@@ -288,8 +315,10 @@ async function promotePlayingGameActionTimed(
 async function playJourneyActionTimed(
   formData: FormData,
   action:
+    | "cancel-scheduled"
     | "cancel-terminal"
     | "confirm-session"
+    | "confirm-scheduled"
     | "confirm-terminal"
     | "create-momento"
     | "create-chapter"
@@ -297,6 +326,7 @@ async function playJourneyActionTimed(
     | "log-offline"
     | "request-terminal"
     | "reveal-spoiler"
+    | "schedule-session"
     | "set-chapter"
     | "start-live"
     | "update-progress",
@@ -364,6 +394,23 @@ async function playJourneyActionTimed(
         return confirmTerminalStatus({
           userId: session.user.id,
           requestId: getFormString(formData, "requestId")
+        });
+      case "schedule-session":
+        return schedulePlaySession({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId"),
+          scheduledLocalDateTime: getFormString(formData, "scheduledLocalDateTime"),
+          scheduledSessionId: getFormString(formData, "scheduledSessionId") || null
+        });
+      case "cancel-scheduled":
+        return cancelScheduledSession({
+          userId: session.user.id,
+          scheduledSessionId: getFormString(formData, "scheduledSessionId")
+        });
+      case "confirm-scheduled":
+        return confirmScheduledSession({
+          userId: session.user.id,
+          scheduledSessionId: getFormString(formData, "scheduledSessionId")
         });
       case "create-momento":
         return createMomento({
@@ -477,8 +524,10 @@ function playOrderReasonToState(reason: Exclude<PlayOrderMutationResult, { ok: t
 
 function playJourneySuccessState(
   action:
+    | "cancel-scheduled"
     | "cancel-terminal"
     | "confirm-session"
+    | "confirm-scheduled"
     | "confirm-terminal"
     | "create-momento"
     | "create-chapter"
@@ -486,6 +535,7 @@ function playJourneySuccessState(
     | "log-offline"
     | "request-terminal"
     | "reveal-spoiler"
+    | "schedule-session"
     | "set-chapter"
     | "start-live"
     | "update-progress"
@@ -511,6 +561,12 @@ function playJourneySuccessState(
       return "pedido-terminal-cancelado";
     case "confirm-terminal":
       return "pedido-terminal-confirmado";
+    case "schedule-session":
+      return "sessao-agendada";
+    case "cancel-scheduled":
+      return "sessao-agendada-cancelada";
+    case "confirm-scheduled":
+      return "presenca-confirmada";
     case "create-momento":
       return "momento-criado";
     case "reveal-spoiler":
@@ -542,6 +598,10 @@ function playJourneyReasonToState(reason: string): string {
       return "sessao-nao-ativa";
     case "session-not-found":
       return "sessao-nao-encontrada";
+    case "invalid-scheduled-time":
+      return "horario-invalido";
+    case "scheduled-session-not-found":
+      return "sessao-agendada-nao-encontrada";
     case "terminal-request-not-pending":
       return "pedido-terminal-nao-pendente";
     default:

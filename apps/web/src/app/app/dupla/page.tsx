@@ -13,6 +13,11 @@ import {
   updateDuoSettings
 } from "../../../modules/duo";
 import {
+  getDuoNotifications,
+  NotificationCenter,
+  PushPreferences
+} from "../../../modules/play";
+import {
   requireAuthoritativeVerifiedSession,
   requireVerifiedSession
 } from "../../../platform/auth/session";
@@ -29,9 +34,10 @@ type DuoPageProps = {
 
 export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
   const session = await requireVerifiedSession();
-  const [dashboard, params] = await Promise.all([
+  const [dashboard, params, notificationsResult] = await Promise.all([
     getDuoDashboard(session.user.id),
-    searchParams
+    searchParams,
+    getDuoNotifications({ userId: session.user.id })
   ]);
 
   if (dashboard.routeState === "pairing" || !dashboard.duo) {
@@ -42,7 +48,12 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
   const statusMessage = getDuoStatusMessage(getSearchParam(params?.estado));
 
   return (
-    <AppShell currentPage="dupla">
+    <AppShell
+      currentPage="dupla"
+      notificationCenter={
+        <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
+      }
+    >
       <header className="app-header">
         <div>
           <p className="eyebrow">Contrato /2</p>
@@ -135,6 +146,7 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
           <p className="support-copy">
             A permissao de push so aparece quando houver um lembrete real.
           </p>
+          <PushPreferences />
         </section>
 
         <div className="form-actions">

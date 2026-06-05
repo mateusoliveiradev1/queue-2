@@ -244,6 +244,27 @@ export type PlayTerminalRequestRecord = {
   updatedAt: Date;
 };
 
+export type PlayScheduledSessionStatus = "scheduled" | "completed" | "cancelled";
+
+export type PlayScheduledSessionRecord = {
+  id: string;
+  duoId: PlayDuoId;
+  libraryGameId: PlayLibraryGameId;
+  scheduledStartAt: Date;
+  timezone: string;
+  status: PlayScheduledSessionStatus;
+  reminderDueAt: Date;
+  createdByUserId: PlayUserId;
+  updatedByUserId: PlayUserId;
+  createdAt: Date;
+  updatedAt: Date;
+  confirmedByUserIds: PlayUserId[];
+  pendingUserIds: PlayUserId[];
+  confirmationCount: number;
+  requiredConfirmationCount: number;
+  doubleConfirmed: boolean;
+};
+
 export type PlayMomentoRecord = {
   id: string;
   duoId: PlayDuoId;
@@ -300,6 +321,7 @@ export type GameTimelineRecord = {
 
 export type GamePlayDetailRecord = {
   duoId: PlayDuoId;
+  duoTimezone: string;
   libraryGameId: PlayLibraryGameId;
   catalogGameId: PlayCatalogGameId;
   libraryStatus: string;
@@ -309,6 +331,7 @@ export type GamePlayDetailRecord = {
   progress: PlayProgressRecord;
   chapters: PlayChapterRecord[];
   terminalRequest: PlayTerminalRequestRecord | null;
+  scheduledSessions: PlayScheduledSessionRecord[];
 };
 
 export type PlayReminderJobRecord = {
@@ -320,6 +343,30 @@ export type PlayReminderJobRecord = {
   status: "pending" | "claimed" | "completed" | "failed" | "cancelled";
   attempts: number;
   payload: Record<string, unknown>;
+};
+
+export type PlayPushSubscriptionInput = {
+  userId: PlayUserId;
+  endpoint: string;
+  p256dh: string;
+  authSecret: string;
+  userAgent?: string | null;
+};
+
+export type PlayPushSubscriptionRecord = {
+  id: string;
+  duoId: PlayDuoId;
+  userId: PlayUserId;
+  endpoint: string;
+  p256dh: string;
+  authSecret: string;
+  enabled: boolean;
+  updatedAt: Date;
+};
+
+export type PlayNotificationCenterRecord = {
+  unreadCount: number;
+  items: PlayNotificationRecord[];
 };
 
 export type PlayRepositoryTransaction = {
@@ -453,6 +500,57 @@ export type PlayRepositoryTransaction = {
     requestId: string;
     actorUserId: PlayUserId;
   }): Promise<PlayTerminalRequestRecord | null>;
+  readDuoTimezone(input: {
+    duoId: PlayDuoId;
+  }): Promise<string>;
+  createScheduledSession(input: {
+    duoId: PlayDuoId;
+    libraryGameId: PlayLibraryGameId;
+    scheduledStartAt: Date;
+    timezone: string;
+    reminderDueAt: Date;
+    actorUserId: PlayUserId;
+    memberUserIds: PlayUserId[];
+  }): Promise<PlayScheduledSessionRecord>;
+  updateScheduledSession(input: {
+    duoId: PlayDuoId;
+    scheduledSessionId: string;
+    libraryGameId: PlayLibraryGameId;
+    scheduledStartAt: Date;
+    timezone: string;
+    reminderDueAt: Date;
+    actorUserId: PlayUserId;
+    memberUserIds: PlayUserId[];
+  }): Promise<PlayScheduledSessionRecord | null>;
+  cancelScheduledSession(input: {
+    duoId: PlayDuoId;
+    scheduledSessionId: string;
+    actorUserId: PlayUserId;
+    memberUserIds: PlayUserId[];
+  }): Promise<PlayScheduledSessionRecord | null>;
+  readScheduledSessionDetail(input: {
+    duoId: PlayDuoId;
+    scheduledSessionId: string;
+    memberUserIds: PlayUserId[];
+  }): Promise<PlayScheduledSessionRecord | null>;
+  confirmScheduledAttendance(input: {
+    duoId: PlayDuoId;
+    scheduledSessionId: string;
+    actorUserId: PlayUserId;
+    memberUserIds: PlayUserId[];
+  }): Promise<PlayScheduledSessionRecord | null>;
+  insertReminderJob(input: {
+    duoId: PlayDuoId;
+    scheduledSessionId: string;
+    runAt: Date;
+    scheduledStartAt: Date;
+    createdByUserId: PlayUserId;
+  }): Promise<PlayReminderJobRecord>;
+  registerPushSubscription(input: PlayPushSubscriptionInput): Promise<PlayPushSubscriptionRecord>;
+  disablePushSubscriptions(input: {
+    userId: PlayUserId;
+    endpoint?: string | null;
+  }): Promise<number>;
   createMomento(input: {
     duoId: PlayDuoId;
     libraryGameId: PlayLibraryGameId;
@@ -509,9 +607,33 @@ export interface PlayRepository {
   }): Promise<void>;
   insertNotificationItem(input: PlayNotificationInput): Promise<PlayNotificationRecord>;
   insertXpAward(input: PlayXpAwardInput): Promise<PlayXpAwardRecord | null>;
+  readNotificationCenter(input: {
+    userId: PlayUserId;
+    limit: number;
+  }): Promise<PlayNotificationCenterRecord | null>;
+  registerPushSubscription(input: PlayPushSubscriptionInput): Promise<PlayPushSubscriptionRecord | null>;
+  disablePushSubscriptions(input: {
+    userId: PlayUserId;
+    endpoint?: string | null;
+  }): Promise<number>;
   claimDueReminderJobs(input: {
     now: Date;
     limit: number;
     workerId: string;
   }): Promise<PlayReminderJobRecord[]>;
+  completeReminderJob(input: {
+    jobId: string;
+    processedAt: Date;
+  }): Promise<void>;
+  failReminderJob(input: {
+    jobId: string;
+    error: string;
+  }): Promise<void>;
+  runAsUser<T>(
+    userId: PlayUserId,
+    callback: (transaction: PlayRepositoryTransaction) => Promise<T>
+  ): Promise<T>;
+  readEnabledPushSubscriptions(input: {
+    userId: PlayUserId;
+  }): Promise<PlayPushSubscriptionRecord[]>;
 }

@@ -20,10 +20,12 @@ const navigation = [
 
 export function AppShell({
   children,
-  currentPage
+  currentPage,
+  notificationCenter
 }: {
   children: ReactNode;
   currentPage: AppShellPage;
+  notificationCenter?: ReactNode;
 }) {
   return (
     <div className="app-shell">
@@ -59,6 +61,7 @@ export function AppShell({
             })}
           </nav>
         </div>
+        {notificationCenter}
         <div className="neutral-state">
           <QueueMark size={40} />
           <span>A fila pertence aos dois. Tudo que importa aqui e compartilhado.</span>

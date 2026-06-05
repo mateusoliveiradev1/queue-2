@@ -178,6 +178,7 @@ function gamePlayDetailRecord(
 ): GamePlayDetailRecord {
   return {
     duoId: "duo-1",
+    duoTimezone: "America/Sao_Paulo",
     libraryGameId: "library-1",
     catalogGameId: "game-1",
     libraryStatus: "jogando",
@@ -195,6 +196,7 @@ function gamePlayDetailRecord(
     progress: playProgressRecord(),
     chapters: [],
     terminalRequest: null,
+    scheduledSessions: [],
     ...overrides
   };
 }

@@ -14,10 +14,15 @@ import {
   createMomentoUseCase,
   revealMomentoSpoilerUseCase
 } from "./application/manage-momentos";
+import { getDuoNotificationsUseCase } from "./application/get-duo-notifications";
 import {
   createPlayChapterUseCase,
   setPlayChapterCompletionUseCase
 } from "./application/manage-play-chapters";
+import {
+  disableProductPushUseCase,
+  registerProductPushUseCase
+} from "./application/register-product-push";
 import { promotePlayingGameUseCase } from "./application/promote-playing-game";
 import {
   cancelTerminalStatusUseCase,
@@ -25,6 +30,11 @@ import {
   requestTerminalStatusUseCase
 } from "./application/request-terminal-status";
 import { reorderPlayingGamesUseCase } from "./application/reorder-playing-games";
+import {
+  cancelScheduledSessionUseCase,
+  schedulePlaySessionUseCase
+} from "./application/schedule-play-session";
+import { confirmScheduledSessionUseCase } from "./application/confirm-scheduled-session";
 import { startLiveSessionUseCase } from "./application/start-live-session";
 import { updatePlayProgressUseCase } from "./application/update-play-progress";
 import { playRepository } from "./infrastructure/play-repository";
@@ -119,11 +129,16 @@ export type {
   PlayMembershipContext,
   PlayMomentoRecord,
   PlayNotificationInput,
+  PlayNotificationCenterRecord,
   PlayNotificationRecord,
   PlayProgressRecord,
+  PlayPushSubscriptionInput,
+  PlayPushSubscriptionRecord,
   PlayReminderJobRecord,
   PlayRepository,
   PlayRepositoryTransaction,
+  PlayScheduledSessionRecord,
+  PlayScheduledSessionStatus,
   PlaySessionDetailRecord,
   PlayTimelineEvent,
   PlayTimelineMilestoneRecord,
@@ -179,11 +194,29 @@ export {
   type SetPlayChapterCompletionResult
 } from "./application/manage-play-chapters";
 export {
+  confirmScheduledSessionUseCase,
+  type ConfirmScheduledSessionResult
+} from "./application/confirm-scheduled-session";
+export {
+  getDuoNotificationsUseCase,
+  type GetDuoNotificationsResult
+} from "./application/get-duo-notifications";
+export {
   createMomentoUseCase,
   revealMomentoSpoilerUseCase,
   type CreateMomentoResult,
   type RevealMomentoSpoilerResult
 } from "./application/manage-momentos";
+export {
+  PRODUCT_PUSH_AUTH_MAX_LENGTH,
+  PRODUCT_PUSH_ENDPOINT_MAX_LENGTH,
+  PRODUCT_PUSH_KEY_MAX_LENGTH,
+  disableProductPushUseCase,
+  getProductPushPublicConfig,
+  registerProductPushUseCase,
+  type BrowserProductPushSubscriptionPayload,
+  type ProductPushSubscriptionResult
+} from "./application/register-product-push";
 export {
   cancelTerminalStatusUseCase,
   confirmTerminalStatusUseCase,
@@ -198,6 +231,13 @@ export {
 export {
   reorderPlayingGamesUseCase
 } from "./application/reorder-playing-games";
+export {
+  cancelScheduledSessionUseCase,
+  parseLocalDateTimeInZone,
+  schedulePlaySessionUseCase,
+  type CancelScheduledSessionResult,
+  type SchedulePlaySessionResult
+} from "./application/schedule-play-session";
 
 export function getCurrentPlay(userId: string) {
   return getCurrentPlayUseCase(userId, playRepository);
@@ -216,6 +256,13 @@ export function getGameTimeline(input: {
   estimatedMinutes: number | null;
 }) {
   return getGameTimelineUseCase(input, playRepository);
+}
+
+export function getDuoNotifications(input: {
+  userId: string;
+  limit?: number;
+}) {
+  return getDuoNotificationsUseCase(input, playRepository);
 }
 
 export function activatePlayingGame(input: {
@@ -322,6 +369,29 @@ export function confirmTerminalStatus(input: {
   return confirmTerminalStatusUseCase(input, playRepository);
 }
 
+export function schedulePlaySession(input: {
+  userId: string;
+  catalogGameId: string;
+  scheduledLocalDateTime: string;
+  scheduledSessionId?: string | null;
+}) {
+  return schedulePlaySessionUseCase(input, playRepository);
+}
+
+export function cancelScheduledSession(input: {
+  userId: string;
+  scheduledSessionId: string;
+}) {
+  return cancelScheduledSessionUseCase(input, playRepository);
+}
+
+export function confirmScheduledSession(input: {
+  userId: string;
+  scheduledSessionId: string;
+}) {
+  return confirmScheduledSessionUseCase(input, playRepository);
+}
+
 export function createMomento(input: {
   userId: string;
   catalogGameId: string;
@@ -339,6 +409,27 @@ export function revealMomentoSpoiler(input: {
   return revealMomentoSpoilerUseCase(input, playRepository);
 }
 
+export function registerProductPush(input: {
+  userId: string;
+  subscription: {
+    endpoint: string;
+    keys: {
+      p256dh: string;
+      auth: string;
+    };
+  };
+  userAgent?: string | null;
+}) {
+  return registerProductPushUseCase(input, playRepository);
+}
+
+export function disableProductPush(input: {
+  userId: string;
+  endpoint?: string | null;
+}) {
+  return disableProductPushUseCase(input, playRepository);
+}
+
 export { PlayingNowDashboard } from "./presentation/playing-now-dashboard";
 export { PlayingOrderControls } from "./presentation/playing-order-controls";
 export { ChapterList } from "./presentation/chapter-list";
@@ -350,6 +441,9 @@ export { MilestoneBadge } from "./presentation/milestone-badge";
 export { MomentoForm } from "./presentation/momento-form";
 export { SpoilerReveal } from "./presentation/spoiler-reveal";
 export { Timeline } from "./presentation/timeline";
+export { NotificationCenter } from "./presentation/notification-center";
+export { PushPreferences } from "./presentation/push-preferences";
+export { ScheduleSessionForm } from "./presentation/schedule-session-form";
 export {
   toPlayingNowView,
   type PlayingNowGameView,

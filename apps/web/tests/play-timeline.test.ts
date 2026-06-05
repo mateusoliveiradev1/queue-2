@@ -11,9 +11,13 @@ import type {
   GamePlayDetailRecord,
   PlayMembershipContext,
   PlayMomentoRecord,
+  PlayNotificationCenterRecord,
   PlayNotificationRecord,
+  PlayPushSubscriptionRecord,
+  PlayReminderJobRecord,
   PlayRepository,
   PlayRepositoryTransaction,
+  PlayScheduledSessionRecord,
   PlayXpAwardRecord
 } from "../src/modules/play/application/ports";
 import { classifyTimelineMilestones } from "../src/modules/play/domain/milestone-policy";
@@ -225,6 +229,22 @@ function makeTimelineRepository(input: {
     createTerminalRequest: vi.fn(),
     cancelTerminalRequest: vi.fn(),
     confirmTerminalRequest: vi.fn(),
+    readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
+    createScheduledSession: vi.fn(async () => scheduledSessionRecord()),
+    updateScheduledSession: vi.fn(async () => scheduledSessionRecord()),
+    cancelScheduledSession: vi.fn(async () => scheduledSessionRecord({ status: "cancelled" })),
+    readScheduledSessionDetail: vi.fn(async () => scheduledSessionRecord()),
+    confirmScheduledAttendance: vi.fn(async () =>
+      scheduledSessionRecord({
+        confirmationCount: 2,
+        confirmedByUserIds: ["member-1", "member-2"],
+        doubleConfirmed: true,
+        pendingUserIds: []
+      })
+    ),
+    insertReminderJob: vi.fn(async () => reminderJobRecord()),
+    registerPushSubscription: vi.fn(async (pushInput) => pushSubscriptionRecord(pushInput)),
+    disablePushSubscriptions: vi.fn(async () => 1),
     createMomento: vi.fn(async (momentoInput) => momentoRecord(momentoInput)),
     revealMomento: vi.fn(async (momentoInput) =>
       momentoRecord({
@@ -248,7 +268,14 @@ function makeTimelineRepository(input: {
     cancelConfirmation: vi.fn(),
     insertNotificationItem: vi.fn(async (notificationInput) => notificationRecord(notificationInput)),
     insertXpAward: vi.fn(async (awardInput) => xpAwardRecord(awardInput)),
-    claimDueReminderJobs: vi.fn(async () => [])
+    readNotificationCenter: vi.fn(async () => notificationCenterRecord()),
+    registerPushSubscription: vi.fn(async (pushInput) => pushSubscriptionRecord(pushInput)),
+    disablePushSubscriptions: vi.fn(async () => 1),
+    claimDueReminderJobs: vi.fn(async () => []),
+    completeReminderJob: vi.fn(),
+    failReminderJob: vi.fn(),
+    runAsUser: vi.fn(async (_userId, callback) => callback(transaction)),
+    readEnabledPushSubscriptions: vi.fn(async () => [])
   };
 
   return { repository, transaction };
@@ -272,6 +299,7 @@ function gamePlayDetailRecord(
 ): GamePlayDetailRecord {
   return {
     duoId: "duo-1",
+    duoTimezone: "America/Sao_Paulo",
     libraryGameId: "library-1",
     catalogGameId: "game-1",
     libraryStatus: "jogando",
@@ -287,6 +315,7 @@ function gamePlayDetailRecord(
     },
     chapters: [],
     terminalRequest: null,
+    scheduledSessions: [],
     ...overrides
   };
 }
@@ -333,6 +362,70 @@ function notificationRecord(
     title: "Timeline",
     body: null,
     createdAt: new Date("2026-06-05T12:00:00.000Z"),
+    ...overrides
+  };
+}
+
+function notificationCenterRecord(
+  overrides: Partial<PlayNotificationCenterRecord> = {}
+): PlayNotificationCenterRecord {
+  return {
+    unreadCount: 0,
+    items: [],
+    ...overrides
+  };
+}
+
+function scheduledSessionRecord(
+  overrides: Partial<PlayScheduledSessionRecord> = {}
+): PlayScheduledSessionRecord {
+  return {
+    id: "scheduled-1",
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    scheduledStartAt: new Date("2026-06-06T20:00:00.000Z"),
+    timezone: "America/Sao_Paulo",
+    status: "scheduled",
+    reminderDueAt: new Date("2026-06-06T19:30:00.000Z"),
+    createdByUserId: "member-1",
+    updatedByUserId: "member-1",
+    createdAt: new Date("2026-06-05T12:00:00.000Z"),
+    updatedAt: new Date("2026-06-05T12:00:00.000Z"),
+    confirmedByUserIds: [],
+    pendingUserIds: ["member-1", "member-2"],
+    confirmationCount: 0,
+    requiredConfirmationCount: 2,
+    doubleConfirmed: false,
+    ...overrides
+  };
+}
+
+function reminderJobRecord(overrides: Partial<PlayReminderJobRecord> = {}): PlayReminderJobRecord {
+  return {
+    id: "job-1",
+    duoId: "duo-1",
+    jobKey: "play-session-reminder:scheduled-1",
+    jobType: "play-session-reminder",
+    runAt: new Date("2026-06-06T19:30:00.000Z"),
+    status: "pending",
+    attempts: 0,
+    payload: {},
+    ...overrides
+  };
+}
+
+function pushSubscriptionRecord(
+  overrides: Partial<PlayPushSubscriptionRecord> = {}
+): PlayPushSubscriptionRecord {
+  return {
+    id: "push-1",
+    duoId: "duo-1",
+    userId: "member-1",
+    endpoint: "https://push.example.test/sub",
+    p256dh: "p256dh_key",
+    authSecret: "auth_secret",
+    enabled: true,
+    updatedAt: new Date("2026-06-05T12:00:00.000Z"),
     ...overrides
   };
 }

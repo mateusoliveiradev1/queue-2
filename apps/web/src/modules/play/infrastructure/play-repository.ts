@@ -16,13 +16,17 @@ import type {
   PlayChapterRecord,
   PlayMembershipContext,
   PlayMomentoRecord,
+  PlayNotificationCenterRecord,
   PlayNotificationInput,
   PlayNotificationRecord,
   PlayActivationLibraryGameRecord,
   PlayProgressRecord,
+  PlayPushSubscriptionInput,
+  PlayPushSubscriptionRecord,
   PlayReminderJobRecord,
   PlayRepository,
   PlayRepositoryTransaction,
+  PlayScheduledSessionRecord,
   PlaySessionDetailRecord,
   PlaySessionRecord,
   PlayTimelineEvent,
@@ -146,6 +150,22 @@ type TerminalRequestRow = {
   updated_at: Date;
 };
 
+type ScheduledSessionRow = {
+  id: string;
+  duo_id: string;
+  library_game_id: string;
+  scheduled_start_at: Date;
+  timezone: string;
+  status: PlayScheduledSessionRecord["status"];
+  reminder_due_at: Date;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: Date;
+  updated_at: Date;
+  confirmed_by_user_ids: string[];
+  confirmation_count: number;
+};
+
 type MomentoRow = {
   id: string;
   duo_id: string;
@@ -170,6 +190,17 @@ type NotificationRow = {
   title: string;
   body: string | null;
   created_at: Date;
+};
+
+type PushSubscriptionRow = {
+  id: string;
+  duo_id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth_secret: string;
+  enabled: boolean;
+  updated_at: Date;
 };
 
 type XpAwardRow = {
@@ -211,7 +242,17 @@ export const playRepository: PlayRepository = {
   cancelConfirmation: (...args) => getDefaultPlayRepository().cancelConfirmation(...args),
   insertNotificationItem: (...args) => getDefaultPlayRepository().insertNotificationItem(...args),
   insertXpAward: (...args) => getDefaultPlayRepository().insertXpAward(...args),
-  claimDueReminderJobs: (...args) => getDefaultPlayRepository().claimDueReminderJobs(...args)
+  readNotificationCenter: (...args) => getDefaultPlayRepository().readNotificationCenter(...args),
+  registerPushSubscription: (...args) =>
+    getDefaultPlayRepository().registerPushSubscription(...args),
+  disablePushSubscriptions: (...args) =>
+    getDefaultPlayRepository().disablePushSubscriptions(...args),
+  claimDueReminderJobs: (...args) => getDefaultPlayRepository().claimDueReminderJobs(...args),
+  completeReminderJob: (...args) => getDefaultPlayRepository().completeReminderJob(...args),
+  failReminderJob: (...args) => getDefaultPlayRepository().failReminderJob(...args),
+  runAsUser: (...args) => getDefaultPlayRepository().runAsUser(...args),
+  readEnabledPushSubscriptions: (...args) =>
+    getDefaultPlayRepository().readEnabledPushSubscriptions(...args)
 };
 
 export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): PlayRepository {
@@ -286,7 +327,41 @@ export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): Play
       withAppUserTransaction(pool, input.awardedByUserId ?? "", (client) =>
         insertXpAward(client, input)
       ),
-    claimDueReminderJobs: (input) => claimDueReminderJobs(pool, input)
+    readNotificationCenter: (input) =>
+      withAppUserTransaction(pool, input.userId, async (client) => {
+        const membership = await resolveMembership(client, input.userId);
+        return membership
+          ? readNotificationCenter(client, {
+              duoId: membership.duoId,
+              limit: input.limit
+            })
+          : null;
+      }),
+    registerPushSubscription: (input) =>
+      withAppUserTransaction(pool, input.userId, async (client) => {
+        const membership = await resolveMembership(client, input.userId);
+        return membership
+          ? registerPushSubscription(client, {
+              ...input,
+              duoId: membership.duoId
+            })
+          : null;
+      }),
+    disablePushSubscriptions: (input) =>
+      withAppUserTransaction(pool, input.userId, (client) =>
+        disablePushSubscriptions(client, input)
+      ),
+    claimDueReminderJobs: (input) => claimDueReminderJobs(pool, input),
+    completeReminderJob: (input) => completeReminderJob(pool, input),
+    failReminderJob: (input) => failReminderJob(pool, input),
+    runAsUser: (userId, callback) =>
+      withAppUserTransaction(pool, userId, (client) =>
+        callback(createTransaction(client))
+      ),
+    readEnabledPushSubscriptions: (input) =>
+      withAppUserTransaction(pool, input.userId, (client) =>
+        readEnabledPushSubscriptions(client, input.userId)
+      )
   };
 }
 
@@ -348,6 +423,26 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     createTerminalRequest: (input) => createTerminalRequest(client, input),
     cancelTerminalRequest: (input) => cancelTerminalRequest(client, input),
     confirmTerminalRequest: (input) => confirmTerminalRequest(client, input),
+    readDuoTimezone: (input) => readDuoTimezone(client, input.duoId),
+    createScheduledSession: (input) => createScheduledSession(client, input),
+    updateScheduledSession: (input) => updateScheduledSession(client, input),
+    cancelScheduledSession: (input) => cancelScheduledSession(client, input),
+    readScheduledSessionDetail: (input) => readScheduledSessionDetail(client, input),
+    confirmScheduledAttendance: (input) => confirmScheduledAttendance(client, input),
+    insertReminderJob: (input) => insertReminderJob(client, input),
+    registerPushSubscription: async (input) => {
+      const membership = await resolveMembership(client, input.userId);
+
+      if (!membership) {
+        throw new Error("play_push_membership_required");
+      }
+
+      return registerPushSubscription(client, {
+        ...input,
+        duoId: membership.duoId
+      });
+    },
+    disablePushSubscriptions: (input) => disablePushSubscriptions(client, input),
     createMomento: (input) => createMomento(client, input),
     revealMomento: (input) => revealMomento(client, input),
     insertNotificationItem: (input) => insertNotificationItem(client, input),
@@ -467,8 +562,18 @@ async function readGamePlayDetail(
     return null;
   }
 
-  const [currentGames, activeLiveSession, pendingSessions, progress, chapters, terminalRequest] =
+  const [
+    duoTimezone,
+    currentGames,
+    activeLiveSession,
+    pendingSessions,
+    progress,
+    chapters,
+    terminalRequest,
+    scheduledSessions
+  ] =
     await Promise.all([
+      readDuoTimezone(client, input.duoId),
       readCurrentPlayGames(client, input.duoId),
       readActiveLiveSession(client, input.duoId),
       readPendingSessionsForLibraryGame(client, {
@@ -478,11 +583,17 @@ async function readGamePlayDetail(
       }),
       readProgress(client, input.duoId, libraryGame.id),
       readChapters(client, input.duoId, libraryGame.id),
-      readPendingTerminalRequest(client, input.duoId, libraryGame.id)
+      readPendingTerminalRequest(client, input.duoId, libraryGame.id),
+      readScheduledSessionsForLibraryGame(client, {
+        duoId: input.duoId,
+        libraryGameId: libraryGame.id,
+        memberUserIds: input.memberUserIds
+      })
     ]);
 
   return {
     duoId: input.duoId,
+    duoTimezone,
     libraryGameId: libraryGame.id,
     catalogGameId: libraryGame.catalog_game_id,
     libraryStatus: libraryGame.status,
@@ -492,7 +603,8 @@ async function readGamePlayDetail(
     pendingSessions,
     progress,
     chapters,
-    terminalRequest
+    terminalRequest,
+    scheduledSessions
   };
 }
 
@@ -892,6 +1004,331 @@ async function readPendingTerminalRequest(
   const row = result.rows[0];
 
   return row ? mapTerminalRequest(row) : null;
+}
+
+async function readScheduledSessionsForLibraryGame(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlayScheduledSessionRecord[]> {
+  const result = await client.query<ScheduledSessionRow>(
+    `
+      SELECT
+        scheduled.id,
+        scheduled.duo_id,
+        scheduled.library_game_id,
+        scheduled.scheduled_start_at,
+        scheduled.timezone,
+        scheduled.status,
+        scheduled.reminder_due_at,
+        scheduled.created_by_user_id,
+        scheduled.updated_by_user_id,
+        scheduled.created_at,
+        scheduled.updated_at,
+        coalesce(array_agg(attendance.user_id ORDER BY attendance.confirmed_at) FILTER (WHERE attendance.user_id IS NOT NULL), ARRAY[]::text[]) AS confirmed_by_user_ids,
+        count(attendance.user_id)::int AS confirmation_count
+      FROM app.play_scheduled_sessions AS scheduled
+      LEFT JOIN app.play_scheduled_attendance AS attendance
+        ON attendance.scheduled_session_id = scheduled.id
+      WHERE scheduled.duo_id = $1
+        AND scheduled.library_game_id = $2
+        AND scheduled.status <> 'cancelled'
+      GROUP BY scheduled.id
+      ORDER BY scheduled.scheduled_start_at ASC
+      LIMIT 12
+    `,
+    [input.duoId, input.libraryGameId]
+  );
+
+  return result.rows.map((row) => mapScheduledSession(row, input.memberUserIds));
+}
+
+async function readScheduledSessionDetail(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    scheduledSessionId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlayScheduledSessionRecord | null> {
+  const result = await client.query<ScheduledSessionRow>(
+    `
+      SELECT
+        scheduled.id,
+        scheduled.duo_id,
+        scheduled.library_game_id,
+        scheduled.scheduled_start_at,
+        scheduled.timezone,
+        scheduled.status,
+        scheduled.reminder_due_at,
+        scheduled.created_by_user_id,
+        scheduled.updated_by_user_id,
+        scheduled.created_at,
+        scheduled.updated_at,
+        coalesce(array_agg(attendance.user_id ORDER BY attendance.confirmed_at) FILTER (WHERE attendance.user_id IS NOT NULL), ARRAY[]::text[]) AS confirmed_by_user_ids,
+        count(attendance.user_id)::int AS confirmation_count
+      FROM app.play_scheduled_sessions AS scheduled
+      LEFT JOIN app.play_scheduled_attendance AS attendance
+        ON attendance.scheduled_session_id = scheduled.id
+      WHERE scheduled.duo_id = $1
+        AND scheduled.id = $2
+      GROUP BY scheduled.id
+      LIMIT 1
+    `,
+    [input.duoId, input.scheduledSessionId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapScheduledSession(row, input.memberUserIds) : null;
+}
+
+async function createScheduledSession(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    scheduledStartAt: Date;
+    timezone: string;
+    reminderDueAt: Date;
+    actorUserId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlayScheduledSessionRecord> {
+  const result = await client.query<ScheduledSessionRow>(
+    `
+      INSERT INTO app.play_scheduled_sessions (
+        duo_id,
+        library_game_id,
+        scheduled_start_at,
+        timezone,
+        reminder_due_at,
+        created_by_user_id,
+        updated_by_user_id,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $6, now())
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        scheduled_start_at,
+        timezone,
+        status,
+        reminder_due_at,
+        created_by_user_id,
+        updated_by_user_id,
+        created_at,
+        updated_at,
+        ARRAY[]::text[] AS confirmed_by_user_ids,
+        0::int AS confirmation_count
+    `,
+    [
+      input.duoId,
+      input.libraryGameId,
+      input.scheduledStartAt,
+      input.timezone,
+      input.reminderDueAt,
+      input.actorUserId
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("play_scheduled_session_create_failed");
+  }
+
+  return mapScheduledSession(row, input.memberUserIds);
+}
+
+async function updateScheduledSession(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    scheduledSessionId: string;
+    libraryGameId: string;
+    scheduledStartAt: Date;
+    timezone: string;
+    reminderDueAt: Date;
+    actorUserId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlayScheduledSessionRecord | null> {
+  const result = await client.query<ScheduledSessionRow>(
+    `
+      UPDATE app.play_scheduled_sessions
+      SET library_game_id = $3,
+          scheduled_start_at = $4,
+          timezone = $5,
+          reminder_due_at = $6,
+          status = 'scheduled',
+          updated_by_user_id = $7,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'scheduled'
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        scheduled_start_at,
+        timezone,
+        status,
+        reminder_due_at,
+        created_by_user_id,
+        updated_by_user_id,
+        created_at,
+        updated_at,
+        ARRAY[]::text[] AS confirmed_by_user_ids,
+        0::int AS confirmation_count
+    `,
+    [
+      input.duoId,
+      input.scheduledSessionId,
+      input.libraryGameId,
+      input.scheduledStartAt,
+      input.timezone,
+      input.reminderDueAt,
+      input.actorUserId
+    ]
+  );
+  const row = result.rows[0];
+
+  return row ? mapScheduledSession(row, input.memberUserIds) : null;
+}
+
+async function cancelScheduledSession(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    scheduledSessionId: string;
+    actorUserId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlayScheduledSessionRecord | null> {
+  const result = await client.query<ScheduledSessionRow>(
+    `
+      UPDATE app.play_scheduled_sessions
+      SET status = 'cancelled',
+          updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'scheduled'
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        scheduled_start_at,
+        timezone,
+        status,
+        reminder_due_at,
+        created_by_user_id,
+        updated_by_user_id,
+        created_at,
+        updated_at,
+        ARRAY[]::text[] AS confirmed_by_user_ids,
+        0::int AS confirmation_count
+    `,
+    [input.duoId, input.scheduledSessionId, input.actorUserId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapScheduledSession(row, input.memberUserIds) : null;
+}
+
+async function confirmScheduledAttendance(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    scheduledSessionId: string;
+    actorUserId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlayScheduledSessionRecord | null> {
+  await client.query(
+    `
+      INSERT INTO app.play_scheduled_attendance (
+        duo_id,
+        scheduled_session_id,
+        user_id
+      )
+      SELECT $1, scheduled.id, $3
+      FROM app.play_scheduled_sessions AS scheduled
+      WHERE scheduled.duo_id = $1
+        AND scheduled.id = $2
+        AND scheduled.status = 'scheduled'
+      ON CONFLICT (scheduled_session_id, user_id) DO NOTHING
+    `,
+    [input.duoId, input.scheduledSessionId, input.actorUserId]
+  );
+
+  return readScheduledSessionDetail(client, input);
+}
+
+async function insertReminderJob(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    scheduledSessionId: string;
+    runAt: Date;
+    scheduledStartAt: Date;
+    createdByUserId: string;
+  }
+): Promise<PlayReminderJobRecord> {
+  const jobKey = `play-session-reminder:${input.scheduledSessionId}:${input.runAt.toISOString()}`;
+  const payload = {
+    createdByUserId: input.createdByUserId,
+    scheduledSessionId: input.scheduledSessionId,
+    scheduledStartAt: input.scheduledStartAt.toISOString()
+  };
+  const result = await client.query<JobRow>(
+    `
+      INSERT INTO ops.scheduled_jobs (
+        duo_id,
+        job_key,
+        job_type,
+        run_at,
+        payload
+      )
+      VALUES ($1, $2, 'play-session-reminder', $3, $4::jsonb)
+      ON CONFLICT (job_key) DO NOTHING
+      RETURNING
+        id,
+        duo_id,
+        job_key,
+        job_type,
+        run_at,
+        status,
+        attempts,
+        payload
+    `,
+    [input.duoId, jobKey, input.runAt, JSON.stringify(payload)]
+  );
+  const row = result.rows[0];
+
+  if (row) {
+    return mapJob(row);
+  }
+
+  const existing = await client.query<JobRow>(
+    `
+      SELECT id, duo_id, job_key, job_type, run_at, status, attempts, payload
+      FROM ops.scheduled_jobs
+      WHERE job_key = $1
+      LIMIT 1
+    `,
+    [jobKey]
+  );
+  const existingRow = existing.rows[0];
+
+  if (!existingRow) {
+    throw new Error("play_reminder_job_insert_failed");
+  }
+
+  return mapJob(existingRow);
 }
 
 async function readMomentosForLibraryGame(
@@ -1902,6 +2339,165 @@ async function insertNotificationItem(
   return mapNotification(row);
 }
 
+async function readNotificationCenter(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    limit: number;
+  }
+): Promise<PlayNotificationCenterRecord> {
+  const limit = Math.min(Math.max(input.limit, 1), 30);
+  const [items, unread] = await Promise.all([
+    client.query<NotificationRow>(
+      `
+        SELECT
+          id,
+          duo_id,
+          recipient_user_id,
+          notification_type,
+          state,
+          action_ref_type,
+          action_ref_id,
+          title,
+          body,
+          created_at
+        FROM app.play_notifications
+        WHERE duo_id = $1
+          AND state <> 'archived'
+        ORDER BY created_at DESC
+        LIMIT $2
+      `,
+      [input.duoId, limit]
+    ),
+    client.query<{ unread_count: number }>(
+      `
+        SELECT count(*)::int AS unread_count
+        FROM app.play_notifications
+        WHERE duo_id = $1
+          AND state = 'unread'
+      `,
+      [input.duoId]
+    )
+  ]);
+
+  return {
+    unreadCount: Number(unread.rows[0]?.unread_count ?? 0),
+    items: items.rows.map(mapNotification)
+  };
+}
+
+async function registerPushSubscription(
+  client: QueueDbClient,
+  input: PlayPushSubscriptionInput & {
+    duoId: string;
+  }
+): Promise<PlayPushSubscriptionRecord> {
+  const result = await client.query<PushSubscriptionRow>(
+    `
+      INSERT INTO app.push_subscriptions (
+        duo_id,
+        user_id,
+        endpoint,
+        p256dh,
+        auth_secret,
+        user_agent,
+        enabled,
+        disabled_at,
+        last_seen_at,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, true, NULL, now(), now())
+      ON CONFLICT (duo_id, user_id, endpoint) DO UPDATE
+      SET p256dh = excluded.p256dh,
+          auth_secret = excluded.auth_secret,
+          user_agent = excluded.user_agent,
+          enabled = true,
+          disabled_at = NULL,
+          last_seen_at = now(),
+          updated_at = now()
+      RETURNING
+        id,
+        duo_id,
+        user_id,
+        endpoint,
+        p256dh,
+        auth_secret,
+        enabled,
+        updated_at
+    `,
+    [
+      input.duoId,
+      input.userId,
+      input.endpoint,
+      input.p256dh,
+      input.authSecret,
+      input.userAgent ?? null
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("play_push_subscription_register_failed");
+  }
+
+  return mapPushSubscription(row);
+}
+
+async function disablePushSubscriptions(
+  client: QueueDbClient,
+  input: {
+    userId: string;
+    endpoint?: string | null;
+  }
+): Promise<number> {
+  const result = await client.query<{ disabled_count: number }>(
+    `
+      WITH disabled AS (
+        UPDATE app.push_subscriptions
+        SET enabled = false,
+            disabled_at = coalesce(disabled_at, now()),
+            updated_at = now()
+        WHERE user_id = $1
+          AND enabled = true
+          AND ($2::text IS NULL OR endpoint = $2)
+        RETURNING id
+      )
+      SELECT count(*)::int AS disabled_count
+      FROM disabled
+    `,
+    [input.userId, input.endpoint ?? null]
+  );
+
+  return Number(result.rows[0]?.disabled_count ?? 0);
+}
+
+async function readEnabledPushSubscriptions(
+  client: QueueDbClient,
+  userId: string
+): Promise<PlayPushSubscriptionRecord[]> {
+  const result = await client.query<PushSubscriptionRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        user_id,
+        endpoint,
+        p256dh,
+        auth_secret,
+        enabled,
+        updated_at
+      FROM app.push_subscriptions
+      WHERE user_id = $1
+        AND enabled = true
+      ORDER BY updated_at DESC
+      LIMIT 10
+    `,
+    [userId]
+  );
+
+  return result.rows.map(mapPushSubscription);
+}
+
 async function insertXpAward(
   client: QueueDbClient,
   input: PlayXpAwardInput
@@ -1945,6 +2541,71 @@ async function insertXpAward(
   return row ? mapXpAward(row) : null;
 }
 
+async function completeReminderJob(
+  pool: QueueDbPool,
+  input: {
+    jobId: string;
+    processedAt: Date;
+  }
+): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+        UPDATE ops.scheduled_jobs
+        SET status = 'completed',
+            processed_at = $2,
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = NULL,
+            updated_at = now()
+        WHERE id = $1
+      `,
+      [input.jobId, input.processedAt]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function failReminderJob(
+  pool: QueueDbPool,
+  input: {
+    jobId: string;
+    error: string;
+  }
+): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query(
+      `
+        UPDATE ops.scheduled_jobs
+        SET status = 'failed',
+            locked_at = NULL,
+            locked_by = NULL,
+            last_error = left($2, 500),
+            updated_at = now()
+        WHERE id = $1
+      `,
+      [input.jobId, input.error]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
 async function claimDueReminderJobs(
   pool: QueueDbPool,
   input: {
@@ -1963,6 +2624,7 @@ async function claimDueReminderJobs(
           SELECT id
           FROM ops.scheduled_jobs
           WHERE status IN ('pending', 'failed')
+            AND job_type = 'play-session-reminder'
             AND run_at <= $1
           ORDER BY run_at ASC, id ASC
           LIMIT $2
@@ -2115,6 +2777,35 @@ function mapTerminalRequest(row: TerminalRequestRow): PlayTerminalRequestRecord 
   };
 }
 
+function mapScheduledSession(
+  row: ScheduledSessionRow,
+  memberUserIds: string[]
+): PlayScheduledSessionRecord {
+  const confirmedByUserIds = row.confirmed_by_user_ids ?? [];
+  const pendingUserIds = memberUserIds.filter(
+    (userId) => !confirmedByUserIds.includes(userId)
+  );
+
+  return {
+    id: row.id,
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    scheduledStartAt: row.scheduled_start_at,
+    timezone: row.timezone,
+    status: row.status,
+    reminderDueAt: row.reminder_due_at,
+    createdByUserId: row.created_by_user_id,
+    updatedByUserId: row.updated_by_user_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    confirmedByUserIds,
+    pendingUserIds,
+    confirmationCount: Number(row.confirmation_count ?? confirmedByUserIds.length),
+    requiredConfirmationCount: memberUserIds.length,
+    doubleConfirmed: pendingUserIds.length === 0 && memberUserIds.length >= 2
+  };
+}
+
 function mapMomento(row: MomentoRow): PlayMomentoRecord {
   return {
     id: row.id,
@@ -2201,6 +2892,19 @@ function mapNotification(row: NotificationRow): PlayNotificationRecord {
     title: row.title,
     body: row.body,
     createdAt: row.created_at
+  };
+}
+
+function mapPushSubscription(row: PushSubscriptionRow): PlayPushSubscriptionRecord {
+  return {
+    id: row.id,
+    duoId: row.duo_id,
+    userId: row.user_id,
+    endpoint: row.endpoint,
+    p256dh: row.p256dh,
+    authSecret: row.auth_secret,
+    enabled: row.enabled,
+    updatedAt: row.updated_at
   };
 }
 

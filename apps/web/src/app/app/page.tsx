@@ -7,6 +7,8 @@ import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
 import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library";
 import {
   getCurrentPlay,
+  getDuoNotifications,
+  NotificationCenter,
   PlayingNowDashboard,
   toPlayingNowView
 } from "../../modules/play";
@@ -51,14 +53,15 @@ async function renderDashboardPage() {
   const session = await measureStage("auth", dashboardTimingContext, () =>
     requireVerifiedSession()
   );
-  const [dashboard, libraryResult, currentPlayResult] = await measureStage(
+  const [dashboard, libraryResult, currentPlayResult, notificationsResult] = await measureStage(
     "database",
     dashboardTimingContext,
     () =>
       Promise.all([
         getDuoDashboard(session.user.id),
         getLibraryOverview(session.user.id),
-        getCurrentPlay(session.user.id)
+        getCurrentPlay(session.user.id),
+        getDuoNotifications({ userId: session.user.id })
       ])
   );
 
@@ -91,7 +94,12 @@ async function renderDashboardPage() {
     : 0;
 
   return measureStage("render", dashboardTimingContext, async () => (
-    <AppShell currentPage="dashboard">
+    <AppShell
+      currentPage="dashboard"
+      notificationCenter={
+        <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
+      }
+    >
       <header className="app-header">
         <div>
           <p className="eyebrow">Dupla formada</p>
