@@ -17,6 +17,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 3: Descoberta E Matches** - A dupla encontra jogos por cinco modos de descoberta e transforma preferencias em matches. (completed 2026-06-04)
 - [x] **Phase 03.1: Refinos Visuais e UX da Descoberta (INSERTED)** - A experiencia de Descoberta ganha polimento visual, revisao browser real e limpeza de divida arquitetural antes de Jogando. (completed 2026-06-04)
 - [x] **Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)** - A Biblioteca vira uma superficie escalavel de backlog, filtros, status e arquivo da dupla antes de Jogando. (completed 2026-06-05)
+- [ ] **Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)** - O app fica perceptivelmente rapido em producao antes de novas funcionalidades ampliarem o custo operacional.
 - [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
 - [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
@@ -136,9 +137,29 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   - **Wave 4 *(blocked on Wave 3 completion)*:** `03.2-04` - Browser, accessibility, RLS and regression evidence.
 **UI hint**: yes
 
+### Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)
+
+**Goal:** O app fica perceptivelmente rapido em producao, com Catalogo, Biblioteca, Descobrir e mutacoes principais respondendo com feedback imediato, queries medidas e budgets reais antes de novas features.
+**Requirements**: PERF-01, PERF-02, PERF-03, PERF-04, PERF-05, BRND-08, BRND-09, BRND-10, DATA-11, SAFE-04
+**Depends on:** Phase 03.2
+**Success Criteria** (what must be TRUE):
+  1. Rotas autenticadas criticas (`/app`, `/app/catalogo`, `/app/biblioteca`, `/app/descobrir`, `/app/jogo/[slug]`) possuem baseline de producao/preview com TTFB, tempo ate conteudo util, Hydration e interacao inicial registrados.
+  2. Mutacoes principais (`Adicionar a Wishlist`, mover status da Biblioteca, decisoes de Descobrir, handoff de match e controles de Live/Quiz) oferecem feedback visual em ate 100ms e nao dependem de redirect/render pesado para parecer concluidas.
+  3. Hot paths de banco possuem contagem de queries, `EXPLAIN`/plano revisado em Neon, indices ou shapes corrigidos, e nenhum N+1 obvio em listas de Catalogo, Biblioteca ou Descobrir.
+  4. Server Actions e rotas registram duracao por etapa sem vazar dados sensiveis, permitindo diagnosticar lentidao de auth, banco, RAWG/cache, render e revalidacao.
+  5. Gates de browser em desktop, mobile, rede lenta e reduced motion provam que loading states, skeletons, botoes pendentes, navegacao e refresh nao deixam o usuario preso sem resposta.
+**Plans**: TBD
+
+**Plan Waves**:
+  - **Wave 1:** `03.3-01` - Production performance baseline, instrumentation and latency budgets.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `03.3-02` - Database/query/server-action hot path optimization.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `03.3-03` - Optimistic UX, loading states and redirect-free mutation flows.
+  - **Wave 4 *(blocked on Wave 3 completion)*:** `03.3-04` - Production-like browser performance gates, regression tests and deployment evidence.
+**UI hint**: yes
+
 ### Phase 4: Jogando Agora, Sessoes E Agendamento
 **Goal**: A dupla pode transformar uma escolha em jogo real, registrar progresso coop e coordenar a proxima sessao.
-**Depends on**: Phase 03.2
+**Depends on**: Phase 03.3
 **Requirements**: PLAY-01, PLAY-02, PLAY-03, PLAY-04, PLAY-06, PLAY-07, PLAY-08, PLAY-09, PLAY-10, PLAY-11, PLAY-12, PLAY-13, SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08, SESS-09, SESS-10, SESS-11, SESS-12, SESS-13, SESS-14, SAFE-01, SAFE-02, SAFE-04
 **Success Criteria** (what must be TRUE):
   1. Dashboard mostra um Principal e ate dois jogos secundarios, e a dupla pode reordenar os tres sem quebrar os limites de Jogando.
@@ -203,7 +224,7 @@ These gates apply to every phase and cannot be deferred as polish:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 4 -> 5 -> 6 -> 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -214,6 +235,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 4 -> 5 -
 | 3. Descoberta E Matches | 4/4 | Complete   | 2026-06-04 |
 | 03.1. Refinos Visuais e UX da Descoberta | 4/4 | Complete   | 2026-06-04 |
 | 03.2. Biblioteca Escalavel e Backlog Operacional | 4/4 | Complete   | 2026-06-05 |
+| 03.3. Performance de Producao e UX de Latencia | 0/TBD | Not started | - |
 | 4. Jogando Agora, Sessoes E Agendamento | 0/TBD | Not started | - |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
