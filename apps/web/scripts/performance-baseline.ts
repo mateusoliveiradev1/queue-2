@@ -47,6 +47,11 @@ const baselinePath = resolve(
 
 const baseURL = process.env.E2E_BASE_URL ?? "";
 const gameSlug = process.env.E2E_PHASE3_3_GAME_SLUG ?? "";
+const slowNetworkProfile = {
+  downloadKbps: 750,
+  latencyMs: 420,
+  uploadKbps: 250
+} as const;
 const routes: BaselineRoute[] = [
   {
     key: "app.home",
@@ -336,6 +341,13 @@ async function writeBaselineMarkdown({
         `${route.budgets.hydrationMs}ms`
       ].join(" | ")} |`
     ),
+    "",
+    "## Slow Network",
+    "",
+    "- Baseline runner scope: route baseline timings.",
+    `- slow network profile for browser gate: ${slowNetworkProfile.latencyMs}ms latency, ${slowNetworkProfile.downloadKbps}kbps down, ${slowNetworkProfile.uploadKbps}kbps up.`,
+    "- Evidence command: `pnpm --filter @queue/web test:e2e -- tests/phase-03-3-performance.spec.ts tests/accessibility.spec.ts`.",
+    "- Delayed mutation feedback is measured in the Phase 03.3 Playwright suite, not by this route-only baseline runner.",
     "",
     "## Findings",
     "",
