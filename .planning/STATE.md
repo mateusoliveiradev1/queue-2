@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: blocked
-stopped_at: Completed 03.3-04-PLAN.md - performance review blocked on missing fixture evidence
-last_updated: "2026-06-05T03:56:05.000Z"
+stopped_at: Quick 260605-1g4 complete - Phase 03.3 remains blocked pending production performance/security evidence
+last_updated: "2026-06-05T04:10:31.363Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
@@ -101,6 +101,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260605-lsf | Fix Biblioteca status refresh and Mais acoes card layout | 2026-06-05 | pending | [260605-lsf-fix-library-status-refresh-action-sheet](./quick/260605-lsf-fix-library-status-refresh-action-sheet/) |
 | 260605-acx | Add close behavior to Biblioteca Mais acoes action sheet | 2026-06-05 | pending | [260605-acx-close-library-action-sheet](./quick/260605-acx-close-library-action-sheet/) |
 | 260605-hrd | Redirect authenticated users from public home to app | 2026-06-05 | pending | [260605-hrd-home-redirect-auth-session](./quick/260605-hrd-home-redirect-auth-session/) |
+| 260605-1g4 | Research maximum production performance and security hardening for the QUEUE/2 stack | 2026-06-05 | pending | [260605-1g4-research-maximum-production-performance-](./quick/260605-1g4-research-maximum-production-performance-/) |
 
 ## Accumulated Context
 
@@ -198,11 +199,15 @@ Recent decisions affecting current work:
 - [Quick 260605-lsf]: Library card action controls are width-capped and action sheets render outside card overflow. — Avoids full-width button bands and clipped Mais acoes panels on desktop/mobile cards.
 - [Quick 260605-acx]: Biblioteca Mais acoes uses a controlled action sheet with `aria-expanded`, explicit Fechar, outside click and Escape dismissal. - Keeps secondary actions discoverable without trapping the open panel.
 - [Quick 260605-hrd]: Public home checks the server session before rendering and redirects verified signed-in users to `/app`. - Prevents authenticated users from seeing the logged-out landing after trimming the URL to the origin.
+- [Quick 260605-1g4]: Phase 03.3 remains blocked until production/preview performance evidence runs with authenticated ready-duo fixtures. - Local query review, unit checks and non-skipped setup are not enough to mark production performance as passed.
+- [Quick 260605-1g4]: Maximum performance cannot trade away server authorization, RLS or duo-private cache boundaries. - Shared caching is allowed only for public/catalog-safe data; duo-scoped pages need private or no shared cache.
+- [Quick 260605-1g4]: Auth/session latency is a first-class optimization target. - Normal page rendering may use a short Better Auth cookie cache only if sensitive mutations and security screens keep authoritative no-cache checks.
 
 ### Pending Todos
 
 - Discovery evidence follow-up: provide `E2E_BASE_URL`, ready-duo/partner/other-duo credentials, `E2E_PHASE3_DISCOVERY_QUERY` and `TEST_DATABASE_URL`, then rerun the Phase 03.1 browser and database gates.
 - Phase 03.3 performance follow-up: provide production/preview `E2E_BASE_URL`, `E2E_READY_USER_EMAIL`, `E2E_READY_USER_PASSWORD`, `E2E_READY_PARTNER_EMAIL`, `E2E_READY_PARTNER_PASSWORD`, `E2E_OTHER_DUO_USER_EMAIL`, `E2E_OTHER_DUO_USER_PASSWORD`, `E2E_PHASE3_3_CATALOG_QUERY` and `E2E_PHASE3_3_GAME_SLUG`, then rerun `pnpm phase:03.3:gate`.
+- Performance/security hardening follow-up: execute quick 260605-1g4 P0 plan, starting with documented Phase 03.3 fixtures, Vercel/Neon region evidence, scale-to-zero policy and production/preview baselines.
 - Production launch follow-ups: replace temporary Resend sender with verified custom domain sender, then run real transactional email delivery check and capture Neon restore rehearsal evidence.
 - E2E fixture setup: provide `E2E_BASE_URL`, ready-user credentials and `E2E_PHASE2_CATALOG_SLUG` before browser regression runs.
 
@@ -228,6 +233,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T03:56:05.000Z
-Stopped at: Quick 260605-hrd complete; ready to commit, push and deploy public home session redirect
+Last session: 2026-06-05T04:10:31.363Z
+Stopped at: Quick 260605-1g4 complete; Phase 03.3 remains blocked pending production performance/security evidence
 Resume file: None
