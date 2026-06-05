@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   ActionFeedback,
@@ -41,6 +42,7 @@ export function LibraryStatusControls({
           catalogGameId={catalogGameId}
           enhancedAction={enhancedAction}
           item={primaryAction}
+          key={`${catalogGameId}:${normalizedStatus ?? "unknown"}:${primaryAction.status}`}
           returnTo={returnTo}
           tone="primary"
         />
@@ -84,7 +86,12 @@ function StatusActionForm({
   returnTo?: string;
   tone: "primary" | "quiet";
 }) {
+  const router = useRouter();
   const [state, setState] = useState<ActionFeedbackState>("idle");
+
+  useEffect(() => {
+    setState("idle");
+  }, [catalogGameId, item.status]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!enhancedAction) {
@@ -102,7 +109,13 @@ function StatusActionForm({
         return;
       }
 
-      setState(result.ok ? "confirmed" : "failed");
+      if (result.ok) {
+        setState("confirmed");
+        router.refresh();
+        return;
+      }
+
+      setState("failed");
     } catch {
       setState("failed");
     }

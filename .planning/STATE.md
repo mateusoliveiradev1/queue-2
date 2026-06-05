@@ -4,7 +4,7 @@ milestone: v1.0
 milestone_name: milestone
 status: blocked
 stopped_at: Completed 03.3-04-PLAN.md - performance review blocked on missing fixture evidence
-last_updated: "2026-06-05T03:22:00.000Z"
+last_updated: "2026-06-05T03:35:00.000Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
@@ -98,6 +98,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260605-rdb | Make `pnpm verify` run DB integration tests with configured `TEST_DATABASE_URL` | 2026-06-05 | pending | [260605-rdb-finalize-db-integration-verify-deploy](./quick/260605-rdb-finalize-db-integration-verify-deploy/) |
 | 260605-vfx | Fix Catalogo and match-history card overflow before deploy | 2026-06-05 | pending | [260605-vfx-fix-card-overflow-before-deploy](./quick/260605-vfx-fix-card-overflow-before-deploy/) |
 | 260605-mbf | Fix mobile Biblioteca overlap and Catalogo Wishlist loading feedback | 2026-06-05 | pending | [260605-mbf-fix-mobile-library-filter-overlap](./quick/260605-mbf-fix-mobile-library-filter-overlap/) |
+| 260605-lsf | Fix Biblioteca status refresh and Mais acoes card layout | 2026-06-05 | pending | [260605-lsf-fix-library-status-refresh-action-sheet](./quick/260605-lsf-fix-library-status-refresh-action-sheet/) |
 
 ## Accumulated Context
 
@@ -191,6 +192,8 @@ Recent decisions affecting current work:
 - [Quick 260605-mbf]: Mobile Biblioteca filters stay in normal flow and result cards reserve bottom navigation scroll space. — Prevents filters and list content from sitting underneath the fixed mobile nav.
 - [Quick 260605-mbf]: Enhanced Catalogo Wishlist mutations revalidate only the dashboard and Biblioteca surfaces. — Keeps the card-level syncing feedback visible instead of triggering a full Catalogo route refresh after add-to-Wishlist.
 - [Quick 260605-mbf]: Catalogo owns a route-local loading shell inside AppShell. — Route waits keep the authenticated navigation and skeleton context instead of showing the global full-screen loader.
+- [Quick 260605-lsf]: Biblioteca status controls refresh the current route after successful enhanced moves and reset local action state when status changes. — Prevents a Jogando card from keeping stale `Confirmado` button copy.
+- [Quick 260605-lsf]: Library card action controls are width-capped and action sheets render outside card overflow. — Avoids full-width button bands and clipped Mais acoes panels on desktop/mobile cards.
 
 ### Pending Todos
 
@@ -221,6 +224,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T03:22:00.000Z
-Stopped at: Quick 260605-mbf complete; ready to commit, push and deploy mobile/loading fixes
+Last session: 2026-06-05T03:35:00.000Z
+Stopped at: Quick 260605-lsf complete; ready to commit, push and deploy Biblioteca action fixes
 Resume file: None

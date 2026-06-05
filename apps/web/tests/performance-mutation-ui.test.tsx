@@ -22,8 +22,27 @@ type Deferred = {
   reject: (error: Error) => void;
 };
 
+const navigationMock = vi.hoisted(() => ({
+  back: vi.fn(),
+  forward: vi.fn(),
+  prefetch: vi.fn(),
+  push: vi.fn(),
+  refresh: vi.fn(),
+  replace: vi.fn()
+}));
+
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+
+  return {
+    ...actual,
+    useRouter: () => navigationMock
+  };
+});
+
 afterEach(() => {
   cleanup();
+  navigationMock.refresh.mockClear();
 });
 
 describe("action feedback primitives", () => {
@@ -221,6 +240,33 @@ describe("enhanced catalog and library mutation forms", () => {
     expect(screen.getByRole("button", { name: /tentar de novo/i })).not.toBeDisabled();
     expect(container.querySelector("input[name='status']")).toHaveValue("jogando");
     expect(container.querySelector("input[name='returnTo']")).toHaveValue("/app/biblioteca");
+  });
+
+  it("refreshes Biblioteca after a successful status move and resets stale confirmed copy", async () => {
+    const fallbackAction = vi.fn(async () => undefined);
+    const enhancedAction = vi.fn(async () => ({ ok: true }));
+    const props = {
+      action: fallbackAction,
+      catalogGameId: "game-1",
+      enhancedAction,
+      returnTo: "/app/biblioteca"
+    };
+    const { rerender } = render(
+      <LibraryStatusControls {...props} currentStatus="wishlist" />
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /comecar em jogando/i }));
+
+    expect(enhancedAction).toHaveBeenCalledOnce();
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      /status confirmado pelo servidor/i
+    );
+    expect(navigationMock.refresh).toHaveBeenCalledOnce();
+
+    rerender(<LibraryStatusControls {...props} currentStatus="jogando" />);
+
+    expect(screen.getByRole("button", { name: /^pausar$/i })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^confirmado$/i })).not.toBeInTheDocument();
   });
 });
 

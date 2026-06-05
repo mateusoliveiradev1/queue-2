@@ -69,6 +69,14 @@ const libraryModuleMock = vi.hoisted(() => ({
   moveLibraryGame: vi.fn(async () => ({ ok: true, game: {} })),
   updateMemberPlatforms: vi.fn(async () => ({ ok: true, platforms: ["pc"] }))
 }));
+const navigationMock = vi.hoisted(() => ({
+  back: vi.fn(),
+  forward: vi.fn(),
+  prefetch: vi.fn(),
+  push: vi.fn(),
+  refresh: vi.fn(),
+  replace: vi.fn()
+}));
 
 vi.mock("../src/platform/auth/session", () => ({
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
@@ -83,6 +91,15 @@ vi.mock("next/image", () => ({
     src: string;
   }) => <img alt={alt} src={src} />
 }));
+
+vi.mock("next/navigation", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("next/navigation")>();
+
+  return {
+    ...actual,
+    useRouter: () => navigationMock
+  };
+});
 
 vi.mock("../src/modules/duo", () => ({
   formatPairingDate: vi.fn(() => "03/06/2026"),
@@ -317,6 +334,9 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(cardSource).toContain("LibraryStatusControls");
     expect(catalogCardSource).toContain("catalog-library-state");
     expect(statusControlsSource).toContain("library-action-sheet");
+    expect(statusControlsSource).toContain("useRouter");
+    expect(statusControlsSource).toContain("router.refresh()");
+    expect(statusControlsSource).toContain('setState("idle")');
     expect(statusControlsSource).not.toContain("Zerado bloqueado");
     expect(statusControlsSource).not.toContain("Dropado bloqueado");
     expect(filterSource).toContain("LibraryFilterBar");
@@ -346,6 +366,11 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(css).toContain(".catalog-loading-shell");
     expect(css).toContain(".catalog-loading-grid");
     expect(css).toContain("grid-template-columns: 88px minmax(0, 1fr)");
+    expect(css).toContain(".library-game .status-controls");
+    expect(css).toContain("max-width: min(100%, 520px)");
+    expect(css).toContain("overflow: visible");
+    expect(css).toContain("top: calc(100% + var(--space-2))");
+    expect(css).toContain("max-height: min(60svh, 360px)");
     expect(css).not.toContain("position: sticky;\n    top: var(--space-3);");
     expect(css).not.toContain(".library-board");
 

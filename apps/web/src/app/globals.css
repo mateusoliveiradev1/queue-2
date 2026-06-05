@@ -1413,7 +1413,7 @@ input {
   gap: var(--space-4);
   grid-template-columns: 96px minmax(0, 1fr);
   min-height: 176px;
-  overflow: hidden;
+  overflow: visible;
   padding: var(--space-4);
 }
 
@@ -1493,9 +1493,26 @@ input {
   width: 100%;
 }
 
+.library-game .status-controls {
+  align-items: start;
+  display: grid;
+  grid-template-columns: minmax(168px, 320px) minmax(132px, 160px);
+  max-width: min(100%, 520px);
+}
+
+.library-game .status-controls .action-feedback-form {
+  flex: none;
+  min-width: 0;
+}
+
 .library-action-sheet {
   min-width: min(100%, 152px);
   position: relative;
+}
+
+.library-game .library-action-sheet {
+  min-width: 0;
+  width: 100%;
 }
 
 .library-action-sheet > summary {
@@ -1522,11 +1539,12 @@ input {
   box-shadow: 0 18px 40px color-mix(in oklch, black 34%, transparent);
   display: grid;
   gap: var(--space-2);
-  margin-top: var(--space-2);
+  margin-top: 0;
   min-width: 220px;
   padding: var(--space-3);
   position: absolute;
   right: 0;
+  top: calc(100% + var(--space-2));
   z-index: 20;
 }
 
@@ -3083,6 +3101,11 @@ input {
     flex-direction: column;
   }
 
+  .library-game .status-controls {
+    grid-template-columns: 1fr;
+    max-width: none;
+  }
+
   .status-controls .queue2-button,
   .library-tabs a,
   .discovery-live-entry .queue2-button,
@@ -3113,9 +3136,12 @@ input {
     bottom: calc(96px + env(safe-area-inset-bottom));
     left: var(--space-4);
     margin: 0;
+    max-height: min(60svh, 360px);
     min-width: 0;
+    overflow: auto;
     position: fixed;
     right: var(--space-4);
+    top: auto;
     z-index: 60;
   }
 
