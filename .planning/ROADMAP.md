@@ -18,7 +18,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 03.1: Refinos Visuais e UX da Descoberta (INSERTED)** - A experiencia de Descoberta ganha polimento visual, revisao browser real e limpeza de divida arquitetural antes de Jogando. (completed 2026-06-04)
 - [x] **Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)** - A Biblioteca vira uma superficie escalavel de backlog, filtros, status e arquivo da dupla antes de Jogando. (completed 2026-06-05)
 - [x] **Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)** - O app fica perceptivelmente rapido em producao antes de novas funcionalidades ampliarem o custo operacional. (completed 2026-06-05; production gate passed)
-- [ ] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop.
+- [x] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop. (completed 2026-06-05; external DB/browser/reminder readiness blockers recorded)
 - [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
 - [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
 - [ ] **Phase 7: Hall, Stats E Lancamento** - A dupla revisita sua historia e o produto recebe acabamento publico completo.
@@ -167,7 +167,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. A dupla pode iniciar uma sessao live com timer resiliente a refresh, confirmar em conjunto e registrar "Jogamos Hoje" rapidamente sem duplicar bonus.
   4. Cada jogo exibe timeline com marcadores, Momentos inline e spoilers ocultos ate revelacao explicita.
   5. A dupla pode agendar uma sessao, confirmar presenca, receber lembrete push 30 minutos antes e desativar push quando desejar.
-**Plans**: 04-01, 04-02, 04-03, 04-04, 04-05, 04-06 (5/6 complete)
+**Plans**: 04-01, 04-02, 04-03, 04-04, 04-05, 04-06 (6/6 complete; `pnpm phase:4:gate` reports external blockers)
 
 **Plan Waves**:
   - **Wave 1:** `04-01` - Play schema, RLS, domain policies, XP awards, jobs and module foundation.
@@ -243,7 +243,7 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 03.1. Refinos Visuais e UX da Descoberta | 4/4 | Complete   | 2026-06-04 |
 | 03.2. Biblioteca Escalavel e Backlog Operacional | 4/4 | Complete   | 2026-06-05 |
 | 03.3. Performance de Producao e UX de Latencia | 4/4 | Complete | 2026-06-05 |
-| 4. Jogando Agora, Sessoes E Agendamento | 5/6 | Executing | - |
+| 4. Jogando Agora, Sessoes E Agendamento | 6/6 | Complete | 2026-06-05 |
 | 5. Gamificacao Coletiva | 0/TBD | Not started | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
 | 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |

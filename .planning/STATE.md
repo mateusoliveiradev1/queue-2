@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 04-05-PLAN.md
-last_updated: "2026-06-05T17:31:36.461Z"
+stopped_at: Completed 04-06-PLAN.md
+last_updated: "2026-06-05T17:43:17.347Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 35
-  completed_plans: 34
-  percent: 97
+  completed_plans: 35
+  percent: 100
 ---
 
 # Project State
@@ -21,22 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 04 — jogando-agora-sessoes-e-agendamento
+**Current focus:** Phase 05 — gamificacao-coletiva
 
 ## Current Position
 
-Phase: 04 (jogando-agora-sessoes-e-agendamento) — EXECUTING
-Plan: 6 of 6
-Status: Ready to execute 04-06
+Phase: 05 (gamificacao-coletiva) — READY FOR PLANNING
+Plan: TBD
+Status: Phase 04 complete; ready to plan Phase 05
 Last activity: 2026-06-05
 
-Progress: [##########] 97%
+Progress: [##########] 100%
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 33
+- Total plans completed: 35
 - Average duration: -
 - Total execution time: 0.0 hours
 
@@ -88,6 +88,7 @@ Progress: [##########] 97%
 | Phase 04 P03 | 30m | 4 tasks | 26 files |
 | Phase 04 P04 | 35m | 3 tasks | 22 files |
 | Phase 04 P05 | 45m | 3 tasks | 32 files |
+| Phase 04 P06 | 35m | 3 tasks | 11 files |
 
 ## Quick Tasks Completed
 
@@ -233,6 +234,10 @@ Recent decisions affecting current work:
 - [Phase 04-05]: Push failures create Central da Dupla notices and keep the reminder job retryable without duplicating first-attempt visible effects. - Central remains durable while push delivery can recover after configuration/browser issues.
 - [Phase 04-05]: Product push opt-in is explicit per browser and disabling it does not disable schedules or Central da Dupla. - `Notification.requestPermission` is never called on initial render.
 - [Phase 04-05]: Central da Dupla is an operational Phase 4 surface, not chat/social feed/preferences matrix. - It lists scheduled sessions, reminders and push/confirmation events only.
+- [Phase 04-06]: Phase 4 has a root gate command. - `pnpm phase:4:gate` runs architecture, typecheck, focused play tests, DB integration targets, query review, browser/accessibility and reminder readiness.
+- [Phase 04-06]: Missing external fixtures are blockers, not passing evidence. - The gate exits nonzero for real local failures and writes blockers for TEST_DATABASE_URL, E2E slugs and reminder environment/readiness.
+- [Phase 04-06]: Exact 30-minute reminder copy remains blocked until readiness passes. - `04-REMINDER-READINESS.md` currently disallows exact promise because CRON/VAPID/runner setup is missing.
+- [Phase 04-06]: Phase 4 E2E uses product-authenticated ready duo, partner and other-duo fixtures. - No test-only session bypass was introduced.
 
 ### Pending Todos
 
@@ -256,6 +261,7 @@ Recent decisions affecting current work:
 - Phase 04.5 DB integration evidence blocked until TEST_DATABASE_URL points at an isolated Neon/test Postgres database.
 - Phase 04.5 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
 - Phase 04.5 real push delivery requires VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT; exact reminders require CRON_SECRET plus a scheduler/runner with compatible frequency.
+- Phase 04.6 gate result is `BLOCKED - missing external evidence or reminder readiness` until TEST_DATABASE_URL, E2E_PHASE4_PRINCIPAL_SLUG, E2E_PHASE4_SECONDARY_SLUG, CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT and compatible runner frequency are configured.
 
 ## Deferred Items
 
@@ -268,6 +274,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T17:31:36.461Z
-Stopped at: Completed 04-05-PLAN.md
+Last session: 2026-06-05T17:43:17.347Z
+Stopped at: Completed 04-06-PLAN.md
 Resume file: None
