@@ -148,7 +148,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Hot paths de banco possuem contagem de queries, `EXPLAIN`/plano revisado em Neon, indices ou shapes corrigidos, e nenhum N+1 obvio em listas de Catalogo, Biblioteca ou Descobrir.
   4. Server Actions e rotas registram duracao por etapa sem vazar dados sensiveis, permitindo diagnosticar lentidao de auth, banco, RAWG/cache, render e revalidacao.
   5. Gates de browser em desktop, mobile, rede lenta e reduced motion provam que loading states, skeletons, botoes pendentes, navegacao e refresh nao deixam o usuario preso sem resposta.
-**Plans**: TBD
+**Plans**: 03.3-01, 03.3-02, 03.3-03, 03.3-04
 
 **Plan Waves**:
   - **Wave 1:** `03.3-01` - Production performance baseline, instrumentation and latency budgets.
