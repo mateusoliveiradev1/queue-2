@@ -39,8 +39,8 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **BRND-05**: User sees the roulette pointer motif as a recurring divider, current-game indicator or list marker
 - [x] **BRND-06**: User sees a `/2` SVG stroke loading state instead of a generic spinner
 - [ ] **BRND-07**: User experiences calm utility screens and heightened spectacle only for meaningful moments
-- [ ] **BRND-08**: User gets the same product capabilities on mobile and desktop with an adaptive composition
-- [ ] **BRND-09**: User can navigate core flows with keyboard, visible focus, readable contrast and adequate touch targets
+- [x] **BRND-08**: User gets the same product capabilities on mobile and desktop with an adaptive composition
+- [x] **BRND-09**: User can navigate core flows with keyboard, visible focus, readable contrast and adequate touch targets
 - [ ] **BRND-10**: User with reduced-motion preference receives an equivalent low-motion experience
 - [x] **BRND-11**: User sees appropriate single-line and stacked QUEUE/2 logo variants on dark and light backgrounds
 - [ ] **BRND-12**: User sees global grain, sharp 4px or pill radii, and scanlines only inside the roulette experience
@@ -269,8 +269,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | BRND-05 | Phase 1 | Complete |
 | BRND-06 | Phase 1 | Complete |
 | BRND-07 | Phase 7 | Pending |
-| BRND-08 | Phase 7 | Pending |
-| BRND-09 | Phase 7 | Pending |
+| BRND-08 | Phase 7 | Complete |
+| BRND-09 | Phase 7 | Complete |
 | BRND-10 | Phase 7 | Pending |
 | BRND-11 | Phase 1 | Complete |
 | BRND-12 | Phase 7 | Pending |
