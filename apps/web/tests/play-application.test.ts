@@ -12,10 +12,17 @@ import {
 } from "../src/modules/play";
 import type {
   ActivePlayGameRecord,
+  GamePlayDetailRecord,
+  PlayChapterRecord,
   PlayMembershipContext,
+  PlayProgressRecord,
   PlayRepository,
   PlayActivationLibraryGameRecord,
-  PlayRepositoryTransaction
+  PlayRepositoryTransaction,
+  PlaySessionDetailRecord,
+  PlaySessionRecord,
+  PlayTerminalRequestRecord,
+  PlayXpAwardRecord
 } from "../src/modules/play/application/ports";
 import { createPlayRepository } from "../src/modules/play/infrastructure/play-repository";
 
@@ -417,8 +424,105 @@ function fakePlayRepository(input: {
       input.upsertActiveRoleRows ?? vi.fn(async () => input.activeGames),
     replaceActiveRoleRows:
       input.replaceActiveRoleRows ?? vi.fn(async () => input.activeGames),
-    createSession: vi.fn(),
-    confirmSession: vi.fn(),
+    createSession: vi.fn(async (sessionInput) =>
+      playSessionRecord({
+        duoId: sessionInput.duoId,
+        libraryGameId: sessionInput.libraryGameId,
+        kind: sessionInput.kind,
+        status: sessionInput.status,
+        startedAt: sessionInput.startedAt ?? new Date("2026-06-05T12:00:00.000Z"),
+        endedAt: sessionInput.endedAt ?? null,
+        durationSeconds: sessionInput.durationSeconds ?? null,
+        createdByUserId: sessionInput.actorUserId
+      })
+    ),
+    confirmSession: vi.fn(async (confirmationInput) => ({
+      id: "confirmation-1",
+      duoId: confirmationInput.duoId,
+      effectId: confirmationInput.sessionId,
+      userId: confirmationInput.userId,
+      confirmedAt: new Date("2026-06-05T12:05:00.000Z")
+    })),
+    readGamePlayDetail: vi.fn(async ({ catalogGameId }) =>
+      membership
+        ? gamePlayDetailRecord({
+            activeGame: input.activeGames.at(0) ?? null,
+            catalogGameId,
+            libraryGameId: input.libraryGame?.id ?? "library-1",
+            libraryStatus: input.libraryGame?.status ?? "jogando"
+          })
+        : null
+    ),
+    readActiveLiveSession: vi.fn(async () => null),
+    endLiveSession: vi.fn(async () => null),
+    readSessionDetail: vi.fn(async () => null),
+    applyConfirmedSessionEffects: vi.fn(async (effectInput) => ({
+      progress: playProgressRecord({ duoId: effectInput.duoId }),
+      xpAward:
+        effectInput.xpAmount > 0
+          ? xpAwardRecord({
+              duoId: effectInput.duoId,
+              awardKey: `live-session:${effectInput.sessionId}`,
+              sourceType: "live-session",
+              sourceId: effectInput.sessionId,
+              amount: effectInput.xpAmount,
+              awardedByUserId: effectInput.actorUserId
+            })
+          : null,
+      session: playSessionRecord({
+        id: effectInput.sessionId,
+        duoId: effectInput.duoId,
+        status: "confirmed"
+      })
+    })),
+    updateProgressPercent: vi.fn(async (progressInput) =>
+      playProgressRecord({
+        duoId: progressInput.duoId,
+        libraryGameId: progressInput.libraryGameId,
+        subjectivePercent: progressInput.subjectivePercent
+      })
+    ),
+    createChapter: vi.fn(async (chapterInput) =>
+      playChapterRecord({
+        duoId: chapterInput.duoId,
+        libraryGameId: chapterInput.libraryGameId,
+        title: chapterInput.title,
+        createdByUserId: chapterInput.actorUserId,
+        updatedByUserId: chapterInput.actorUserId
+      })
+    ),
+    setChapterCompletion: vi.fn(async (chapterInput) => ({
+      chapter: playChapterRecord({
+        id: chapterInput.chapterId,
+        duoId: chapterInput.duoId,
+        completedAt: chapterInput.completed
+          ? new Date("2026-06-05T12:15:00.000Z")
+          : null,
+        completedByUserId: chapterInput.completed ? chapterInput.actorUserId : null,
+        updatedByUserId: chapterInput.actorUserId
+      }),
+      xpAward: chapterInput.completed
+        ? xpAwardRecord({
+            id: "chapter-xp-1",
+            duoId: chapterInput.duoId,
+            awardKey: `chapter:${chapterInput.chapterId}`,
+            sourceType: "chapter",
+            sourceId: chapterInput.chapterId,
+            amount: 25,
+            awardedByUserId: chapterInput.actorUserId
+          })
+        : null
+    })),
+    createTerminalRequest: vi.fn(async (terminalInput) =>
+      terminalRequestRecord({
+        duoId: terminalInput.duoId,
+        libraryGameId: terminalInput.libraryGameId,
+        targetStatus: terminalInput.targetStatus,
+        requestedByUserId: terminalInput.actorUserId
+      })
+    ),
+    cancelTerminalRequest: vi.fn(async () => null),
+    confirmTerminalRequest: vi.fn(async () => null),
     insertNotificationItem: vi.fn(),
     insertXpAward: vi.fn()
   };
@@ -439,6 +543,16 @@ function fakePlayRepository(input: {
             ),
             limit: 3 as const
           }
+        : null
+    ),
+    readGamePlayDetail: vi.fn(async ({ catalogGameId }) =>
+      membership
+        ? gamePlayDetailRecord({
+            activeGame: input.activeGames.at(0) ?? null,
+            catalogGameId,
+            libraryGameId: input.libraryGame?.id ?? "library-1",
+            libraryStatus: input.libraryGame?.status ?? "jogando"
+          })
         : null
     ),
     readActivePlayGames: vi.fn(async () => input.activeGames),
@@ -539,6 +653,122 @@ function currentPlayRecord(
       confirmedCoopSeconds: 0,
       subjectivePercent: null
     },
+    ...overrides
+  };
+}
+
+function gamePlayDetailRecord(
+  overrides: Partial<GamePlayDetailRecord> = {}
+): GamePlayDetailRecord {
+  const catalogGameId = overrides.catalogGameId ?? "game-1";
+  const libraryGameId = overrides.libraryGameId ?? "library-1";
+
+  return {
+    duoId: "duo-1",
+    libraryGameId,
+    catalogGameId,
+    libraryStatus: "jogando",
+    activeGame: activeRecord({ catalogGameId, libraryGameId }),
+    activeLiveSession: null,
+    pendingSessions: [],
+    progress: playProgressRecord({ libraryGameId }),
+    chapters: [],
+    terminalRequest: null,
+    ...overrides
+  };
+}
+
+function playProgressRecord(
+  overrides: Partial<PlayProgressRecord> = {}
+): PlayProgressRecord {
+  return {
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    confirmedCoopSeconds: 0,
+    subjectivePercent: null,
+    updatedAt: new Date("2026-06-05T12:00:00.000Z"),
+    ...overrides
+  };
+}
+
+function playSessionRecord(
+  overrides: Partial<PlaySessionRecord> = {}
+): PlaySessionRecord {
+  return {
+    id: "session-1",
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    kind: "live",
+    status: "active",
+    startedAt: new Date("2026-06-05T12:00:00.000Z"),
+    endedAt: null,
+    durationSeconds: null,
+    createdByUserId: "member-1",
+    ...overrides
+  };
+}
+
+function playSessionDetailRecord(
+  overrides: Partial<PlaySessionDetailRecord> = {}
+): PlaySessionDetailRecord {
+  return {
+    ...playSessionRecord(overrides),
+    confirmedByUserIds: [],
+    pendingUserIds: ["member-1", "member-2"],
+    confirmationCount: 0,
+    requiredConfirmationCount: 2,
+    doubleConfirmed: false,
+    ...overrides
+  };
+}
+
+function playChapterRecord(
+  overrides: Partial<PlayChapterRecord> = {}
+): PlayChapterRecord {
+  return {
+    id: "chapter-1",
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    title: "Ato 1 completo",
+    position: 1,
+    completedAt: null,
+    completedByUserId: null,
+    createdByUserId: "member-1",
+    updatedByUserId: "member-1",
+    createdAt: new Date("2026-06-05T12:00:00.000Z"),
+    updatedAt: new Date("2026-06-05T12:00:00.000Z"),
+    ...overrides
+  };
+}
+
+function terminalRequestRecord(
+  overrides: Partial<PlayTerminalRequestRecord> = {}
+): PlayTerminalRequestRecord {
+  return {
+    id: "terminal-1",
+    duoId: "duo-1",
+    libraryGameId: "library-1",
+    targetStatus: "zerado",
+    status: "pending",
+    requestedByUserId: "member-1",
+    confirmedByUserId: null,
+    cancelledByUserId: null,
+    updatedAt: new Date("2026-06-05T12:00:00.000Z"),
+    ...overrides
+  };
+}
+
+function xpAwardRecord(overrides: Partial<PlayXpAwardRecord> = {}): PlayXpAwardRecord {
+  return {
+    id: "xp-1",
+    duoId: "duo-1",
+    awardKey: "live-session:session-1",
+    sourceType: "live-session",
+    sourceId: "session-1",
+    amount: 30,
+    awardedByUserId: "member-1",
+    metadata: {},
+    awardedAt: new Date("2026-06-05T12:10:00.000Z"),
     ...overrides
   };
 }

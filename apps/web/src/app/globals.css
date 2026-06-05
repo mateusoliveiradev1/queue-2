@@ -1167,6 +1167,101 @@ input {
   outline-offset: 3px;
 }
 
+.play-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.play-inline-form,
+.offline-presets,
+.terminal-actions,
+.form-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.live-session-card,
+.play-pending-card,
+.terminal-request-card,
+.chapter-row,
+.progress-layer {
+  background: color-mix(in oklch, var(--bg) 52%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: 8px;
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.live-session-card,
+.play-pending-card,
+.terminal-request-card,
+.chapter-row {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.play-pending-list,
+.chapter-list {
+  display: grid;
+  gap: 10px;
+}
+
+.play-pending-list h3 {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.offline-custom-form,
+.chapter-create-form,
+.progress-percent-form {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.offline-custom-form label,
+.chapter-create-form label,
+.progress-percent-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.offline-custom-form input,
+.chapter-create-form input,
+.progress-percent-form input {
+  background: var(--bg);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 22%, transparent);
+  border-radius: 8px;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 0 12px;
+}
+
+.progress-layer-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.progress-layer span,
+.progress-layer small,
+.chapter-row .muted,
+.live-session-card .muted,
+.play-pending-card .muted,
+.terminal-request-card .muted {
+  overflow-wrap: anywhere;
+}
+
+.chapter-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
 .catalog-grid {
   display: grid;
   gap: var(--space-4);
@@ -3202,6 +3297,14 @@ input {
   .playing-now-layout,
   .library-overview-grid,
   .detail-library-panel,
+  .live-session-card,
+  .play-pending-card,
+  .terminal-request-card,
+  .chapter-row,
+  .offline-custom-form,
+  .chapter-create-form,
+  .progress-layer-grid,
+  .progress-percent-form,
   .locked-status-grid,
   .game-detail-hero,
   .discovery-stage-trays {

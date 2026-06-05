@@ -11,14 +11,19 @@ import type {
   ActivePlayGameRecord,
   CurrentPlayGameRecord,
   CurrentPlayRecord,
+  GamePlayDetailRecord,
+  PlayChapterRecord,
   PlayMembershipContext,
   PlayNotificationInput,
   PlayNotificationRecord,
   PlayActivationLibraryGameRecord,
+  PlayProgressRecord,
   PlayReminderJobRecord,
   PlayRepository,
   PlayRepositoryTransaction,
+  PlaySessionDetailRecord,
   PlaySessionRecord,
+  PlayTerminalRequestRecord,
   PlayUserId,
   PlayXpAwardInput,
   PlayXpAwardRecord
@@ -27,7 +32,8 @@ import type {
   PlayGameRole,
   PlayNotificationType,
   PlaySessionKind,
-  PlaySessionStatus
+  PlaySessionStatus,
+  TerminalTargetStatus
 } from "../domain/play-policy";
 
 type MembershipRow = {
@@ -80,12 +86,51 @@ type SessionRow = {
   created_by_user_id: string;
 };
 
+type SessionDetailRow = SessionRow & {
+  confirmed_by_user_ids: string[];
+  confirmation_count: number;
+};
+
+type ProgressRow = {
+  duo_id: string;
+  library_game_id: string;
+  confirmed_coop_seconds: number;
+  subjective_percent: number | null;
+  updated_at: Date;
+};
+
+type ChapterRow = {
+  id: string;
+  duo_id: string;
+  library_game_id: string;
+  title: string;
+  position: number;
+  completed_at: Date | null;
+  completed_by_user_id: string | null;
+  created_by_user_id: string;
+  updated_by_user_id: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
 type ConfirmationRow = {
   id: string;
   duo_id: string;
   session_id: string;
   user_id: string;
   confirmed_at: Date;
+};
+
+type TerminalRequestRow = {
+  id: string;
+  duo_id: string;
+  library_game_id: string;
+  target_status: TerminalTargetStatus;
+  status: "pending" | "confirmed" | "cancelled";
+  requested_by_user_id: string;
+  confirmed_by_user_id: string | null;
+  cancelled_by_user_id: string | null;
+  updated_at: Date;
 };
 
 type NotificationRow = {
@@ -131,6 +176,7 @@ export const playRepository: PlayRepository = {
   withUserTransaction: (...args) => getDefaultPlayRepository().withUserTransaction(...args),
   resolveMembership: (...args) => getDefaultPlayRepository().resolveMembership(...args),
   readCurrentPlay: (...args) => getDefaultPlayRepository().readCurrentPlay(...args),
+  readGamePlayDetail: (...args) => getDefaultPlayRepository().readGamePlayDetail(...args),
   readActivePlayGames: (...args) => getDefaultPlayRepository().readActivePlayGames(...args),
   upsertActiveRoleRows: (...args) => getDefaultPlayRepository().upsertActiveRoleRows(...args),
   createSessionConfirmation: (...args) =>
@@ -153,6 +199,17 @@ export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): Play
       withAppUserTransaction(pool, input.userId, async (client) => {
         const membership = await resolveMembership(client, input.userId);
         return membership ? readCurrentPlay(client, membership.duoId) : null;
+      }),
+    readGamePlayDetail: (input) =>
+      withAppUserTransaction(pool, input.userId, async (client) => {
+        const membership = await resolveMembership(client, input.userId);
+        return membership
+          ? readGamePlayDetail(client, {
+              duoId: membership.duoId,
+              catalogGameId: input.catalogGameId,
+              memberUserIds: membership.memberUserIds
+            })
+          : null;
       }),
     readActivePlayGames: (input) =>
       withAppUserTransaction(pool, input.userId, async (client) => {
@@ -219,6 +276,31 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
 
         return confirmation;
       }),
+    readGamePlayDetail: async (input) => {
+      const membership = await resolveMembershipByDuo(client, input.duoId);
+      return readGamePlayDetail(client, {
+        duoId: input.duoId,
+        catalogGameId: input.catalogGameId,
+        memberUserIds: membership
+      });
+    },
+    readActiveLiveSession: (input) => readActiveLiveSession(client, input.duoId),
+    endLiveSession: (input) => endLiveSession(client, input),
+    readSessionDetail: async (input) => {
+      const membership = await resolveMembershipByDuo(client, input.duoId);
+      return readSessionDetail(client, {
+        ...input,
+        memberUserIds: membership
+      });
+    },
+    applyConfirmedSessionEffects: (input) =>
+      applyConfirmedSessionEffects(client, input),
+    updateProgressPercent: (input) => updateProgressPercent(client, input),
+    createChapter: (input) => createChapter(client, input),
+    setChapterCompletion: (input) => setChapterCompletion(client, input),
+    createTerminalRequest: (input) => createTerminalRequest(client, input),
+    cancelTerminalRequest: (input) => cancelTerminalRequest(client, input),
+    confirmTerminalRequest: (input) => confirmTerminalRequest(client, input),
     insertNotificationItem: (input) => insertNotificationItem(client, input),
     insertXpAward: (input) =>
       insertXpAward(client, input).then((award) => {
@@ -264,6 +346,23 @@ async function resolveMembership(
   };
 }
 
+async function resolveMembershipByDuo(
+  client: QueueDbClient,
+  duoId: string
+): Promise<string[]> {
+  const result = await client.query<MembershipRow>(
+    `
+      SELECT duo_id, user_id
+      FROM app.duo_members
+      WHERE duo_id = $1
+      ORDER BY member_slot
+    `,
+    [duoId]
+  );
+
+  return result.rows.map((row) => row.user_id);
+}
+
 async function readActivePlayGames(
   client: QueueDbClient,
   duoId: string
@@ -288,6 +387,64 @@ async function readActivePlayGames(
   );
 
   return result.rows.map(mapActiveGame);
+}
+
+async function readGamePlayDetail(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    catalogGameId: string;
+    memberUserIds: string[];
+  }
+): Promise<GamePlayDetailRecord | null> {
+  const result = await client.query<ActivationLibraryGameRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        catalog_game_id,
+        status,
+        updated_at
+      FROM app.duo_library_games
+      WHERE duo_id = $1
+        AND catalog_game_id = $2
+      LIMIT 1
+    `,
+    [input.duoId, input.catalogGameId]
+  );
+  const libraryGame = result.rows[0];
+
+  if (!libraryGame) {
+    return null;
+  }
+
+  const [currentGames, activeLiveSession, pendingSessions, progress, chapters, terminalRequest] =
+    await Promise.all([
+      readCurrentPlayGames(client, input.duoId),
+      readActiveLiveSession(client, input.duoId),
+      readPendingSessionsForLibraryGame(client, {
+        duoId: input.duoId,
+        libraryGameId: libraryGame.id,
+        memberUserIds: input.memberUserIds
+      }),
+      readProgress(client, input.duoId, libraryGame.id),
+      readChapters(client, input.duoId, libraryGame.id),
+      readPendingTerminalRequest(client, input.duoId, libraryGame.id)
+    ]);
+
+  return {
+    duoId: input.duoId,
+    libraryGameId: libraryGame.id,
+    catalogGameId: libraryGame.catalog_game_id,
+    libraryStatus: libraryGame.status,
+    activeGame: currentGames.find((game) => game.libraryGameId === libraryGame.id) ?? null,
+    activeLiveSession:
+      activeLiveSession?.libraryGameId === libraryGame.id ? activeLiveSession : null,
+    pendingSessions,
+    progress,
+    chapters,
+    terminalRequest
+  };
 }
 
 async function readCurrentPlay(
@@ -350,6 +507,204 @@ async function readCurrentPlayGames(
   );
 
   return result.rows.map(mapCurrentPlayGame);
+}
+
+async function readActiveLiveSession(
+  client: QueueDbClient,
+  duoId: string
+): Promise<PlaySessionRecord | null> {
+  const result = await client.query<SessionRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        library_game_id,
+        kind,
+        status,
+        started_at,
+        ended_at,
+        duration_seconds,
+        created_by_user_id
+      FROM app.play_sessions
+      WHERE duo_id = $1
+        AND kind = 'live'
+        AND status = 'active'
+      ORDER BY started_at DESC
+      LIMIT 1
+    `,
+    [duoId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapSession(row) : null;
+}
+
+async function readPendingSessionsForLibraryGame(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlaySessionDetailRecord[]> {
+  const result = await client.query<SessionDetailRow>(
+    `
+      SELECT
+        session.id,
+        session.duo_id,
+        session.library_game_id,
+        session.kind,
+        session.status,
+        session.started_at,
+        session.ended_at,
+        session.duration_seconds,
+        session.created_by_user_id,
+        coalesce(array_agg(confirmation.user_id ORDER BY confirmation.confirmed_at) FILTER (WHERE confirmation.user_id IS NOT NULL), ARRAY[]::text[]) AS confirmed_by_user_ids,
+        count(confirmation.user_id)::int AS confirmation_count
+      FROM app.play_sessions AS session
+      LEFT JOIN app.play_session_confirmations AS confirmation
+        ON confirmation.session_id = session.id
+      WHERE session.duo_id = $1
+        AND session.library_game_id = $2
+        AND session.status = 'pending_confirmation'
+      GROUP BY session.id
+      ORDER BY session.updated_at DESC
+      LIMIT 8
+    `,
+    [input.duoId, input.libraryGameId]
+  );
+
+  return result.rows.map((row) => mapSessionDetail(row, input.memberUserIds));
+}
+
+async function readSessionDetail(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    sessionId: string;
+    memberUserIds: string[];
+  }
+): Promise<PlaySessionDetailRecord | null> {
+  const result = await client.query<SessionDetailRow>(
+    `
+      SELECT
+        session.id,
+        session.duo_id,
+        session.library_game_id,
+        session.kind,
+        session.status,
+        session.started_at,
+        session.ended_at,
+        session.duration_seconds,
+        session.created_by_user_id,
+        coalesce(array_agg(confirmation.user_id ORDER BY confirmation.confirmed_at) FILTER (WHERE confirmation.user_id IS NOT NULL), ARRAY[]::text[]) AS confirmed_by_user_ids,
+        count(confirmation.user_id)::int AS confirmation_count
+      FROM app.play_sessions AS session
+      LEFT JOIN app.play_session_confirmations AS confirmation
+        ON confirmation.session_id = session.id
+      WHERE session.duo_id = $1
+        AND session.id = $2
+      GROUP BY session.id
+      LIMIT 1
+    `,
+    [input.duoId, input.sessionId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapSessionDetail(row, input.memberUserIds) : null;
+}
+
+async function readProgress(
+  client: QueueDbClient,
+  duoId: string,
+  libraryGameId: string
+): Promise<PlayProgressRecord> {
+  const result = await client.query<ProgressRow>(
+    `
+      SELECT
+        duo_id,
+        library_game_id,
+        confirmed_coop_seconds,
+        subjective_percent,
+        updated_at
+      FROM app.play_progress
+      WHERE duo_id = $1
+        AND library_game_id = $2
+      LIMIT 1
+    `,
+    [duoId, libraryGameId]
+  );
+  const row = result.rows[0];
+
+  return row
+    ? mapProgress(row)
+    : {
+        duoId,
+        libraryGameId,
+        confirmedCoopSeconds: 0,
+        subjectivePercent: null,
+        updatedAt: new Date(0)
+      };
+}
+
+async function readChapters(
+  client: QueueDbClient,
+  duoId: string,
+  libraryGameId: string
+): Promise<PlayChapterRecord[]> {
+  const result = await client.query<ChapterRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        library_game_id,
+        title,
+        position,
+        completed_at,
+        completed_by_user_id,
+        created_by_user_id,
+        updated_by_user_id,
+        created_at,
+        updated_at
+      FROM app.play_chapters
+      WHERE duo_id = $1
+        AND library_game_id = $2
+      ORDER BY position ASC, created_at ASC
+    `,
+    [duoId, libraryGameId]
+  );
+
+  return result.rows.map(mapChapter);
+}
+
+async function readPendingTerminalRequest(
+  client: QueueDbClient,
+  duoId: string,
+  libraryGameId: string
+): Promise<PlayTerminalRequestRecord | null> {
+  const result = await client.query<TerminalRequestRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        library_game_id,
+        target_status,
+        status,
+        requested_by_user_id,
+        confirmed_by_user_id,
+        cancelled_by_user_id,
+        updated_at
+      FROM app.play_terminal_requests
+      WHERE duo_id = $1
+        AND library_game_id = $2
+        AND status = 'pending'
+      LIMIT 1
+    `,
+    [duoId, libraryGameId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapTerminalRequest(row) : null;
 }
 
 async function readLibraryGameForActivation(
@@ -637,6 +992,45 @@ async function createSession(
   return mapSession(row);
 }
 
+async function endLiveSession(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    sessionId: string;
+    actorUserId: string;
+    endedAt: Date;
+  }
+): Promise<PlaySessionRecord | null> {
+  const result = await client.query<SessionRow>(
+    `
+      UPDATE app.play_sessions
+      SET status = 'pending_confirmation',
+          ended_at = $4,
+          duration_seconds = greatest(0, floor(extract(epoch FROM ($4 - started_at)))::int),
+          updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+        AND kind = 'live'
+        AND status = 'active'
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        kind,
+        status,
+        started_at,
+        ended_at,
+        duration_seconds,
+        created_by_user_id
+    `,
+    [input.duoId, input.sessionId, input.actorUserId, input.endedAt]
+  );
+  const row = result.rows[0];
+
+  return row ? mapSession(row) : null;
+}
+
 async function createSessionConfirmation(
   client: QueueDbClient,
   input: {
@@ -677,6 +1071,285 @@ async function createSessionConfirmation(
     : null;
 }
 
+async function applyConfirmedSessionEffects(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    sessionId: string;
+    actorUserId: string;
+    xpAmount: number;
+  }
+): Promise<{
+  progress: PlayProgressRecord;
+  xpAward: PlayXpAwardRecord | null;
+  session: PlaySessionRecord;
+} | null> {
+  const sessionResult = await client.query<SessionRow>(
+    `
+      UPDATE app.play_sessions
+      SET status = 'confirmed',
+          updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'pending_confirmation'
+        AND (
+          SELECT count(*)
+          FROM app.play_session_confirmations AS confirmation
+          WHERE confirmation.session_id = app.play_sessions.id
+        ) >= 2
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        kind,
+        status,
+        started_at,
+        ended_at,
+        duration_seconds,
+        created_by_user_id
+    `,
+    [input.duoId, input.sessionId, input.actorUserId]
+  );
+  const row = sessionResult.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  const session = mapSession(row);
+  const progress = await addConfirmedCoopSeconds(client, {
+    duoId: input.duoId,
+    libraryGameId: session.libraryGameId,
+    actorUserId: input.actorUserId,
+    durationSeconds: session.durationSeconds ?? 0
+  });
+  const xpAward = input.xpAmount > 0
+    ? await insertXpAward(client, {
+        duoId: input.duoId,
+        awardKey: `${session.kind}-session:${session.id}`,
+        sourceType: session.kind === "live" ? "live-session" : "offline-session",
+        sourceId: session.id,
+        amount: input.xpAmount,
+        awardedByUserId: input.actorUserId,
+        metadata: {
+          durationSeconds: session.durationSeconds ?? 0
+        }
+      })
+    : null;
+
+  return {
+    progress,
+    xpAward,
+    session
+  };
+}
+
+async function addConfirmedCoopSeconds(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    actorUserId: string;
+    durationSeconds: number;
+  }
+): Promise<PlayProgressRecord> {
+  const result = await client.query<ProgressRow>(
+    `
+      INSERT INTO app.play_progress (
+        duo_id,
+        library_game_id,
+        confirmed_coop_seconds,
+        updated_by_user_id,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, now())
+      ON CONFLICT (library_game_id) DO UPDATE
+      SET confirmed_coop_seconds = app.play_progress.confirmed_coop_seconds + excluded.confirmed_coop_seconds,
+          updated_by_user_id = excluded.updated_by_user_id,
+          updated_at = now()
+      RETURNING
+        duo_id,
+        library_game_id,
+        confirmed_coop_seconds,
+        subjective_percent,
+        updated_at
+    `,
+    [
+      input.duoId,
+      input.libraryGameId,
+      Math.max(0, input.durationSeconds),
+      input.actorUserId
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("play_progress_update_failed");
+  }
+
+  return mapProgress(row);
+}
+
+async function updateProgressPercent(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    actorUserId: string;
+    subjectivePercent: number | null;
+  }
+): Promise<PlayProgressRecord> {
+  const result = await client.query<ProgressRow>(
+    `
+      INSERT INTO app.play_progress (
+        duo_id,
+        library_game_id,
+        subjective_percent,
+        updated_by_user_id,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, now())
+      ON CONFLICT (library_game_id) DO UPDATE
+      SET subjective_percent = excluded.subjective_percent,
+          updated_by_user_id = excluded.updated_by_user_id,
+          updated_at = now()
+      RETURNING
+        duo_id,
+        library_game_id,
+        confirmed_coop_seconds,
+        subjective_percent,
+        updated_at
+    `,
+    [input.duoId, input.libraryGameId, input.subjectivePercent, input.actorUserId]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("play_progress_percent_update_failed");
+  }
+
+  return mapProgress(row);
+}
+
+async function createChapter(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    title: string;
+    actorUserId: string;
+  }
+): Promise<PlayChapterRecord> {
+  const result = await client.query<ChapterRow>(
+    `
+      INSERT INTO app.play_chapters (
+        duo_id,
+        library_game_id,
+        title,
+        position,
+        created_by_user_id,
+        updated_by_user_id,
+        updated_at
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        coalesce((
+          SELECT max(position) + 1
+          FROM app.play_chapters
+          WHERE duo_id = $1
+            AND library_game_id = $2
+        ), 1),
+        $4,
+        $4,
+        now()
+      )
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        title,
+        position,
+        completed_at,
+        completed_by_user_id,
+        created_by_user_id,
+        updated_by_user_id,
+        created_at,
+        updated_at
+    `,
+    [input.duoId, input.libraryGameId, input.title, input.actorUserId]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("play_chapter_create_failed");
+  }
+
+  return mapChapter(row);
+}
+
+async function setChapterCompletion(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    chapterId: string;
+    actorUserId: string;
+    completed: boolean;
+  }
+): Promise<{
+  chapter: PlayChapterRecord;
+  xpAward: PlayXpAwardRecord | null;
+} | null> {
+  const result = await client.query<ChapterRow>(
+    `
+      UPDATE app.play_chapters
+      SET completed_at = CASE WHEN $4 THEN coalesce(completed_at, now()) ELSE NULL END,
+          completed_by_user_id = CASE WHEN $4 THEN coalesce(completed_by_user_id, $3) ELSE NULL END,
+          updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        title,
+        position,
+        completed_at,
+        completed_by_user_id,
+        created_by_user_id,
+        updated_by_user_id,
+        created_at,
+        updated_at
+    `,
+    [input.duoId, input.chapterId, input.actorUserId, input.completed]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  const chapter = mapChapter(row);
+  const xpAward = input.completed
+    ? await insertXpAward(client, {
+        duoId: input.duoId,
+        awardKey: `chapter:${chapter.id}`,
+        sourceType: "chapter",
+        sourceId: chapter.id,
+        amount: 25,
+        awardedByUserId: input.actorUserId,
+        metadata: {
+          title: chapter.title
+        }
+      })
+    : null;
+
+  return { chapter, xpAward };
+}
+
 async function cancelPendingSessionConfirmation(
   client: QueueDbClient,
   input: {
@@ -695,6 +1368,153 @@ async function cancelPendingSessionConfirmation(
     `,
     [input.sessionId, input.userId]
   );
+}
+
+async function createTerminalRequest(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+    targetStatus: TerminalTargetStatus;
+    actorUserId: string;
+  }
+): Promise<PlayTerminalRequestRecord> {
+  const result = await client.query<TerminalRequestRow>(
+    `
+      INSERT INTO app.play_terminal_requests (
+        duo_id,
+        library_game_id,
+        target_status,
+        requested_by_user_id,
+        updated_by_user_id,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $4, now())
+      ON CONFLICT (library_game_id) WHERE status = 'pending' DO UPDATE
+      SET target_status = excluded.target_status,
+          requested_by_user_id = excluded.requested_by_user_id,
+          updated_by_user_id = excluded.updated_by_user_id,
+          updated_at = now()
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        target_status,
+        status,
+        requested_by_user_id,
+        confirmed_by_user_id,
+        cancelled_by_user_id,
+        updated_at
+    `,
+    [input.duoId, input.libraryGameId, input.targetStatus, input.actorUserId]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("play_terminal_request_create_failed");
+  }
+
+  return mapTerminalRequest(row);
+}
+
+async function cancelTerminalRequest(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    requestId: string;
+    actorUserId: string;
+  }
+): Promise<PlayTerminalRequestRecord | null> {
+  const result = await client.query<TerminalRequestRow>(
+    `
+      UPDATE app.play_terminal_requests
+      SET status = 'cancelled',
+          cancelled_by_user_id = $3,
+          cancelled_at = now(),
+          updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'pending'
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        target_status,
+        status,
+        requested_by_user_id,
+        confirmed_by_user_id,
+        cancelled_by_user_id,
+        updated_at
+    `,
+    [input.duoId, input.requestId, input.actorUserId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapTerminalRequest(row) : null;
+}
+
+async function confirmTerminalRequest(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    requestId: string;
+    actorUserId: string;
+  }
+): Promise<PlayTerminalRequestRecord | null> {
+  const result = await client.query<TerminalRequestRow>(
+    `
+      UPDATE app.play_terminal_requests
+      SET status = 'confirmed',
+          confirmed_by_user_id = $3,
+          confirmed_at = now(),
+          updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'pending'
+        AND requested_by_user_id <> $3
+      RETURNING
+        id,
+        duo_id,
+        library_game_id,
+        target_status,
+        status,
+        requested_by_user_id,
+        confirmed_by_user_id,
+        cancelled_by_user_id,
+        updated_at
+    `,
+    [input.duoId, input.requestId, input.actorUserId]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    return null;
+  }
+
+  await client.query(
+    `
+      UPDATE app.duo_library_games
+      SET status = $3,
+          status_updated_by_user_id = $4,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+    `,
+    [input.duoId, row.library_game_id, row.target_status, input.actorUserId]
+  );
+  await client.query(
+    `
+      DELETE FROM app.play_active_games
+      WHERE duo_id = $1
+        AND library_game_id = $2
+    `,
+    [input.duoId, row.library_game_id]
+  );
+  await compactActivePlayRows(client, input.duoId, input.actorUserId);
+
+  return mapTerminalRequest(row);
 }
 
 async function insertNotificationItem(
@@ -898,6 +1718,65 @@ function mapSession(row: SessionRow): PlaySessionRecord {
     endedAt: row.ended_at,
     durationSeconds: row.duration_seconds,
     createdByUserId: row.created_by_user_id
+  };
+}
+
+function mapSessionDetail(
+  row: SessionDetailRow,
+  memberUserIds: string[]
+): PlaySessionDetailRecord {
+  const confirmedByUserIds = row.confirmed_by_user_ids ?? [];
+  const pendingUserIds = memberUserIds.filter(
+    (userId) => !confirmedByUserIds.includes(userId)
+  );
+
+  return {
+    ...mapSession(row),
+    confirmedByUserIds,
+    pendingUserIds,
+    confirmationCount: Number(row.confirmation_count ?? confirmedByUserIds.length),
+    requiredConfirmationCount: memberUserIds.length,
+    doubleConfirmed: pendingUserIds.length === 0 && memberUserIds.length >= 2
+  };
+}
+
+function mapProgress(row: ProgressRow): PlayProgressRecord {
+  return {
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    confirmedCoopSeconds: Number(row.confirmed_coop_seconds ?? 0),
+    subjectivePercent: row.subjective_percent,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapChapter(row: ChapterRow): PlayChapterRecord {
+  return {
+    id: row.id,
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    title: row.title,
+    position: row.position,
+    completedAt: row.completed_at,
+    completedByUserId: row.completed_by_user_id,
+    createdByUserId: row.created_by_user_id,
+    updatedByUserId: row.updated_by_user_id,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  };
+}
+
+function mapTerminalRequest(row: TerminalRequestRow): PlayTerminalRequestRecord {
+  return {
+    id: row.id,
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    targetStatus: row.target_status,
+    status: row.status,
+    requestedByUserId: row.requested_by_user_id,
+    confirmedByUserId: row.confirmed_by_user_id,
+    cancelledByUserId: row.cancelled_by_user_id,
+    updatedAt: row.updated_at
   };
 }
 

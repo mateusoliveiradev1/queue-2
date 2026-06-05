@@ -3,17 +3,32 @@
 import { revalidatePath } from "next/cache";
 
 import {
+  cancelTerminalStatus,
+  confirmPlaySession,
+  confirmTerminalStatus,
+  createPlayChapter,
+  endLiveSession,
+  logOfflineSession,
   promotePlayingGame,
-  reorderPlayingGames
+  requestTerminalStatus,
+  reorderPlayingGames,
+  startLiveSession,
+  setPlayChapterCompletion,
+  updatePlayProgress
 } from "../../modules/play";
 import { requireAuthoritativeVerifiedSession } from "../../platform/auth/session";
 import {
   measureStage,
+  type ServerTimingContext,
   withServerTiming
 } from "../../platform/performance/server-timing";
 
 const reorderTimingContext = { action: "play.order.reorder" } as const;
 const promoteTimingContext = { action: "play.order.promote" } as const;
+const sessionTimingContext = { action: "play.session" } as const;
+const progressTimingContext = { action: "play.progress" } as const;
+const chapterTimingContext = { action: "play.chapter" } as const;
+const terminalTimingContext = { action: "play.terminal" } as const;
 
 export type PlayOrderMutationResult =
   | {
@@ -32,6 +47,19 @@ export type PlayOrderMutationResult =
       redirectTo?: string;
     };
 
+export type PlayJourneyMutationResult =
+  | {
+      ok: true;
+      state: string;
+      redirectTo?: string;
+    }
+  | {
+      ok: false;
+      reason: string;
+      state: string;
+      redirectTo?: string;
+    };
+
 export async function reorderPlayingGamesAction(
   formData: FormData
 ): Promise<PlayOrderMutationResult> {
@@ -45,6 +73,86 @@ export async function promotePlayingGameAction(
 ): Promise<PlayOrderMutationResult> {
   return withServerTiming(promoteTimingContext, () =>
     promotePlayingGameActionTimed(formData)
+  );
+}
+
+export async function startLiveSessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "start-live", sessionTimingContext)
+  );
+}
+
+export async function endLiveSessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "end-live", sessionTimingContext)
+  );
+}
+
+export async function confirmPlaySessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "confirm-session", sessionTimingContext)
+  );
+}
+
+export async function logOfflineSessionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(sessionTimingContext, () =>
+    playJourneyActionTimed(formData, "log-offline", sessionTimingContext)
+  );
+}
+
+export async function updatePlayProgressAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(progressTimingContext, () =>
+    playJourneyActionTimed(formData, "update-progress", progressTimingContext)
+  );
+}
+
+export async function createPlayChapterAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(chapterTimingContext, () =>
+    playJourneyActionTimed(formData, "create-chapter", chapterTimingContext)
+  );
+}
+
+export async function setPlayChapterCompletionAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(chapterTimingContext, () =>
+    playJourneyActionTimed(formData, "set-chapter", chapterTimingContext)
+  );
+}
+
+export async function requestTerminalStatusAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(terminalTimingContext, () =>
+    playJourneyActionTimed(formData, "request-terminal", terminalTimingContext)
+  );
+}
+
+export async function cancelTerminalStatusAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(terminalTimingContext, () =>
+    playJourneyActionTimed(formData, "cancel-terminal", terminalTimingContext)
+  );
+}
+
+export async function confirmTerminalStatusAction(
+  formData: FormData
+): Promise<void> {
+  await withServerTiming(terminalTimingContext, () =>
+    playJourneyActionTimed(formData, "confirm-terminal", terminalTimingContext)
   );
 }
 
@@ -158,6 +266,112 @@ async function promotePlayingGameActionTimed(
       };
 }
 
+async function playJourneyActionTimed(
+  formData: FormData,
+  action:
+    | "cancel-terminal"
+    | "confirm-session"
+    | "confirm-terminal"
+    | "create-chapter"
+    | "end-live"
+    | "log-offline"
+    | "request-terminal"
+    | "set-chapter"
+    | "start-live"
+    | "update-progress",
+  timingContext: ServerTimingContext
+): Promise<PlayJourneyMutationResult> {
+  const session = await measureStage("auth", timingContext, () =>
+    requireAuthoritativeVerifiedSession()
+  );
+  const gameSlugs = await measureStage("validation", timingContext, async () =>
+    getSafeGameSlugs(formData)
+  );
+  const result = await measureStage("database", timingContext, async () => {
+    switch (action) {
+      case "start-live":
+        return startLiveSession({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId")
+        });
+      case "end-live":
+        return endLiveSession({
+          userId: session.user.id,
+          sessionId: getFormString(formData, "sessionId")
+        });
+      case "confirm-session":
+        return confirmPlaySession({
+          userId: session.user.id,
+          sessionId: getFormString(formData, "sessionId")
+        });
+      case "log-offline":
+        return logOfflineSession({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId"),
+          durationMinutes: getFormNumber(formData, "durationMinutes")
+        });
+      case "update-progress":
+        return updatePlayProgress({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId"),
+          subjectivePercent: getOptionalFormNumber(formData, "subjectivePercent")
+        });
+      case "create-chapter":
+        return createPlayChapter({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId"),
+          title: getFormString(formData, "title")
+        });
+      case "set-chapter":
+        return setPlayChapterCompletion({
+          userId: session.user.id,
+          chapterId: getFormString(formData, "chapterId"),
+          completed: getFormString(formData, "completed") === "true"
+        });
+      case "request-terminal":
+        return requestTerminalStatus({
+          userId: session.user.id,
+          catalogGameId: getFormString(formData, "catalogGameId"),
+          targetStatus: getFormString(formData, "targetStatus")
+        });
+      case "cancel-terminal":
+        return cancelTerminalStatus({
+          userId: session.user.id,
+          requestId: getFormString(formData, "requestId")
+        });
+      case "confirm-terminal":
+        return confirmTerminalStatus({
+          userId: session.user.id,
+          requestId: getFormString(formData, "requestId")
+        });
+    }
+  });
+
+  if (!result.ok && result.reason === "membership-required") {
+    return {
+      ok: false,
+      reason: "membership-required",
+      redirectTo: "/parear",
+      state: "membership-required"
+    };
+  }
+
+  await measureStage("revalidation", timingContext, async () => {
+    revalidatePlaySurfaces(gameSlugs);
+  });
+
+  return result.ok
+    ? {
+        ok: true,
+        state: playJourneySuccessState(action)
+      }
+    : {
+        ok: false,
+        reason: result.reason,
+        state: playJourneyReasonToState(result.reason)
+      };
+}
+
 function getOrderedLibraryGameIds(formData: FormData): string[] {
   return formData
     .getAll("libraryGameId")
@@ -183,6 +397,22 @@ function getFormString(formData: FormData, key: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function getFormNumber(formData: FormData, key: string): number {
+  const value = Number(getFormString(formData, key));
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
+function getOptionalFormNumber(formData: FormData, key: string): number | null {
+  const raw = getFormString(formData, key);
+
+  if (!raw) {
+    return null;
+  }
+
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : Number.NaN;
+}
+
 function isSafeSlug(value: string): boolean {
   return /^[a-z0-9][a-z0-9-]{0,159}$/.test(value);
 }
@@ -206,6 +436,70 @@ function playOrderReasonToState(reason: Exclude<PlayOrderMutationResult, { ok: t
       return "principal-invalido";
     case "membership-required":
       return "membership-required";
+    default:
+      return "acao-invalida";
+  }
+}
+
+function playJourneySuccessState(
+  action:
+    | "cancel-terminal"
+    | "confirm-session"
+    | "confirm-terminal"
+    | "create-chapter"
+    | "end-live"
+    | "log-offline"
+    | "request-terminal"
+    | "set-chapter"
+    | "start-live"
+    | "update-progress"
+): string {
+  switch (action) {
+    case "start-live":
+      return "sessao-ao-vivo-iniciada";
+    case "end-live":
+      return "sessao-pendente-confirmacao";
+    case "confirm-session":
+      return "sessao-confirmada";
+    case "log-offline":
+      return "jogamos-hoje-pendente";
+    case "update-progress":
+      return "progresso-atualizado";
+    case "create-chapter":
+      return "capitulo-criado";
+    case "set-chapter":
+      return "capitulo-atualizado";
+    case "request-terminal":
+      return "pedido-terminal-pendente";
+    case "cancel-terminal":
+      return "pedido-terminal-cancelado";
+    case "confirm-terminal":
+      return "pedido-terminal-confirmado";
+  }
+}
+
+function playJourneyReasonToState(reason: string): string {
+  switch (reason) {
+    case "active-live-session-exists":
+      return "sessao-ao-vivo-ja-ativa";
+    case "already-confirmed":
+      return "confirmacao-ja-registrada";
+    case "duration-out-of-range":
+      return "duracao-invalida";
+    case "library-game-not-found":
+      return "jogo-fora-da-biblioteca";
+    case "not-playing":
+      return "jogo-nao-esta-jogando";
+    case "partner-confirmation-required":
+      return "confirmacao-do-parceiro-obrigatoria";
+    case "percent-out-of-range":
+      return "percentual-invalido";
+    case "session-not-active":
+      return "sessao-nao-ativa";
+    case "session-not-found":
+      return "sessao-nao-encontrada";
+    case "terminal-request-not-pending":
+      return "pedido-terminal-nao-pendente";
     default:
       return "acao-invalida";
   }

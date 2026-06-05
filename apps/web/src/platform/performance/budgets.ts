@@ -83,11 +83,27 @@ export const mutationPerformanceBudgets: Record<
     pendingFeedbackMs: 100,
     authoritativeSettledMs: 2_000
   },
+  "play.chapter": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
+  },
   "play.order.promote": {
     pendingFeedbackMs: 100,
     authoritativeSettledMs: 2_500
   },
   "play.order.reorder": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
+  },
+  "play.progress": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
+  },
+  "play.session": {
+    pendingFeedbackMs: 100,
+    authoritativeSettledMs: 2_500
+  },
+  "play.terminal": {
     pendingFeedbackMs: 100,
     authoritativeSettledMs: 2_500
   }

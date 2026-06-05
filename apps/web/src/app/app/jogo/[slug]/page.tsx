@@ -17,6 +17,14 @@ import {
   LibraryStatusControls,
   toLibraryGameDetailView
 } from "../../../../modules/library";
+import {
+  ChapterList,
+  getGamePlayDetail,
+  JogamosHojeForm,
+  LiveSessionPanel,
+  ProgressPanel,
+  TerminalStatusPanel
+} from "../../../../modules/play";
 import { requireVerifiedSession } from "../../../../platform/auth/session";
 import {
   measureStage,
@@ -26,6 +34,18 @@ import {
   addGameToWishlistAction,
   moveLibraryGameAction
 } from "../../phase-2-actions";
+import {
+  cancelTerminalStatusAction,
+  confirmPlaySessionAction,
+  confirmTerminalStatusAction,
+  createPlayChapterAction,
+  endLiveSessionAction,
+  logOfflineSessionAction,
+  requestTerminalStatusAction,
+  setPlayChapterCompletionAction,
+  startLiveSessionAction,
+  updatePlayProgressAction
+} from "../../phase-4-actions";
 import {
   getPhase2StatusMessage,
   getSearchParam
@@ -90,6 +110,15 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
   const libraryView = libraryResult.ok
     ? toLibraryGameDetailView(libraryResult.detail)
     : null;
+  const playDetailResult = libraryResult.ok
+    ? await measureStage("database", gameTimingContext, () =>
+        getGamePlayDetail({
+          userId: session.user.id,
+          catalogGameId: catalog.id
+        })
+      )
+    : null;
+  const playDetail = playDetailResult?.ok ? playDetailResult.detail : null;
   const returnTo = `/app/jogo/${catalog.slug}`;
   const state = getSearchParam(query?.estado);
   const statusMessage = getPhase2StatusMessage(state);
@@ -218,22 +247,56 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
         )}
       </section>
 
-      <section className="surface-band app-section" aria-labelledby="duo-journey">
-        <div className="section-heading">
-          <h2 className="eyebrow" id="duo-journey">
-            Jornada da dupla
-          </h2>
-          <p className="support-copy">
-            Sessoes, checkpoints, progresso e marcos entram quando a rotina de
-            jogo for ativada.
-          </p>
-        </div>
-        <p className="lede">
-          {libraryView
-            ? libraryView.duoJourney
-            : "A jornada comeca quando o jogo entra na biblioteca compartilhada."}
-        </p>
-      </section>
+      {libraryView ? (
+        <>
+          <LiveSessionPanel
+            catalogGameId={catalog.id}
+            confirmAction={confirmPlaySessionAction}
+            detail={playDetail}
+            endAction={endLiveSessionAction}
+            gameSlug={catalog.slug}
+            startAction={startLiveSessionAction}
+          />
+          <JogamosHojeForm
+            action={logOfflineSessionAction}
+            catalogGameId={catalog.id}
+            gameSlug={catalog.slug}
+          />
+          <ProgressPanel
+            action={updatePlayProgressAction}
+            catalogGameId={catalog.id}
+            gameSlug={catalog.slug}
+            playDetail={playDetail}
+            timeEstimate={catalog.timeEstimate}
+          />
+          <ChapterList
+            catalogGameId={catalog.id}
+            createAction={createPlayChapterAction}
+            gameSlug={catalog.slug}
+            playDetail={playDetail}
+            toggleAction={setPlayChapterCompletionAction}
+          />
+          <TerminalStatusPanel
+            cancelAction={cancelTerminalStatusAction}
+            catalogGameId={catalog.id}
+            confirmAction={confirmTerminalStatusAction}
+            gameSlug={catalog.slug}
+            playDetail={playDetail}
+            requestAction={requestTerminalStatusAction}
+          />
+        </>
+      ) : (
+        <section className="surface-band app-section" aria-labelledby="duo-journey">
+          <div className="section-heading">
+            <h2 className="eyebrow" id="duo-journey">
+              Jornada da dupla
+            </h2>
+            <p className="support-copy">
+              A jornada comeca quando o jogo entra na biblioteca compartilhada.
+            </p>
+          </div>
+        </section>
+      )}
     </AppShell>
   ));
 }

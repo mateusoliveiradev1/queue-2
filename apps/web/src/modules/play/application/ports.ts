@@ -148,6 +148,36 @@ export type PlaySessionRecord = {
   createdByUserId: PlayUserId;
 };
 
+export type PlaySessionDetailRecord = PlaySessionRecord & {
+  confirmedByUserIds: PlayUserId[];
+  pendingUserIds: PlayUserId[];
+  confirmationCount: number;
+  requiredConfirmationCount: number;
+  doubleConfirmed: boolean;
+};
+
+export type PlayProgressRecord = {
+  duoId: PlayDuoId;
+  libraryGameId: PlayLibraryGameId;
+  confirmedCoopSeconds: number;
+  subjectivePercent: number | null;
+  updatedAt: Date;
+};
+
+export type PlayChapterRecord = {
+  id: string;
+  duoId: PlayDuoId;
+  libraryGameId: PlayLibraryGameId;
+  title: string;
+  position: number;
+  completedAt: Date | null;
+  completedByUserId: PlayUserId | null;
+  createdByUserId: PlayUserId;
+  updatedByUserId: PlayUserId;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 export type PlayConfirmationRecord = {
   id: string;
   duoId: PlayDuoId;
@@ -210,6 +240,19 @@ export type PlayTerminalRequestRecord = {
   confirmedByUserId: PlayUserId | null;
   cancelledByUserId: PlayUserId | null;
   updatedAt: Date;
+};
+
+export type GamePlayDetailRecord = {
+  duoId: PlayDuoId;
+  libraryGameId: PlayLibraryGameId;
+  catalogGameId: PlayCatalogGameId;
+  libraryStatus: string;
+  activeGame: ActivePlayGameRecord | null;
+  activeLiveSession: PlaySessionRecord | null;
+  pendingSessions: PlaySessionDetailRecord[];
+  progress: PlayProgressRecord;
+  chapters: PlayChapterRecord[];
+  terminalRequest: PlayTerminalRequestRecord | null;
 };
 
 export type PlayReminderJobRecord = {
@@ -284,6 +327,70 @@ export type PlayRepositoryTransaction = {
     sessionId: string;
     userId: PlayUserId;
   }): Promise<PlayConfirmationRecord>;
+  readGamePlayDetail(input: {
+    duoId: PlayDuoId;
+    catalogGameId: PlayCatalogGameId;
+  }): Promise<GamePlayDetailRecord | null>;
+  readActiveLiveSession(input: {
+    duoId: PlayDuoId;
+  }): Promise<PlaySessionRecord | null>;
+  endLiveSession(input: {
+    duoId: PlayDuoId;
+    sessionId: string;
+    actorUserId: PlayUserId;
+    endedAt: Date;
+  }): Promise<PlaySessionRecord | null>;
+  readSessionDetail(input: {
+    duoId: PlayDuoId;
+    sessionId: string;
+  }): Promise<PlaySessionDetailRecord | null>;
+  applyConfirmedSessionEffects(input: {
+    duoId: PlayDuoId;
+    sessionId: string;
+    actorUserId: PlayUserId;
+    xpAmount: number;
+  }): Promise<{
+    progress: PlayProgressRecord;
+    xpAward: PlayXpAwardRecord | null;
+    session: PlaySessionRecord;
+  } | null>;
+  updateProgressPercent(input: {
+    duoId: PlayDuoId;
+    libraryGameId: PlayLibraryGameId;
+    actorUserId: PlayUserId;
+    subjectivePercent: number | null;
+  }): Promise<PlayProgressRecord>;
+  createChapter(input: {
+    duoId: PlayDuoId;
+    libraryGameId: PlayLibraryGameId;
+    title: string;
+    actorUserId: PlayUserId;
+  }): Promise<PlayChapterRecord>;
+  setChapterCompletion(input: {
+    duoId: PlayDuoId;
+    chapterId: string;
+    actorUserId: PlayUserId;
+    completed: boolean;
+  }): Promise<{
+    chapter: PlayChapterRecord;
+    xpAward: PlayXpAwardRecord | null;
+  } | null>;
+  createTerminalRequest(input: {
+    duoId: PlayDuoId;
+    libraryGameId: PlayLibraryGameId;
+    targetStatus: TerminalTargetStatus;
+    actorUserId: PlayUserId;
+  }): Promise<PlayTerminalRequestRecord>;
+  cancelTerminalRequest(input: {
+    duoId: PlayDuoId;
+    requestId: string;
+    actorUserId: PlayUserId;
+  }): Promise<PlayTerminalRequestRecord | null>;
+  confirmTerminalRequest(input: {
+    duoId: PlayDuoId;
+    requestId: string;
+    actorUserId: PlayUserId;
+  }): Promise<PlayTerminalRequestRecord | null>;
   insertNotificationItem(input: PlayNotificationInput): Promise<PlayNotificationRecord>;
   insertXpAward(input: PlayXpAwardInput): Promise<PlayXpAwardRecord | null>;
 };
@@ -297,6 +404,10 @@ export interface PlayRepository {
   readCurrentPlay(input: {
     userId: PlayUserId;
   }): Promise<CurrentPlayRecord | null>;
+  readGamePlayDetail(input: {
+    userId: PlayUserId;
+    catalogGameId: PlayCatalogGameId;
+  }): Promise<GamePlayDetailRecord | null>;
   readActivePlayGames(input: {
     userId: PlayUserId;
   }): Promise<ActivePlayGameRecord[]>;

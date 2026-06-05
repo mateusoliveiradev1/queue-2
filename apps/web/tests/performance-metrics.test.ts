@@ -162,8 +162,8 @@ describe("server timing helpers", () => {
     const discoverySearchRoute = readFileSync("src/app/api/discovery/search/route.ts", "utf8");
 
     expect(dashboardPage).toContain('route: "app.home"');
-    expect(dashboardPage).toContain('measureStage("auth"');
-    expect(dashboardPage).toContain('measureStage("database"');
+    expect(dashboardPage).toMatch(/measureStage\(\s*"auth"/);
+    expect(dashboardPage).toMatch(/measureStage\(\s*"database"/);
     expect(catalogPage).toContain('route: "app.catalogo"');
     expect(gamePage).toContain('route: "app.jogo"');
     expect(gamePage).toContain('measureStage("auth"');
@@ -174,6 +174,10 @@ describe("server timing helpers", () => {
     expect(libraryActions).toContain('action: "library.status.move"');
     expect(playActions).toContain('action: "play.order.promote"');
     expect(playActions).toContain('action: "play.order.reorder"');
+    expect(playActions).toContain('action: "play.session"');
+    expect(playActions).toContain('action: "play.progress"');
+    expect(playActions).toContain('action: "play.chapter"');
+    expect(playActions).toContain('action: "play.terminal"');
     expect(discoveryActions).toContain('action: "discovery.decision"');
     expect(discoveryActions).toContain('action: "discovery.handoff"');
     expect(discoveryActions).toContain('action: "discovery.live.start"');
@@ -206,8 +210,12 @@ describe("performance budgets", () => {
       "discovery.quiz.answer",
       "discovery.surprise",
       "library.status.move",
+      "play.chapter",
       "play.order.promote",
-      "play.order.reorder"
+      "play.order.reorder",
+      "play.progress",
+      "play.session",
+      "play.terminal"
     ]);
   });
 });
