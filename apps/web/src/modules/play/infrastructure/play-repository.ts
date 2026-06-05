@@ -9,9 +9,12 @@ import {
 
 import type {
   ActivePlayGameRecord,
+  CurrentPlayGameRecord,
+  CurrentPlayRecord,
   PlayMembershipContext,
   PlayNotificationInput,
   PlayNotificationRecord,
+  PlayActivationLibraryGameRecord,
   PlayReminderJobRecord,
   PlayRepository,
   PlayRepositoryTransaction,
@@ -39,6 +42,29 @@ type ActiveGameRow = {
   catalog_game_id: string;
   role: PlayGameRole;
   position: number;
+  updated_at: Date;
+};
+
+type CurrentPlayGameRow = ActiveGameRow & {
+  library_status: string;
+  game_slug: string;
+  game_name: string;
+  background_image_url: string | null;
+  source: string;
+  source_url: string;
+  source_updated_at: Date | null;
+  synced_at: Date;
+  has_reliable_time_estimate: boolean;
+  has_verified_availability: boolean;
+  confirmed_coop_seconds: number | null;
+  subjective_percent: number | null;
+};
+
+type ActivationLibraryGameRow = {
+  id: string;
+  duo_id: string;
+  catalog_game_id: string;
+  status: string;
   updated_at: Date;
 };
 
@@ -104,6 +130,7 @@ let defaultPlayRepository: PlayRepository | undefined;
 export const playRepository: PlayRepository = {
   withUserTransaction: (...args) => getDefaultPlayRepository().withUserTransaction(...args),
   resolveMembership: (...args) => getDefaultPlayRepository().resolveMembership(...args),
+  readCurrentPlay: (...args) => getDefaultPlayRepository().readCurrentPlay(...args),
   readActivePlayGames: (...args) => getDefaultPlayRepository().readActivePlayGames(...args),
   upsertActiveRoleRows: (...args) => getDefaultPlayRepository().upsertActiveRoleRows(...args),
   createSessionConfirmation: (...args) =>
@@ -122,6 +149,11 @@ export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): Play
       ),
     resolveMembership: (userId) =>
       withAppUserTransaction(pool, userId, (client) => resolveMembership(client, userId)),
+    readCurrentPlay: (input) =>
+      withAppUserTransaction(pool, input.userId, async (client) => {
+        const membership = await resolveMembership(client, input.userId);
+        return membership ? readCurrentPlay(client, membership.duoId) : null;
+      }),
     readActivePlayGames: (input) =>
       withAppUserTransaction(pool, input.userId, async (client) => {
         const membership = await resolveMembership(client, input.userId);
@@ -164,7 +196,15 @@ export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): Play
 function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
   return {
     resolveMembership: (userId) => resolveMembership(client, userId),
+    lockActivePlaySet: (input) => lockActivePlaySet(client, input.duoId),
     readActivePlayGames: (input) => readActivePlayGames(client, input.duoId),
+    readCurrentPlayGames: (input) => readCurrentPlayGames(client, input.duoId),
+    readLibraryGameForActivation: (input) =>
+      readLibraryGameForActivation(client, input),
+    activatePlayingLibraryGame: (input) =>
+      activatePlayingLibraryGame(client, input),
+    deactivatePlayingLibraryGame: (input) =>
+      deactivatePlayingLibraryGame(client, input),
     upsertActiveRoleRows: (input) => upsertActiveRoleRows(client, input),
     createSession: (input) => createSession(client, input),
     confirmSession: (input) =>
@@ -249,6 +289,171 @@ async function readActivePlayGames(
   return result.rows.map(mapActiveGame);
 }
 
+async function readCurrentPlay(
+  client: QueueDbClient,
+  duoId: string
+): Promise<CurrentPlayRecord> {
+  return createCurrentPlayRecord(await readCurrentPlayGames(client, duoId));
+}
+
+async function readCurrentPlayGames(
+  client: QueueDbClient,
+  duoId: string
+): Promise<CurrentPlayGameRecord[]> {
+  const result = await client.query<CurrentPlayGameRow>(
+    `
+      SELECT
+        active.id,
+        active.duo_id,
+        active.library_game_id,
+        library.catalog_game_id,
+        library.status AS library_status,
+        active.role,
+        active.position,
+        active.updated_at,
+        game.slug AS game_slug,
+        game.name AS game_name,
+        game.background_image_url,
+        game.source,
+        game.source_url,
+        game.source_updated_at,
+        game.synced_at,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_time_estimates AS estimate
+          WHERE estimate.game_id = game.id
+            AND estimate.minutes IS NOT NULL
+            AND estimate.confidence IN ('verified', 'estimated')
+        ) AS has_reliable_time_estimate,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_availability AS availability
+          WHERE availability.game_id = game.id
+            AND availability.status = 'available'
+        ) AS has_verified_availability,
+        progress.confirmed_coop_seconds,
+        progress.subjective_percent
+      FROM app.play_active_games AS active
+      INNER JOIN app.duo_library_games AS library
+        ON library.id = active.library_game_id
+      INNER JOIN catalog.games AS game
+        ON game.id = library.catalog_game_id
+      LEFT JOIN app.play_progress AS progress
+        ON progress.library_game_id = library.id
+      WHERE active.duo_id = $1
+        AND library.status = 'jogando'
+      ORDER BY active.position ASC
+      LIMIT 3
+    `,
+    [duoId]
+  );
+
+  return result.rows.map(mapCurrentPlayGame);
+}
+
+async function readLibraryGameForActivation(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    catalogGameId: string;
+  }
+): Promise<PlayActivationLibraryGameRecord | null> {
+  const result = await client.query<ActivationLibraryGameRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        catalog_game_id,
+        status,
+        updated_at
+      FROM app.duo_library_games
+      WHERE duo_id = $1
+        AND catalog_game_id = $2
+      LIMIT 1
+      FOR UPDATE
+    `,
+    [input.duoId, input.catalogGameId]
+  );
+  const row = result.rows[0];
+
+  return row
+    ? {
+        id: row.id,
+        duoId: row.duo_id,
+        catalogGameId: row.catalog_game_id,
+        status: row.status,
+        updatedAt: row.updated_at
+      }
+    : null;
+}
+
+async function activatePlayingLibraryGame(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    actorUserId: string;
+    libraryGameId: string;
+    role: PlayGameRole;
+    position: number;
+  }
+): Promise<ActivePlayGameRecord[]> {
+  await client.query(
+    `
+      UPDATE app.duo_library_games
+      SET status = 'jogando',
+          status_updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+    `,
+    [input.duoId, input.libraryGameId, input.actorUserId]
+  );
+
+  return upsertActiveRoleRows(client, {
+    duoId: input.duoId,
+    actorUserId: input.actorUserId,
+    games: [
+      {
+        libraryGameId: input.libraryGameId,
+        role: input.role,
+        position: input.position
+      }
+    ]
+  });
+}
+
+async function deactivatePlayingLibraryGame(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    actorUserId: string;
+    libraryGameId: string;
+    nextStatus: "wishlist" | "pausado";
+  }
+): Promise<ActivePlayGameRecord[]> {
+  await client.query(
+    `
+      UPDATE app.duo_library_games
+      SET status = $3,
+          status_updated_by_user_id = $4,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+    `,
+    [input.duoId, input.libraryGameId, input.nextStatus, input.actorUserId]
+  );
+  await client.query(
+    `
+      DELETE FROM app.play_active_games
+      WHERE duo_id = $1
+        AND library_game_id = $2
+    `,
+    [input.duoId, input.libraryGameId]
+  );
+
+  return compactActivePlayRows(client, input.duoId, input.actorUserId);
+}
+
 async function upsertActiveRoleRows(
   client: QueueDbClient,
   input: {
@@ -289,6 +494,46 @@ async function upsertActiveRoleRows(
   }
 
   return readActivePlayGames(client, input.duoId);
+}
+
+async function compactActivePlayRows(
+  client: QueueDbClient,
+  duoId: string,
+  actorUserId: string
+): Promise<ActivePlayGameRecord[]> {
+  const current = await readActivePlayGames(client, duoId);
+  const compacted = current.map((game, index) => ({
+    libraryGameId: game.libraryGameId,
+    role: index === 0 ? "principal" as const : "secondary" as const,
+    position: index + 1
+  }));
+
+  if (compacted.length === 0) {
+    return [];
+  }
+
+  for (const game of compacted) {
+    await client.query(
+      `
+        UPDATE app.play_active_games
+        SET role = $3,
+            position = $4,
+            updated_by_user_id = $5,
+            updated_at = now()
+        WHERE duo_id = $1
+          AND library_game_id = $2
+      `,
+      [duoId, game.libraryGameId, game.role, game.position, actorUserId]
+    );
+  }
+
+  return readActivePlayGames(client, duoId);
+}
+
+async function lockActivePlaySet(client: QueueDbClient, duoId: string): Promise<void> {
+  await client.query("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", [
+    `play-active:${duoId}`
+  ]);
 }
 
 async function createSession(
@@ -565,6 +810,38 @@ function mapActiveGame(row: ActiveGameRow): ActivePlayGameRecord {
     role: row.role,
     position: row.position,
     updatedAt: row.updated_at
+  };
+}
+
+function mapCurrentPlayGame(row: CurrentPlayGameRow): CurrentPlayGameRecord {
+  return {
+    ...mapActiveGame(row),
+    libraryStatus: row.library_status,
+    catalogGame: {
+      id: row.catalog_game_id,
+      slug: row.game_slug,
+      name: row.game_name,
+      coverUrl: row.background_image_url,
+      source: row.source,
+      sourceUrl: row.source_url,
+      sourceUpdatedAt: row.source_updated_at,
+      syncedAt: row.synced_at,
+      hasReliableTimeEstimate: row.has_reliable_time_estimate,
+      hasVerifiedAvailability: row.has_verified_availability
+    },
+    progress: {
+      confirmedCoopSeconds: Number(row.confirmed_coop_seconds ?? 0),
+      subjectivePercent: row.subjective_percent
+    }
+  };
+}
+
+function createCurrentPlayRecord(games: CurrentPlayGameRecord[]): CurrentPlayRecord {
+  return {
+    games,
+    principal: games.find((game) => game.role === "principal") ?? null,
+    secondaries: games.filter((game) => game.role === "secondary"),
+    limit: 3
   };
 }
 

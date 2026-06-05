@@ -30,10 +30,12 @@ type LibraryGateway = {
         ok: false;
         reason:
           | "future-confirmation-required"
+          | "invalid-active-layout"
           | "invalid-status"
           | "jogando-limit-reached"
           | "library-game-not-found"
-          | "membership-required";
+          | "membership-required"
+          | "replacement-required";
         status?: string;
       }
   >;

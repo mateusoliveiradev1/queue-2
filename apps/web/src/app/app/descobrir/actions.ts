@@ -506,7 +506,10 @@ function handoffResultToState(
     case "future-confirmation-required":
       return "estado-futuro-bloqueado";
     case "jogando-limit-reached":
+    case "replacement-required":
       return "limite-jogando";
+    case "invalid-active-layout":
+      return "fila-jogando-invalida";
     default:
       return "acao-invalida";
   }

@@ -28,6 +28,88 @@ export type ActivePlayGameRecord = {
   updatedAt: Date;
 };
 
+export type CurrentPlayCatalogFacts = {
+  id: PlayCatalogGameId;
+  slug: string;
+  name: string;
+  coverUrl: string | null;
+  source: string;
+  sourceUrl: string;
+  sourceUpdatedAt: Date | null;
+  syncedAt: Date;
+  hasReliableTimeEstimate: boolean;
+  hasVerifiedAvailability: boolean;
+};
+
+export type CurrentPlayProgressRecord = {
+  confirmedCoopSeconds: number;
+  subjectivePercent: number | null;
+};
+
+export type CurrentPlayGameRecord = ActivePlayGameRecord & {
+  libraryStatus: string;
+  catalogGame: CurrentPlayCatalogFacts;
+  progress: CurrentPlayProgressRecord;
+};
+
+export type CurrentPlayRecord = {
+  games: CurrentPlayGameRecord[];
+  principal: CurrentPlayGameRecord | null;
+  secondaries: CurrentPlayGameRecord[];
+  limit: 3;
+};
+
+export type PlayActivationLibraryGameRecord = {
+  id: PlayLibraryGameId;
+  duoId: PlayDuoId;
+  catalogGameId: PlayCatalogGameId;
+  status: string;
+  updatedAt: Date;
+};
+
+export type PlayActivationOutcome =
+  | "principal-assigned"
+  | "secondary-assigned"
+  | "already-playing";
+
+export type PlayReplacementDecision = {
+  availableActions: ["pause", "replace", "cancel"];
+  autoPause: false;
+  currentGames: CurrentPlayGameRecord[];
+};
+
+export type ActivatePlayingGameResult =
+  | {
+      ok: true;
+      outcome: PlayActivationOutcome;
+      activeGame: ActivePlayGameRecord;
+      activeGames: ActivePlayGameRecord[];
+      currentPlay: CurrentPlayRecord;
+    }
+  | {
+      ok: false;
+      reason:
+        | "invalid-active-layout"
+        | "library-game-not-found"
+        | "membership-required"
+        | "replacement-required";
+      replacement?: PlayReplacementDecision;
+    };
+
+export type DeactivatePlayingGameResult =
+  | {
+      ok: true;
+      activeGames: ActivePlayGameRecord[];
+      currentPlay: CurrentPlayRecord;
+    }
+  | {
+      ok: false;
+      reason:
+        | "invalid-active-layout"
+        | "library-game-not-found"
+        | "membership-required";
+    };
+
 export type PlaySessionRecord = {
   id: string;
   duoId: PlayDuoId;
@@ -117,8 +199,31 @@ export type PlayReminderJobRecord = {
 
 export type PlayRepositoryTransaction = {
   resolveMembership(userId: PlayUserId): Promise<PlayMembershipContext | null>;
+  lockActivePlaySet(input: {
+    duoId: PlayDuoId;
+  }): Promise<void>;
   readActivePlayGames(input: {
     duoId: PlayDuoId;
+  }): Promise<ActivePlayGameRecord[]>;
+  readCurrentPlayGames(input: {
+    duoId: PlayDuoId;
+  }): Promise<CurrentPlayGameRecord[]>;
+  readLibraryGameForActivation(input: {
+    duoId: PlayDuoId;
+    catalogGameId: PlayCatalogGameId;
+  }): Promise<PlayActivationLibraryGameRecord | null>;
+  activatePlayingLibraryGame(input: {
+    duoId: PlayDuoId;
+    actorUserId: PlayUserId;
+    libraryGameId: PlayLibraryGameId;
+    role: PlayGameRole;
+    position: number;
+  }): Promise<ActivePlayGameRecord[]>;
+  deactivatePlayingLibraryGame(input: {
+    duoId: PlayDuoId;
+    actorUserId: PlayUserId;
+    libraryGameId: PlayLibraryGameId;
+    nextStatus: "wishlist" | "pausado";
   }): Promise<ActivePlayGameRecord[]>;
   upsertActiveRoleRows(input: {
     duoId: PlayDuoId;
@@ -154,6 +259,9 @@ export interface PlayRepository {
     callback: (transaction: PlayRepositoryTransaction) => Promise<T>
   ): Promise<T>;
   resolveMembership(userId: PlayUserId): Promise<PlayMembershipContext | null>;
+  readCurrentPlay(input: {
+    userId: PlayUserId;
+  }): Promise<CurrentPlayRecord | null>;
   readActivePlayGames(input: {
     userId: PlayUserId;
   }): Promise<ActivePlayGameRecord[]>;

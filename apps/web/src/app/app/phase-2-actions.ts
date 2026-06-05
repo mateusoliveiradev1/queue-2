@@ -27,8 +27,10 @@ export type EnhancedLibraryMutationResult =
         | "library-game-not-found"
         | "membership-required"
         | "future-confirmation-required"
+        | "invalid-active-layout"
         | "invalid-status"
-        | "jogando-limit-reached";
+        | "jogando-limit-reached"
+        | "replacement-required";
       state: string;
       redirectTo?: string;
     };
@@ -270,7 +272,10 @@ function moveResultToState(
 
   switch (result.reason) {
     case "jogando-limit-reached":
+    case "replacement-required":
       return "limite-jogando";
+    case "invalid-active-layout":
+      return "fila-jogando-invalida";
     case "future-confirmation-required":
       return "estado-futuro-bloqueado";
     case "library-game-not-found":

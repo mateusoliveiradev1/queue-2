@@ -8,6 +8,10 @@ import { getLibraryQueueUseCase } from "./application/get-library-queue";
 import { moveLibraryGameUseCase } from "./application/move-library-game";
 import { updateMemberPlatformsUseCase } from "./application/update-member-platforms";
 import { libraryRepository } from "./infrastructure/library-repository";
+import {
+  activatePlayingGame,
+  deactivatePlayingGame
+} from "../play";
 
 export {
   getCommonPlatforms,
@@ -143,7 +147,10 @@ export function moveLibraryGame(input: {
   catalogGameId: string;
   status: string;
 }) {
-  return moveLibraryGameUseCase(input, libraryRepository);
+  return moveLibraryGameUseCase(input, libraryRepository, {
+    activatePlayingGame,
+    deactivatePlayingGame
+  });
 }
 
 export function getLibraryGameDetail(input: {

@@ -256,8 +256,10 @@ export type DiscoveryLibraryHandoffResult =
         | "catalog-game-not-found"
         | "library-game-not-found"
         | "invalid-status"
+        | "invalid-active-layout"
         | "future-confirmation-required"
-        | "jogando-limit-reached";
+        | "jogando-limit-reached"
+        | "replacement-required";
       status?: string;
     };
 

@@ -7,6 +7,9 @@ import {
 import {
   getLibraryQueueUseCase
 } from "../src/modules/library/application/get-library-queue";
+import {
+  moveLibraryGameUseCase
+} from "../src/modules/library/application/move-library-game";
 import type {
   LibraryGameDetailRecord,
   LibraryGameRecord,
@@ -162,6 +165,132 @@ describe("library queue use case", () => {
         repository
       )
     ).resolves.toEqual({ ok: false, reason: "membership-required" });
+  });
+});
+
+describe("library move to play coordination", () => {
+  it("delegates Jogando activation to the Play coordinator and preserves Principal outcome", async () => {
+    const activatePlayingGame = vi.fn(async () => ({
+      ok: true as const,
+      outcome: "principal-assigned" as const
+    }));
+    const moveLibraryGame = vi.fn();
+    const repository = createRepository({
+      moveLibraryGame
+    });
+
+    await expect(
+      moveLibraryGameUseCase(
+        {
+          userId: "user-1",
+          catalogGameId: "game-1",
+          status: "jogando"
+        },
+        repository,
+        {
+          activatePlayingGame,
+          deactivatePlayingGame: vi.fn()
+        }
+      )
+    ).resolves.toEqual({
+      ok: true,
+      game: expect.objectContaining({ status: "jogando" }),
+      playOutcome: "principal-assigned"
+    });
+    expect(activatePlayingGame).toHaveBeenCalledWith({
+      userId: "user-1",
+      catalogGameId: "game-1"
+    });
+    expect(moveLibraryGame).not.toHaveBeenCalled();
+  });
+
+  it("returns replacement-required with pause replace cancel options for a fourth active game", async () => {
+    const repository = createRepository({
+      getJogandoCount: vi.fn(async () => 3)
+    });
+
+    await expect(
+      moveLibraryGameUseCase(
+        {
+          userId: "user-1",
+          catalogGameId: "game-4",
+          status: "jogando"
+        },
+        repository,
+        {
+          activatePlayingGame: vi.fn(async () => ({
+            ok: false as const,
+            reason: "replacement-required" as const,
+            replacement: {
+              availableActions: ["pause", "replace", "cancel"] as [
+                "pause",
+                "replace",
+                "cancel"
+              ],
+              autoPause: false as const,
+              currentGames: [
+                {
+                  libraryGameId: "library-1",
+                  catalogGame: { name: "It Takes Two" },
+                  role: "principal",
+                  position: 1
+                }
+              ]
+            }
+          })),
+          deactivatePlayingGame: vi.fn()
+        }
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "replacement-required",
+      replacement: {
+        availableActions: ["pause", "replace", "cancel"],
+        autoPause: false,
+        currentGames: [
+          {
+            libraryGameId: "library-1",
+            name: "It Takes Two",
+            role: "principal",
+            position: 1
+          }
+        ]
+      }
+    });
+  });
+
+  it("delegates Pausado moves from Jogando to active-role removal", async () => {
+    const deactivatePlayingGame = vi.fn(async () => ({ ok: true as const }));
+    const moveLibraryGame = vi.fn();
+    const repository = createRepository({
+      getLibraryGame: vi.fn(async () => libraryGame({ status: "jogando" })),
+      moveLibraryGame
+    });
+
+    await expect(
+      moveLibraryGameUseCase(
+        {
+          userId: "user-1",
+          catalogGameId: "game-1",
+          status: "pausado"
+        },
+        repository,
+        {
+          activatePlayingGame: vi.fn(),
+          deactivatePlayingGame
+        }
+      )
+    ).resolves.toEqual({
+      ok: true,
+      game: expect.objectContaining({ status: "pausado" }),
+      playOutcome: "active-removed"
+    });
+    expect(deactivatePlayingGame).toHaveBeenCalledWith({
+      userId: "user-1",
+      catalogGameId: "game-1",
+      nextStatus: "pausado"
+    });
+    expect(moveLibraryGame).not.toHaveBeenCalled();
   });
 });
 
@@ -423,7 +552,7 @@ function detailRecord(status: "wishlist" | "jogando" | "pausado"): LibraryGameDe
   };
 }
 
-function libraryGame(): LibraryGameRecord {
+function libraryGame(overrides: Partial<LibraryGameRecord> = {}): LibraryGameRecord {
   return {
     id: "library-1",
     duoId: "duo-1",
@@ -432,7 +561,8 @@ function libraryGame(): LibraryGameRecord {
     addedByUserId: "user-1",
     statusUpdatedByUserId: "user-1",
     createdAt: new Date("2026-06-03T12:00:00.000Z"),
-    updatedAt: new Date("2026-06-03T12:00:00.000Z")
+    updatedAt: new Date("2026-06-03T12:00:00.000Z"),
+    ...overrides
   };
 }
 

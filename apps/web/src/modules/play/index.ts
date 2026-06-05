@@ -1,3 +1,12 @@
+import "server-only";
+
+import {
+  activatePlayingGameUseCase,
+  deactivatePlayingGameUseCase
+} from "./application/activate-playing-game";
+import { getCurrentPlayUseCase } from "./application/get-current-play";
+import { playRepository } from "./infrastructure/play-repository";
+
 export {
   CHAPTER_COMPLETION_XP,
   DISALLOWED_NOTIFICATION_SCOPES,
@@ -64,6 +73,12 @@ export {
 
 export type {
   ActivePlayGameRecord,
+  ActivatePlayingGameResult,
+  CurrentPlayCatalogFacts,
+  CurrentPlayGameRecord,
+  CurrentPlayProgressRecord,
+  CurrentPlayRecord,
+  DeactivatePlayingGameResult,
   PlayCatalogGameId,
   PlayConfirmationRecord,
   PlayDuoId,
@@ -80,3 +95,31 @@ export type {
   PlayXpAwardInput,
   PlayXpAwardRecord
 } from "./application/ports";
+
+export {
+  activatePlayingGameUseCase,
+  deactivatePlayingGameUseCase
+} from "./application/activate-playing-game";
+export {
+  getCurrentPlayUseCase,
+  type GetCurrentPlayResult
+} from "./application/get-current-play";
+
+export function getCurrentPlay(userId: string) {
+  return getCurrentPlayUseCase(userId, playRepository);
+}
+
+export function activatePlayingGame(input: {
+  userId: string;
+  catalogGameId: string;
+}) {
+  return activatePlayingGameUseCase(input, playRepository);
+}
+
+export function deactivatePlayingGame(input: {
+  userId: string;
+  catalogGameId: string;
+  nextStatus: "wishlist" | "pausado";
+}) {
+  return deactivatePlayingGameUseCase(input, playRepository);
+}

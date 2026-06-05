@@ -107,17 +107,85 @@ export type LibraryGameStatusesResult =
   | { ok: false; reason: "membership-required" };
 
 export type MoveLibraryGameResult =
-  | { ok: true; game: LibraryGameRecord }
+  | {
+      ok: true;
+      game: LibraryGameRecord;
+      playOutcome?:
+        | "principal-assigned"
+        | "secondary-assigned"
+        | "already-playing"
+        | "active-removed";
+    }
   | {
       ok: false;
       reason:
         | "future-confirmation-required"
         | "invalid-status"
+        | "invalid-active-layout"
         | "jogando-limit-reached"
         | "library-game-not-found"
-        | "membership-required";
+        | "membership-required"
+        | "replacement-required";
       status?: LibraryStatus;
+      replacement?: {
+        availableActions: ["pause", "replace", "cancel"];
+        autoPause: false;
+        currentGames: Array<{
+          libraryGameId: string;
+          name: string;
+          role: string;
+          position: number;
+        }>;
+      };
     };
+
+export interface LibraryPlayCoordinator {
+  activatePlayingGame(input: {
+    userId: string;
+    catalogGameId: string;
+  }): Promise<
+    | {
+        ok: true;
+        outcome: "principal-assigned" | "secondary-assigned" | "already-playing";
+      }
+    | {
+        ok: false;
+        reason:
+          | "invalid-active-layout"
+          | "library-game-not-found"
+          | "membership-required"
+          | "replacement-required";
+        replacement?: {
+          availableActions: ["pause", "replace", "cancel"];
+          autoPause: false;
+          currentGames: Array<{
+            libraryGameId: string;
+            catalogGame: {
+              name: string;
+            };
+            role: string;
+            position: number;
+          }>;
+        };
+      }
+  >;
+  deactivatePlayingGame(input: {
+    userId: string;
+    catalogGameId: string;
+    nextStatus: "wishlist" | "pausado";
+  }): Promise<
+    | {
+        ok: true;
+      }
+    | {
+        ok: false;
+        reason:
+          | "invalid-active-layout"
+          | "library-game-not-found"
+          | "membership-required";
+      }
+  >;
+}
 
 export interface LibraryRepository {
   getOverview(userId: string): Promise<LibraryOverviewRecord | null>;
