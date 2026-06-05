@@ -152,7 +152,7 @@ export default async function LibraryPage({ searchParams }: LibraryPageProps = {
           ) : (
             <div className="empty-state">
               <strong>Nada em Jogando</strong>
-              <span>Quando a dupla assumir um jogo, ele aparece aqui sem virar painel de progresso.</span>
+              <span>Quando a dupla assumir um jogo, ele aparece aqui como compromisso ativo.</span>
             </div>
           )}
         </section>

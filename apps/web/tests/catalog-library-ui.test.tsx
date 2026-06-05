@@ -244,6 +244,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "src/app/app/biblioteca/page.tsx",
       "utf8"
     );
+    const css = readFileSync("src/app/globals.css", "utf8");
 
     expect(source).toContain("library-operational-shell");
     expect(source).toContain("getLibraryQueue");
@@ -252,6 +253,12 @@ describe("Phase 2 authenticated catalog and library UI", () => {
     expect(source).not.toContain("locked-status");
     expect(source).not.toContain("Zerado bloqueado");
     expect(source).not.toContain("Dropado bloqueado");
+    expect(css).toContain(".library-operational-shell");
+    expect(css).toContain(".library-priority-strip");
+    expect(css).toContain(".library-playing-strip");
+    expect(css).toContain(".library-results");
+    expect(css).toContain(".library-pagination");
+    expect(css).not.toContain(".library-board");
 
     for (const futureOnlyWord of [
       "Principal",

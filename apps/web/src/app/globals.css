@@ -1089,10 +1089,21 @@ input {
   font-variant-numeric: tabular-nums;
 }
 
-.library-board {
+.library-operational-shell {
   display: grid;
   gap: var(--space-5);
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.library-priority-strip,
+.library-playing-strip {
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--primary) 7%, transparent), transparent 40%),
+    color-mix(in oklch, var(--surface) 82%, black);
+}
+
+.library-results {
+  display: grid;
+  gap: var(--space-5);
 }
 
 .library-list {
@@ -1106,18 +1117,61 @@ input {
   display: grid;
   gap: var(--space-4);
   grid-template-columns: 96px minmax(0, 1fr);
+  min-height: 176px;
+  overflow: hidden;
   padding: var(--space-4);
 }
 
 .library-cover {
   aspect-ratio: 3 / 4;
+  align-self: start;
   min-height: 128px;
+  width: 96px;
 }
 
 .library-game-body {
   display: grid;
   gap: var(--space-4);
   min-width: 0;
+}
+
+.library-game-body h3 a {
+  text-decoration: none;
+}
+
+.library-game .form-actions {
+  align-items: stretch;
+}
+
+.library-game .form-actions form,
+.library-game .form-actions .queue2-button {
+  min-width: 0;
+}
+
+.library-game .form-actions form {
+  display: flex;
+}
+
+.library-game .form-actions .queue2-button {
+  min-height: 44px;
+  overflow-wrap: anywhere;
+  text-align: center;
+  white-space: normal;
+}
+
+.library-pagination {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.library-pagination span {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
 }
 
 .status-controls {
@@ -2559,8 +2613,31 @@ input {
     scroll-margin-bottom: calc(96px + env(safe-area-inset-bottom));
   }
 
+  .library-game {
+    align-items: start;
+    gap: var(--space-3);
+    grid-template-columns: 88px minmax(0, 1fr);
+    min-height: 0;
+    padding: var(--space-3);
+  }
+
+  .library-cover {
+    min-height: 118px;
+    width: 88px;
+  }
+
+  .library-game-body {
+    gap: var(--space-3);
+  }
+
+  .library-game h3 {
+    font-size: 18px;
+    line-height: 1.1;
+  }
+
   .status-controls,
   .library-tabs,
+  .library-pagination,
   .discovery-live-entry,
   .discovery-decision-actions,
   .discovery-handoff-actions {
