@@ -119,6 +119,9 @@ vi.mock("../src/modules/library", async () => {
   const policy = await vi.importActual<
     typeof import("../src/modules/library/domain/library-policy")
   >("../src/modules/library/domain/library-policy");
+  const platforms = await vi.importActual<
+    typeof import("../src/modules/library/domain/platforms")
+  >("../src/modules/library/domain/platforms");
 
   return {
     ...viewModels,
@@ -128,12 +131,21 @@ vi.mock("../src/modules/library", async () => {
     getLibraryGameDetail: libraryModuleMock.getLibraryGameDetail,
     getLibraryOverview: libraryModuleMock.getLibraryOverview,
     isPhase2LibraryStatus: policy.isPhase2LibraryStatus,
+    normalizeLibraryLimit: policy.normalizeLibraryLimit,
+    normalizeLibraryPage: policy.normalizeLibraryPage,
+    normalizeLibrarySort: policy.normalizeLibrarySort,
+    normalizeLibraryView: policy.normalizeLibraryView,
+    normalizePlatformKey: platforms.normalizePlatformKey,
     moveLibraryGame: libraryModuleMock.moveLibraryGame,
     updateMemberPlatforms: libraryModuleMock.updateMemberPlatforms
   };
 });
 
 import DashboardPage from "../src/app/app/page";
+import {
+  buildLibraryPath,
+  parseLibraryRouteParams
+} from "../src/app/app/biblioteca/library-route-params";
 import LibraryPage from "../src/app/app/biblioteca/page";
 import CatalogPage from "../src/app/app/catalogo/page";
 import GamePage from "../src/app/app/jogo/[slug]/page";
@@ -171,6 +183,51 @@ beforeEach(() => {
     ok: true,
     detail: libraryDetail("wishlist"),
     catalog: catalogDetail()
+  });
+});
+
+describe("Biblioteca route params", () => {
+  it("normalizes invalid URL state into the bounded queue defaults", () => {
+    expect(
+      parseLibraryRouteParams({
+        visao: "desconhecida",
+        q: "  Portal  ",
+        plataforma: "PS5",
+        ordenar: "raridade",
+        pagina: "0",
+        tamanho: "99"
+      })
+    ).toEqual({
+      view: "todas",
+      query: "Portal",
+      commonPlatformOnly: false,
+      platform: "playstation",
+      sort: "recentes",
+      page: 1,
+      limit: 24,
+      offset: 0
+    });
+  });
+
+  it("preserves filters through pagination and resets page when filters change", () => {
+    const params = parseLibraryRouteParams({
+      visao: "wishlist",
+      q: "take",
+      plataforma: "comum",
+      ordenar: "match",
+      pagina: "3",
+      tamanho: "24"
+    });
+
+    expect(buildLibraryPath(params, { page: 4 })).toBe(
+      "/app/biblioteca?visao=wishlist&q=take&plataforma=comum&ordenar=match&tamanho=24&pagina=4"
+    );
+    expect(buildLibraryPath(params, { query: "overcooked" })).toBe(
+      "/app/biblioteca?visao=wishlist&q=overcooked&plataforma=comum&ordenar=match&tamanho=24"
+    );
+    expect(buildLibraryPath(params, { view: "jogando" })).toBe(
+      "/app/biblioteca?visao=jogando&q=take&plataforma=comum&ordenar=match&tamanho=24"
+    );
   });
 });
 
