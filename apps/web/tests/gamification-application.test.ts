@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import type { QueueDbClient, QueueDbPool } from "@queue/db";
 import { describe, expect, it, vi } from "vitest";
 
-import { getLevelForXp } from "../src/modules/gamification";
+import {
+  EMPTY_ACHIEVEMENT_METRICS,
+  getLevelForXp
+} from "../src/modules/gamification";
 import type {
   GamificationAchievementUnlockRecord,
   GamificationDueJobRecord,
@@ -162,6 +165,7 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => projectionRecord()),
+    readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: input.insertXpLedgerAward ?? vi.fn(async () => xpAwardRecord()),
     updateProjection: input.updateProjection ?? vi.fn(async () => projectionRecord()),

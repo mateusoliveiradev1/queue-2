@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   ACHIEVEMENT_CATALOG,
   ACHIEVEMENT_GROUPS,
+  EMPTY_ACHIEVEMENT_METRICS,
   getAchievements,
   toAchievementRouteView
 } from "../src/modules/gamification";
@@ -225,6 +226,7 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => projectionRecord()),
+    readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),
     updateProjection: vi.fn(async () => projectionRecord()),

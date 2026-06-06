@@ -1,7 +1,8 @@
+import type { AchievementSeed } from "../domain/achievement-catalog";
 import {
-  getAchievementBySlug,
-  type AchievementSeed
-} from "../domain/achievement-catalog";
+  evaluateAchievements,
+  type AchievementMetricSnapshot
+} from "../domain/achievement-predicates";
 import {
   evaluateXpSourceEligibility,
   getRewardIntensityForRarity,
@@ -180,19 +181,6 @@ export async function applyGamificationFactToTransaction(
         }
       : null;
 
-  const achievements = await applyAchievements(
-    input,
-    transaction,
-    buildAchievementSlugs(input, {
-      completedQuests: questProgress.filter(
-        (progress) => progress.completed && progress.xpAwarded > 0
-      ),
-      level: nextLevel.level,
-      previousLevel: projection.level.level,
-      streak: streakWithFreezes
-    })
-  );
-
   const shouldUpdateProjection =
     totalXpAwarded !== 0 || levelUp !== null || streakWithFreezes !== null;
   const nextProjection = shouldUpdateProjection
@@ -204,6 +192,14 @@ export async function applyGamificationFactToTransaction(
         availableFreezes: streakWithFreezes?.availableFreezes
       })
     : projection;
+  const achievementMetrics = await transaction.readAchievementMetrics(input.duoId, {
+    timezone: timezone || DEFAULT_TIMEZONE
+  });
+  const achievements = await applyAchievements(
+    input,
+    transaction,
+    evaluateAchievements(withProjectedAchievementCount(achievementMetrics))
+  );
 
   await insertRewardNotifications(input, transaction, {
     xpAwards,
@@ -389,17 +385,11 @@ async function applyStreak(
 async function applyAchievements(
   input: GamificationFactInput,
   transaction: GamificationRepositoryTransaction,
-  slugs: string[]
+  seeds: readonly AchievementSeed[]
 ): Promise<GamificationAchievementSummary[]> {
   const summaries: GamificationAchievementSummary[] = [];
 
-  for (const slug of [...new Set(slugs)]) {
-    const seed = getAchievementBySlug(slug);
-
-    if (!seed) {
-      continue;
-    }
-
+  for (const seed of seeds) {
     const unlock = await transaction.insertAchievementUnlock({
       duoId: input.duoId,
       achievementSlug: seed.slug,
@@ -500,72 +490,6 @@ async function insertRewardNotifications(
       actionRefId: input.sourceId
     });
   }
-}
-
-function buildAchievementSlugs(
-  input: GamificationFactInput,
-  context: {
-    completedQuests: GamificationQuestProgressSummary[];
-    level: number;
-    previousLevel: number;
-    streak: GamificationRewardSummary["streak"];
-  }
-): string[] {
-  const slugs: string[] = [];
-
-  if (input.sourceType === "live-session" || input.sourceType === "offline-session") {
-    slugs.push("primeiro-save", "controle-passado");
-  }
-
-  if (input.sourceType === "chapter") {
-    slugs.push("capitulo-na-conta");
-  }
-
-  if (input.sourceType === "scheduled-session") {
-    slugs.push("presenca-confirmada");
-  }
-
-  if (input.sourceType === "terminal-zerado") {
-    slugs.push("final-verdadeiro");
-  }
-
-  if (input.sourceType === "terminal-dropado") {
-    slugs.push("sem-tilt");
-  }
-
-  if (input.sourceType === "discovery-match") {
-    slugs.push("radar-ligado");
-  }
-
-  if (input.sourceType === "quest" || context.completedQuests.length > 0) {
-    slugs.push("primeiro-desafio");
-  }
-
-  for (const completedQuest of context.completedQuests) {
-    const template = getQuestTemplate(completedQuest.questSlug);
-
-    if (template) {
-      slugs.push(...template.completionAchievementSlugs);
-    }
-  }
-
-  if ((context.streak?.currentStreak ?? 0) >= 2) {
-    slugs.push("chama-inicial");
-  }
-
-  if ((context.streak?.earnedFreezes ?? 0) > 0) {
-    slugs.push("freeze-na-manga");
-  }
-
-  if (context.streak?.consumedFreeze) {
-    slugs.push("gelo-sem-drama");
-  }
-
-  if (context.previousLevel < 50 && context.level >= 50) {
-    slugs.push("lendas-do-coop");
-  }
-
-  return slugs;
 }
 
 function factMatchesQuest(
@@ -718,4 +642,23 @@ function readStringArray(
   return Array.isArray(value)
     ? value.filter((item): item is string => typeof item === "string")
     : [];
+}
+
+function withProjectedAchievementCount(
+  snapshot: AchievementMetricSnapshot
+): AchievementMetricSnapshot {
+  const unlocked = new Set(snapshot.unlockedAchievementSlugs);
+  const newlyQualified = evaluateAchievements(snapshot).filter(
+    (achievement) =>
+      achievement.predicateKey !== "achievement-count:25" &&
+      !unlocked.has(achievement.slug)
+  );
+
+  return {
+    ...snapshot,
+    achievementCount: Math.max(
+      snapshot.achievementCount,
+      unlocked.size + newlyQualified.length
+    )
+  };
 }

@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   ChallengeBoard,
+  EMPTY_ACHIEVEMENT_METRICS,
   getChallenges,
   StreakPanel,
   toChallengeRouteView
@@ -306,6 +307,7 @@ function fakeGamificationRepository(input: {
     readProjection: vi.fn(async () =>
       input.projection === undefined ? projectionRecord() : input.projection
     ),
+    readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),
     updateProjection: vi.fn(async () => projectionRecord()),

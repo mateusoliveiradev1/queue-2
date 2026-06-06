@@ -26,6 +26,7 @@ import type {
   GamificationXpLedgerRecord,
   GamificationReadyJobTarget
 } from "../application/ports";
+import type { AchievementMetricSnapshot } from "../domain/achievement-predicates";
 import type { GamificationFactSourceType } from "../domain/gamification-policy";
 import type { QuestType } from "../domain/quest-catalog";
 import { getLevelForXp } from "../domain/level-curve";
@@ -116,6 +117,55 @@ type ReadyJobTargetRow = {
   created_by_user_id: string;
 };
 
+type AchievementMetricsRow = {
+  achievement_count: string | number;
+  achievement_slugs: string[] | null;
+  aligned_play_day_count: string | number;
+  attendance_confirmation_count: string | number;
+  boss_marker_count: string | number;
+  calm_streak_count: string | number;
+  comeback_session_count: string | number;
+  completed_chapter_count: string | number;
+  confirmed_session_count: string | number;
+  couch_boss_count: string | number;
+  current_streak: string | number;
+  discovery_match_count: string | number;
+  double_confirmation_count: string | number;
+  duo_decision_count: string | number;
+  freeze_consumed_count: string | number;
+  freeze_earned_count: string | number;
+  late_night_activity_count: string | number;
+  late_session_chain_count: string | number;
+  level: string | number;
+  library_growth_count: string | number;
+  library_maintenance_count: string | number;
+  long_session_count: string | number;
+  longest_streak: string | number;
+  longest_streak_without_reset: string | number;
+  marathon_session_count: string | number;
+  max_confirmed_actions_per_local_day: string | number;
+  max_confirmed_facts_per_local_week: string | number;
+  max_estimated_time_ratio: string | number;
+  max_progress_layers_per_game: string | number;
+  max_sessions_per_game: string | number;
+  max_weekly_quest_completions: string | number;
+  monthly_quest_complete_count: string | number;
+  mutual_want_count: string | number;
+  quest_complete_count: string | number;
+  quiz_match_count: string | number;
+  same_hour_session_count: string | number;
+  scheduled_session_count: string | number;
+  seasonal_anniversary_complete_count: string | number;
+  seasonal_awards_complete_count: string | number;
+  seasonal_quest_complete_count: string | number;
+  seasonal_spooky_complete_count: string | number;
+  surprise_match_count: string | number;
+  terminal_dropado_count: string | number;
+  terminal_zerado_count: string | number;
+  unexpected_match_count: string | number;
+  weekend_session_count: string | number;
+};
+
 type GamificationRepositoryOptions = {
   runtimePool?: QueueDbPool;
   workerPool?: QueueDbPool;
@@ -181,6 +231,8 @@ export function createGamificationTransaction(
     resolveMembership: (userId) => resolveMembership(client, userId),
     readDuoTimezone: (duoId) => readDuoTimezone(client, duoId),
     readProjection: (duoId) => readProjection(client, duoId),
+    readAchievementMetrics: (duoId, context) =>
+      readAchievementMetrics(client, duoId, context),
     countXpAwardsForDuoDay: (input) => countXpAwardsForDuoDay(client, input),
     insertXpLedgerAward: (input) => insertXpLedgerAward(client, input),
     updateProjection: (input) => updateProjection(client, input),
@@ -274,6 +326,341 @@ async function readProjection(
   const row = result.rows[0];
 
   return row ? mapProjection(row) : null;
+}
+
+async function readAchievementMetrics(
+  client: QueueDbClient,
+  duoId: string,
+  context: {
+    timezone: string;
+  }
+): Promise<AchievementMetricSnapshot> {
+  const result = await client.query<AchievementMetricsRow>(
+    `
+      WITH confirmed_sessions AS (
+        SELECT
+          session.id,
+          session.library_game_id,
+          session.kind,
+          session.duration_seconds,
+          COALESCE(session.ended_at, session.started_at) AS occurred_at,
+          (COALESCE(session.ended_at, session.started_at) AT TIME ZONE $2)::date AS local_day,
+          extract(hour FROM COALESCE(session.ended_at, session.started_at) AT TIME ZONE $2)::integer AS local_hour,
+          date_trunc('week', COALESCE(session.ended_at, session.started_at) AT TIME ZONE $2)::date AS local_week
+        FROM app.play_sessions AS session
+        WHERE session.duo_id = $1
+          AND session.status = 'confirmed'
+      ),
+      session_gaps AS (
+        SELECT
+          local_day,
+          lag(local_day) OVER (ORDER BY local_day, occurred_at, id) AS previous_local_day
+        FROM confirmed_sessions
+      ),
+      session_game_counts AS (
+        SELECT library_game_id, count(*) AS session_count
+        FROM confirmed_sessions
+        GROUP BY library_game_id
+      ),
+      session_hour_counts AS (
+        SELECT local_hour, count(*) AS session_count
+        FROM confirmed_sessions
+        GROUP BY local_hour
+      ),
+      late_session_days AS (
+        SELECT local_day, count(*) AS session_count
+        FROM confirmed_sessions
+        WHERE local_hour BETWEEN 0 AND 3
+        GROUP BY local_day
+      ),
+      completed_chapters AS (
+        SELECT
+          chapter.id,
+          chapter.library_game_id,
+          chapter.title,
+          chapter.completed_at AS occurred_at,
+          (chapter.completed_at AT TIME ZONE $2)::date AS local_day,
+          extract(hour FROM chapter.completed_at AT TIME ZONE $2)::integer AS local_hour,
+          date_trunc('week', chapter.completed_at AT TIME ZONE $2)::date AS local_week
+        FROM app.play_chapters AS chapter
+        WHERE chapter.duo_id = $1
+          AND chapter.completed_at IS NOT NULL
+      ),
+      boss_chapters AS (
+        SELECT *
+        FROM completed_chapters
+        WHERE translate(
+          lower(title),
+          'áàâãäéèêëíìîïóòôõöúùûüç',
+          'aaaaaeeeeiiiiooooouuuuc'
+        ) ~ '(boss|chefe|chefao)'
+      ),
+      confirmed_terminals AS (
+        SELECT
+          terminal.id,
+          terminal.library_game_id,
+          terminal.target_status,
+          terminal.confirmed_at AS occurred_at,
+          (terminal.confirmed_at AT TIME ZONE $2)::date AS local_day,
+          extract(hour FROM terminal.confirmed_at AT TIME ZONE $2)::integer AS local_hour,
+          date_trunc('week', terminal.confirmed_at AT TIME ZONE $2)::date AS local_week
+        FROM app.play_terminal_requests AS terminal
+        WHERE terminal.duo_id = $1
+          AND terminal.status = 'confirmed'
+          AND terminal.confirmed_at IS NOT NULL
+      ),
+      attended_schedules AS (
+        SELECT
+          scheduled.id,
+          scheduled.library_game_id,
+          scheduled.scheduled_start_at AS occurred_at,
+          (scheduled.scheduled_start_at AT TIME ZONE $2)::date AS local_day,
+          extract(hour FROM scheduled.scheduled_start_at AT TIME ZONE $2)::integer AS local_hour,
+          date_trunc('week', scheduled.scheduled_start_at AT TIME ZONE $2)::date AS local_week
+        FROM app.play_scheduled_sessions AS scheduled
+        JOIN app.play_scheduled_attendance AS attendance
+          ON attendance.scheduled_session_id = scheduled.id
+          AND attendance.duo_id = scheduled.duo_id
+        WHERE scheduled.duo_id = $1
+          AND scheduled.status <> 'cancelled'
+        GROUP BY
+          scheduled.id,
+          scheduled.library_game_id,
+          scheduled.scheduled_start_at
+        HAVING count(DISTINCT attendance.user_id) = 2
+      ),
+      confirmed_actions AS (
+        SELECT occurred_at, local_day, local_hour, local_week FROM confirmed_sessions
+        UNION ALL
+        SELECT occurred_at, local_day, local_hour, local_week FROM completed_chapters
+        UNION ALL
+        SELECT occurred_at, local_day, local_hour, local_week FROM confirmed_terminals
+        UNION ALL
+        SELECT occurred_at, local_day, local_hour, local_week FROM attended_schedules
+      ),
+      action_day_counts AS (
+        SELECT local_day, count(*) AS action_count
+        FROM confirmed_actions
+        GROUP BY local_day
+      ),
+      action_week_counts AS (
+        SELECT local_week, count(*) AS action_count
+        FROM confirmed_actions
+        GROUP BY local_week
+      ),
+      aligned_play_days AS (
+        SELECT DISTINCT session.library_game_id, session.local_day
+        FROM confirmed_sessions AS session
+        WHERE EXISTS (
+          SELECT 1
+          FROM completed_chapters AS chapter
+          WHERE chapter.library_game_id = session.library_game_id
+            AND chapter.local_day = session.local_day
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM confirmed_terminals AS terminal
+          WHERE terminal.library_game_id = session.library_game_id
+            AND terminal.local_day = session.local_day
+        )
+      ),
+      progress_metrics AS (
+        SELECT
+          progress.library_game_id,
+          (
+            CASE WHEN progress.confirmed_coop_seconds > 0 THEN 1 ELSE 0 END
+            + CASE WHEN progress.subjective_percent IS NOT NULL THEN 1 ELSE 0 END
+            + CASE WHEN EXISTS (
+                SELECT 1
+                FROM completed_chapters AS chapter
+                WHERE chapter.library_game_id = progress.library_game_id
+              ) THEN 1 ELSE 0 END
+          ) AS progress_layers,
+          CASE
+            WHEN estimate.minutes > 0
+              THEN progress.confirmed_coop_seconds::numeric / (estimate.minutes * 60)
+            ELSE 0
+          END AS estimated_time_ratio
+        FROM app.play_progress AS progress
+        JOIN app.duo_library_games AS library_game
+          ON library_game.id = progress.library_game_id
+          AND library_game.duo_id = progress.duo_id
+        LEFT JOIN LATERAL (
+          SELECT max(time_estimate.minutes) AS minutes
+          FROM catalog.game_time_estimates AS time_estimate
+          WHERE time_estimate.game_id = library_game.catalog_game_id
+            AND time_estimate.minutes IS NOT NULL
+        ) AS estimate ON true
+        WHERE progress.duo_id = $1
+      ),
+      couch_boss_sessions AS (
+        SELECT session.id
+        FROM confirmed_sessions AS session
+        WHERE session.kind = 'offline'
+          AND COALESCE(session.duration_seconds, 0) >= 7200
+          AND EXISTS (
+            SELECT 1
+            FROM boss_chapters AS boss
+            WHERE boss.library_game_id = session.library_game_id
+          )
+      ),
+      unexpected_matches AS (
+        SELECT match.id
+        FROM app.discovery_matches AS match
+        WHERE match.duo_id = $1
+          AND EXISTS (
+            SELECT 1
+            FROM app.discovery_matches AS previous_match
+            WHERE previous_match.duo_id = match.duo_id
+              AND previous_match.matched_at < match.matched_at
+          )
+          AND EXISTS (
+            SELECT 1
+            FROM catalog.game_genres AS current_genre
+            WHERE current_genre.game_id = match.catalog_game_id
+          )
+          AND NOT EXISTS (
+            SELECT 1
+            FROM catalog.game_genres AS current_genre
+            JOIN app.discovery_matches AS previous_match
+              ON previous_match.duo_id = match.duo_id
+              AND previous_match.matched_at < match.matched_at
+            JOIN catalog.game_genres AS previous_genre
+              ON previous_genre.game_id = previous_match.catalog_game_id
+              AND previous_genre.slug = current_genre.slug
+            WHERE current_genre.game_id = match.catalog_game_id
+          )
+      ),
+      completed_quests AS (
+        SELECT
+          cycle.quest_slug,
+          cycle.quest_type,
+          cycle.cycle_key
+        FROM app.gamification_quest_progress AS progress
+        JOIN app.gamification_quest_cycles AS cycle
+          ON cycle.id = progress.quest_cycle_id
+          AND cycle.duo_id = progress.duo_id
+        WHERE progress.duo_id = $1
+          AND progress.completed_at IS NOT NULL
+      ),
+      weekly_quest_counts AS (
+        SELECT cycle_key, count(*) AS quest_count
+        FROM completed_quests
+        WHERE quest_type = 'weekly'
+        GROUP BY cycle_key
+      ),
+      achievement_unlocks AS (
+        SELECT achievement_slug
+        FROM app.gamification_achievement_unlocks
+        WHERE duo_id = $1
+      ),
+      streak_snapshot AS (
+        SELECT
+          COALESCE(state.current_streak, 0) AS current_streak,
+          COALESCE(state.longest_streak, 0) AS longest_streak,
+          COALESCE((
+            SELECT count(*)
+            FROM app.gamification_streak_events AS event
+            WHERE event.duo_id = $1
+              AND event.event_type = 'freeze-consumed'
+          ), 0) AS freeze_consumed_count,
+          COALESCE((
+            SELECT count(*)
+            FROM app.gamification_streak_events AS event
+            WHERE event.duo_id = $1
+              AND event.event_type = 'streak-reset'
+          ), 0) AS reset_count
+        FROM app.duos AS duo
+        LEFT JOIN app.gamification_streak_state AS state
+          ON state.duo_id = duo.id
+        WHERE duo.id = $1
+      )
+      SELECT
+        (SELECT count(*) FROM achievement_unlocks) AS achievement_count,
+        COALESCE((SELECT array_agg(achievement_slug ORDER BY achievement_slug) FROM achievement_unlocks), ARRAY[]::text[]) AS achievement_slugs,
+        (SELECT count(*) FROM aligned_play_days) AS aligned_play_day_count,
+        (SELECT count(*) FROM attended_schedules) AS attendance_confirmation_count,
+        (SELECT count(*) FROM boss_chapters) AS boss_marker_count,
+        CASE
+          WHEN streak.current_streak >= 7 AND streak.reset_count = 0 THEN 1
+          ELSE 0
+        END AS calm_streak_count,
+        (SELECT count(*) FROM session_gaps WHERE local_day - previous_local_day >= 7) AS comeback_session_count,
+        (SELECT count(*) FROM completed_chapters) AS completed_chapter_count,
+        (SELECT count(*) FROM confirmed_sessions) AS confirmed_session_count,
+        (SELECT count(*) FROM couch_boss_sessions) AS couch_boss_count,
+        streak.current_streak,
+        (SELECT count(*) FROM app.discovery_matches WHERE duo_id = $1) AS discovery_match_count,
+        (
+          (SELECT count(*) FROM confirmed_sessions)
+          + (SELECT count(*) FROM attended_schedules)
+          + (SELECT count(*) FROM confirmed_terminals)
+        ) AS double_confirmation_count,
+        (
+          SELECT count(*)
+          FROM ops.domain_events
+          WHERE duo_id = $1
+            AND event_type = 'discovery.decision_recorded'
+        ) AS duo_decision_count,
+        streak.freeze_consumed_count,
+        floor(duo.level / 10.0)::integer AS freeze_earned_count,
+        (SELECT count(*) FROM confirmed_actions WHERE local_hour BETWEEN 0 AND 3) AS late_night_activity_count,
+        COALESCE((SELECT max(floor(session_count / 3.0)) FROM late_session_days), 0) AS late_session_chain_count,
+        duo.level,
+        (SELECT count(*) FROM app.duo_library_games WHERE duo_id = $1) AS library_growth_count,
+        (
+          SELECT count(*)
+          FROM ops.domain_events
+          WHERE duo_id = $1
+            AND event_type = 'library.status_moved'
+        ) AS library_maintenance_count,
+        (SELECT count(*) FROM confirmed_sessions WHERE COALESCE(duration_seconds, 0) >= 2700) AS long_session_count,
+        streak.longest_streak,
+        streak.current_streak AS longest_streak_without_reset,
+        (SELECT count(*) FROM confirmed_sessions WHERE COALESCE(duration_seconds, 0) >= 7200) AS marathon_session_count,
+        COALESCE((SELECT max(action_count) FROM action_day_counts), 0) AS max_confirmed_actions_per_local_day,
+        COALESCE((SELECT max(action_count) FROM action_week_counts), 0) AS max_confirmed_facts_per_local_week,
+        COALESCE((SELECT max(estimated_time_ratio) FROM progress_metrics), 0) AS max_estimated_time_ratio,
+        COALESCE((SELECT max(progress_layers) FROM progress_metrics), 0) AS max_progress_layers_per_game,
+        COALESCE((SELECT max(session_count) FROM session_game_counts), 0) AS max_sessions_per_game,
+        COALESCE((SELECT max(quest_count) FROM weekly_quest_counts), 0) AS max_weekly_quest_completions,
+        (SELECT count(*) FROM completed_quests WHERE quest_type = 'monthly') AS monthly_quest_complete_count,
+        (SELECT count(*) FROM app.discovery_matches WHERE duo_id = $1) AS mutual_want_count,
+        (SELECT count(*) FROM completed_quests) AS quest_complete_count,
+        (SELECT count(*) FROM app.discovery_matches WHERE duo_id = $1 AND created_from = 'quiz') AS quiz_match_count,
+        COALESCE((SELECT max(session_count) FROM session_hour_counts), 0) AS same_hour_session_count,
+        (
+          SELECT count(*)
+          FROM app.play_scheduled_sessions
+          WHERE duo_id = $1
+            AND status <> 'cancelled'
+        ) AS scheduled_session_count,
+        (SELECT count(*) FROM completed_quests WHERE quest_slug = 'aniversario-da-fila') AS seasonal_anniversary_complete_count,
+        (SELECT count(*) FROM completed_quests WHERE quest_slug = 'awards-em-casa') AS seasonal_awards_complete_count,
+        (SELECT count(*) FROM completed_quests WHERE quest_type = 'seasonal') AS seasonal_quest_complete_count,
+        (SELECT count(*) FROM completed_quests WHERE quest_slug = 'spooky-coop') AS seasonal_spooky_complete_count,
+        (SELECT count(*) FROM app.discovery_matches WHERE duo_id = $1 AND created_from = 'surprise') AS surprise_match_count,
+        (SELECT count(*) FROM confirmed_terminals WHERE target_status = 'dropado') AS terminal_dropado_count,
+        (SELECT count(*) FROM confirmed_terminals WHERE target_status = 'zerado') AS terminal_zerado_count,
+        (SELECT count(*) FROM unexpected_matches) AS unexpected_match_count,
+        (
+          SELECT count(*)
+          FROM confirmed_sessions
+          WHERE extract(isodow FROM occurred_at AT TIME ZONE $2) IN (6, 7)
+        ) AS weekend_session_count
+      FROM app.duos AS duo
+      CROSS JOIN streak_snapshot AS streak
+      WHERE duo.id = $1
+    `,
+    [duoId, context.timezone]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("gamification_achievement_metrics_not_found");
+  }
+
+  return mapAchievementMetrics(row);
 }
 
 async function countXpAwardsForDuoDay(
@@ -1194,6 +1581,65 @@ function mapProjection(row: ProjectionRow): GamificationProjectionRecord {
     streak: Number(row.streak),
     availableFreezes: Number(row.available_freezes ?? 0),
     updatedAt: row.updated_at
+  };
+}
+
+function mapAchievementMetrics(
+  row: AchievementMetricsRow
+): AchievementMetricSnapshot {
+  return {
+    achievementCount: Number(row.achievement_count),
+    alignedPlayDayCount: Number(row.aligned_play_day_count),
+    attendanceConfirmationCount: Number(row.attendance_confirmation_count),
+    bossMarkerCount: Number(row.boss_marker_count),
+    calmStreakCount: Number(row.calm_streak_count),
+    comebackSessionCount: Number(row.comeback_session_count),
+    completedChapterCount: Number(row.completed_chapter_count),
+    confirmedSessionCount: Number(row.confirmed_session_count),
+    couchBossCount: Number(row.couch_boss_count),
+    currentStreak: Number(row.current_streak),
+    discoveryMatchCount: Number(row.discovery_match_count),
+    doubleConfirmationCount: Number(row.double_confirmation_count),
+    duoDecisionCount: Number(row.duo_decision_count),
+    freezeConsumedCount: Number(row.freeze_consumed_count),
+    freezeEarnedCount: Number(row.freeze_earned_count),
+    lateNightActivityCount: Number(row.late_night_activity_count),
+    lateSessionChainCount: Number(row.late_session_chain_count),
+    level: Number(row.level),
+    libraryGrowthCount: Number(row.library_growth_count),
+    libraryMaintenanceCount: Number(row.library_maintenance_count),
+    longSessionCount: Number(row.long_session_count),
+    longestStreak: Number(row.longest_streak),
+    longestStreakWithoutReset: Number(row.longest_streak_without_reset),
+    marathonSessionCount: Number(row.marathon_session_count),
+    maxConfirmedActionsPerLocalDay: Number(
+      row.max_confirmed_actions_per_local_day
+    ),
+    maxConfirmedFactsPerLocalWeek: Number(
+      row.max_confirmed_facts_per_local_week
+    ),
+    maxEstimatedTimeRatio: Number(row.max_estimated_time_ratio),
+    maxProgressLayersPerGame: Number(row.max_progress_layers_per_game),
+    maxSessionsPerGame: Number(row.max_sessions_per_game),
+    maxWeeklyQuestCompletions: Number(row.max_weekly_quest_completions),
+    monthlyQuestCompleteCount: Number(row.monthly_quest_complete_count),
+    mutualWantCount: Number(row.mutual_want_count),
+    questCompleteCount: Number(row.quest_complete_count),
+    quizMatchCount: Number(row.quiz_match_count),
+    sameHourSessionCount: Number(row.same_hour_session_count),
+    scheduledSessionCount: Number(row.scheduled_session_count),
+    seasonalAnniversaryCompleteCount: Number(
+      row.seasonal_anniversary_complete_count
+    ),
+    seasonalAwardsCompleteCount: Number(row.seasonal_awards_complete_count),
+    seasonalQuestCompleteCount: Number(row.seasonal_quest_complete_count),
+    seasonalSpookyCompleteCount: Number(row.seasonal_spooky_complete_count),
+    surpriseMatchCount: Number(row.surprise_match_count),
+    terminalDropadoCount: Number(row.terminal_dropado_count),
+    terminalZeradoCount: Number(row.terminal_zerado_count),
+    unexpectedMatchCount: Number(row.unexpected_match_count),
+    unlockedAchievementSlugs: row.achievement_slugs ?? [],
+    weekendSessionCount: Number(row.weekend_session_count)
   };
 }
 

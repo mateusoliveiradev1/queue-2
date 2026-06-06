@@ -4,6 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { getGamificationDashboard } from "../src/modules/gamification/application/get-gamification-dashboard";
+import { EMPTY_ACHIEVEMENT_METRICS } from "../src/modules/gamification/domain/achievement-predicates";
 import type {
   GamificationAchievementUnlockRecord,
   GamificationDashboardRecord,
@@ -497,6 +498,7 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => input.projection ?? projectionRecord()),
+    readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),
     updateProjection: vi.fn(async () => input.projection ?? projectionRecord()),

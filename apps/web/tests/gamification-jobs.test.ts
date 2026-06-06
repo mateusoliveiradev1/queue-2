@@ -27,6 +27,7 @@ import type {
   GamificationXpLedgerRecord
 } from "../src/modules/gamification/application/ports";
 import { getLevelForXp } from "../src/modules/gamification/domain/level-curve";
+import { EMPTY_ACHIEVEMENT_METRICS } from "../src/modules/gamification/domain/achievement-predicates";
 
 const now = new Date("2026-06-06T15:00:00.000Z");
 const jobsSource = readFileSync("src/modules/gamification/jobs.ts", "utf8");
@@ -541,6 +542,7 @@ function fakeGamificationRepository(input: {
     readProjection: vi.fn(async () =>
       input.projection === undefined ? projectionRecord() : input.projection
     ),
+    readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),
     updateProjection: input.updateProjection ?? vi.fn(async () => projectionRecord()),

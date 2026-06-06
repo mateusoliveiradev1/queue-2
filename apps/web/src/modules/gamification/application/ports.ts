@@ -2,6 +2,7 @@ import type {
   GamificationFactSourceType,
   RewardNotificationIntensity
 } from "../domain/gamification-policy";
+import type { AchievementMetricSnapshot } from "../domain/achievement-predicates";
 import type { LevelDefinition } from "../domain/level-curve";
 import type { QuestType } from "../domain/quest-catalog";
 
@@ -351,6 +352,12 @@ export type GamificationRepositoryTransaction = {
   resolveMembership(userId: GamificationUserId): Promise<GamificationMembershipContext | null>;
   readDuoTimezone(duoId: GamificationDuoId): Promise<string>;
   readProjection(duoId: GamificationDuoId): Promise<GamificationProjectionRecord | null>;
+  readAchievementMetrics(
+    duoId: GamificationDuoId,
+    context: {
+      timezone: string;
+    }
+  ): Promise<AchievementMetricSnapshot>;
   countXpAwardsForDuoDay(input: {
     duoId: GamificationDuoId;
     sourceType: GamificationFactSourceType;

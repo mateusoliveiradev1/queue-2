@@ -48,10 +48,14 @@ export type AchievementMetricSnapshot = {
   terminalDropadoCount: number;
   terminalZeradoCount: number;
   unexpectedMatchCount: number;
+  unlockedAchievementSlugs: readonly string[];
   weekendSessionCount: number;
 };
 
-export type AchievementMetric = keyof AchievementMetricSnapshot;
+export type AchievementMetric = Exclude<
+  keyof AchievementMetricSnapshot,
+  "unlockedAchievementSlugs"
+>;
 export type AchievementMetricSource =
   | "achievement-unlocks"
   | "catalog-time-estimates"
@@ -169,7 +173,7 @@ export const ACHIEVEMENT_PREDICATES = {
   ]),
   "library-growth-count:5": metric("libraryGrowthCount", 5, ["library-games"]),
   "duo-decision-count:20": metric("duoDecisionCount", 20, [
-    "discovery-decisions"
+    "domain-events"
   ]),
   "streak-days:2": metric("currentStreak", 2, streakSources),
   "duo-day-backup-count:1": metric("lateNightActivityCount", 1, [
@@ -286,6 +290,7 @@ export const EMPTY_ACHIEVEMENT_METRICS: AchievementMetricSnapshot = {
   terminalDropadoCount: 0,
   terminalZeradoCount: 0,
   unexpectedMatchCount: 0,
+  unlockedAchievementSlugs: [],
   weekendSessionCount: 0
 };
 
