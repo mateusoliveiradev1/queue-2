@@ -184,7 +184,9 @@ export async function applyGamificationFactToTransaction(
     input,
     transaction,
     buildAchievementSlugs(input, {
-      questCompleted: questProgress.some((progress) => progress.completed),
+      completedQuests: questProgress.filter(
+        (progress) => progress.completed && progress.xpAwarded > 0
+      ),
       level: nextLevel.level,
       previousLevel: projection.level.level,
       streak: streakWithFreezes
@@ -503,7 +505,7 @@ async function insertRewardNotifications(
 function buildAchievementSlugs(
   input: GamificationFactInput,
   context: {
-    questCompleted: boolean;
+    completedQuests: GamificationQuestProgressSummary[];
     level: number;
     previousLevel: number;
     streak: GamificationRewardSummary["streak"];
@@ -535,8 +537,16 @@ function buildAchievementSlugs(
     slugs.push("radar-ligado");
   }
 
-  if (input.sourceType === "quest" || context.questCompleted) {
+  if (input.sourceType === "quest" || context.completedQuests.length > 0) {
     slugs.push("primeiro-desafio");
+  }
+
+  for (const completedQuest of context.completedQuests) {
+    const template = getQuestTemplate(completedQuest.questSlug);
+
+    if (template) {
+      slugs.push(...template.completionAchievementSlugs);
+    }
   }
 
   if ((context.streak?.currentStreak ?? 0) >= 2) {

@@ -12,6 +12,7 @@ export type QuestTemplate = {
   xpReward: number;
   eligibilityKey: string;
   seasonalKey?: "spooky" | "awards" | "anniversary";
+  completionAchievementSlugs: readonly string[];
 };
 
 export type QuestWindow = {
@@ -41,10 +42,10 @@ export const QUEST_TEMPLATES = [
   quest("capitulo-da-semana", "weekly", "Capitulo da semana", "Concluam um capitulo manual sem transformar progresso em tarefa.", 1, 70, "completed-chapter"),
   quest("descoberta-em-dupla", "weekly", "Descoberta em dupla", "Criem um match real ou levem um jogo novo para a fila.", 1, 60, "discovery-match"),
   quest("jogando-sem-pressa", "weekly", "Jogando sem pressa", "Registrem duas acoes confirmadas em dias diferentes.", 2, 90, "two-duo-days"),
-  quest("mes-da-fila", "monthly", "Mes da fila", "Fechem quatro fatos reais da dupla durante o mes.", 4, 240, "monthly-confirmed-facts"),
-  quest("spooky-coop", "seasonal", "Spooky coop", "No ciclo Spooky, joguem algo tenso ou avancem um jogo noturno.", 1, 180, "seasonal-spooky", "spooky"),
-  quest("awards-em-casa", "seasonal", "Awards em casa", "No ciclo Awards, avancem um destaque do backlog.", 1, 180, "seasonal-awards", "awards"),
-  quest("aniversario-da-fila", "seasonal", "Aniversario da fila", "No aniversario, celebrem a parceria com um marco confirmado.", 1, 220, "seasonal-anniversary", "anniversary")
+  quest("mes-da-fila", "monthly", "Mes da fila", "Fechem quatro fatos reais da dupla durante o mes.", 4, 240, "monthly-confirmed-facts", undefined, ["mes-da-dupla"]),
+  quest("spooky-coop", "seasonal", "Spooky coop", "No ciclo Spooky, joguem algo tenso ou avancem um jogo noturno.", 1, 180, "seasonal-spooky", "spooky", ["selo-sazonal", "spooky-coop"]),
+  quest("awards-em-casa", "seasonal", "Awards em casa", "No ciclo Awards, avancem um destaque do backlog.", 1, 180, "seasonal-awards", "awards", ["selo-sazonal", "awards-em-casa"]),
+  quest("aniversario-da-fila", "seasonal", "Aniversario da fila", "No aniversario, celebrem a parceria com um marco confirmado.", 1, 220, "seasonal-anniversary", "anniversary", ["selo-sazonal", "aniversario-da-fila"])
 ] as const satisfies readonly QuestTemplate[];
 
 export function getActiveQuestTemplateSlugs(): {
@@ -118,7 +119,8 @@ function quest(
   goalValue: number,
   xpReward: number,
   eligibilityKey: string,
-  seasonalKey?: QuestTemplate["seasonalKey"]
+  seasonalKey?: QuestTemplate["seasonalKey"],
+  completionAchievementSlugs: readonly string[] = []
 ): QuestTemplate {
   return {
     slug,
@@ -128,7 +130,8 @@ function quest(
     goalValue,
     xpReward,
     eligibilityKey,
-    seasonalKey
+    seasonalKey,
+    completionAchievementSlugs
   };
 }
 

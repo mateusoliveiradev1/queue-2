@@ -148,6 +148,7 @@ describe("Phase 05.5 challenge read model", () => {
       expect.objectContaining({
         questSlug: "spooky-coop",
         completed: true,
+        completedAt: now,
         seasonalKey: "spooky"
       })
     );
@@ -258,6 +259,7 @@ describe("Phase 05.5 challenge presentation", () => {
     expect(container.querySelector(".challenge-card")?.getAttribute("tabindex")).toBe("0");
     expect(container.textContent).toContain("Spooky coop");
     expect(container.textContent).toContain("Selo spooky");
+    expect(container.textContent).toContain("desde 06/06/2026");
   });
 
   it("keeps /app/desafios authenticated, server-authoritative and responsive in source", () => {
@@ -269,6 +271,7 @@ describe("Phase 05.5 challenge presentation", () => {
     expect(pageSource).not.toMatch(/modules\/gamification\/(domain|application|infrastructure|presentation)/);
     expect(challengeBoardSource).not.toMatch(/use client|onClick|<button|<form/);
     expect(streakPanelSource).not.toMatch(/use client|onClick|<button|<form/);
+    expect(viewModelSource).toContain("quest.completedAt");
     expect(appShellSource).toContain("/app/desafios");
     expect(appShellSource).toContain("Desafios");
     expect(globalCssSource).toContain("grid-template-columns: repeat(8, minmax(72px, 1fr))");

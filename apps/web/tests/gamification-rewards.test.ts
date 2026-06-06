@@ -167,6 +167,95 @@ describe("gamification reward application", () => {
     );
   });
 
+  it("unlocks permanent monthly and seasonal seals only from completed quest rewards", async () => {
+    const { repository, transaction } = fakeGamificationRepository({
+      questCycles: [
+        questCycleRecord({
+          id: "00000000-0000-4000-8000-000000000121",
+          questSlug: "mes-da-fila",
+          questType: "monthly",
+          cycleKey: "monthly:2026-06"
+        }),
+        questCycleRecord({
+          id: "00000000-0000-4000-8000-000000000122",
+          questSlug: "spooky-coop",
+          questType: "seasonal",
+          cycleKey: "seasonal:spooky:2026"
+        })
+      ],
+      questProgress: [
+        questProgressRecord({
+          questCycleId: "00000000-0000-4000-8000-000000000121",
+          currentValue: 3
+        })
+      ]
+    });
+
+    const result = await applyGamificationFact(
+      {
+        duoId: "duo-1",
+        actorUserId: "member-1",
+        sourceType: "live-session",
+        sourceId: "00000000-0000-4000-8000-000000000505",
+        occurredAt: now,
+        confirmedDuoFact: true,
+        metadata: { durationSeconds: 1_800 }
+      },
+      repository
+    );
+
+    expect(result).toEqual(expect.objectContaining({ ok: true, duplicate: false }));
+
+    if (!result.ok) {
+      throw new Error(result.reason);
+    }
+
+    expect(result.summary.questProgress).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          questSlug: "mes-da-fila",
+          questType: "monthly",
+          completed: true,
+          xpAwarded: 240
+        }),
+        expect.objectContaining({
+          questSlug: "spooky-coop",
+          questType: "seasonal",
+          completed: true,
+          xpAwarded: 180
+        })
+      ])
+    );
+    expect(result.summary.achievements.map((achievement) => achievement.slug)).toEqual(
+      expect.arrayContaining([
+        "primeiro-desafio",
+        "mes-da-dupla",
+        "selo-sazonal",
+        "spooky-coop"
+      ])
+    );
+    expect(transaction.insertAchievementUnlock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        achievementSlug: "mes-da-dupla",
+        metadata: expect.objectContaining({
+          predicateKey: "monthly-quest-complete-count:1"
+        })
+      })
+    );
+    expect(transaction.insertAchievementUnlock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        achievementSlug: "spooky-coop",
+        metadata: expect.objectContaining({
+          predicateKey: "seasonal-spooky-complete:1"
+        })
+      })
+    );
+    expect(new Set(result.summary.achievements.map((achievement) => achievement.slug)).size).toBe(
+      result.summary.achievements.length
+    );
+    expect(JSON.stringify(result.summary)).not.toMatch(/inventory|shop|loadout|equip/i);
+  });
+
   it("enforces the chapter duo-day XP cap without accepting client supplied totals", async () => {
     const { repository, transaction } = fakeGamificationRepository({
       awardsForDuoDay: MAX_CHAPTER_XP_AWARDS_PER_DUO_DAY

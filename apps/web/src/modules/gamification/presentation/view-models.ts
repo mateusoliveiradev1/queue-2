@@ -409,7 +409,7 @@ function toChallengeQuestView(
     statusLabel: quest.completed ? "Recompensa registrada" : "Em andamento leve",
     completed: quest.completed,
     seasonalSealLabel: quest.completed && quest.questType === "seasonal"
-      ? `Selo ${quest.seasonalKey ?? "sazonal"} guardado na historia da dupla`
+      ? `Selo ${quest.seasonalKey ?? "sazonal"} guardado na historia da dupla desde ${formatDate(quest.completedAt ?? quest.windowEndAt)}`
       : null
   };
 }
