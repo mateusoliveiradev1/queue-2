@@ -2,6 +2,7 @@ export const QUEST_CATALOG_VERSION = "queue2-quests-v1";
 
 export const QUEST_TYPES = ["weekly", "monthly", "seasonal"] as const;
 export type QuestType = (typeof QUEST_TYPES)[number];
+export type SeasonalQuestKey = "spooky" | "awards" | "anniversary";
 
 export type QuestTemplate = {
   slug: string;
@@ -11,7 +12,7 @@ export type QuestTemplate = {
   goalValue: number;
   xpReward: number;
   eligibilityKey: string;
-  seasonalKey?: "spooky" | "awards" | "anniversary";
+  seasonalKey?: SeasonalQuestKey;
   completionAchievementSlugs: readonly string[];
 };
 
@@ -36,6 +37,27 @@ export const SEASONAL_QUEST_SEEDS = [
   "awards-em-casa",
   "aniversario-da-fila"
 ] as const;
+
+export const SEASONAL_QUEST_WINDOWS = {
+  anniversary: {
+    start: { month: 6, day: 1 },
+    end: { month: 7, day: 1 }
+  },
+  spooky: {
+    start: { month: 10, day: 1 },
+    end: { month: 11, day: 1 }
+  },
+  awards: {
+    start: { month: 12, day: 1 },
+    end: { month: 1, day: 1 }
+  }
+} as const satisfies Record<
+  SeasonalQuestKey,
+  {
+    start: { month: number; day: number };
+    end: { month: number; day: number };
+  }
+>;
 
 export const QUEST_TEMPLATES = [
   quest("sessao-confirmada", "weekly", "Sessao confirmada", "Confirmem uma sessao coop real nesta semana.", 1, 80, "confirmed-session"),
@@ -101,14 +123,26 @@ export function getQuestWindow(input: {
   }
 
   const seasonalKey = input.seasonalKey ?? "spooky";
+  const seasonalWindow = getSeasonalWindowForDate(local, seasonalKey)
+    ?? getSeasonalWindowDates(local.year, seasonalKey);
 
   return {
     type: "seasonal",
-    cycleKey: `seasonal:${seasonalKey}:${local.year}`,
-    startsOn: `${local.year}-01-01`,
-    endsOn: `${local.year + 1}-01-01`,
+    cycleKey: `seasonal:${seasonalKey}:${seasonalWindow.startYear}`,
+    startsOn: seasonalWindow.startsOn,
+    endsOn: seasonalWindow.endsOn,
     timezone: input.timezone
   };
+}
+
+export function isSeasonalQuestActive(input: {
+  now: Date;
+  seasonalKey: SeasonalQuestKey;
+  timezone: string;
+}): boolean {
+  const local = getLocalDateParts(input.now, input.timezone);
+
+  return getSeasonalWindowForDate(local, input.seasonalKey) !== null;
 }
 
 function quest(
@@ -178,6 +212,62 @@ function addLocalDays(date: Date, days: number): Date {
 
 function formatDate(date: Date): string {
   return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}`;
+}
+
+function getSeasonalWindowForDate(
+  local: { year: number; month: number; day: number },
+  seasonalKey: SeasonalQuestKey
+): ReturnType<typeof getSeasonalWindowDates> | null {
+  const localDate = formatCivilDate(local.year, local.month, local.day);
+
+  for (const startYear of [local.year - 1, local.year]) {
+    const window = getSeasonalWindowDates(startYear, seasonalKey);
+
+    if (localDate >= window.startsOn && localDate < window.endsOn) {
+      return window;
+    }
+  }
+
+  return null;
+}
+
+function getSeasonalWindowDates(
+  startYear: number,
+  seasonalKey: SeasonalQuestKey
+): {
+  startYear: number;
+  startsOn: string;
+  endsOn: string;
+} {
+  const definition = SEASONAL_QUEST_WINDOWS[seasonalKey];
+  const startMonth: number = definition.start.month;
+  const startDay: number = definition.start.day;
+  const endMonth: number = definition.end.month;
+  const endDay: number = definition.end.day;
+  const crossesYear =
+    endMonth < startMonth
+    || (
+      endMonth === startMonth
+      && endDay <= startDay
+    );
+
+  return {
+    startYear,
+    startsOn: formatCivilDate(
+      startYear,
+      startMonth,
+      startDay
+    ),
+    endsOn: formatCivilDate(
+      crossesYear ? startYear + 1 : startYear,
+      endMonth,
+      endDay
+    )
+  };
+}
+
+function formatCivilDate(year: number, month: number, day: number): string {
+  return `${year}-${pad(month)}-${pad(day)}`;
 }
 
 function pad(value: number): string {
