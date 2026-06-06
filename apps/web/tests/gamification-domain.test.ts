@@ -25,11 +25,19 @@ import {
   getQuestWindow,
   getRewardIntensityForRarity
 } from "../src/modules/gamification";
+import {
+  getNextQuestRotationAt,
+  getNextStreakCheckAt
+} from "../src/modules/gamification/domain/gamification-schedule";
+import {
+  SEASONAL_QUEST_WINDOWS
+} from "../src/modules/gamification/domain/quest-catalog";
 
 const domainFiles = [
   "src/modules/gamification/domain/gamification-policy.ts",
   "src/modules/gamification/domain/level-curve.ts",
   "src/modules/gamification/domain/achievement-catalog.ts",
+  "src/modules/gamification/domain/gamification-schedule.ts",
   "src/modules/gamification/domain/quest-catalog.ts",
   "src/modules/gamification/domain/streak-policy.ts"
 ];
@@ -194,6 +202,102 @@ describe("gamification quest catalog", () => {
       timezone: "America/Sao_Paulo"
     });
   });
+
+  it("keeps seasonal activation windows explicit", () => {
+    expect(SEASONAL_QUEST_WINDOWS).toEqual({
+      anniversary: {
+        end: { day: 1, month: 7 },
+        start: { day: 1, month: 6 }
+      },
+      awards: {
+        end: { day: 1, month: 1 },
+        start: { day: 1, month: 12 }
+      },
+      spooky: {
+        end: { day: 1, month: 11 },
+        start: { day: 1, month: 10 }
+      }
+    });
+  });
+});
+
+describe("gamification local schedule", () => {
+  it("schedules weekly, monthly, seasonal and streak boundaries in Sao Paulo civil time", () => {
+    const after = new Date("2026-06-03T15:00:00.000Z");
+    const timezone = "America/Sao_Paulo";
+    const weekly = getNextQuestRotationAt({
+      after,
+      questType: "weekly",
+      timezone
+    });
+    const monthly = getNextQuestRotationAt({
+      after,
+      questType: "monthly",
+      timezone
+    });
+    const seasonal = getNextQuestRotationAt({
+      after,
+      questType: "seasonal",
+      timezone
+    });
+    const streak = getNextStreakCheckAt({ after, timezone });
+
+    expect(weekly.toISOString()).toBe("2026-06-08T03:00:00.000Z");
+    expect(monthly.toISOString()).toBe("2026-07-01T03:00:00.000Z");
+    expect(seasonal.toISOString()).toBe("2026-07-01T03:00:00.000Z");
+    expect(streak.toISOString()).toBe("2026-06-04T07:00:00.000Z");
+    expect(civilDateTime(weekly, timezone)).toBe("2026-06-08 00:00");
+    expect(civilDateTime(monthly, timezone)).toBe("2026-07-01 00:00");
+    expect(civilDateTime(seasonal, timezone)).toBe("2026-07-01 00:00");
+    expect(civilDateTime(streak, timezone)).toBe("2026-06-04 04:00");
+  });
+
+  it("keeps New York boundaries stable across both 2026 DST transitions", () => {
+    const timezone = "America/New_York";
+    const springStreak = getNextStreakCheckAt({
+      after: new Date("2026-03-07T15:00:00.000Z"),
+      timezone
+    });
+    const springWeekly = getNextQuestRotationAt({
+      after: new Date("2026-03-07T15:00:00.000Z"),
+      questType: "weekly",
+      timezone
+    });
+    const fallStreak = getNextStreakCheckAt({
+      after: new Date("2026-10-31T15:00:00.000Z"),
+      timezone
+    });
+    const fallWeekly = getNextQuestRotationAt({
+      after: new Date("2026-10-31T15:00:00.000Z"),
+      questType: "weekly",
+      timezone
+    });
+    const spookyBoundary = getNextQuestRotationAt({
+      after: new Date("2026-09-30T15:00:00.000Z"),
+      questType: "seasonal",
+      timezone
+    });
+
+    expect(springStreak.toISOString()).toBe("2026-03-08T08:00:00.000Z");
+    expect(springWeekly.toISOString()).toBe("2026-03-09T04:00:00.000Z");
+    expect(fallStreak.toISOString()).toBe("2026-11-01T09:00:00.000Z");
+    expect(fallWeekly.toISOString()).toBe("2026-11-02T05:00:00.000Z");
+    expect(spookyBoundary.toISOString()).toBe("2026-10-01T04:00:00.000Z");
+    expect(civilDateTime(springStreak, timezone)).toBe("2026-03-08 04:00");
+    expect(civilDateTime(springWeekly, timezone)).toBe("2026-03-09 00:00");
+    expect(civilDateTime(fallStreak, timezone)).toBe("2026-11-01 04:00");
+    expect(civilDateTime(fallWeekly, timezone)).toBe("2026-11-02 00:00");
+    expect(civilDateTime(spookyBoundary, timezone)).toBe("2026-10-01 00:00");
+  });
+
+  it("rejects invalid IANA timezones instead of falling back to UTC", () => {
+    expect(() =>
+      getNextStreakCheckAt({
+        after: new Date("2026-06-06T15:00:00.000Z"),
+        timezone: "Timezone inventado"
+      })
+    ).toThrowError("invalid_gamification_timezone");
+  });
 });
 
 describe("gamification streak policy", () => {
@@ -257,3 +361,19 @@ describe("gamification module boundary", () => {
     expect(gamificationPublicIndexSource).not.toContain("gamificationRepository");
   });
 });
+
+function civilDateTime(date: Date, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    day: "2-digit",
+    hour: "2-digit",
+    hour12: false,
+    minute: "2-digit",
+    month: "2-digit",
+    timeZone: timezone,
+    year: "numeric"
+  }).formatToParts(date);
+  const value = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value;
+
+  return `${value("year")}-${value("month")}-${value("day")} ${value("hour")}:${value("minute")}`;
+}
