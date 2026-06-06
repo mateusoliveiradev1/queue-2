@@ -87,9 +87,7 @@ describe("gamification application contract", () => {
   it("keeps persistence patterns server-only, RLS-scoped and idempotent", () => {
     expect(gamificationRepositorySource).toContain("import \"server-only\"");
     expect(gamificationRepositorySource).toContain("withAppUserTransaction");
-    expect(gamificationRepositorySource).toContain(
-      "ON CONFLICT (duo_id, award_key) DO NOTHING"
-    );
+    expect(gamificationRepositorySource).toContain("ON CONFLICT DO NOTHING");
     expect(gamificationRepositorySource).toContain(
       "ON CONFLICT (duo_id, achievement_slug) DO NOTHING"
     );

@@ -140,6 +140,30 @@ export type GamificationDashboardRecord = {
   updatedAt: Date;
 };
 
+export type GamificationProjectionRebuildResult =
+  | {
+      ok: true;
+      dryRun: boolean;
+      rebuildKey: string;
+      duoId: GamificationDuoId;
+      before: {
+        xp: number;
+        level: LevelDefinition;
+        streak: number;
+      };
+      after: {
+        xp: number;
+        level: LevelDefinition;
+        streak: number;
+      };
+      adjustmentDelta: number;
+      projection: GamificationProjectionRecord;
+    }
+  | {
+      ok: false;
+      reason: "membership-required" | "duo-mismatch" | "projection-not-found";
+    };
+
 export type GamificationAchievementUnlockRecord = {
   id: GamificationUuid;
   duoId: GamificationDuoId;

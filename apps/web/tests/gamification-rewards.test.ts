@@ -6,7 +6,8 @@ import {
   MAX_CHAPTER_XP_AWARDS_PER_DUO_DAY,
   applyGamificationFact,
   getGamificationDashboard,
-  getLevelForXp
+  getLevelForXp,
+  rebuildGamificationProjections
 } from "../src/modules/gamification";
 import type {
   GamificationAchievementUnlockRecord,
@@ -227,6 +228,65 @@ describe("gamification reward application", () => {
     );
     expect(portsSource).not.toMatch(/individualXp|userXp|playerXp|memberXp/i);
   });
+
+  it("rebuilds XP and level projections from the authoritative ledger", async () => {
+    const recordProjectionRebuild = vi.fn<
+      GamificationRepository["recordProjectionRebuild"]
+    >();
+    const { repository, transaction } = fakeGamificationRepository({
+      projection: projectionRecord({ xp: 100, level: getLevelForXp(100), streak: 1 }),
+      ledgerXp: 250,
+      recordProjectionRebuild,
+      streakState: streakStateRecord({ currentStreak: 2, availableFreezes: 1 })
+    });
+
+    await expect(
+      rebuildGamificationProjections(
+        {
+          userId: "member-1",
+          rebuildKey: "test-rebuild",
+          reasonCode: "test-drift"
+        },
+        repository
+      )
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: true,
+        adjustmentDelta: 150,
+        before: expect.objectContaining({ xp: 100, streak: 1 }),
+        after: expect.objectContaining({ xp: 250, streak: 2 }),
+        projection: expect.objectContaining({
+          xp: 250,
+          streak: 2,
+          availableFreezes: 1
+        })
+      })
+    );
+    expect(transaction.insertAdjustment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        adjustmentKey: "rebuild:test-rebuild",
+        amountDelta: 150,
+        reasonCode: "test-drift"
+      })
+    );
+    expect(transaction.updateProjection).toHaveBeenCalledWith(
+      expect.objectContaining({
+        xpDelta: 150,
+        streak: 2,
+        availableFreezes: 1
+      })
+    );
+    expect(recordProjectionRebuild).toHaveBeenCalledWith(
+      expect.objectContaining({
+        rebuildKey: "test-rebuild",
+        status: "completed",
+        xpBefore: 100,
+        xpAfter: 250,
+        streakBefore: 1,
+        streakAfter: 2
+      })
+    );
+  });
 });
 
 function fakeGamificationRepository(input: {
@@ -237,7 +297,9 @@ function fakeGamificationRepository(input: {
   achievementUnlocks?: GamificationAchievementUnlockRecord[];
   streakState?: GamificationStreakStateRecord | null;
   awardsForDuoDay?: number;
+  ledgerXp?: number;
   insertXpLedgerAward?: GamificationRepositoryTransaction["insertXpLedgerAward"];
+  recordProjectionRebuild?: GamificationRepository["recordProjectionRebuild"];
 } = {}): {
   repository: GamificationRepository;
   transaction: GamificationRepositoryTransaction;
@@ -309,7 +371,7 @@ function fakeGamificationRepository(input: {
     upsertStreakState: vi.fn(async (state) => state),
     insertRewardNotification: vi.fn(),
     insertAdjustment: vi.fn(),
-    sumXpLedgerAwards: vi.fn(async () => projection.xp)
+    sumXpLedgerAwards: vi.fn(async () => input.ledgerXp ?? projection.xp)
   };
 
   return {
@@ -319,7 +381,7 @@ function fakeGamificationRepository(input: {
       claimDueGamificationJobs: vi.fn(async () => [jobRecord()]),
       completeGamificationJob: vi.fn(),
       failGamificationJob: vi.fn(),
-      recordProjectionRebuild: vi.fn()
+      recordProjectionRebuild: input.recordProjectionRebuild ?? vi.fn()
     }
   };
 }
@@ -400,6 +462,20 @@ function questProgressRecord(
     completedAt: null,
     rewardAwardId: null,
     metadata: {},
+    updatedAt: now,
+    ...overrides
+  };
+}
+
+function streakStateRecord(
+  overrides: Partial<GamificationStreakStateRecord> = {}
+): GamificationStreakStateRecord {
+  return {
+    duoId: "duo-1",
+    currentStreak: 0,
+    longestStreak: 0,
+    availableFreezes: 0,
+    lastActivityDuoDay: null,
     updatedAt: now,
     ...overrides
   };

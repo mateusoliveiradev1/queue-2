@@ -273,7 +273,7 @@ async function insertXpLedgerAward(
         metadata
       )
       VALUES ($1, $2, $3, $4::uuid, $5, $6, $7, $8::jsonb)
-      ON CONFLICT (duo_id, award_key) DO NOTHING
+      ON CONFLICT DO NOTHING
       RETURNING
         id,
         duo_id,

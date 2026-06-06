@@ -72,6 +72,10 @@ export {
   getGamificationDashboard,
   getGamificationDashboardFromTransaction
 } from "./application/get-gamification-dashboard";
+export {
+  rebuildGamificationProjections,
+  rebuildGamificationProjectionsInTransaction
+} from "./application/rebuild-gamification-projections";
 
 export type {
   GamificationAdjustmentInput,
@@ -85,6 +89,7 @@ export type {
   GamificationLevelUpSummary,
   GamificationMembershipContext,
   GamificationProjectionRecord,
+  GamificationProjectionRebuildResult,
   GamificationQuestCycleRecord,
   GamificationQuestProgressRecord,
   GamificationQuestProgressSummary,

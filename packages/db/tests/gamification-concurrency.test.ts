@@ -52,6 +52,21 @@ describe.skipIf(!testDatabaseUrl)("gamification database-backed concurrency inva
     await expect(readXpAwardCount(pool, duo.ownerUserId, duo.duoId, awardKey)).resolves.toBe(1);
   });
 
+  test("duplicate XP source ids converge even when replay keys differ", async () => {
+    const duo = await createReadyDuo(pool, "game-xp-source-idempotency");
+    const sourceId = randomUUID();
+
+    const results = await Promise.allSettled([
+      insertQuestXpAward(pool, duo.ownerUserId, duo.duoId, sourceId, `quest:${sourceId}:a`),
+      insertQuestXpAward(pool, duo.partnerUserId, duo.duoId, sourceId, `quest:${sourceId}:b`)
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(2);
+    await expect(
+      readXpAwardSourceCount(pool, duo.ownerUserId, duo.duoId, sourceId)
+    ).resolves.toBe(1);
+  });
+
   test("duplicate achievement unlock attempts converge to one unlock", async () => {
     const duo = await createReadyDuo(pool, "game-achievement-idempotency");
     const achievementSlug = await insertAchievementSeed(pool, "game-achievement-idempotency");
@@ -166,10 +181,32 @@ async function insertQuestXpAward(
           awarded_by_user_id
         )
         VALUES ($1, $2, 'quest', $3, 80, 'quest-complete', $4)
-        ON CONFLICT (duo_id, award_key) DO NOTHING
+        ON CONFLICT DO NOTHING
       `,
       [duoId, awardKey, sourceId, userId]
     );
+  });
+}
+
+async function readXpAwardSourceCount(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string,
+  sourceId: string
+): Promise<number> {
+  return withRuntimeUser(pool, userId, async (client) => {
+    const result = await client.query<{ count: string }>(
+      `
+        SELECT count(*) AS count
+        FROM app.duo_xp_awards
+        WHERE duo_id = $1
+          AND source_type = 'quest'
+          AND source_id = $2
+      `,
+      [duoId, sourceId]
+    );
+
+    return Number(result.rows[0]?.count ?? 0);
   });
 }
 

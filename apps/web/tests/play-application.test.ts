@@ -381,7 +381,7 @@ describe("play repository skeleton", () => {
     expect(playRepositorySource).toContain("readCurrentPlayGames");
     expect(playRepositorySource).toContain("ON CONFLICT (library_game_id) DO UPDATE");
     expect(playRepositorySource).toContain("ON CONFLICT (session_id, user_id) DO NOTHING");
-    expect(playRepositorySource).toContain("ON CONFLICT (duo_id, award_key) DO NOTHING");
+    expect(playRepositorySource).toContain("ON CONFLICT DO NOTHING");
     expect(playRepositorySource).toContain("AND job_type = 'play-session-reminder'");
     expect(playRepositorySource).toContain("FOR UPDATE SKIP LOCKED");
   });
