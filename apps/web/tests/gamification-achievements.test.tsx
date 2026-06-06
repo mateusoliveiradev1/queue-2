@@ -20,6 +20,10 @@ import type {
   GamificationRepositoryTransaction,
   GamificationXpLedgerRecord
 } from "../src/modules/gamification/application/ports";
+import {
+  buildAchievementPath,
+  parseAchievementRouteParams
+} from "../src/app/app/conquistas/achievement-route-params";
 import { AchievementGrid } from "../src/modules/gamification/presentation/achievement-grid";
 import { getLevelForXp } from "../src/modules/gamification/domain/level-curve";
 
@@ -41,6 +45,8 @@ const gridSource = readFileSync(
   "utf8"
 );
 const globalCssSource = readFileSync("src/app/globals.css", "utf8");
+const appShellSource = readFileSync("src/components/app-shell.tsx", "utf8");
+const pageSource = readFileSync("src/app/app/conquistas/page.tsx", "utf8");
 
 afterEach(() => {
   cleanup();
@@ -79,13 +85,19 @@ describe("Phase 05.4 achievement read model", () => {
   });
 
   it("validates rarity params and preserves shareable filter URLs", async () => {
+    const rareParams = parseAchievementRouteParams({ raridade: "rare" });
+    const invalidParams = parseAchievementRouteParams({ raridade: "admin" });
     const { repository } = fakeGamificationRepository();
     const record = await getAchievements(
-      { userId: "member-1", rarity: "rare" },
+      { userId: "member-1", rarity: rareParams.rarity },
       repository
     );
     const view = toAchievementRouteView(record!);
 
+    expect(rareParams).toEqual({ rarity: "rare", invalidRarity: false });
+    expect(invalidParams).toEqual({ rarity: null, invalidRarity: true });
+    expect(buildAchievementPath(rareParams)).toBe("/app/conquistas?raridade=rare");
+    expect(buildAchievementPath(rareParams, { rarity: null })).toBe("/app/conquistas");
     expect(record?.selectedRarity).toBe("rare");
     expect(record?.groups.flatMap((group) => group.achievements).every((achievement) => achievement.rarity === "rare")).toBe(true);
     expect(view.filterOptions.find((option) => option.rarity === "rare")).toEqual(
@@ -176,6 +188,17 @@ describe("Phase 05.4 achievement presentation", () => {
     expect(globalCssSource).toContain(".achievement-card:focus-visible");
     expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
     expect(globalCssSource).not.toMatch(/letter-spacing:\s*-/);
+  });
+
+  it("adds /app/conquistas as an authenticated route through public module APIs and AppShell navigation", () => {
+    expect(pageSource).toContain("getAchievements");
+    expect(pageSource).toContain("currentPage=\"conquistas\"");
+    expect(pageSource).toContain("NotificationCenter");
+    expect(pageSource).toContain("withServerTiming");
+    expect(pageSource).not.toMatch(/modules\/gamification\/(domain|application|infrastructure|presentation)/);
+    expect(appShellSource).toContain("/app/conquistas");
+    expect(appShellSource).toContain("Conquistas");
+    expect(globalCssSource).toContain("grid-template-columns: repeat(7, minmax(72px, 1fr))");
   });
 });
 

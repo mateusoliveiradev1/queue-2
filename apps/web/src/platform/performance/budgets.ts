@@ -37,6 +37,12 @@ export const routePerformanceBudgets: Record<Exclude<PerformanceRouteKey, "unkno
     firstInteractionMs: 2_700,
     hydrationMs: 3_000
   },
+  "app.conquistas": {
+    ttfbMs: 1_100,
+    usefulContentMs: 2_500,
+    firstInteractionMs: 2_500,
+    hydrationMs: 2_800
+  },
   "app.jogo": {
     ttfbMs: 1_100,
     usefulContentMs: 2_500,
@@ -118,6 +124,7 @@ export const criticalRoutePaths: Record<Exclude<PerformanceRouteKey, "unknown">,
   "app.catalogo": "/app/catalogo",
   "app.biblioteca": "/app/biblioteca",
   "app.descobrir": "/app/descobrir",
+  "app.conquistas": "/app/conquistas",
   "app.jogo": "/app/jogo/[slug]",
   "api.discovery.search": "/api/discovery/search"
 };

@@ -66,6 +66,11 @@ const phase5DashboardMissingEnv = missingEnv([
   "E2E_READY_USER_EMAIL",
   "E2E_READY_USER_PASSWORD"
 ]);
+const phase5AchievementsMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -77,6 +82,7 @@ reportMissingEnv("Phase 03.2 Biblioteca accessibility", phase32LibraryMissingEnv
 reportMissingEnv("Phase 03.3 performance feedback accessibility", phase33PerformanceMissingEnv);
 reportMissingEnv("Phase 4 Jogando Agora accessibility", phase4MissingEnv);
 reportMissingEnv("Phase 5 gamification dashboard accessibility", phase5DashboardMissingEnv);
+reportMissingEnv("Phase 5 achievements accessibility", phase5AchievementsMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -156,7 +162,8 @@ test.describe("Authenticated accessibility", () => {
     "/app/dupla",
     "/app/catalogo",
     "/app/descobrir",
-    "/app/biblioteca"
+    "/app/biblioteca",
+    "/app/conquistas"
   ]) {
     test(`${route} has no WCAG A/AA axe violations`, async ({ page }) => {
       await login(page, readyActor);
@@ -164,6 +171,47 @@ test.describe("Authenticated accessibility", () => {
       await expectNoAxeViolations(page);
     });
   }
+});
+
+test.describe("Phase 5 achievements accessibility", () => {
+  test.skip(
+    phase5AchievementsMissingEnv.length > 0,
+    `Missing Phase 5 achievements accessibility fixture: ${phase5AchievementsMissingEnv.join(", ")}`
+  );
+
+  test("achievements route is filterable, focusable, reduced-motion safe and axe-clean", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/conquistas?raridade=rare");
+
+    const route = page.locator(".achievements-route");
+    await expect(route).toBeVisible();
+    await expect(page.getByRole("heading", { name: /conquistas da dupla/i })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: /navegacao principal mobile/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /conquistas/i }).first()).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+
+    const filter = page.getByRole("navigation", { name: /filtrar conquistas por raridade/i });
+    await expect(filter.getByRole("link", { name: /rara/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    await filter.getByRole("link", { name: /todas/i }).focus();
+    await expect(filter.getByRole("link", { name: /todas/i })).toBeFocused();
+
+    const firstCard = page.locator(".achievement-card").first();
+    await expect(firstCard).toBeVisible();
+    await firstCard.focus();
+    await expect(firstCard).toBeFocused();
+    await expectStaticFeedbackMark(page.locator(".achievement-badge-icon").first());
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+    await expectNoAxeViolations(page);
+  });
 });
 
 test.describe("Phase 3 discovery accessibility", () => {
