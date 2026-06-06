@@ -122,7 +122,7 @@ async function processQuestRotationJob(input: {
   timezone: string;
 }> {
   let cyclesUpserted = 0;
-  let skipped = 0;
+  const skipped = 0;
   let timezone: string | null = null;
 
   await input.repository.withUserTransaction(input.payload.createdByUserId, async (transaction) => {

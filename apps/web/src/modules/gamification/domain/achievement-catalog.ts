@@ -31,7 +31,7 @@ export type AchievementSeed<PredicateKey extends string = string> = {
   title: string;
   description: string;
   iconKey: string;
-  predicateKey: string;
+  predicateKey: PredicateKey;
 };
 
 export const ACHIEVEMENT_CATALOG_VERSION = "queue2-achievements-v1";
