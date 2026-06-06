@@ -9,7 +9,6 @@ import {
   type GamificationFactSourceType,
   type XpEligibilityResult
 } from "../domain/gamification-policy";
-import { getLevelForXp } from "../domain/level-curve";
 import { getQuestTemplate, type QuestTemplate } from "../domain/quest-catalog";
 import {
   evaluateStreakTransition,
@@ -67,7 +66,7 @@ export async function applyGamificationFactToTransaction(
     return { ok: false, reason: "duo-mismatch" };
   }
 
-  const projection = await transaction.readProjection(input.duoId);
+  const projection = await transaction.lockProjection(input.duoId);
 
   if (!projection) {
     return { ok: false, reason: "projection-not-found" };
@@ -149,49 +148,69 @@ export async function applyGamificationFactToTransaction(
   const questProgress = await applyQuestProgress(input, transaction, xpAwards);
   const streak = await applyStreak(input, transaction, projection, duoDay);
   const totalXpAwarded = xpAwards.reduce((sum, award) => sum + award.amount, 0);
-  const nextXp = Math.max(0, projection.xp + totalXpAwarded);
-  const nextLevel = getLevelForXp(nextXp);
-  const levelUp = nextLevel.level > projection.level.level
+  const shouldUpdateProjection = totalXpAwarded !== 0 || streak !== null;
+  let nextProjection = shouldUpdateProjection
+    ? await transaction.updateProjection({
+        duoId: input.duoId,
+        xpDelta: totalXpAwarded,
+        streak: streak?.currentStreak,
+        availableFreezes: streak?.availableFreezes
+      })
+    : projection;
+  const levelUp = nextProjection.level.level > projection.level.level
     ? {
         previousLevel: projection.level,
-        currentLevel: nextLevel
+        currentLevel: nextProjection.level
       }
     : null;
-  const earnedFreezes = getFreezeEarnedForLevelChange({
+  const freezeDelta = getFreezeEarnedForLevelChange({
     previousLevel: projection.level.level,
-    nextLevel: nextLevel.level
+    nextLevel: nextProjection.level.level
   });
-  const nextAvailableFreezes =
-    (streak?.availableFreezes ?? projection.availableFreezes) + earnedFreezes;
+  const freezeInserted = freezeDelta > 0
+    ? await transaction.insertStreakEvent({
+        duoId: input.duoId,
+        eventKey: `freeze-earned:level:${nextProjection.level.level}`,
+        eventType: "freeze-earned",
+        duoDay,
+        sourceType: input.sourceType,
+        sourceId: input.sourceId,
+        actorUserId: input.actorUserId,
+        freezeDelta,
+        metadata: {
+          previousLevel: projection.level.level,
+          currentLevel: nextProjection.level.level
+        }
+      })
+    : false;
+  const earnedFreezes = freezeInserted ? freezeDelta : 0;
+
+  if (earnedFreezes > 0) {
+    nextProjection = await transaction.updateProjection({
+      duoId: input.duoId,
+      xpDelta: 0,
+      streak: streak?.currentStreak,
+      availableFreezes: nextProjection.availableFreezes + earnedFreezes
+    });
+  }
+
   const streakWithFreezes = streak
     ? {
         ...streak,
         earnedFreezes,
-        availableFreezes: nextAvailableFreezes
+        availableFreezes: nextProjection.availableFreezes
       }
     : earnedFreezes > 0
       ? {
           previousStreak: projection.streak,
           currentStreak: projection.streak,
-          availableFreezes: nextAvailableFreezes,
+          availableFreezes: nextProjection.availableFreezes,
           earnedFreezes,
           consumedFreeze: false,
           reset: false,
           duoDay
         }
       : null;
-
-  const shouldUpdateProjection =
-    totalXpAwarded !== 0 || levelUp !== null || streakWithFreezes !== null;
-  const nextProjection = shouldUpdateProjection
-    ? await transaction.updateProjection({
-        duoId: input.duoId,
-        xpDelta: totalXpAwarded,
-        nextLevel,
-        streak: streakWithFreezes?.currentStreak,
-        availableFreezes: streakWithFreezes?.availableFreezes
-      })
-    : projection;
   const achievementMetrics = await transaction.readAchievementMetrics(input.duoId, {
     timezone: timezone || DEFAULT_TIMEZONE
   });

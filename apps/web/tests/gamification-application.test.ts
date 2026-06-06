@@ -135,8 +135,7 @@ async function applyFakeXpFact(repository: GamificationRepository) {
 
     const projection = await transaction.updateProjection({
       duoId: membership.duoId,
-      xpDelta: award.amount,
-      nextLevel: getLevelForXp(award.amount)
+      xpDelta: award.amount
     });
 
     return {
@@ -165,6 +164,7 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => projectionRecord()),
+    lockProjection: vi.fn(async () => projectionRecord()),
     readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: input.insertXpLedgerAward ?? vi.fn(async () => xpAwardRecord()),

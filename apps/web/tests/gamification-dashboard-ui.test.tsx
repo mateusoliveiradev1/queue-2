@@ -498,6 +498,7 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => input.projection ?? projectionRecord()),
+    lockProjection: vi.fn(async () => input.projection ?? projectionRecord()),
     readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),

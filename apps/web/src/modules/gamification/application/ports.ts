@@ -352,6 +352,7 @@ export type GamificationRepositoryTransaction = {
   resolveMembership(userId: GamificationUserId): Promise<GamificationMembershipContext | null>;
   readDuoTimezone(duoId: GamificationDuoId): Promise<string>;
   readProjection(duoId: GamificationDuoId): Promise<GamificationProjectionRecord | null>;
+  lockProjection(duoId: GamificationDuoId): Promise<GamificationProjectionRecord | null>;
   readAchievementMetrics(
     duoId: GamificationDuoId,
     context: {
@@ -377,7 +378,6 @@ export type GamificationRepositoryTransaction = {
   updateProjection(input: {
     duoId: GamificationDuoId;
     xpDelta: number;
-    nextLevel: LevelDefinition;
     streak?: number;
     availableFreezes?: number;
   }): Promise<GamificationProjectionRecord>;

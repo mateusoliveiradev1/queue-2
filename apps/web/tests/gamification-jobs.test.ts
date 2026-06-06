@@ -205,6 +205,8 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
           streak: input.streak ?? 0
         })
     );
+    const lockProjection = vi.fn(async () => projectionRecord());
+    const readStreakState = vi.fn(async () => streakState);
     const repository = fakeGamificationRepository({
       jobs: [
         jobRecord({
@@ -226,7 +228,8 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
         })
       ],
       insertStreakEvent,
-      readStreakState: vi.fn(async () => streakState),
+      lockProjection,
+      readStreakState,
       updateProjection,
       upsertStreakState
     });
@@ -250,6 +253,9 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
       skipped: 1
     });
     expect(insertStreakEvent).toHaveBeenCalledTimes(1);
+    expect(lockProjection.mock.invocationCallOrder[0]).toBeLessThan(
+      readStreakState.mock.invocationCallOrder[0]!
+    );
     expect(upsertStreakState).toHaveBeenCalledWith(
       expect.objectContaining({
         availableFreezes: 0,
@@ -521,6 +527,7 @@ function fakeGamificationRepository(input: {
   jobs?: GamificationDueJobRecord[];
   membership?: GamificationMembershipContext | null;
   projection?: GamificationProjectionRecord | null;
+  lockProjection?: GamificationRepositoryTransaction["lockProjection"];
   readStreakState?: GamificationRepositoryTransaction["readStreakState"];
   insertStreakEvent?: GamificationRepositoryTransaction["insertStreakEvent"];
   upsertQuestCycle?: GamificationRepositoryTransaction["upsertQuestCycle"];
@@ -542,6 +549,11 @@ function fakeGamificationRepository(input: {
     readProjection: vi.fn(async () =>
       input.projection === undefined ? projectionRecord() : input.projection
     ),
+    lockProjection:
+      input.lockProjection ??
+      vi.fn(async () =>
+        input.projection === undefined ? projectionRecord() : input.projection
+      ),
     readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),

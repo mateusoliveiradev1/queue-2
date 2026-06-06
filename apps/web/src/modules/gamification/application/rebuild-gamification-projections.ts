@@ -75,7 +75,7 @@ export async function rebuildGamificationProjectionsInTransaction(
     return { ok: false, reason: "duo-mismatch" };
   }
 
-  const projection = await transaction.readProjection(duoId);
+  const projection = await transaction.lockProjection(duoId);
 
   if (!projection) {
     return { ok: false, reason: "projection-not-found" };
@@ -133,7 +133,6 @@ export async function rebuildGamificationProjectionsInTransaction(
       ? await transaction.updateProjection({
           duoId,
           xpDelta,
-          nextLevel,
           streak: nextStreak,
           availableFreezes: nextAvailableFreezes
         })

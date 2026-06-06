@@ -307,6 +307,9 @@ function fakeGamificationRepository(input: {
     readProjection: vi.fn(async () =>
       input.projection === undefined ? projectionRecord() : input.projection
     ),
+    lockProjection: vi.fn(async () =>
+      input.projection === undefined ? projectionRecord() : input.projection
+    ),
     readAchievementMetrics: vi.fn(async () => EMPTY_ACHIEVEMENT_METRICS),
     countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: vi.fn(async () => xpAwardRecord()),

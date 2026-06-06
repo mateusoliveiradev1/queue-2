@@ -132,16 +132,17 @@ async function processStreakCheckJob(input: {
       throw new Error("gamification_job_duo_mismatch");
     }
 
-    const [resolvedTimezone, projection, state] = await Promise.all([
-      transaction.readDuoTimezone(membership.duoId),
-      transaction.readProjection(membership.duoId),
-      transaction.readStreakState(membership.duoId)
-    ]);
-    timezone = resolvedTimezone;
+    const projection = await transaction.lockProjection(membership.duoId);
 
     if (!projection) {
       throw new Error("projection_not_found");
     }
+
+    const [resolvedTimezone, state] = await Promise.all([
+      transaction.readDuoTimezone(membership.duoId),
+      transaction.readStreakState(membership.duoId)
+    ]);
+    timezone = resolvedTimezone;
 
     if (!state?.lastActivityDuoDay || state.currentStreak <= 0) {
       return;
@@ -184,7 +185,6 @@ async function processStreakCheckJob(input: {
       await transaction.updateProjection({
         availableFreezes: nextState.availableFreezes,
         duoId: membership.duoId,
-        nextLevel: projection.level,
         streak: nextState.currentStreak,
         xpDelta: 0
       });
@@ -219,7 +219,6 @@ async function processStreakCheckJob(input: {
     await transaction.updateProjection({
       availableFreezes: nextState.availableFreezes,
       duoId: membership.duoId,
-      nextLevel: projection.level,
       streak: nextState.currentStreak,
       xpDelta: 0
     });

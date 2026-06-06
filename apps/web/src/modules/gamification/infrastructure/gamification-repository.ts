@@ -231,6 +231,7 @@ export function createGamificationTransaction(
     resolveMembership: (userId) => resolveMembership(client, userId),
     readDuoTimezone: (duoId) => readDuoTimezone(client, duoId),
     readProjection: (duoId) => readProjection(client, duoId),
+    lockProjection: (duoId) => lockProjection(client, duoId),
     readAchievementMetrics: (duoId, context) =>
       readAchievementMetrics(client, duoId, context),
     countXpAwardsForDuoDay: (input) => countXpAwardsForDuoDay(client, input),
@@ -320,6 +321,43 @@ async function readProjection(
         ON streak.duo_id = duo.id
       WHERE duo.id = $1
       LIMIT 1
+    `,
+    [duoId]
+  );
+  const row = result.rows[0];
+
+  return row ? mapProjection(row) : null;
+}
+
+async function lockProjection(
+  client: QueueDbClient,
+  duoId: string
+): Promise<GamificationProjectionRecord | null> {
+  await client.query(
+    `
+      INSERT INTO app.gamification_streak_state (duo_id)
+      SELECT id
+      FROM app.duos
+      WHERE id = $1
+      ON CONFLICT (duo_id) DO NOTHING
+    `,
+    [duoId]
+  );
+
+  const result = await client.query<ProjectionRow>(
+    `
+      SELECT
+        duo.id AS duo_id,
+        duo.xp,
+        duo.level,
+        duo.streak,
+        streak.available_freezes,
+        GREATEST(duo.updated_at, streak.updated_at) AS updated_at
+      FROM app.duos AS duo
+      INNER JOIN app.gamification_streak_state AS streak
+        ON streak.duo_id = duo.id
+      WHERE duo.id = $1
+      FOR UPDATE OF duo, streak
     `,
     [duoId]
   );
@@ -731,23 +769,35 @@ async function updateProjection(
   client: QueueDbClient,
   input: Parameters<GamificationRepositoryTransaction["updateProjection"]>[0]
 ): Promise<GamificationProjectionRecord> {
-  const updateResult = await client.query<{ duo_id: string; streak: number }>(
+  const updateResult = await client.query<{ duo_id: string; xp: number; streak: number }>(
     `
       UPDATE app.duos
       SET xp = GREATEST(0, xp + $2),
-          level = $3,
-          streak = COALESCE($4::integer, streak),
+          streak = COALESCE($3::integer, streak),
           updated_at = now()
       WHERE id = $1
-      RETURNING id AS duo_id, streak
+      RETURNING id AS duo_id, xp, streak
     `,
-    [input.duoId, input.xpDelta, input.nextLevel.level, input.streak ?? null]
+    [input.duoId, input.xpDelta, input.streak ?? null]
   );
   const updatedDuo = updateResult.rows[0];
 
   if (!updatedDuo) {
     throw new Error("gamification_projection_duo_not_found");
   }
+
+  const nextLevel = getLevelForXp(updatedDuo.xp);
+
+  await client.query(
+    `
+      UPDATE app.duos
+      SET level = $2,
+          updated_at = CASE WHEN level IS DISTINCT FROM $2 THEN now() ELSE updated_at END
+      WHERE id = $1
+        AND level IS DISTINCT FROM $2
+    `,
+    [input.duoId, nextLevel.level]
+  );
 
   if (input.streak !== undefined || input.availableFreezes !== undefined) {
     await client.query(

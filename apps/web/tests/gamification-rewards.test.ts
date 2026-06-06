@@ -98,7 +98,6 @@ describe("gamification reward application", () => {
       expect.objectContaining({
         duoId: "duo-1",
         xpDelta: 110,
-        nextLevel: expect.objectContaining({ level: 2 }),
         streak: 1,
         availableFreezes: 0
       })
