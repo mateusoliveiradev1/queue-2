@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-10-PLAN.md; next 05-08-PLAN.md
-last_updated: "2026-06-06T20:49:19.923Z"
+stopped_at: Completed 05-08-PLAN.md; next 05-09-PLAN.md
+last_updated: "2026-06-06T21:02:47.880Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 46
-  completed_plans: 43
-  percent: 93
+  completed_plans: 44
+  percent: 96
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 05 (gamificacao-coletiva) — EXECUTING
-Plan: 8 of 11
+Plan: 9 of 11
 Status: Ready to execute
 Last activity: 2026-06-06
 
-Progress: [█████████░] 93%
+Progress: [██████████] 96%
 
 ## Performance Metrics
 
@@ -97,6 +97,7 @@ Progress: [█████████░] 93%
 | Phase 05 P06 | 16min | 3 tasks | 13 files |
 | Phase 05 P07 | 15min | 3 tasks | 15 files |
 | Phase 05 P10 | 5min | 3 tasks | 8 files |
+| Phase 05 P08 | 11min | 3 tasks | 11 files |
 
 ## Quick Tasks Completed
 
@@ -269,6 +270,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Worker job inserts are restricted to gamification quest rotation and streak check payloads with createdByUserId. — The worker can produce required maintenance work without receiving broad scheduled-job or duo-data write authority.
 - [Phase 05]: Reward feedback URLs carry only a five-minute signed presentation view bound to an opaque user-duo subject. — The query string can display persisted feedback without becoming authority or exposing raw identifiers and projection state.
 - [Phase 05]: Play reward redirects are derived only from validated game slugs or the fixed /app fallback. — Prevents open redirects while preserving feedback from session, chapter, scheduled attendance and terminal confirmations.
+- [Phase 05]: Recurring gamification jobs enqueue a deterministic successor before completing the current job. — Retries converge without duplicate chains while successful jobs remain self-sustaining.
+- [Phase 05]: Seasonal quest schedules use explicit June, October and December catalog windows. — Keeps D-12 auditable and prevents implicit seasons from changing job cadence.
 
 ### Pending Todos
 
@@ -307,6 +310,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T20:49:19.916Z
-Stopped at: Completed 05-10-PLAN.md; next 05-08-PLAN.md
-Resume file: None
+Last session: 2026-06-06T21:02:47.872Z
+Stopped at: Completed 05-08-PLAN.md; next 05-09-PLAN.md
+Resume file: .planning/phases/05-gamificacao-coletiva/05-09-PLAN.md
