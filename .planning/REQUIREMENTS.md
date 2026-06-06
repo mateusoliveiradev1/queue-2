@@ -158,23 +158,23 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Gamification
 
-- [ ] **GAME-01**: Duo has one shared XP total with no individual XP totals
-- [ ] **GAME-02**: Duo progresses through 50 thematic levels from `Lv1 Casuais` to `Lv50 Lendas do Coop`
-- [ ] **GAME-03**: Level thresholds follow a versioned curve based on an approximate 1.18 multiplier
-- [ ] **GAME-04**: Every XP award or deduction is applied once and remains auditable
-- [ ] **GAME-05**: Duo can unlock approximately 50 seeded achievements
-- [ ] **GAME-06**: User sees achievements grouped as Story, Coop-Sincronia, Compromisso, Descoberta, Streak, Roleta or Comedia
-- [ ] **GAME-07**: User sees custom engraved-style SVG achievement icons without emoji
-- [ ] **GAME-08**: User can view and filter the achievement grid by rarity
-- [ ] **GAME-09**: Duo receives three weekly quests that reset Monday at 00:00 in the duo timezone
-- [ ] **GAME-10**: Duo receives one monthly quest
-- [ ] **GAME-11**: Duo can receive seasonal quests such as Spooky, Awards and Anniversary
+- [x] **GAME-01**: Duo has one shared XP total with no individual XP totals
+- [x] **GAME-02**: Duo progresses through 50 thematic levels from `Lv1 Casuais` to `Lv50 Lendas do Coop`
+- [x] **GAME-03**: Level thresholds follow a versioned curve based on an approximate 1.18 multiplier
+- [x] **GAME-04**: Every XP award or deduction is applied once and remains auditable
+- [x] **GAME-05**: Duo can unlock approximately 50 seeded achievements
+- [x] **GAME-06**: User sees achievements grouped as Story, Coop-Sincronia, Compromisso, Descoberta, Streak, Roleta or Comedia
+- [x] **GAME-07**: User sees custom engraved-style SVG achievement icons without emoji
+- [x] **GAME-08**: User can view and filter the achievement grid by rarity
+- [x] **GAME-09**: Duo receives three weekly quests that reset Monday at 00:00 in the duo timezone
+- [x] **GAME-10**: Duo receives one monthly quest
+- [x] **GAME-11**: Duo can receive seasonal quests such as Spooky, Awards and Anniversary
 - [ ] **GAME-12**: User can view weekly, monthly and seasonal quest progress on the challenges page
-- [ ] **GAME-13**: Duo maintains a collaborative play streak
+- [x] **GAME-13**: Duo maintains a collaborative play streak
 - [ ] **GAME-14**: User sees animated flame and freezing states for the streak
-- [ ] **GAME-15**: Duo earns one Streak Freeze every ten levels
-- [ ] **GAME-16**: Duo streak activity can be backed up until 04:00 in the duo timezone
-- [ ] **GAME-17**: User sees rarity styling on games, achievements and reviews through meaningful neon gradient borders
+- [x] **GAME-15**: Duo earns one Streak Freeze every ten levels
+- [x] **GAME-16**: Duo streak activity can be backed up until 04:00 in the duo timezone
+- [x] **GAME-17**: User sees rarity styling on games, achievements and reviews through meaningful neon gradient borders
 
 ### Roulette
 
@@ -205,7 +205,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **SAFE-01**: User is asked for push permission only after an action that explains its value
 - [x] **SAFE-02**: User can disable product push notifications
-- [ ] **SAFE-03**: Catalog synchronization, streak checks, quest rotation and reminders continue through scheduled server jobs
+- [x] **SAFE-03**: Catalog synchronization, streak checks, quest rotation and reminders continue through scheduled server jobs
 - [x] **SAFE-04**: Failed scheduled work can be retried without duplicating user-visible effects
 - [x] **SAFE-05**: Secrets such as RAWG, email, auth and privileged database credentials never reach the browser
 - [ ] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
@@ -369,23 +369,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SESS-12 | Phase 4 | Complete |
 | SESS-13 | Phase 4 | Complete |
 | SESS-14 | Phase 4 | Complete |
-| GAME-01 | Phase 5 | Pending |
-| GAME-02 | Phase 5 | Pending |
-| GAME-03 | Phase 5 | Pending |
-| GAME-04 | Phase 5 | Pending |
-| GAME-05 | Phase 5 | Pending |
-| GAME-06 | Phase 5 | Pending |
-| GAME-07 | Phase 5 | Pending |
-| GAME-08 | Phase 5 | Pending |
-| GAME-09 | Phase 5 | Pending |
-| GAME-10 | Phase 5 | Pending |
-| GAME-11 | Phase 5 | Pending |
+| GAME-01 | Phase 5 | Complete |
+| GAME-02 | Phase 5 | Complete |
+| GAME-03 | Phase 5 | Complete |
+| GAME-04 | Phase 5 | Complete |
+| GAME-05 | Phase 5 | Complete |
+| GAME-06 | Phase 5 | Complete |
+| GAME-07 | Phase 5 | Complete |
+| GAME-08 | Phase 5 | Complete |
+| GAME-09 | Phase 5 | Complete |
+| GAME-10 | Phase 5 | Complete |
+| GAME-11 | Phase 5 | Complete |
 | GAME-12 | Phase 5 | Pending |
-| GAME-13 | Phase 5 | Pending |
+| GAME-13 | Phase 5 | Complete |
 | GAME-14 | Phase 5 | Pending |
-| GAME-15 | Phase 5 | Pending |
-| GAME-16 | Phase 5 | Pending |
-| GAME-17 | Phase 5 | Pending |
+| GAME-15 | Phase 5 | Complete |
+| GAME-16 | Phase 5 | Complete |
+| GAME-17 | Phase 5 | Complete |
 | ROUL-01 | Phase 6 | Pending |
 | ROUL-02 | Phase 6 | Pending |
 | ROUL-03 | Phase 6 | Pending |
@@ -407,7 +407,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | HALL-09 | Phase 7 | Pending |
 | SAFE-01 | Phase 4 | Complete |
 | SAFE-02 | Phase 4 | Complete |
-| SAFE-03 | Phase 5 | Pending |
+| SAFE-03 | Phase 5 | Complete |
 | SAFE-04 | Phase 4 | Complete |
 | SAFE-05 | Phase 1 | Complete |
 | SAFE-06 | Phase 6 | Pending |

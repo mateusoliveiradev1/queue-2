@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Phase 5 context gathered
-last_updated: "2026-06-06T04:11:02.266Z"
-last_activity: 2026-06-06 -- Phase 05 planning complete
+stopped_at: Completed 05-01-PLAN.md
+last_updated: "2026-06-06T08:49:56.163Z"
+last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 41
-  completed_plans: 35
-  percent: 85
+  completed_plans: 36
+  percent: 88
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 
 ## Current Position
 
-Phase: 05 (gamificacao-coletiva) — READY TO EXECUTE
-Plan: TBD
+Phase: 05 (gamificacao-coletiva) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-06-06 -- Phase 05 planning complete
+Last activity: 2026-06-06
 
-Progress: [########--] 85%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -89,6 +89,7 @@ Progress: [########--] 85%
 | Phase 04 P04 | 35m | 3 tasks | 22 files |
 | Phase 04 P05 | 45m | 3 tasks | 32 files |
 | Phase 04 P06 | 35m | 3 tasks | 11 files |
+| Phase 05 P01 | 27 min | 3 tasks | 19 files |
 
 ## Quick Tasks Completed
 
@@ -238,6 +239,8 @@ Recent decisions affecting current work:
 - [Phase 04-06]: Missing external fixtures are blockers, not passing evidence. - The gate exits nonzero for real local failures and writes blockers for TEST_DATABASE_URL, E2E slugs and reminder environment/readiness.
 - [Phase 04-06]: Exact 30-minute reminder copy remains blocked until readiness passes. - `04-REMINDER-READINESS.md` currently disallows exact promise because CRON/VAPID/runner setup is missing.
 - [Phase 04-06]: Phase 4 E2E uses product-authenticated ready duo, partner and other-duo fixtures. - No test-only session bypass was introduced.
+- [Phase 05-01]: app.duo_xp_awards remains the canonical shared XP ledger for Phase 5. — Avoids a parallel reward ledger and keeps play, discovery and gamification facts in one audit trail.
+- [Phase 05-01]: Gamification user-facing persistence is server-only and uses withAppUserTransaction. — Preserves runtime RLS/least privilege while worker job claims stay bounded with FOR UPDATE SKIP LOCKED.
 
 ### Pending Todos
 
@@ -274,6 +277,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T03:49:16.495Z
-Stopped at: Phase 5 context gathered
-Resume file: .planning/phases/05-gamificacao-coletiva/05-CONTEXT.md
+Last session: 2026-06-06T08:49:56.156Z
+Stopped at: Completed 05-01-PLAN.md
+Resume file: None
