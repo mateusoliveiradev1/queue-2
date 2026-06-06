@@ -1,7 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
+import type { GamificationRewardSummary } from "../../modules/gamification";
 import {
   cancelTerminalStatus,
   cancelScheduledSession,
@@ -27,6 +29,7 @@ import {
   type ServerTimingContext,
   withServerTiming
 } from "../../platform/performance/server-timing";
+import { createRewardToken } from "./phase-5-reward-token";
 
 const reorderTimingContext = { action: "play.order.reorder" } as const;
 const promoteTimingContext = { action: "play.order.promote" } as const;
@@ -56,6 +59,8 @@ export type PlayOrderMutationResult =
 export type PlayJourneyMutationResult =
   | {
       ok: true;
+      reward: GamificationRewardSummary | null;
+      rewardToken: string | null;
       state: string;
       redirectTo?: string;
     }
@@ -101,8 +106,10 @@ export async function endLiveSessionAction(
 export async function confirmPlaySessionAction(
   formData: FormData
 ): Promise<void> {
-  await withServerTiming(sessionTimingContext, () =>
-    playJourneyActionTimed(formData, "confirm-session", sessionTimingContext)
+  await runPlayJourneyActionWithRedirect(
+    formData,
+    "confirm-session",
+    sessionTimingContext
   );
 }
 
@@ -133,8 +140,10 @@ export async function createPlayChapterAction(
 export async function setPlayChapterCompletionAction(
   formData: FormData
 ): Promise<void> {
-  await withServerTiming(chapterTimingContext, () =>
-    playJourneyActionTimed(formData, "set-chapter", chapterTimingContext)
+  await runPlayJourneyActionWithRedirect(
+    formData,
+    "set-chapter",
+    chapterTimingContext
   );
 }
 
@@ -157,8 +166,10 @@ export async function cancelTerminalStatusAction(
 export async function confirmTerminalStatusAction(
   formData: FormData
 ): Promise<void> {
-  await withServerTiming(terminalTimingContext, () =>
-    playJourneyActionTimed(formData, "confirm-terminal", terminalTimingContext)
+  await runPlayJourneyActionWithRedirect(
+    formData,
+    "confirm-terminal",
+    terminalTimingContext
   );
 }
 
@@ -181,8 +192,10 @@ export async function cancelScheduledSessionAction(
 export async function confirmScheduledSessionAction(
   formData: FormData
 ): Promise<void> {
-  await withServerTiming(sessionTimingContext, () =>
-    playJourneyActionTimed(formData, "confirm-scheduled", sessionTimingContext)
+  await runPlayJourneyActionWithRedirect(
+    formData,
+    "confirm-scheduled",
+    sessionTimingContext
   );
 }
 
@@ -441,16 +454,71 @@ async function playJourneyActionTimed(
     revalidatePlaySurfaces(gameSlugs);
   });
 
-  return result.ok
-    ? {
-        ok: true,
-        state: playJourneySuccessState(action)
-      }
-    : {
+  if (!result.ok) {
+    return {
         ok: false,
         reason: result.reason,
         state: playJourneyReasonToState(result.reason)
-      };
+    };
+  }
+
+  const reward = "reward" in result
+    ? result.reward ?? null
+    : null;
+  const rewardToken = reward
+    ? createRewardToken({
+        subject: {
+          duoId: reward.projection.duoId,
+          userId: session.user.id
+        },
+        summary: reward
+      })
+    : null;
+
+  return {
+    ok: true,
+    reward,
+    rewardToken,
+    state: playJourneySuccessState(action)
+  };
+}
+
+async function runPlayJourneyActionWithRedirect(
+  formData: FormData,
+  action:
+    | "confirm-session"
+    | "confirm-scheduled"
+    | "confirm-terminal"
+    | "set-chapter",
+  timingContext: ServerTimingContext
+): Promise<never> {
+  const result = await withServerTiming(timingContext, () =>
+    playJourneyActionTimed(formData, action, timingContext)
+  );
+
+  redirect(buildPlayJourneyRedirect(result, getSafeGameSlugs(formData)[0] ?? null));
+}
+
+function buildPlayJourneyRedirect(
+  result: PlayJourneyMutationResult,
+  gameSlug: string | null
+): string {
+  if (result.redirectTo === "/parear") {
+    return "/parear";
+  }
+
+  const destination = gameSlug && isSafeSlug(gameSlug)
+    ? `/app/jogo/${gameSlug}`
+    : "/app";
+  const params = new URLSearchParams({
+    estado: result.state
+  });
+
+  if (result.ok && result.rewardToken) {
+    params.set("recompensa", result.rewardToken);
+  }
+
+  return `${destination}?${params.toString()}`;
 }
 
 function getOrderedLibraryGameIds(formData: FormData): string[] {

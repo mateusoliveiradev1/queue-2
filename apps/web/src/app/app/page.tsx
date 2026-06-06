@@ -128,7 +128,10 @@ async function renderDashboardPage({
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
   const rewardState = getSearchParam(params?.recompensa);
-  const rewardStatus = getPhase5RewardStatus(rewardState);
+  const rewardStatus = getPhase5RewardStatus(rewardState, {
+    duoId: duo.id,
+    userId: session.user.id
+  });
 
   return measureStage("render", dashboardTimingContext, async () => (
     <AppShell

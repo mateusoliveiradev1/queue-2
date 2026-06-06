@@ -13,6 +13,9 @@ import {
 } from "../../../../modules/catalog";
 import { getDuoDashboard } from "../../../../modules/duo";
 import {
+  RewardToast
+} from "../../../../modules/gamification";
+import {
   getLibraryGameDetail,
   LibraryStatusControls,
   toLibraryGameDetailView
@@ -61,6 +64,7 @@ import {
   getPhase2StatusMessage,
   getSearchParam
 } from "../../phase-2-status";
+import { getPhase5RewardStatus } from "../../phase-5-status";
 
 export const metadata: Metadata = {
   description:
@@ -105,6 +109,17 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
     redirect("/app/dupla?estado=dupla-formada");
   }
 
+  const duo = dashboard.duo;
+
+  if (!duo?.name || !duo.pairedAt) {
+    redirect("/parear");
+  }
+
+  const rewardState = getSearchParam(query?.recompensa);
+  const rewardStatus = getPhase5RewardStatus(rewardState, {
+    duoId: duo.id,
+    userId: session.user.id
+  });
   const catalog = await measureStage("database", gameTimingContext, () =>
     getCatalogGameDetail(slug)
   );
@@ -204,6 +219,7 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
           </p>
         </>
       ) : null}
+      <RewardToast reward={rewardStatus} />
 
       <section className="surface-band app-section" aria-labelledby="catalog-facts">
         <div className="section-heading">
