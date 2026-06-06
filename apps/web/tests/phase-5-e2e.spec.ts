@@ -100,7 +100,7 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
     await expectNoVisibleControlOverlap(page);
   });
 
-  test("reduced motion keeps equivalent reward, rarity and streak feedback", async ({ page }) => {
+  test("forged reward query is ignored while reduced motion keeps static feedback", async ({ page }) => {
     const hydrationErrors = collectHydrationErrors(page);
 
     await page.setViewportSize(desktopViewport);
@@ -111,7 +111,8 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
     await expect
       .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
       .toBe(true);
-    await expect(page.locator(".reward-inline-state")).toBeVisible();
+    await expect(page.locator(".reward-inline-state")).toHaveCount(0);
+    await expect(page.locator(".queue2-toast")).toHaveCount(0);
     await expectStaticFeedbackMark(page.locator(".gamification-streak-mark").first());
 
     await page.goto("/app/conquistas?raridade=legendary");
@@ -126,6 +127,7 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
 
   test("both members must confirm Zerado before the major reward is visible", async ({ page }) => {
     await page.setViewportSize(desktopViewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, readyActor);
     await page.goto(`/app/jogo/${zeradoSlug}`);
 
@@ -140,7 +142,17 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
     await page.goto(`/app/jogo/${zeradoSlug}`);
     await expect(page.getByText(/pedido pendente:\s*zerado/i)).toBeVisible();
     await page.getByRole("button", { name: /confirmar com a dupla/i }).click();
-    await page.waitForURL(/pedido-terminal-confirmado|recompensa=zerado|\/app\/jogo\//);
+    await page.waitForURL((url) =>
+      url.pathname === `/app/jogo/${zeradoSlug}`
+      && url.searchParams.get("estado") === "pedido-terminal-confirmado"
+      && url.searchParams.has("recompensa")
+    );
+    const rewardFeedback = page.locator(".reward-inline-state");
+    await expect(rewardFeedback).toBeVisible();
+    await expect(rewardFeedback).toContainText(/XP|conquista|desafio|level-up/i);
+    await expectStaticFeedbackMark(rewardFeedback);
+    await page.getByRole("link", { name: /voltar ao catalogo/i }).click();
+    await page.waitForURL(/\/app\/catalogo/);
     await page.goto("/app");
     await expect(page.locator(".gamification-dashboard-band")).toContainText(/Zerado|Final verdadeiro|XP da dupla/i);
   });
