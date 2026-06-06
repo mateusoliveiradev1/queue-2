@@ -187,7 +187,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. A dupla pode desbloquear e filtrar aproximadamente 50 conquistas customizadas por grupo e raridade.
   4. Desafios semanais, mensais e sazonais rotacionam no horario correto e mostram progresso atual.
   5. Streaks exibem chama, freezing, backup ate 04:00 e Streak Freeze a cada dez niveis, enquanto raridade aparece de forma consistente.
-**Plans**: 05-01, 05-02, 05-03, 05-04, 05-05, 05-06 (0/6 complete; ready to execute)
+**Plans**: 05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07, 05-08, 05-09, 05-10, 05-11 (6/11 complete; 5 gap-closure plans ready)
 
 **Plan Waves**:
   - **Wave 1:** `05-01` - Gamification schema, forced RLS, public module, policy/catalog/repository foundation.
@@ -196,6 +196,10 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   - **Wave 4 *(blocked on Wave 3 completion)*:** `05-04` - Achievements route, filters, custom SVG icon system and navigation.
   - **Wave 5 *(blocked on Wave 4 completion)*:** `05-05` - Challenge/streak UI, rotation jobs, 04:00 cutoff and maintenance cron.
   - **Wave 6 *(blocked on Wave 5 completion)*:** `05-06` - Phase gate with E2E, accessibility, security, DB, performance and economy audits.
+  - **Wave 7 *(gap closure; blocked on completed Waves 3, 5 and 6)*:** `05-07` - Secure ready-duo job producer foundation; `05-10` - authoritative signed reward feedback.
+  - **Wave 8 *(blocked on Wave 7 plan 05-07)*:** `05-08` - Timezone-correct recurring quest/streak jobs with producer-to-completion integration.
+  - **Wave 9 *(blocked on Wave 8)*:** `05-09` - Catalog-wide achievement predicate evaluation and 50/50 reachability gate.
+  - **Wave 10 *(blocked on Waves 8 and 9)*:** `05-11` - Serialized projections and atomic additive quest progress under concurrency.
 **UI hint**: yes
 
 ### Phase 6: Roleta E Economia
