@@ -10,6 +10,7 @@ export function NotificationCenter({
 }) {
   const items = center?.items ?? [];
   const unreadCount = center?.unreadCount ?? 0;
+  const extraCount = Math.max(unreadCount - items.length, 0);
 
   return (
     <section className="notification-center" aria-labelledby="central-title">
@@ -31,6 +32,9 @@ export function NotificationCenter({
       ) : (
         <p className="empty-state">Nada pendente na Central da Dupla.</p>
       )}
+      {extraCount > 0 ? (
+        <p className="notification-more">+{extraCount} pendencias fora do resumo</p>
+      ) : null}
     </section>
   );
 }

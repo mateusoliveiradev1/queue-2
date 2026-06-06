@@ -68,7 +68,8 @@ const libraryModuleMock = vi.hoisted(() => ({
 }));
 
 const playModuleMock = vi.hoisted(() => ({
-  getCurrentPlay: vi.fn()
+  getCurrentPlay: vi.fn(),
+  getDuoNotifications: vi.fn()
 }));
 
 const phase4ActionMock = vi.hoisted(() => ({
@@ -80,6 +81,10 @@ const phase4ActionMock = vi.hoisted(() => ({
     ok: true,
     state: "ordem-atualizada"
   }))
+}));
+
+const phase2ActionMock = vi.hoisted(() => ({
+  moveLibraryGameAction: vi.fn(async () => undefined)
 }));
 
 const navigationMock = vi.hoisted(() => ({
@@ -124,6 +129,7 @@ vi.mock("../src/modules/library", () => ({
   toLibraryOverviewView: libraryModuleMock.toLibraryOverviewView
 }));
 
+vi.mock("../src/app/app/phase-2-actions", () => phase2ActionMock);
 vi.mock("../src/app/app/phase-4-actions", () => phase4ActionMock);
 
 vi.mock("../src/modules/play", async () => {
@@ -136,11 +142,16 @@ vi.mock("../src/modules/play", async () => {
   const viewModels = await vi.importActual<
     typeof import("../src/modules/play/presentation/view-models")
   >("../src/modules/play/presentation/view-models");
+  const notifications = await vi.importActual<
+    typeof import("../src/modules/play/presentation/notification-center")
+  >("../src/modules/play/presentation/notification-center");
 
   return {
+    NotificationCenter: notifications.NotificationCenter,
     PlayingNowDashboard: dashboard.PlayingNowDashboard,
     PlayingOrderControls: orderControls.PlayingOrderControls,
     getCurrentPlay: playModuleMock.getCurrentPlay,
+    getDuoNotifications: playModuleMock.getDuoNotifications,
     toPlayingNowView: viewModels.toPlayingNowView
   };
 });
@@ -184,13 +195,20 @@ beforeEach(() => {
     groups: {
       wishlist: [],
       jogando: [],
-      pausado: []
+      pausado: [pausedLibraryGame()]
     },
     lockedStatuses: []
   });
   playModuleMock.getCurrentPlay.mockResolvedValue({
     ok: true,
     currentPlay: currentPlayRecord()
+  });
+  playModuleMock.getDuoNotifications.mockResolvedValue({
+    ok: true,
+    center: {
+      unreadCount: 0,
+      items: []
+    }
   });
 });
 
@@ -202,7 +220,7 @@ describe("Phase 04.2 Jogando Agora dashboard", () => {
 
     expect(screen.getByRole("heading", { name: /jogando agora/i, level: 1 })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /a fila e nossa/i })).toBeInTheDocument();
-    expect(screen.getByText("3/3 em Jogando")).toBeInTheDocument();
+    expect(screen.getAllByText("3/3 em Jogando").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByRole("heading", { name: /it takes two/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /abrir jornada/i })).toHaveAttribute(
       "href",
@@ -218,6 +236,10 @@ describe("Phase 04.2 Jogando Agora dashboard", () => {
     );
     expect(screen.getByRole("heading", { name: /portal 2/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /overcooked 2/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /na reserva da dupla/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /unravel two/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /retomar/i })).toBeInTheDocument();
+    expect(screen.getByText(/1 na wishlist, 3 em jogando, 1 pausado/i)).toBeInTheDocument();
     expect(playingNow).not.toBeNull();
     expect(metricGrid).not.toBeNull();
     expect(appearsBefore(playingNow as Element, metricGrid as Element)).toBe(true);
@@ -293,6 +315,7 @@ describe("Phase 04.2 Jogando Agora dashboard", () => {
     expect(pageSource).not.toContain("Roleta e sessoes entram depois");
     expect(dashboardSource).toContain("Jogando Agora");
     expect(dashboardSource).toContain("playing-principal-backdrop");
+    expect(dashboardSource).toContain("playing-paused-panel");
     expect(dashboardSource).toContain("Jogamos Hoje");
     expect(orderControlsSource).toContain("DndContext");
     expect(orderControlsSource).toContain("SortableContext");
@@ -318,6 +341,25 @@ describe("Phase 04.2 Jogando Agora dashboard", () => {
 function orderedLibraryIds(container: HTMLElement): string[] {
   return Array.from(container.querySelectorAll<HTMLInputElement>("input[name='libraryGameId']"))
     .map((input) => input.value);
+}
+
+function pausedLibraryGame() {
+  return {
+    id: "library-paused",
+    catalogGameId: "catalog-paused",
+    slug: "unravel-two",
+    name: "Unravel Two",
+    coverUrl: "https://media.rawg.io/media/games/unravel-two.jpg",
+    status: "Pausado",
+    platformLabels: ["PC"],
+    commonPlatformLabels: ["PC"],
+    match: {
+      label: "Forte",
+      factors: ["coop campanha 2p confirmado"],
+      recommendedForMainFlow: true
+    },
+    duoJourney: "Pausado sem culpa; a dupla pode retomar quando fizer sentido."
+  };
 }
 
 function appearsBefore(first: Element, second: Element): boolean {

@@ -21,7 +21,7 @@ export async function getDuoNotificationsUseCase(
   repository: PlayRepository
 ): Promise<GetDuoNotificationsResult> {
   const center = await repository.readNotificationCenter({
-    limit: input.limit ?? 12,
+    limit: input.limit ?? 5,
     userId: input.userId
   });
 

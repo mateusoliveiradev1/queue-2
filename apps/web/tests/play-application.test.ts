@@ -613,6 +613,7 @@ function fakePlayRepository(input: {
       updatedAt: new Date("2026-06-05T12:20:00.000Z")
     })),
     insertNotificationItem: vi.fn(),
+    markNotificationsActioned: vi.fn(async () => 1),
     insertXpAward: vi.fn()
   };
 

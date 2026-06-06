@@ -40,6 +40,13 @@ export async function endLiveSessionUseCase(
       return { ok: false, reason: "session-not-active" };
     }
 
+    await transaction.markNotificationsActioned({
+      duoId: membership.duoId,
+      notificationType: "live-session",
+      actionRefType: "play_session",
+      actionRefId: session.id
+    });
+
     for (const userId of membership.memberUserIds) {
       await transaction.insertNotificationItem({
         duoId: membership.duoId,

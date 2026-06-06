@@ -144,6 +144,9 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
   const returnTo = `/app/jogo/${catalog.slug}`;
   const state = getSearchParam(query?.estado);
   const statusMessage = getPhase2StatusMessage(state);
+  const pendingSessionBlockReason = playDetail?.pendingSessions.length
+    ? "Confirmem a sessao aberta antes de registrar outra."
+    : null;
 
   return measureStage("render", gameTimingContext, async () => (
     <AppShell
@@ -275,69 +278,79 @@ async function renderGamePage({ params, searchParams }: GamePageProps) {
       </section>
 
       {libraryView ? (
-        <>
-          <LiveSessionPanel
-            catalogGameId={catalog.id}
-            confirmAction={confirmPlaySessionAction}
-            detail={playDetail}
-            endAction={endLiveSessionAction}
-            gameSlug={catalog.slug}
-            startAction={startLiveSessionAction}
-          />
-          <JogamosHojeForm
-            action={logOfflineSessionAction}
-            catalogGameId={catalog.id}
-            gameSlug={catalog.slug}
-          />
-          <ProgressPanel
-            action={updatePlayProgressAction}
-            catalogGameId={catalog.id}
-            gameSlug={catalog.slug}
-            playDetail={playDetail}
-            timeEstimate={catalog.timeEstimate}
-          />
-          <ChapterList
-            catalogGameId={catalog.id}
-            createAction={createPlayChapterAction}
-            gameSlug={catalog.slug}
-            playDetail={playDetail}
-            toggleAction={setPlayChapterCompletionAction}
-          />
-          <TerminalStatusPanel
-            cancelAction={cancelTerminalStatusAction}
-            catalogGameId={catalog.id}
-            confirmAction={confirmTerminalStatusAction}
-            gameSlug={catalog.slug}
-            playDetail={playDetail}
-            requestAction={requestTerminalStatusAction}
-          />
-          <ScheduleSessionForm
-            cancelAction={cancelScheduledSessionAction}
-            catalogGameId={catalog.id}
-            confirmAction={confirmScheduledSessionAction}
-            gameSlug={catalog.slug}
-            playDetail={playDetail}
-            scheduleAction={schedulePlaySessionAction}
-          />
-          <section className="surface-band app-section play-panel" aria-labelledby="push-title">
-            <div className="section-heading">
-              <h2 className="eyebrow" id="push-title">
-                Push de sessoes
-              </h2>
-              <p className="support-copy">
-                Opcional depois de combinar horario. Desativar push nao cancela agenda nem Central.
-              </p>
+        <div className="game-session-layout">
+          <div className="game-session-layout__main">
+            <div className="game-session-layout__primary">
+              <LiveSessionPanel
+                catalogGameId={catalog.id}
+                confirmAction={confirmPlaySessionAction}
+                detail={playDetail}
+                endAction={endLiveSessionAction}
+                gameSlug={catalog.slug}
+                startAction={startLiveSessionAction}
+                viewerUserId={session.user.id}
+              />
+              <JogamosHojeForm
+                action={logOfflineSessionAction}
+                catalogGameId={catalog.id}
+                disabledReason={pendingSessionBlockReason}
+                gameSlug={catalog.slug}
+              />
+              <ProgressPanel
+                action={updatePlayProgressAction}
+                catalogGameId={catalog.id}
+                gameSlug={catalog.slug}
+                playDetail={playDetail}
+                timeEstimate={catalog.timeEstimate}
+              />
             </div>
-            <PushPreferences />
-          </section>
-          <Timeline
-            catalogGameId={catalog.id}
-            createMomentoAction={createMomentoAction}
-            gameSlug={catalog.slug}
-            revealSpoilerAction={revealMomentoSpoilerAction}
-            timeline={timeline}
-          />
-        </>
+            <div className="game-session-layout__timeline">
+              <Timeline
+                catalogGameId={catalog.id}
+                createMomentoAction={createMomentoAction}
+                gameSlug={catalog.slug}
+                revealSpoilerAction={revealMomentoSpoilerAction}
+                timeline={timeline}
+              />
+            </div>
+          </div>
+          <div className="game-session-layout__secondary">
+            <ChapterList
+              catalogGameId={catalog.id}
+              createAction={createPlayChapterAction}
+              gameSlug={catalog.slug}
+              playDetail={playDetail}
+              toggleAction={setPlayChapterCompletionAction}
+            />
+            <TerminalStatusPanel
+              cancelAction={cancelTerminalStatusAction}
+              catalogGameId={catalog.id}
+              confirmAction={confirmTerminalStatusAction}
+              gameSlug={catalog.slug}
+              playDetail={playDetail}
+              requestAction={requestTerminalStatusAction}
+            />
+            <ScheduleSessionForm
+              cancelAction={cancelScheduledSessionAction}
+              catalogGameId={catalog.id}
+              confirmAction={confirmScheduledSessionAction}
+              gameSlug={catalog.slug}
+              playDetail={playDetail}
+              scheduleAction={schedulePlaySessionAction}
+            />
+            <section className="surface-band app-section play-panel" aria-labelledby="push-title">
+              <div className="section-heading">
+                <h2 className="eyebrow" id="push-title">
+                  Push de sessoes
+                </h2>
+                <p className="support-copy">
+                  Opcional depois de combinar horario. Desativar push nao cancela agenda nem Central.
+                </p>
+              </div>
+              <PushPreferences />
+            </section>
+          </div>
+        </div>
       ) : (
         <section className="surface-band app-section" aria-labelledby="duo-journey">
           <div className="section-heading">

@@ -590,6 +590,8 @@ function playJourneyReasonToState(reason: string): string {
       return "momento-nao-encontrado";
     case "not-playing":
       return "jogo-nao-esta-jogando";
+    case "pending-confirmation-exists":
+      return "confirmacao-pendente-existe";
     case "partner-confirmation-required":
       return "confirmacao-do-parceiro-obrigatoria";
     case "percent-out-of-range":

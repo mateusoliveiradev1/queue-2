@@ -12,7 +12,8 @@ export function LiveSessionPanel({
   detail,
   endAction,
   gameSlug,
-  startAction
+  startAction,
+  viewerUserId
 }: {
   catalogGameId: string;
   confirmAction: PlayJourneyAction;
@@ -20,9 +21,11 @@ export function LiveSessionPanel({
   endAction: PlayJourneyAction;
   gameSlug: string;
   startAction: PlayJourneyAction;
+  viewerUserId: string;
 }) {
   const active = detail?.activeLiveSession ?? null;
   const pending = detail?.pendingSessions ?? [];
+  const hasPending = pending.length > 0;
 
   return (
     <section className="surface-band app-section play-panel" aria-labelledby="live-session-title">
@@ -40,6 +43,13 @@ export function LiveSessionPanel({
           gameSlug={gameSlug}
           session={active}
         />
+      ) : hasPending ? (
+        <div className="play-session-blocked">
+          <strong>Confirmacao pendente</strong>
+          <span className="muted">
+            A proxima sessao fica bloqueada ate a dupla resolver o registro aberto.
+          </span>
+        </div>
       ) : (
         <form action={startAction} className="play-inline-form">
           <input name="catalogGameId" type="hidden" value={catalogGameId} />
@@ -58,6 +68,7 @@ export function LiveSessionPanel({
               gameSlug={gameSlug}
               key={session.id}
               session={session}
+              viewerUserId={viewerUserId}
             />
           ))}
         </div>
@@ -97,12 +108,16 @@ function ActiveLiveSession({
 function PendingSession({
   confirmAction,
   gameSlug,
-  session
+  session,
+  viewerUserId
 }: {
   confirmAction: PlayJourneyAction;
   gameSlug: string;
   session: PlaySessionDetailRecord;
+  viewerUserId: string;
 }) {
+  const alreadyConfirmed = session.confirmedByUserIds.includes(viewerUserId);
+
   return (
     <article className="play-pending-card">
       <div>
@@ -111,13 +126,17 @@ function PendingSession({
           {formatDuration(session.durationSeconds ?? 0)} aguardando {session.pendingUserIds.length} confirmacao.
         </span>
       </div>
-      <form action={confirmAction}>
-        <input name="sessionId" type="hidden" value={session.id} />
-        <input name="gameSlug" type="hidden" value={gameSlug} />
-        <button className="queue2-button" data-tone="quiet" type="submit">
-          Confirmar sessao
-        </button>
-      </form>
+      {alreadyConfirmed ? (
+        <span className="session-confirmed-pill">Sua confirmacao entrou</span>
+      ) : (
+        <form action={confirmAction}>
+          <input name="sessionId" type="hidden" value={session.id} />
+          <input name="gameSlug" type="hidden" value={gameSlug} />
+          <button className="queue2-button" data-tone="quiet" type="submit">
+            Confirmar sessao
+          </button>
+        </form>
+      )}
     </article>
   );
 }

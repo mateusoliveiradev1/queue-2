@@ -429,7 +429,7 @@ export type PlayRepositoryTransaction = {
     duoId: PlayDuoId;
     sessionId: string;
     userId: PlayUserId;
-  }): Promise<PlayConfirmationRecord>;
+  }): Promise<PlayConfirmationRecord | null>;
   readGamePlayDetail(input: {
     duoId: PlayDuoId;
     catalogGameId: PlayCatalogGameId;
@@ -565,6 +565,13 @@ export type PlayRepositoryTransaction = {
     viewerUserId: PlayUserId;
   }): Promise<PlayMomentoRecord | null>;
   insertNotificationItem(input: PlayNotificationInput): Promise<PlayNotificationRecord>;
+  markNotificationsActioned(input: {
+    duoId: PlayDuoId;
+    notificationType?: PlayNotificationType;
+    actionRefType: string;
+    actionRefId: string;
+    recipientUserId?: PlayUserId | null;
+  }): Promise<number>;
   insertXpAward(input: PlayXpAwardInput): Promise<PlayXpAwardRecord | null>;
 };
 

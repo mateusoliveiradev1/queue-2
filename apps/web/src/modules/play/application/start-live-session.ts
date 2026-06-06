@@ -21,7 +21,8 @@ export type StartLiveSessionResult =
         | "active-live-session-exists"
         | "library-game-not-found"
         | "membership-required"
-        | "not-playing";
+        | "not-playing"
+        | "pending-confirmation-exists";
       activeSession?: PlaySessionRecord;
       serverNow?: Date;
       elapsedSeconds?: number;
@@ -53,6 +54,10 @@ export async function startLiveSessionUseCase(
 
     if (detail.libraryStatus !== "jogando" || !detail.activeGame) {
       return { ok: false, reason: "not-playing" };
+    }
+
+    if (detail.pendingSessions.length > 0) {
+      return { ok: false, reason: "pending-confirmation-exists" };
     }
 
     const serverNow = input.now ?? new Date();

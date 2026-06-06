@@ -69,6 +69,12 @@ const libraryModuleMock = vi.hoisted(() => ({
   moveLibraryGame: vi.fn(async () => ({ ok: true, game: {} })),
   updateMemberPlatforms: vi.fn(async () => ({ ok: true, platforms: ["pc"] }))
 }));
+const playModuleMock = vi.hoisted(() => ({
+  getCurrentPlay: vi.fn(),
+  getDuoNotifications: vi.fn(),
+  getGamePlayDetail: vi.fn(),
+  getGameTimeline: vi.fn()
+}));
 const navigationMock = vi.hoisted(() => ({
   back: vi.fn(),
   forward: vi.fn(),
@@ -171,6 +177,61 @@ vi.mock("../src/modules/library", async () => {
   };
 });
 
+vi.mock("../src/modules/play", async () => {
+  const chapterList = await vi.importActual<
+    typeof import("../src/modules/play/presentation/chapter-list")
+  >("../src/modules/play/presentation/chapter-list");
+  const dashboard = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-now-dashboard")
+  >("../src/modules/play/presentation/playing-now-dashboard");
+  const jogamosHoje = await vi.importActual<
+    typeof import("../src/modules/play/presentation/jogamos-hoje-form")
+  >("../src/modules/play/presentation/jogamos-hoje-form");
+  const liveSession = await vi.importActual<
+    typeof import("../src/modules/play/presentation/live-session-panel")
+  >("../src/modules/play/presentation/live-session-panel");
+  const notifications = await vi.importActual<
+    typeof import("../src/modules/play/presentation/notification-center")
+  >("../src/modules/play/presentation/notification-center");
+  const orderControls = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-order-controls")
+  >("../src/modules/play/presentation/playing-order-controls");
+  const progress = await vi.importActual<
+    typeof import("../src/modules/play/presentation/progress-panel")
+  >("../src/modules/play/presentation/progress-panel");
+  const schedule = await vi.importActual<
+    typeof import("../src/modules/play/presentation/schedule-session-form")
+  >("../src/modules/play/presentation/schedule-session-form");
+  const terminal = await vi.importActual<
+    typeof import("../src/modules/play/presentation/terminal-status-panel")
+  >("../src/modules/play/presentation/terminal-status-panel");
+  const timeline = await vi.importActual<
+    typeof import("../src/modules/play/presentation/timeline")
+  >("../src/modules/play/presentation/timeline");
+  const viewModels = await vi.importActual<
+    typeof import("../src/modules/play/presentation/view-models")
+  >("../src/modules/play/presentation/view-models");
+
+  return {
+    ChapterList: chapterList.ChapterList,
+    JogamosHojeForm: jogamosHoje.JogamosHojeForm,
+    LiveSessionPanel: liveSession.LiveSessionPanel,
+    NotificationCenter: notifications.NotificationCenter,
+    PlayingNowDashboard: dashboard.PlayingNowDashboard,
+    PlayingOrderControls: orderControls.PlayingOrderControls,
+    ProgressPanel: progress.ProgressPanel,
+    PushPreferences: () => null,
+    ScheduleSessionForm: schedule.ScheduleSessionForm,
+    TerminalStatusPanel: terminal.TerminalStatusPanel,
+    Timeline: timeline.Timeline,
+    getCurrentPlay: playModuleMock.getCurrentPlay,
+    getDuoNotifications: playModuleMock.getDuoNotifications,
+    getGamePlayDetail: playModuleMock.getGamePlayDetail,
+    getGameTimeline: playModuleMock.getGameTimeline,
+    toPlayingNowView: viewModels.toPlayingNowView
+  };
+});
+
 import DashboardPage from "../src/app/app/page";
 import {
   buildLibraryPath,
@@ -228,6 +289,30 @@ beforeEach(() => {
   libraryModuleMock.getLibraryGameStatuses.mockResolvedValue({
     ok: true,
     statuses: {}
+  });
+  playModuleMock.getCurrentPlay.mockResolvedValue({
+    ok: true,
+    currentPlay: {
+      games: [],
+      principal: null,
+      secondaries: [],
+      limit: 3
+    }
+  });
+  playModuleMock.getDuoNotifications.mockResolvedValue({
+    ok: true,
+    center: {
+      unreadCount: 0,
+      items: []
+    }
+  });
+  playModuleMock.getGamePlayDetail.mockResolvedValue({
+    ok: true,
+    detail: null
+  });
+  playModuleMock.getGameTimeline.mockResolvedValue({
+    ok: true,
+    timeline: null
   });
 });
 
@@ -410,8 +495,11 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "href",
       "/app/biblioteca"
     );
-    expect(screen.getByRole("heading", { name: /a fila ja tem dono/i })).toBeInTheDocument();
-    expect(screen.getByText(/1 na Wishlist/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /jogando agora/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /abrir biblioteca/i })).toHaveAttribute(
+      "href",
+      "/app/biblioteca"
+    );
   });
 
   it("renders suggested catalog card, search and RAWG attribution", async () => {
@@ -549,7 +637,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
         .getAllByRole("link", { name: /dados e imagens: rawg/i })
         .some((link) => link.getAttribute("href") === "https://rawg.io/games/it-takes-two")
     ).toBe(true);
-    expect(screen.getByText(/cerca de 14 horas/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/cerca de 14 horas/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/curadoria queue\/2/i).length).toBeGreaterThan(0);
     expect(screen.getAllByText(/sem fonte ativa para exibir/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /fontes e frescor/i })).toBeInTheDocument();
@@ -565,7 +653,7 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       "03 de junho de 2026"
     );
     expect(screen.getByText(/descricao em portugues/i)).toBeInTheDocument();
-    expect(screen.getByText(/jornada da dupla/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /push de sessoes/i })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /registrar checkpoint/i })).not.toBeInTheDocument();
   });
 

@@ -39,6 +39,31 @@ describe("Phase 04.5 notification UI", () => {
     expect(screen.queryByText(/chat/i)).not.toBeInTheDocument();
   });
 
+  it("summarizes notifications outside the sidebar list", () => {
+    render(
+      <NotificationCenter
+        center={{
+          unreadCount: 7,
+          items: Array.from({ length: 5 }, (_, index) => ({
+            id: `notification-${index}`,
+            duoId: "duo-1",
+            recipientUserId: null,
+            notificationType: "session-confirmation",
+            state: "unread",
+            actionRefType: "play_session",
+            actionRefId: `session-${index}`,
+            title: "Confirmar sessao ao vivo",
+            body: "A sessao encerrada so vira progresso depois da confirmacao dos dois.",
+            createdAt: new Date("2026-06-05T12:00:00.000Z")
+          }))
+        }}
+      />
+    );
+
+    expect(screen.getAllByText(/confirmar sessao ao vivo/i)).toHaveLength(5);
+    expect(screen.getByText("+2 pendencias fora do resumo")).toBeInTheDocument();
+  });
+
   it("does not request browser push permission on initial render", () => {
     const requestPermission = vi.fn();
     vi.stubGlobal("Notification", { requestPermission });

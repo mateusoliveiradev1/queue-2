@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { RoulettePointer } from "@queue/ui";
 
 import { AppShell } from "../../components/app-shell";
+import { StatusToast } from "../../components/status-toast";
 import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
 import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library";
 import {
@@ -17,6 +18,11 @@ import {
   measureStage,
   withServerTiming
 } from "../../platform/performance/server-timing";
+import { moveLibraryGameAction } from "./phase-2-actions";
+import {
+  getPhase2StatusMessage,
+  getSearchParam
+} from "./phase-2-status";
 import {
   promotePlayingGameAction,
   reorderPlayingGamesAction
@@ -45,15 +51,31 @@ const ritual = [
 
 const dashboardTimingContext = { route: "app.home" } as const;
 
-export default async function DashboardPage() {
-  return withServerTiming(dashboardTimingContext, renderDashboardPage);
+type DashboardPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function DashboardPage({
+  searchParams
+}: DashboardPageProps = {}) {
+  return withServerTiming(dashboardTimingContext, () =>
+    renderDashboardPage({ searchParams })
+  );
 }
 
-async function renderDashboardPage() {
+async function renderDashboardPage({
+  searchParams
+}: DashboardPageProps = {}) {
   const session = await measureStage("auth", dashboardTimingContext, () =>
     requireVerifiedSession()
   );
-  const [dashboard, libraryResult, currentPlayResult, notificationsResult] = await measureStage(
+  const [
+    dashboard,
+    libraryResult,
+    currentPlayResult,
+    notificationsResult,
+    params
+  ] = await measureStage(
     "database",
     dashboardTimingContext,
     () =>
@@ -61,7 +83,8 @@ async function renderDashboardPage() {
         getDuoDashboard(session.user.id),
         getLibraryOverview(session.user.id),
         getCurrentPlay(session.user.id),
-        getDuoNotifications({ userId: session.user.id })
+        getDuoNotifications({ userId: session.user.id }),
+        searchParams
       ])
   );
 
@@ -92,6 +115,8 @@ async function renderDashboardPage() {
   const totalGames = library
     ? library.counts.wishlist + library.counts.jogando + library.counts.pausado
     : 0;
+  const state = getSearchParam(params?.estado);
+  const statusMessage = getPhase2StatusMessage(state);
 
   return measureStage("render", dashboardTimingContext, async () => (
     <AppShell
@@ -100,6 +125,15 @@ async function renderDashboardPage() {
         <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
       }
     >
+      {statusMessage ? (
+        <>
+          <StatusToast message={statusMessage} state={state} />
+          <p className="status-banner" role="status">
+            {statusMessage}
+          </p>
+        </>
+      ) : null}
+
       <header className="app-header">
         <div>
           <p className="eyebrow">Dupla formada</p>
@@ -112,6 +146,8 @@ async function renderDashboardPage() {
       </header>
 
       <PlayingNowDashboard
+        moveLibraryAction={moveLibraryGameAction}
+        pausedGames={library?.groups?.pausado ?? []}
         promoteAction={promotePlayingGameAction}
         reorderAction={reorderPlayingGamesAction}
         view={playingNow}
@@ -145,7 +181,7 @@ async function renderDashboardPage() {
             <span className="muted">
               {totalGames === 0
                 ? "Nada inventado. Busquem o primeiro coop no catalogo."
-                : `${library?.counts.wishlist ?? 0} na Wishlist, ${library?.counts.jogando ?? 0} em Jogando.`}
+                : formatLibraryStatusSummary(library?.counts)}
             </span>
           </div>
           <div className="metric">
@@ -175,4 +211,28 @@ async function renderDashboardPage() {
       </section>
     </AppShell>
   ));
+}
+
+function formatLibraryStatusSummary(
+  counts:
+    | {
+        wishlist: number;
+        jogando: number;
+        pausado: number;
+      }
+    | undefined
+): string {
+  if (!counts) {
+    return "Fila ainda nao carregada.";
+  }
+
+  return [
+    formatCount(counts.wishlist, "na Wishlist", "na Wishlist"),
+    formatCount(counts.jogando, "em Jogando", "em Jogando"),
+    formatCount(counts.pausado, "pausado", "pausados")
+  ].join(", ");
+}
+
+function formatCount(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { confirmPlaySessionUseCase } from "../src/modules/play/application/confirm-play-session";
+import { endLiveSessionUseCase } from "../src/modules/play/application/end-live-session";
 import { logOfflineSessionUseCase } from "../src/modules/play/application/log-offline-session";
 import { startLiveSessionUseCase } from "../src/modules/play/application/start-live-session";
 import type {
@@ -112,6 +113,101 @@ describe("Phase 04.3 play session lifecycle", () => {
     ]);
   });
 
+  it("refuses to start or log another session while a confirmation is pending", async () => {
+    const createSession = vi.fn<PlayRepositoryTransaction["createSession"]>();
+    const { repository } = makePlayRepository({
+      transaction: {
+        createSession,
+        readGamePlayDetail: vi.fn(async () =>
+          gamePlayDetailRecord({
+            pendingSessions: [
+              playSessionDetailRecord({
+                id: "pending-1",
+                pendingUserIds: ["member-2"]
+              })
+            ]
+          })
+        )
+      }
+    });
+
+    await expect(
+      startLiveSessionUseCase(
+        {
+          userId: "member-1",
+          catalogGameId: "game-1"
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "pending-confirmation-exists"
+    });
+    await expect(
+      logOfflineSessionUseCase(
+        {
+          userId: "member-1",
+          catalogGameId: "game-1",
+          durationMinutes: 30
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "pending-confirmation-exists"
+    });
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("actions the live-session notification when ending the active session", async () => {
+    const endLiveSession = vi.fn<PlayRepositoryTransaction["endLiveSession"]>(
+      async (input) =>
+        playSessionRecord({
+          id: input.sessionId,
+          duoId: input.duoId,
+          status: "pending_confirmation"
+        })
+    );
+    const markNotificationsActioned = vi.fn<
+      PlayRepositoryTransaction["markNotificationsActioned"]
+    >(async () => 1);
+    const insertNotificationItem = vi.fn<PlayRepositoryTransaction["insertNotificationItem"]>(
+      async (input) => notificationRecord(input)
+    );
+    const { repository } = makePlayRepository({
+      transaction: {
+        endLiveSession,
+        insertNotificationItem,
+        markNotificationsActioned
+      }
+    });
+
+    await expect(
+      endLiveSessionUseCase(
+        {
+          userId: "member-1",
+          sessionId: "session-1",
+          now: new Date("2026-06-05T20:00:00.000Z")
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: true,
+      state: "pending-confirmation",
+      session: expect.objectContaining({
+        id: "session-1",
+        status: "pending_confirmation"
+      })
+    });
+    expect(markNotificationsActioned).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      notificationType: "live-session",
+      actionRefType: "play_session",
+      actionRefId: "session-1"
+    });
+    expect(insertNotificationItem).toHaveBeenCalledTimes(2);
+  });
+
   it("applies confirmed live-session effects only after the second confirmation", async () => {
     const readSessionDetail = vi
       .fn<PlayRepositoryTransaction["readSessionDetail"]>()
@@ -150,9 +246,13 @@ describe("Phase 04.3 play session lifecycle", () => {
         status: "confirmed"
       })
     }));
+    const markNotificationsActioned = vi.fn<
+      PlayRepositoryTransaction["markNotificationsActioned"]
+    >(async () => 1);
     const { repository, transaction } = makePlayRepository({
       transaction: {
         applyConfirmedSessionEffects,
+        markNotificationsActioned,
         readSessionDetail
       }
     });
@@ -191,6 +291,61 @@ describe("Phase 04.3 play session lifecycle", () => {
       actorUserId: "member-2",
       xpAmount: 30
     });
+    expect(markNotificationsActioned).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      notificationType: "session-confirmation",
+      actionRefType: "play_session",
+      actionRefId: "session-1",
+      recipientUserId: "member-2"
+    });
+    expect(markNotificationsActioned).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      notificationType: "session-confirmation",
+      actionRefType: "play_session",
+      actionRefId: "session-1"
+    });
+  });
+
+  it("treats a duplicate session confirmation as already confirmed instead of crashing", async () => {
+    const confirmSession = vi.fn<PlayRepositoryTransaction["confirmSession"]>(
+      async () => null
+    );
+    const applyConfirmedSessionEffects = vi.fn<
+      PlayRepositoryTransaction["applyConfirmedSessionEffects"]
+    >();
+    const { repository } = makePlayRepository({
+      transaction: {
+        applyConfirmedSessionEffects,
+        confirmSession,
+        readSessionDetail: vi.fn(async () =>
+          playSessionDetailRecord({
+            confirmedByUserIds: ["member-1"],
+            pendingUserIds: ["member-2"],
+            confirmationCount: 1,
+            doubleConfirmed: false
+          })
+        )
+      }
+    });
+
+    await expect(
+      confirmPlaySessionUseCase(
+        {
+          userId: "member-1",
+          sessionId: "session-1"
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "already-confirmed"
+    });
+    expect(confirmSession).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      sessionId: "session-1",
+      userId: "member-1"
+    });
+    expect(applyConfirmedSessionEffects).not.toHaveBeenCalled();
   });
 });
 
@@ -289,6 +444,7 @@ function makePlayRepository(input: {
     createMomento: vi.fn(),
     revealMomento: vi.fn(),
     insertNotificationItem: vi.fn(async (notificationInput) => notificationRecord(notificationInput)),
+    markNotificationsActioned: vi.fn(async () => 1),
     insertXpAward: vi.fn(async (awardInput) => xpAwardRecord(awardInput)),
     ...input.transaction
   };

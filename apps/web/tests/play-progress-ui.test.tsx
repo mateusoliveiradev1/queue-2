@@ -121,6 +121,7 @@ describe("Phase 04.3 play progress UI", () => {
         endAction={vi.fn(async () => undefined)}
         gameSlug="it-takes-two"
         startAction={vi.fn(async () => undefined)}
+        viewerUserId="member-2"
       />
     );
 
@@ -129,6 +130,48 @@ describe("Phase 04.3 play progress UI", () => {
     expect(screen.getByRole("heading", { name: /confirmacoes pendentes/i })).toBeInTheDocument();
     expect(screen.getByText(/1h aguardando 1 confirmacao/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /confirmar sessao/i })).toBeInTheDocument();
+  });
+
+  it("does not render a duplicate confirmation button after the viewer already confirmed", () => {
+    render(
+      <LiveSessionPanel
+        catalogGameId="game-1"
+        confirmAction={vi.fn(async () => undefined)}
+        detail={gamePlayDetailRecord({
+          pendingSessions: [
+            sessionDetailRecord({
+              id: "pending-1",
+              confirmedByUserIds: ["member-1"],
+              pendingUserIds: ["member-2"]
+            })
+          ]
+        })}
+        endAction={vi.fn(async () => undefined)}
+        gameSlug="it-takes-two"
+        startAction={vi.fn(async () => undefined)}
+        viewerUserId="member-1"
+      />
+    );
+
+    expect(screen.getByText(/sua confirmacao entrou/i)).toBeInTheDocument();
+    expect(screen.getByText(/confirmacao pendente/i)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /iniciar sessao/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /confirmar sessao/i })).not.toBeInTheDocument();
+  });
+
+  it("disables Jogamos Hoje while a session confirmation is pending", () => {
+    render(
+      <JogamosHojeForm
+        action={vi.fn(async () => undefined)}
+        catalogGameId="game-1"
+        disabledReason="Confirmem a sessao aberta antes de registrar outra."
+        gameSlug="it-takes-two"
+      />
+    );
+
+    expect(screen.getByText(/sessao pendente/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "30 min" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /registrar/i })).toBeDisabled();
   });
 
   it("renders terminal request confirmation controls and hides new requests while pending", () => {

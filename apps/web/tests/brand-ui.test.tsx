@@ -102,6 +102,10 @@ const duoModuleMock = vi.hoisted(() => {
 const libraryModuleMock = vi.hoisted(() => ({
   getLibraryOverview: vi.fn()
 }));
+const playModuleMock = vi.hoisted(() => ({
+  getCurrentPlay: vi.fn(),
+  getDuoNotifications: vi.fn()
+}));
 const navigationMock = vi.hoisted(() => ({
   back: vi.fn(),
   forward: vi.fn(),
@@ -152,6 +156,31 @@ vi.mock("../src/modules/library", async () => {
   };
 });
 
+vi.mock("../src/modules/play", async () => {
+  const dashboard = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-now-dashboard")
+  >("../src/modules/play/presentation/playing-now-dashboard");
+  const orderControls = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-order-controls")
+  >("../src/modules/play/presentation/playing-order-controls");
+  const viewModels = await vi.importActual<
+    typeof import("../src/modules/play/presentation/view-models")
+  >("../src/modules/play/presentation/view-models");
+  const notifications = await vi.importActual<
+    typeof import("../src/modules/play/presentation/notification-center")
+  >("../src/modules/play/presentation/notification-center");
+
+  return {
+    NotificationCenter: notifications.NotificationCenter,
+    PlayingNowDashboard: dashboard.PlayingNowDashboard,
+    PlayingOrderControls: orderControls.PlayingOrderControls,
+    PushPreferences: () => null,
+    getCurrentPlay: playModuleMock.getCurrentPlay,
+    getDuoNotifications: playModuleMock.getDuoNotifications,
+    toPlayingNowView: viewModels.toPlayingNowView
+  };
+});
+
 vi.mock("next/navigation", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/navigation")>();
 
@@ -198,6 +227,22 @@ beforeEach(() => {
         pausado: []
       },
       lockedStatuses: ["zerado", "dropado"]
+    }
+  });
+  playModuleMock.getCurrentPlay.mockResolvedValue({
+    ok: true,
+    currentPlay: {
+      games: [],
+      principal: null,
+      secondaries: [],
+      limit: 3
+    }
+  });
+  playModuleMock.getDuoNotifications.mockResolvedValue({
+    ok: true,
+    center: {
+      unreadCount: 0,
+      items: []
     }
   });
 });
@@ -347,13 +392,13 @@ describe("authenticated Phase 1 surfaces", () => {
       screen.getByRole("navigation", { name: /area autenticada queue dois/i })
     );
 
-    expect(screen.getByRole("heading", { name: /a fila ja tem dono/i })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /jogando agora/i })).toBeInTheDocument();
     expect(navigation.getByRole("link", { name: /catalogo/i })).toHaveAttribute("href", "/app/catalogo");
     expect(navigation.getByRole("link", { name: /biblioteca/i })).toHaveAttribute("href", "/app/biblioteca");
     expect(screen.getByText("descobrir")).toBeInTheDocument();
     expect(screen.getByText("decidir")).toBeInTheDocument();
     expect(screen.getByText("zerar")).toBeInTheDocument();
-    expect(screen.getByText(/nada inventado/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /nenhum principal definido/i })).toBeInTheDocument();
   });
 
   it("renders profile display name, active sessions and logout sections", async () => {

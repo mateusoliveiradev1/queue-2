@@ -67,6 +67,10 @@ const libraryModuleMock = vi.hoisted(() => ({
   getLibraryOverview: vi.fn(),
   toLibraryOverviewView: vi.fn()
 }));
+const playModuleMock = vi.hoisted(() => ({
+  getCurrentPlay: vi.fn(),
+  getDuoNotifications: vi.fn()
+}));
 
 vi.mock("../src/platform/auth/session", () => ({
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
@@ -155,6 +159,30 @@ vi.mock("../src/modules/library", () => ({
   ),
   toLibraryOverviewView: libraryModuleMock.toLibraryOverviewView
 }));
+
+vi.mock("../src/modules/play", async () => {
+  const dashboard = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-now-dashboard")
+  >("../src/modules/play/presentation/playing-now-dashboard");
+  const orderControls = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-order-controls")
+  >("../src/modules/play/presentation/playing-order-controls");
+  const viewModels = await vi.importActual<
+    typeof import("../src/modules/play/presentation/view-models")
+  >("../src/modules/play/presentation/view-models");
+  const notifications = await vi.importActual<
+    typeof import("../src/modules/play/presentation/notification-center")
+  >("../src/modules/play/presentation/notification-center");
+
+  return {
+    NotificationCenter: notifications.NotificationCenter,
+    PlayingNowDashboard: dashboard.PlayingNowDashboard,
+    PlayingOrderControls: orderControls.PlayingOrderControls,
+    getCurrentPlay: playModuleMock.getCurrentPlay,
+    getDuoNotifications: playModuleMock.getDuoNotifications,
+    toPlayingNowView: viewModels.toPlayingNowView
+  };
+});
 
 import DashboardPage from "../src/app/app/page";
 import DiscoveryPage from "../src/app/app/descobrir/page";
@@ -297,6 +325,22 @@ beforeEach(() => {
     },
     commonPlatformLabels: ["PC"]
   });
+  playModuleMock.getCurrentPlay.mockResolvedValue({
+    ok: true,
+    currentPlay: {
+      games: [],
+      principal: null,
+      secondaries: [],
+      limit: 3
+    }
+  });
+  playModuleMock.getDuoNotifications.mockResolvedValue({
+    ok: true,
+    center: {
+      unreadCount: 0,
+      items: []
+    }
+  });
 });
 
 describe("Phase 3 Discovery route shell", () => {
@@ -310,11 +354,11 @@ describe("Phase 3 Discovery route shell", () => {
       "href",
       "/app/descobrir"
     );
-    expect(screen.getByRole("link", { name: /abrir descobrir/i })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /descobrir matches/i })).toHaveAttribute(
       "href",
       "/app/descobrir"
     );
-    expect(screen.getByText(/roleta e sessoes entram depois/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /jogando agora/i })).toBeInTheDocument();
   });
 
   it("renders the server Discovery shell from public discovery APIs", async () => {

@@ -50,9 +50,22 @@ export async function confirmPlaySessionUseCase(
       userId: input.userId
     });
 
-    if (!confirmation && existing.confirmedByUserIds.includes(input.userId)) {
-      return { ok: false, reason: "already-confirmed" };
+    if (!confirmation) {
+      return {
+        ok: false,
+        reason: existing.confirmedByUserIds.includes(input.userId)
+          ? "already-confirmed"
+          : "session-not-found"
+      };
     }
+
+    await transaction.markNotificationsActioned({
+      duoId: membership.duoId,
+      notificationType: "session-confirmation",
+      actionRefType: "play_session",
+      actionRefId: input.sessionId,
+      recipientUserId: input.userId
+    });
 
     const detail = await transaction.readSessionDetail({
       duoId: membership.duoId,
@@ -70,6 +83,13 @@ export async function confirmPlaySessionUseCase(
         detail
       };
     }
+
+    await transaction.markNotificationsActioned({
+      duoId: membership.duoId,
+      notificationType: "session-confirmation",
+      actionRefType: "play_session",
+      actionRefId: input.sessionId
+    });
 
     const effect = await transaction.applyConfirmedSessionEffects({
       duoId: membership.duoId,

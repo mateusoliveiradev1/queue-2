@@ -9,12 +9,16 @@ const durationPresets = [
 export function JogamosHojeForm({
   action,
   catalogGameId,
+  disabledReason,
   gameSlug
 }: {
   action: PlayJourneyAction;
   catalogGameId: string;
+  disabledReason?: string | null;
   gameSlug: string;
 }) {
+  const disabled = Boolean(disabledReason);
+
   return (
     <section className="surface-band app-section play-panel" aria-labelledby="jogamos-hoje-title">
       <div className="section-heading">
@@ -25,13 +29,19 @@ export function JogamosHojeForm({
           Registre uma sessao offline em poucos cliques. Ela fica pendente ate o parceiro confirmar.
         </p>
       </div>
+      {disabledReason ? (
+        <p className="play-session-blocked" role="status">
+          <strong>Sessao pendente</strong>
+          <span className="muted">{disabledReason}</span>
+        </p>
+      ) : null}
       <div className="offline-presets" role="group" aria-label="Duracao da sessao offline">
         {durationPresets.map((preset) => (
           <form action={action} key={preset.value}>
             <input name="catalogGameId" type="hidden" value={catalogGameId} />
             <input name="durationMinutes" type="hidden" value={preset.value} />
             <input name="gameSlug" type="hidden" value={gameSlug} />
-            <button className="queue2-button" data-tone="primary" type="submit">
+            <button className="queue2-button" data-tone="primary" disabled={disabled} type="submit">
               {preset.label}
             </button>
           </form>
@@ -49,9 +59,10 @@ export function JogamosHojeForm({
             name="durationMinutes"
             placeholder="Minutos"
             type="number"
+            disabled={disabled}
           />
         </label>
-        <button className="queue2-button" data-tone="quiet" type="submit">
+        <button className="queue2-button" data-tone="quiet" disabled={disabled} type="submit">
           Registrar
         </button>
       </form>

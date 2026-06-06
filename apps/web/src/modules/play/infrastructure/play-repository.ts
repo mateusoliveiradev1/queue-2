@@ -312,9 +312,15 @@ export function createPlayRepository(pool: QueueDbPool = getRuntimePool()): Play
         });
       }),
     createSessionConfirmation: (input) =>
-      withAppUserTransaction(pool, input.userId, (client) =>
-        createSessionConfirmation(client, input)
-      ),
+      withAppUserTransaction(pool, input.userId, async (client) => {
+        const membership = await resolveMembership(client, input.userId);
+        return membership
+          ? createSessionConfirmation(client, {
+              ...input,
+              duoId: membership.duoId
+            })
+          : null;
+      }),
     cancelConfirmation: (input) =>
       withAppUserTransaction(pool, input.userId, (client) =>
         cancelPendingSessionConfirmation(client, input)
@@ -382,14 +388,9 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     createSession: (input) => createSession(client, input),
     confirmSession: (input) =>
       createSessionConfirmation(client, {
+        duoId: input.duoId,
         userId: input.userId,
         sessionId: input.sessionId
-      }).then((confirmation) => {
-        if (!confirmation) {
-          throw new Error("play_session_confirmation_failed");
-        }
-
-        return confirmation;
       }),
     readGamePlayDetail: async (input) => {
       const membership = await resolveMembershipByDuo(client, input.duoId);
@@ -446,6 +447,7 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     createMomento: (input) => createMomento(client, input),
     revealMomento: (input) => revealMomento(client, input),
     insertNotificationItem: (input) => insertNotificationItem(client, input),
+    markNotificationsActioned: (input) => markNotificationsActioned(client, input),
     insertXpAward: (input) =>
       insertXpAward(client, input).then((award) => {
         if (!award) {
@@ -562,34 +564,22 @@ async function readGamePlayDetail(
     return null;
   }
 
-  const [
-    duoTimezone,
-    currentGames,
-    activeLiveSession,
-    pendingSessions,
-    progress,
-    chapters,
-    terminalRequest,
-    scheduledSessions
-  ] =
-    await Promise.all([
-      readDuoTimezone(client, input.duoId),
-      readCurrentPlayGames(client, input.duoId),
-      readActiveLiveSession(client, input.duoId),
-      readPendingSessionsForLibraryGame(client, {
-        duoId: input.duoId,
-        libraryGameId: libraryGame.id,
-        memberUserIds: input.memberUserIds
-      }),
-      readProgress(client, input.duoId, libraryGame.id),
-      readChapters(client, input.duoId, libraryGame.id),
-      readPendingTerminalRequest(client, input.duoId, libraryGame.id),
-      readScheduledSessionsForLibraryGame(client, {
-        duoId: input.duoId,
-        libraryGameId: libraryGame.id,
-        memberUserIds: input.memberUserIds
-      })
-    ]);
+  const duoTimezone = await readDuoTimezone(client, input.duoId);
+  const currentGames = await readCurrentPlayGames(client, input.duoId);
+  const activeLiveSession = await readActiveLiveSession(client, input.duoId);
+  const pendingSessions = await readPendingSessionsForLibraryGame(client, {
+    duoId: input.duoId,
+    libraryGameId: libraryGame.id,
+    memberUserIds: input.memberUserIds
+  });
+  const progress = await readProgress(client, input.duoId, libraryGame.id);
+  const chapters = await readChapters(client, input.duoId, libraryGame.id);
+  const terminalRequest = await readPendingTerminalRequest(client, input.duoId, libraryGame.id);
+  const scheduledSessions = await readScheduledSessionsForLibraryGame(client, {
+    duoId: input.duoId,
+    libraryGameId: libraryGame.id,
+    memberUserIds: input.memberUserIds
+  });
 
   return {
     duoId: input.duoId,
@@ -639,20 +629,18 @@ async function readGameTimeline(
     return null;
   }
 
-  const [timezone, sessions, chapters, momentos] = await Promise.all([
-    readDuoTimezone(client, input.duoId),
-    readConfirmedSessionsForLibraryGame(client, {
-      duoId: input.duoId,
-      libraryGameId: libraryGame.id,
-      memberUserIds: input.memberUserIds
-    }),
-    readChapters(client, input.duoId, libraryGame.id),
-    readMomentosForLibraryGame(client, {
-      duoId: input.duoId,
-      libraryGameId: libraryGame.id,
-      viewerUserId: input.viewerUserId
-    })
-  ]);
+  const timezone = await readDuoTimezone(client, input.duoId);
+  const sessions = await readConfirmedSessionsForLibraryGame(client, {
+    duoId: input.duoId,
+    libraryGameId: libraryGame.id,
+    memberUserIds: input.memberUserIds
+  });
+  const chapters = await readChapters(client, input.duoId, libraryGame.id);
+  const momentos = await readMomentosForLibraryGame(client, {
+    duoId: input.duoId,
+    libraryGameId: libraryGame.id,
+    viewerUserId: input.viewerUserId
+  });
 
   const sessionEvents: PlayTimelineEvent[] = sessions.map((session) => ({
     id: `session:${session.id}`,
@@ -1694,6 +1682,7 @@ async function endLiveSession(
 async function createSessionConfirmation(
   client: QueueDbClient,
   input: {
+    duoId: string;
     userId: string;
     sessionId: string;
   }
@@ -1708,6 +1697,8 @@ async function createSessionConfirmation(
       SELECT session.duo_id, session.id, $2
       FROM app.play_sessions AS session
       WHERE session.id = $1
+        AND session.duo_id = $3
+        AND session.status = 'pending_confirmation'
       ON CONFLICT (session_id, user_id) DO NOTHING
       RETURNING
         id,
@@ -1716,7 +1707,7 @@ async function createSessionConfirmation(
         user_id,
         confirmed_at
     `,
-    [input.sessionId, input.userId]
+    [input.sessionId, input.userId, input.duoId]
   );
   const row = result.rows[0];
 
@@ -2346,44 +2337,107 @@ async function readNotificationCenter(
     limit: number;
   }
 ): Promise<PlayNotificationCenterRecord> {
-  const limit = Math.min(Math.max(input.limit, 1), 30);
-  const [items, unread] = await Promise.all([
-    client.query<NotificationRow>(
-      `
-        SELECT
-          id,
-          duo_id,
-          recipient_user_id,
-          notification_type,
-          state,
-          action_ref_type,
-          action_ref_id,
-          title,
-          body,
-          created_at
-        FROM app.play_notifications
-        WHERE duo_id = $1
-          AND state <> 'archived'
-        ORDER BY created_at DESC
-        LIMIT $2
-      `,
-      [input.duoId, limit]
-    ),
-    client.query<{ unread_count: number }>(
-      `
-        SELECT count(*)::int AS unread_count
-        FROM app.play_notifications
-        WHERE duo_id = $1
-          AND state = 'unread'
-      `,
-      [input.duoId]
-    )
-  ]);
+  const limit = Math.min(Math.max(input.limit, 1), 8);
+  const items = await client.query<NotificationRow>(
+    `
+      SELECT
+        notification.id,
+        notification.duo_id,
+        notification.recipient_user_id,
+        notification.notification_type,
+        notification.state,
+        notification.action_ref_type,
+        notification.action_ref_id,
+        notification.title,
+        notification.body,
+        notification.created_at
+      FROM app.play_notifications AS notification
+      LEFT JOIN app.play_sessions AS session
+        ON notification.action_ref_type = 'play_session'
+       AND notification.action_ref_id = session.id
+      WHERE notification.duo_id = $1
+        AND notification.state IN ('unread', 'read')
+        AND (
+          notification.action_ref_type <> 'play_session'
+          OR notification.notification_type NOT IN ('live-session', 'session-confirmation')
+          OR (
+            notification.notification_type = 'live-session'
+            AND session.status = 'active'
+          )
+          OR (
+            notification.notification_type = 'session-confirmation'
+            AND session.status = 'pending_confirmation'
+          )
+        )
+      ORDER BY notification.created_at DESC
+      LIMIT $2
+    `,
+    [input.duoId, limit]
+  );
+  const unread = await client.query<{ unread_count: number }>(
+    `
+      SELECT count(*)::int AS unread_count
+      FROM app.play_notifications AS notification
+      LEFT JOIN app.play_sessions AS session
+        ON notification.action_ref_type = 'play_session'
+       AND notification.action_ref_id = session.id
+      WHERE notification.duo_id = $1
+        AND notification.state = 'unread'
+        AND (
+          notification.action_ref_type <> 'play_session'
+          OR notification.notification_type NOT IN ('live-session', 'session-confirmation')
+          OR (
+            notification.notification_type = 'live-session'
+            AND session.status = 'active'
+          )
+          OR (
+            notification.notification_type = 'session-confirmation'
+            AND session.status = 'pending_confirmation'
+          )
+        )
+    `,
+    [input.duoId]
+  );
 
   return {
     unreadCount: Number(unread.rows[0]?.unread_count ?? 0),
     items: items.rows.map(mapNotification)
   };
+}
+
+async function markNotificationsActioned(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    notificationType?: string;
+    actionRefType: string;
+    actionRefId: string;
+    recipientUserId?: string | null;
+  }
+): Promise<number> {
+  const result = await client.query(
+    `
+      UPDATE app.play_notifications
+      SET state = 'actioned',
+          read_at = COALESCE(read_at, now()),
+          updated_at = now()
+      WHERE duo_id = $1
+        AND action_ref_type = $2
+        AND action_ref_id = $3::uuid
+        AND state IN ('unread', 'read')
+        AND ($4::text IS NULL OR notification_type = $4)
+        AND ($5::text IS NULL OR recipient_user_id = $5)
+    `,
+    [
+      input.duoId,
+      input.actionRefType,
+      input.actionRefId,
+      input.notificationType ?? null,
+      input.recipientUserId ?? null
+    ]
+  );
+
+  return result.rowCount ?? 0;
 }
 
 async function registerPushSubscription(

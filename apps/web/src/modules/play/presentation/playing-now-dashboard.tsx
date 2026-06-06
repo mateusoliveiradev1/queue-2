@@ -19,24 +19,44 @@ type PlayOrderMutationResult =
     };
 
 type PlayOrderAction = (formData: FormData) => Promise<PlayOrderMutationResult>;
+type LibraryMoveAction = (formData: FormData) => Promise<void>;
+
+type PausedQueueGameView = {
+  catalogGameId: string;
+  slug: string;
+  name: string;
+  coverUrl: string | null;
+  commonPlatformLabels: string[];
+  duoJourney: string;
+};
 
 export function PlayingNowDashboard({
+  moveLibraryAction,
+  pausedGames = [],
   promoteAction,
   reorderAction,
   view
 }: {
+  moveLibraryAction?: LibraryMoveAction;
+  pausedGames?: PausedQueueGameView[];
   promoteAction: PlayOrderAction;
   reorderAction: PlayOrderAction;
   view: PlayingNowViewModel;
 }) {
   if (!view.principal) {
+    const hasPausedGames = pausedGames.length > 0;
+
     return (
       <section className="playing-now app-section" aria-labelledby="playing-now-title">
         <div className="section-heading">
           <p className="eyebrow">Jogando Agora</p>
-          <h2 id="playing-now-title">Nenhum Principal definido</h2>
+          <h2 id="playing-now-title">
+            {hasPausedGames ? "Fila pausada" : "Nenhum Principal definido"}
+          </h2>
           <p className="support-copy">
-            Escolham ate tres jogos em Jogando. O primeiro vira Principal automaticamente.
+            {hasPausedGames
+              ? "Retomem um jogo pausado ou escolham outro coop para virar Principal."
+              : "Escolham ate tres jogos em Jogando. O primeiro vira Principal automaticamente."}
           </p>
         </div>
         <div className="playing-empty-actions">
@@ -47,6 +67,10 @@ export function PlayingNowDashboard({
             Descobrir matches
           </a>
         </div>
+        <PausedQueuePanel
+          games={pausedGames}
+          moveLibraryAction={moveLibraryAction}
+        />
       </section>
     );
   }
@@ -64,6 +88,15 @@ export function PlayingNowDashboard({
       <div className="playing-now-layout">
         <PrincipalHero game={view.principal} />
         <aside className="playing-secondary-panel" aria-label="Jogos secundarios">
+          <div className="playing-rail-card">
+            <p className="eyebrow">Fila ativa</p>
+            <strong>{view.activeCountLabel}</strong>
+            <span>
+              {view.secondaries.length
+                ? `${view.secondaries.length} secundarios segurando alternativas.`
+                : "Sem secundarios; foco total no Principal."}
+            </span>
+          </div>
           <div className="playing-secondary-list">
             {view.secondaries.length ? (
               view.secondaries.map((game) => (
@@ -75,6 +108,10 @@ export function PlayingNowDashboard({
               </p>
             )}
           </div>
+          <PausedQueuePanel
+            games={pausedGames}
+            moveLibraryAction={moveLibraryAction}
+          />
           <PlayingOrderControls
             games={view.games}
             promoteAction={promoteAction}
@@ -83,6 +120,97 @@ export function PlayingNowDashboard({
         </aside>
       </div>
     </section>
+  );
+}
+
+function PausedQueuePanel({
+  games,
+  moveLibraryAction
+}: {
+  games: PausedQueueGameView[];
+  moveLibraryAction?: LibraryMoveAction;
+}) {
+  if (!games.length) {
+    return null;
+  }
+
+  return (
+    <section className="playing-paused-panel" aria-labelledby="playing-paused-title">
+      <div className="playing-paused-heading">
+        <div>
+          <p className="eyebrow">Pausado</p>
+          <h3 id="playing-paused-title">Na reserva da dupla</h3>
+        </div>
+        <span>{games.length}</span>
+      </div>
+      <div className="playing-paused-list">
+        {games.slice(0, 3).map((game) => (
+          <PausedGameCard
+            game={game}
+            key={game.catalogGameId}
+            moveLibraryAction={moveLibraryAction}
+          />
+        ))}
+      </div>
+      {games.length > 3 ? (
+        <a className="queue2-button" data-tone="quiet" href="/app/biblioteca?visao=pausado">
+          Ver todos pausados
+        </a>
+      ) : null}
+    </section>
+  );
+}
+
+function PausedGameCard({
+  game,
+  moveLibraryAction
+}: {
+  game: PausedQueueGameView;
+  moveLibraryAction?: LibraryMoveAction;
+}) {
+  return (
+    <article className="playing-paused-card">
+      <a className="playing-paused-cover queue2-focusable" href={`/app/jogo/${game.slug}`}>
+        {game.coverUrl ? (
+          <Image
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="72px"
+            src={game.coverUrl}
+          />
+        ) : (
+          <span aria-hidden="true">/2</span>
+        )}
+      </a>
+      <div className="playing-paused-copy">
+        <h4>
+          <a className="queue2-focusable" href={`/app/jogo/${game.slug}`}>
+            {game.name}
+          </a>
+        </h4>
+        <p>
+          {game.commonPlatformLabels.length
+            ? `Em comum: ${game.commonPlatformLabels.join(", ")}`
+            : game.duoJourney}
+        </p>
+        <div className="playing-paused-actions">
+          {moveLibraryAction ? (
+            <form action={moveLibraryAction}>
+              <input name="catalogGameId" type="hidden" value={game.catalogGameId} />
+              <input name="status" type="hidden" value="jogando" />
+              <input name="returnTo" type="hidden" value="/app" />
+              <button className="queue2-button" data-tone="primary" type="submit">
+                Retomar
+              </button>
+            </form>
+          ) : null}
+          <a className="queue2-button" data-tone="quiet" href={`/app/jogo/${game.slug}`}>
+            Abrir
+          </a>
+        </div>
+      </div>
+    </article>
   );
 }
 

@@ -15,7 +15,8 @@ export type LogOfflineSessionResult =
         | "duration-out-of-range"
         | "library-game-not-found"
         | "membership-required"
-        | "not-playing";
+        | "not-playing"
+        | "pending-confirmation-exists";
     };
 
 export async function logOfflineSessionUseCase(
@@ -51,6 +52,10 @@ export async function logOfflineSessionUseCase(
 
     if (detail.libraryStatus !== "jogando" || !detail.activeGame) {
       return { ok: false, reason: "not-playing" };
+    }
+
+    if (detail.pendingSessions.length > 0) {
+      return { ok: false, reason: "pending-confirmation-exists" };
     }
 
     const endedAt = input.now ?? new Date();

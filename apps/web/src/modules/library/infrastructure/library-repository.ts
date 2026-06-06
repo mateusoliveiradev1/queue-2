@@ -119,10 +119,8 @@ async function getOverview(
       return null;
     }
 
-    const [memberPlatforms, libraryGames] = await Promise.all([
-      getMemberPlatforms(client, membership.duoId),
-      getLibraryGames(client, membership.duoId)
-    ]);
+    const memberPlatforms = await getMemberPlatforms(client, membership.duoId);
+    const libraryGames = await getLibraryGames(client, membership.duoId);
     const details = await hydrateLibraryRows(client, libraryGames, memberPlatforms);
     const groups = createEmptyGroups();
 
@@ -910,45 +908,43 @@ async function getCatalogFactsByIds(
     return new Map();
   }
 
-  const [gamesResult, platformResult] = await Promise.all([
-    client.query<CatalogGameRow>(
-      `
-        SELECT
-          game.id,
-          game.slug,
-          game.name,
-          game.background_image_url,
-          game.main_flow_eligible,
-          game.coop_campaign_confirmed,
-          EXISTS (
-            SELECT 1
-            FROM catalog.game_time_estimates AS estimate
-            WHERE estimate.game_id = game.id
-              AND estimate.minutes IS NOT NULL
-              AND estimate.confidence IN ('verified', 'estimated')
-          ) AS has_reliable_time_estimate,
-          EXISTS (
-            SELECT 1
-            FROM catalog.game_availability AS availability
-            WHERE availability.game_id = game.id
-              AND availability.status = 'available'
-          ) AS has_verified_availability
-        FROM catalog.games AS game
-        WHERE game.id = ANY($1::uuid[])
-        ORDER BY game.name ASC
-      `,
-      [catalogGameIds]
-    ),
-    client.query<{ game_id: string; platform_key: string }>(
-      `
-        SELECT game_id, platform_key
-        FROM catalog.game_platforms
-        WHERE game_id = ANY($1::uuid[])
-        ORDER BY game_id ASC, platform_key ASC
-      `,
-      [catalogGameIds]
-    )
-  ]);
+  const gamesResult = await client.query<CatalogGameRow>(
+    `
+      SELECT
+        game.id,
+        game.slug,
+        game.name,
+        game.background_image_url,
+        game.main_flow_eligible,
+        game.coop_campaign_confirmed,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_time_estimates AS estimate
+          WHERE estimate.game_id = game.id
+            AND estimate.minutes IS NOT NULL
+            AND estimate.confidence IN ('verified', 'estimated')
+        ) AS has_reliable_time_estimate,
+        EXISTS (
+          SELECT 1
+          FROM catalog.game_availability AS availability
+          WHERE availability.game_id = game.id
+            AND availability.status = 'available'
+        ) AS has_verified_availability
+      FROM catalog.games AS game
+      WHERE game.id = ANY($1::uuid[])
+      ORDER BY game.name ASC
+    `,
+    [catalogGameIds]
+  );
+  const platformResult = await client.query<{ game_id: string; platform_key: string }>(
+    `
+      SELECT game_id, platform_key
+      FROM catalog.game_platforms
+      WHERE game_id = ANY($1::uuid[])
+      ORDER BY game_id ASC, platform_key ASC
+    `,
+    [catalogGameIds]
+  );
   const platformsByGameId = new Map<string, PlatformKey[]>();
 
   for (const row of platformResult.rows) {

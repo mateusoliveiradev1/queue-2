@@ -163,14 +163,11 @@ async function getReadState(
     }
 
     const catalogGameIds = [...new Set(input.catalogGameIds)].filter(Boolean);
-    const [decisions, libraryRows, matches, positiveGenres, currentDuoDecisionCount] =
-      await Promise.all([
-        getDecisions(client, context.duoId, catalogGameIds),
-        getLibraryRows(client, context.duoId, catalogGameIds),
-        getMatches(client, context.duoId, catalogGameIds),
-        getPositiveGenres(client, context.duoId),
-        getCurrentDuoDecisionCount(client, context.duoId)
-      ]);
+    const decisions = await getDecisions(client, context.duoId, catalogGameIds);
+    const libraryRows = await getLibraryRows(client, context.duoId, catalogGameIds);
+    const matches = await getMatches(client, context.duoId, catalogGameIds);
+    const positiveGenres = await getPositiveGenres(client, context.duoId);
+    const currentDuoDecisionCount = await getCurrentDuoDecisionCount(client, context.duoId);
 
     return {
       context,
@@ -582,18 +579,16 @@ async function getMoodQuizStatus(
     }
 
     const quizRound = await getCurrentMoodQuizRound(client, context.duoId);
-    const [mood, currentUserAnswered] = await Promise.all([
-      getMergedMoodForRound(client, {
-        duoId: context.duoId,
-        quizRound,
-        memberUserIds: context.memberUserIds
-      }),
-      hasCompleteMoodAnswerForRound(client, {
-        duoId: context.duoId,
-        userId: input.userId,
-        quizRound
-      })
-    ]);
+    const mood = await getMergedMoodForRound(client, {
+      duoId: context.duoId,
+      quizRound,
+      memberUserIds: context.memberUserIds
+    });
+    const currentUserAnswered = await hasCompleteMoodAnswerForRound(client, {
+      duoId: context.duoId,
+      userId: input.userId,
+      quizRound
+    });
 
     return {
       ok: true as const,

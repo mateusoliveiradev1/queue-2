@@ -264,6 +264,7 @@ function makeTerminalRepository(input: {
     createMomento: vi.fn(),
     revealMomento: vi.fn(),
     insertNotificationItem: vi.fn(async (notificationInput) => notificationRecord(notificationInput)),
+    markNotificationsActioned: vi.fn(async () => 1),
     insertXpAward: vi.fn(async (awardInput) => xpAwardRecord(awardInput)),
     ...input.transaction
   };
