@@ -39,10 +39,18 @@ const repositorySource = readFileSync(
   "src/modules/gamification/infrastructure/gamification-repository.ts",
   "utf8"
 );
+const questRunnerSource = readFileSync(
+  "src/modules/gamification/application/run-quest-rotation-jobs.ts",
+  "utf8"
+);
+const streakRunnerSource = readFileSync(
+  "src/modules/gamification/application/run-streak-jobs.ts",
+  "utf8"
+);
 const vercelSource = readFileSync("../../vercel.json", "utf8");
 
 describe("Phase 05.5 gamification maintenance jobs", () => {
-  it("rotates weekly, monthly and seasonal cycles idempotently per duo window", async () => {
+  it("rotates one quest species per job and enqueues its next local boundary", async () => {
     const upserted = new Map<string, GamificationQuestCycleRecord>();
     const upsertQuestCycle = vi.fn<GamificationRepositoryTransaction["upsertQuestCycle"]>(
       async (input) => {
@@ -72,12 +80,29 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
       jobs: [
         jobRecord({
           id: "job-1",
-          payload: { createdByUserId: "member-1", now: now.toISOString() }
+          payload: {
+            createdByUserId: "member-1",
+            now: now.toISOString(),
+            questType: "weekly"
+          }
         }),
         jobRecord({
           id: "job-2",
-          jobKey: "gamification-quest-rotation:duo-1:duplicate",
-          payload: { createdByUserId: "member-1", now: now.toISOString() }
+          jobKey: "gamification-quest-rotation:duo-1:monthly",
+          payload: {
+            createdByUserId: "member-1",
+            now: now.toISOString(),
+            questType: "monthly"
+          }
+        }),
+        jobRecord({
+          id: "job-3",
+          jobKey: "gamification-quest-rotation:duo-1:seasonal",
+          payload: {
+            createdByUserId: "member-1",
+            now: now.toISOString(),
+            questType: "seasonal"
+          }
         })
       ],
       upsertQuestCycle
@@ -94,10 +119,10 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
 
     expect(result).toEqual({
       ok: true,
-      claimed: 2,
-      completed: 2,
+      claimed: 3,
+      completed: 3,
       failed: 0,
-      cyclesUpserted: 14,
+      cyclesUpserted: 5,
       skipped: 0
     });
     expect(repository.claimDueGamificationJobs).toHaveBeenCalledWith({
@@ -106,11 +131,9 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
       now,
       workerId: "test-rotation"
     });
-    expect(upserted.size).toBe(7);
+    expect(upserted.size).toBe(5);
     expect([...upserted.values()].map((cycle) => cycle.questType).sort()).toEqual([
       "monthly",
-      "seasonal",
-      "seasonal",
       "seasonal",
       "weekly",
       "weekly",
@@ -120,10 +143,40 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
       expect.arrayContaining([
         "duo-1:sessao-confirmada:weekly:2026-06-01",
         "duo-1:mes-da-fila:monthly:2026-06",
-        "duo-1:spooky-coop:seasonal:spooky:2026"
+        "duo-1:aniversario-da-fila:seasonal:anniversary:2026"
       ])
     );
-    expect(repository.completeGamificationJob).toHaveBeenCalledTimes(2);
+    expect(repository.enqueueGamificationJob).toHaveBeenNthCalledWith(1, {
+      createdByUserId: "member-1",
+      duoId: "duo-1",
+      jobKey: "gamification:duo-1:weekly:2026-06-08T03:00:00.000Z",
+      payload: {
+        questType: "weekly"
+      },
+      runAt: new Date("2026-06-08T03:00:00.000Z"),
+      scheduleKind: "weekly"
+    });
+    expect(repository.enqueueGamificationJob).toHaveBeenNthCalledWith(2, {
+      createdByUserId: "member-1",
+      duoId: "duo-1",
+      jobKey: "gamification:duo-1:monthly:2026-07-01T03:00:00.000Z",
+      payload: {
+        questType: "monthly"
+      },
+      runAt: new Date("2026-07-01T03:00:00.000Z"),
+      scheduleKind: "monthly"
+    });
+    expect(repository.enqueueGamificationJob).toHaveBeenNthCalledWith(3, {
+      createdByUserId: "member-1",
+      duoId: "duo-1",
+      jobKey: "gamification:duo-1:seasonal:2026-07-01T03:00:00.000Z",
+      payload: {
+        questType: "seasonal"
+      },
+      runAt: new Date("2026-07-01T03:00:00.000Z"),
+      scheduleKind: "seasonal"
+    });
+    expect(repository.completeGamificationJob).toHaveBeenCalledTimes(3);
     expect(repository.failGamificationJob).not.toHaveBeenCalled();
   });
 
@@ -211,6 +264,75 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
         xpDelta: 0
       })
     );
+    expect(repository.enqueueGamificationJob).toHaveBeenCalledTimes(2);
+    expect(repository.enqueueGamificationJob).toHaveBeenNthCalledWith(1, {
+      createdByUserId: "member-1",
+      duoId: "duo-1",
+      jobKey: "gamification:duo-1:streak:2026-06-09T07:00:00.000Z",
+      payload: {
+        checkAt: "2026-06-09T07:00:00.000Z"
+      },
+      runAt: new Date("2026-06-09T07:00:00.000Z"),
+      scheduleKind: "streak"
+    });
+    expect(repository.enqueueGamificationJob).toHaveBeenNthCalledWith(2, {
+      createdByUserId: "member-1",
+      duoId: "duo-1",
+      jobKey: "gamification:duo-1:streak:2026-06-09T07:00:00.000Z",
+      payload: {
+        checkAt: "2026-06-09T07:00:00.000Z"
+      },
+      runAt: new Date("2026-06-09T07:00:00.000Z"),
+      scheduleKind: "streak"
+    });
+  });
+
+  it("fails invalid or unauthorized jobs without creating a successor", async () => {
+    const invalidPayloadRepository = fakeGamificationRepository({
+      jobs: [
+        jobRecord({
+          payload: {
+            createdByUserId: "member-1",
+            questTypes: ["weekly"]
+          }
+        })
+      ]
+    });
+
+    await expect(
+      runQuestRotationJobsUseCase({ now }, invalidPayloadRepository)
+    ).resolves.toMatchObject({
+      claimed: 1,
+      completed: 0,
+      failed: 1
+    });
+    expect(invalidPayloadRepository.enqueueGamificationJob).not.toHaveBeenCalled();
+    expect(invalidPayloadRepository.completeGamificationJob).not.toHaveBeenCalled();
+    expect(invalidPayloadRepository.failGamificationJob).toHaveBeenCalledTimes(1);
+
+    const unauthorizedRepository = fakeGamificationRepository({
+      jobs: [
+        jobRecord({
+          jobType: "gamification-streak-check",
+          payload: {
+            checkAt: now.toISOString(),
+            createdByUserId: "member-missing"
+          }
+        })
+      ],
+      membership: null
+    });
+
+    await expect(
+      runStreakJobsUseCase({ now }, unauthorizedRepository)
+    ).resolves.toMatchObject({
+      claimed: 1,
+      completed: 0,
+      failed: 1
+    });
+    expect(unauthorizedRepository.enqueueGamificationJob).not.toHaveBeenCalled();
+    expect(unauthorizedRepository.completeGamificationJob).not.toHaveBeenCalled();
+    expect(unauthorizedRepository.failGamificationJob).toHaveBeenCalledTimes(1);
   });
 
   it("guards the maintenance route and script with CRON_SECRET", () => {
@@ -246,6 +368,9 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
     expect(repositorySource).toContain("gamification-streak-check");
     expect(repositorySource).toContain("FOR UPDATE SKIP LOCKED");
     expect(repositorySource).toContain("Math.min(Math.max(input.limit, 1), 100)");
+    expect(questRunnerSource).not.toContain("duoWindowDate");
+    expect(questRunnerSource).not.toContain("T00:00:00.000Z");
+    expect(streakRunnerSource).toContain("getNextStreakCheckAt");
   });
 
   it("bootstraps four idempotent job species only for ready duos", async () => {
