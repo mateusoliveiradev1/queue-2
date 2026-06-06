@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-03-PLAN.md
-last_updated: "2026-06-06T09:54:17.445Z"
+stopped_at: Completed 05-04-PLAN.md
+last_updated: "2026-06-06T10:17:31.737Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 41
-  completed_plans: 38
-  percent: 93
+  completed_plans: 39
+  percent: 95
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 05 (gamificacao-coletiva) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-06-06
 
-Progress: [█████████░] 93%
+Progress: [██████████] 95%
 
 ## Performance Metrics
 
@@ -92,6 +92,7 @@ Progress: [█████████░] 93%
 | Phase 05 P01 | 27 min | 3 tasks | 19 files |
 | Phase 05-gamificacao-coletiva P02 | 27min | 3 tasks | 25 files |
 | Phase 05-gamificacao-coletiva P03 | 15min | 3 tasks | 16 files |
+| Phase 05-gamificacao-coletiva P04 | 18min | 3 tasks | 15 files |
 
 ## Quick Tasks Completed
 
@@ -250,6 +251,10 @@ Recent decisions affecting current work:
 - [Phase 05-03]: A faixa de gamificacao fica imediatamente abaixo de Jogando Agora e resume desafios/conquistas. — As rotas dedicadas de conquistas e desafios continuam sendo as superficies completas.
 - [Phase 05-03]: Historico de XP usa linguagem de produto para a dupla, nao nomes tecnicos de eventos. — Mantem o ledger discreto e alinhado ao ritual coletivo.
 - [Phase 05-03]: Evidencia browser de acessibilidade fica bloqueada ate fixtures autenticadas estarem configuradas. — O skip exige E2E_BASE_URL, E2E_READY_USER_EMAIL e E2E_READY_USER_PASSWORD.
+- [Phase 05-04]: /app/conquistas reads unlock state on the server from the gamification repository; browser filters never affect unlock authority.
+- [Phase 05-04]: Locked hidden achievements expose mystery copy, synthetic view keys and no slug, predicate or source IDs until unlocked.
+- [Phase 05-04]: Seven-item mobile app navigation uses horizontally scrollable min-width tracks to avoid text overlap.
+- [Phase 05-04]: app.conquistas is registered in performance route allowlists and budgets so static server timing labels stay allowlisted.
 
 ### Pending Todos
 
@@ -287,6 +292,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T09:54:17.439Z
-Stopped at: Completed 05-03-PLAN.md
+Last session: 2026-06-06T10:17:31.731Z
+Stopped at: Completed 05-04-PLAN.md
 Resume file: None
