@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: performance-review
-generated: 2026-06-06T21:00:32.417Z
+generated: 2026-06-06T21:17:27.369Z
 result: BLOCKED - missing external evidence
 ---
 
@@ -10,7 +10,7 @@ result: BLOCKED - missing external evidence
 
 ## Environment
 
-- Generated: 2026-06-06T21:00:32.417Z
+- Generated: 2026-06-06T21:17:27.369Z
 - Evidence environment: root Phase 5 gate command
 - Credentials: process-only; no credential values written to this artifact
 - DB fixture status: configured
@@ -45,14 +45,14 @@ result: BLOCKED - missing external evidence
 
 | Command | Status | Duration |
 |---------|--------|----------|
-| Architecture | passed | 933ms |
-| Web typecheck | passed | 1590ms |
-| DB typecheck | passed | 894ms |
-| Focused gamification tests | passed | 1771ms |
-| DB integration evidence | passed | 6940ms |
-| Apply Phase 5 migrations | passed | 1328ms |
-| Phase 5 schema drift | passed | 180ms |
-| Phase 5 query and performance review | passed | 216ms |
+| Architecture | passed | 899ms |
+| Web typecheck | passed | 1589ms |
+| DB typecheck | passed | 797ms |
+| Focused gamification tests | passed | 1726ms |
+| DB integration evidence | passed | 8766ms |
+| Apply Phase 5 migrations | passed | 1308ms |
+| Phase 5 schema drift | passed | 178ms |
+| Phase 5 query and performance review | passed | 274ms |
 | Browser E2E and accessibility | skipped | 0ms |
 
 ## Missing DB Fixtures

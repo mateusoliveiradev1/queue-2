@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: economy-audit
-generated: 2026-06-06T21:00:32.410Z
+generated: 2026-06-06T21:17:27.360Z
 result: BLOCKED - missing external evidence
 ---
 
@@ -10,8 +10,8 @@ result: BLOCKED - missing external evidence
 
 ## Environment
 
-- Generated: 2026-06-06T21:00:32.410Z
-- Source files scanned: 49
+- Generated: 2026-06-06T21:17:27.360Z
+- Source files scanned: 50
 - DB evidence: configured
 - Browser evidence: blocked
 - Job evidence: blocked
@@ -25,6 +25,7 @@ result: BLOCKED - missing external evidence
 | No competitive ranking | passed | No leaderboard, member ranking or best/worst player copy found in Phase 5 sources. |
 | No shame/punitive copy | passed | Challenge/streak/drop copy may say "sem culpa" or "sem punicao", but no punitive callout is present. |
 | No emoji badge dependency | passed | Achievement icon and catalog source use SVG/icon keys, not emoji glyphs. |
+| 50 reachable achievements | passed | The focused TypeScript suite executes the catalog-to-registry source and fixture audit for all 50 active seeds. |
 | 50 polished level names | passed | 50 unique level names checked, with locked anchors Lv1 Casuais and Lv50 Lendas do Coop. |
 | Valid rarity tokens | passed | Achievement rarities are common/rare/epic/legendary and CSS exposes matching tokens. |
 

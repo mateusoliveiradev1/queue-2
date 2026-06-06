@@ -74,6 +74,7 @@ const commands = [
       "@queue/web",
       "test",
       "gamification-domain",
+      "gamification-achievement-reachability",
       "gamification-application",
       "gamification-rewards",
       "play-gamification-integration",
@@ -390,6 +391,7 @@ function writeEconomyAudit({
     `| No competitive ranking | ${findingStatus(findings, "competition")} | No leaderboard, member ranking or best/worst player copy found in Phase 5 sources. |`,
     `| No shame/punitive copy | ${findingStatus(findings, "shame-copy")} | Challenge/streak/drop copy may say "sem culpa" or "sem punicao", but no punitive callout is present. |`,
     `| No emoji badge dependency | ${findingStatus(findings, "emoji")} | Achievement icon and catalog source use SVG/icon keys, not emoji glyphs. |`,
+    `| 50 reachable achievements | ${findingStatus(findings, "achievement-count")} | The focused TypeScript suite executes the catalog-to-registry source and fixture audit for all 50 active seeds. |`,
     `| 50 polished level names | ${findingStatus(findings, "level-names")} | ` + levelEvidence(),
     `| Valid rarity tokens | ${findingStatus(findings, "rarity")} | Achievement rarities are common/rare/epic/legendary and CSS exposes matching tokens. |`,
     "",
@@ -661,12 +663,12 @@ function checkAchievements() {
     });
   }
 
-  if (rarities.length < 48 || rarities.length > 52) {
+  if (rarities.length !== 50) {
     findings.push({
       file: relative(sourcePath),
       line: 1,
-      message: `Expected approximately 50 achievement seeds, found ${rarities.length}.`,
-      type: "rarity"
+      message: `Expected exactly 50 active achievement seeds, found ${rarities.length}.`,
+      type: "achievement-count"
     });
   }
 
