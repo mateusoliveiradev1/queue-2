@@ -8,6 +8,10 @@ import type {
   GamificationUserId
 } from "./ports";
 
+const DASHBOARD_ACTIVE_QUEST_LIMIT = 3;
+const DASHBOARD_RECENT_ACHIEVEMENT_LIMIT = 3;
+const DASHBOARD_RECENT_LEDGER_LIMIT = 5;
+
 export async function getGamificationDashboard(
   input: { userId: GamificationUserId },
   repository?: GamificationRepository
@@ -46,6 +50,10 @@ export async function getGamificationDashboardFromTransaction(
     questProgress.map((record) => [record.questCycleId, record])
   );
   const achievementUnlocks = await transaction.readAchievementUnlocks(membership.duoId);
+  const recentLedger = await transaction.readRecentXpLedgerAwards({
+    duoId: membership.duoId,
+    limit: DASHBOARD_RECENT_LEDGER_LIMIT
+  });
 
   return {
     duoId: membership.duoId,
@@ -59,23 +67,37 @@ export async function getGamificationDashboardFromTransaction(
       current: projection.streak,
       availableFreezes: projection.availableFreezes
     },
-    activeQuests: questCycles.map((cycle) => {
-      const template = getQuestTemplate(cycle.questSlug);
-      const cycleProgress = questProgressByCycleId.get(cycle.id);
+    activeQuests: questCycles
+      .slice()
+      .sort((left, right) => {
+        const typeOrder = questTypeOrder(left.questType) - questTypeOrder(right.questType);
 
-      return {
-        questSlug: cycle.questSlug,
-        questType: cycle.questType,
-        cycleKey: cycle.cycleKey,
-        title: template?.title ?? cycle.questSlug,
-        description: template?.description ?? "",
-        currentValue: cycleProgress?.currentValue ?? 0,
-        goalValue: template?.goalValue ?? 1,
-        completed: Boolean(cycleProgress?.completedAt),
-        windowEndAt: cycle.windowEndAt
-      };
-    }),
-    recentAchievements: achievementUnlocks.slice(0, 8).map((unlock) => {
+        if (typeOrder !== 0) {
+          return typeOrder;
+        }
+
+        const dateOrder = left.windowEndAt.getTime() - right.windowEndAt.getTime();
+
+        return dateOrder !== 0 ? dateOrder : left.questSlug.localeCompare(right.questSlug);
+      })
+      .slice(0, DASHBOARD_ACTIVE_QUEST_LIMIT)
+      .map((cycle) => {
+        const template = getQuestTemplate(cycle.questSlug);
+        const cycleProgress = questProgressByCycleId.get(cycle.id);
+
+        return {
+          questSlug: cycle.questSlug,
+          questType: cycle.questType,
+          cycleKey: cycle.cycleKey,
+          title: template?.title ?? cycle.questSlug,
+          description: template?.description ?? "",
+          currentValue: cycleProgress?.currentValue ?? 0,
+          goalValue: template?.goalValue ?? 1,
+          completed: Boolean(cycleProgress?.completedAt),
+          windowEndAt: cycle.windowEndAt
+        };
+      }),
+    recentAchievements: achievementUnlocks.slice(0, DASHBOARD_RECENT_ACHIEVEMENT_LIMIT).map((unlock) => {
       const seed = getAchievementBySlug(unlock.achievementSlug);
 
       return {
@@ -85,6 +107,25 @@ export async function getGamificationDashboardFromTransaction(
         unlockedAt: unlock.unlockedAt
       };
     }),
+    recentLedger: recentLedger.map((award) => ({
+      id: award.id,
+      amount: award.amount,
+      reasonCode: award.reasonCode,
+      sourceType: award.sourceType,
+      awardedAt: award.awardedAt
+    })),
     updatedAt: projection.updatedAt
   };
+}
+
+function questTypeOrder(questType: "weekly" | "monthly" | "seasonal"): number {
+  if (questType === "weekly") {
+    return 0;
+  }
+
+  if (questType === "monthly") {
+    return 1;
+  }
+
+  return 2;
 }

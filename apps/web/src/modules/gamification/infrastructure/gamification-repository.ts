@@ -148,6 +148,7 @@ export function createGamificationTransaction(
     insertXpLedgerAward: (input) => insertXpLedgerAward(client, input),
     updateProjection: (input) => updateProjection(client, input),
     readAchievementUnlocks: (duoId) => readAchievementUnlocks(client, duoId),
+    readRecentXpLedgerAwards: (input) => readRecentXpLedgerAwards(client, input),
     insertAchievementUnlock: (input) => insertAchievementUnlock(client, input),
     readActiveQuestCycles: (duoId) => readActiveQuestCycles(client, duoId),
     readQuestProgressForCycles: (input) => readQuestProgressForCycles(client, input),
@@ -380,6 +381,35 @@ async function readAchievementUnlocks(
   );
 
   return result.rows.map(mapAchievementUnlock);
+}
+
+async function readRecentXpLedgerAwards(
+  client: QueueDbClient,
+  input: Parameters<GamificationRepositoryTransaction["readRecentXpLedgerAwards"]>[0]
+): Promise<GamificationXpLedgerRecord[]> {
+  const limit = Math.min(Math.max(input.limit, 1), 12);
+  const result = await client.query<XpLedgerRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        award_key,
+        source_type,
+        source_id,
+        amount,
+        reason_code,
+        awarded_by_user_id,
+        metadata,
+        awarded_at
+      FROM app.duo_xp_awards
+      WHERE duo_id = $1
+      ORDER BY awarded_at DESC, id DESC
+      LIMIT $2
+    `,
+    [input.duoId, limit]
+  );
+
+  return result.rows.map(mapXpLedger);
 }
 
 async function insertAchievementUnlock(

@@ -345,6 +345,7 @@ function fakeGamificationRepository(input: {
       })
     ),
     readAchievementUnlocks: vi.fn(async () => achievementUnlocks),
+    readRecentXpLedgerAwards: vi.fn(async () => []),
     insertAchievementUnlock: vi.fn(async (unlockInput) =>
       achievementUnlockRecord({
         ...unlockInput,

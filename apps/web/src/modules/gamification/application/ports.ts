@@ -137,6 +137,13 @@ export type GamificationDashboardRecord = {
     windowEndAt: Date;
   }>;
   recentAchievements: GamificationAchievementSummary[];
+  recentLedger: Array<{
+    id: GamificationUuid;
+    amount: number;
+    reasonCode: string;
+    sourceType: GamificationFactSourceType;
+    awardedAt: Date;
+  }>;
   updatedAt: Date;
 };
 
@@ -273,6 +280,10 @@ export type GamificationRepositoryTransaction = {
     availableFreezes?: number;
   }): Promise<GamificationProjectionRecord>;
   readAchievementUnlocks(duoId: GamificationDuoId): Promise<GamificationAchievementUnlockRecord[]>;
+  readRecentXpLedgerAwards(input: {
+    duoId: GamificationDuoId;
+    limit: number;
+  }): Promise<GamificationXpLedgerRecord[]>;
   insertAchievementUnlock(input: {
     duoId: GamificationDuoId;
     achievementSlug: string;

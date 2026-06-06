@@ -76,6 +76,16 @@ export {
   rebuildGamificationProjections,
   rebuildGamificationProjectionsInTransaction
 } from "./application/rebuild-gamification-projections";
+export {
+  toGamificationDashboardView,
+  toRewardToastView,
+  type GamificationAchievementView,
+  type GamificationDashboardViewModel,
+  type GamificationLedgerEntryView,
+  type GamificationQuestView,
+  type GamificationStreakView,
+  type RewardToastViewModel
+} from "./presentation/view-models";
 
 export type {
   GamificationAdjustmentInput,

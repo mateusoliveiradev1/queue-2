@@ -166,6 +166,7 @@ function fakeGamificationRepository(input: {
     insertXpLedgerAward: input.insertXpLedgerAward ?? vi.fn(async () => xpAwardRecord()),
     updateProjection: input.updateProjection ?? vi.fn(async () => projectionRecord()),
     readAchievementUnlocks: vi.fn(async () => [achievementUnlockRecord()]),
+    readRecentXpLedgerAwards: vi.fn(async () => []),
     insertAchievementUnlock: vi.fn(async () => achievementUnlockRecord()),
     readActiveQuestCycles: vi.fn(async () => [questCycleRecord()]),
     readQuestProgressForCycles: vi.fn(async () => [questProgressRecord()]),
