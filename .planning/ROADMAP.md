@@ -187,7 +187,15 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. A dupla pode desbloquear e filtrar aproximadamente 50 conquistas customizadas por grupo e raridade.
   4. Desafios semanais, mensais e sazonais rotacionam no horario correto e mostram progresso atual.
   5. Streaks exibem chama, freezing, backup ate 04:00 e Streak Freeze a cada dez niveis, enquanto raridade aparece de forma consistente.
-**Plans**: TBD
+**Plans**: 05-01, 05-02, 05-03, 05-04, 05-05, 05-06 (0/6 complete; ready to execute)
+
+**Plan Waves**:
+  - **Wave 1:** `05-01` - Gamification schema, forced RLS, public module, policy/catalog/repository foundation.
+  - **Wave 2 *(blocked on Wave 1 completion)*:** `05-02` - Reward engine, immediate transactional projections, Play/Discovery fact integration and reconciliation.
+  - **Wave 3 *(blocked on Wave 2 completion)*:** `05-03` - Dashboard band, XP ledger and reward feedback in the home experience.
+  - **Wave 4 *(blocked on Wave 3 completion)*:** `05-04` - Achievements route, filters, custom SVG icon system and navigation.
+  - **Wave 5 *(blocked on Wave 4 completion)*:** `05-05` - Challenge/streak UI, rotation jobs, 04:00 cutoff and maintenance cron.
+  - **Wave 6 *(blocked on Wave 5 completion)*:** `05-06` - Phase gate with E2E, accessibility, security, DB, performance and economy audits.
 **UI hint**: yes
 
 ### Phase 6: Roleta E Economia
@@ -244,6 +252,6 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 03.2. Biblioteca Escalavel e Backlog Operacional | 4/4 | Complete   | 2026-06-05 |
 | 03.3. Performance de Producao e UX de Latencia | 4/4 | Complete | 2026-06-05 |
 | 4. Jogando Agora, Sessoes E Agendamento | 6/6 | Complete | 2026-06-05 |
-| 5. Gamificacao Coletiva | 0/TBD | Not started | - |
+| 5. Gamificacao Coletiva | 0/6 | Ready to execute | 2026-06-06 |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
 | 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |
