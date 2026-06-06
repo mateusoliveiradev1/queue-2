@@ -182,6 +182,8 @@ function fakeGamificationRepository(input: {
 
   return {
     withUserTransaction: vi.fn(async (_userId, callback) => callback(transaction)),
+    ensureGamificationJobs: vi.fn(async () => ({ readyDuos: 0, producedJobs: 0 })),
+    enqueueGamificationJob: vi.fn(async () => true),
     claimDueGamificationJobs: vi.fn(async () => [jobRecord()]),
     completeGamificationJob: vi.fn(),
     failGamificationJob: vi.fn(),

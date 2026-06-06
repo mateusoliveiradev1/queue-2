@@ -11,6 +11,9 @@ import type {
   GamificationAdjustmentInput,
   GamificationAchievementUnlockRecord,
   GamificationDueJobRecord,
+  GamificationEnqueueJobInput,
+  GamificationJobBootstrapResult,
+  GamificationJobScheduleKind,
   GamificationMembershipContext,
   GamificationProjectionRecord,
   GamificationQuestCycleRecord,
@@ -20,7 +23,8 @@ import type {
   GamificationRewardNotificationInput,
   GamificationStreakStateRecord,
   GamificationUserId,
-  GamificationXpLedgerRecord
+  GamificationXpLedgerRecord,
+  GamificationReadyJobTarget
 } from "../application/ports";
 import type { GamificationFactSourceType } from "../domain/gamification-policy";
 import type { QuestType } from "../domain/quest-catalog";
@@ -106,12 +110,29 @@ type JobRow = {
   payload: Record<string, unknown>;
 };
 
+type ReadyJobTargetRow = {
+  duo_id: string;
+  timezone: string;
+  created_by_user_id: string;
+};
+
+type GamificationRepositoryOptions = {
+  runtimePool?: QueueDbPool;
+  workerPool?: QueueDbPool;
+  workerPoolFactory?: () => QueueDbPool;
+};
+
 let runtimePool: QueueDbPool | undefined;
+let workerPool: QueueDbPool | undefined;
 let defaultGamificationRepository: GamificationRepository | undefined;
 
 export const gamificationRepository: GamificationRepository = {
   withUserTransaction: (...args) =>
     getDefaultGamificationRepository().withUserTransaction(...args),
+  ensureGamificationJobs: (...args) =>
+    getDefaultGamificationRepository().ensureGamificationJobs(...args),
+  enqueueGamificationJob: (...args) =>
+    getDefaultGamificationRepository().enqueueGamificationJob(...args),
   claimDueGamificationJobs: (...args) =>
     getDefaultGamificationRepository().claimDueGamificationJobs(...args),
   completeGamificationJob: (...args) =>
@@ -123,17 +144,33 @@ export const gamificationRepository: GamificationRepository = {
 };
 
 export function createGamificationRepository(
-  pool: QueueDbPool = getRuntimePool()
+  input: QueueDbPool | GamificationRepositoryOptions = {}
 ): GamificationRepository {
+  const options = isQueueDbPool(input) ? { runtimePool: input } : input;
+  const resolvedRuntimePool = options.runtimePool ?? getRuntimePool();
+  let injectedWorkerPool = options.workerPool;
+  const resolveWorkerPool = () => {
+    injectedWorkerPool ??= options.workerPoolFactory?.() ?? getWorkerPool();
+    return injectedWorkerPool;
+  };
+
   return {
     withUserTransaction: (userId, callback) =>
-      withAppUserTransaction(pool, userId, (client) =>
+      withAppUserTransaction(resolvedRuntimePool, userId, (client) =>
         callback(createGamificationTransaction(client))
       ),
-    claimDueGamificationJobs: (input) => claimDueGamificationJobs(pool, input),
-    completeGamificationJob: (jobId) => completeGamificationJob(pool, jobId),
-    failGamificationJob: (input) => failGamificationJob(pool, input),
-    recordProjectionRebuild: (input) => recordProjectionRebuild(pool, input)
+    ensureGamificationJobs: (now) =>
+      ensureGamificationJobs(resolveWorkerPool(), now),
+    enqueueGamificationJob: (jobInput) =>
+      enqueueGamificationJob(resolveWorkerPool(), jobInput),
+    claimDueGamificationJobs: (jobInput) =>
+      claimDueGamificationJobs(resolveWorkerPool(), jobInput),
+    completeGamificationJob: (jobId) =>
+      completeGamificationJob(resolveWorkerPool(), jobId),
+    failGamificationJob: (jobInput) =>
+      failGamificationJob(resolveWorkerPool(), jobInput),
+    recordProjectionRebuild: (rebuildInput) =>
+      recordProjectionRebuild(resolveWorkerPool(), rebuildInput)
   };
 }
 
@@ -808,6 +845,160 @@ async function sumXpLedgerAwards(
   return Number(result.rows[0]?.total ?? 0);
 }
 
+async function ensureGamificationJobs(
+  pool: QueueDbPool,
+  now: Date
+): Promise<GamificationJobBootstrapResult> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const targetsResult = await client.query<ReadyJobTargetRow>(
+      `
+        SELECT
+          duo.id AS duo_id,
+          duo.timezone,
+          (array_agg(member.user_id ORDER BY member.member_slot))[1] AS created_by_user_id
+        FROM app.duos AS duo
+        JOIN app.duo_members AS member ON member.duo_id = duo.id
+        WHERE duo.paired_at IS NOT NULL
+          AND btrim(COALESCE(duo.name, '')) <> ''
+        GROUP BY duo.id, duo.timezone
+        HAVING count(*) = 2
+          AND count(DISTINCT member.user_id) = 2
+          AND count(DISTINCT member.member_slot) = 2
+          AND min(member.member_slot) = 1
+          AND max(member.member_slot) = 2
+        ORDER BY duo.id
+      `
+    );
+    const targets = targetsResult.rows.map(mapReadyJobTarget);
+    let producedJobs = 0;
+
+    for (const target of targets) {
+      for (const scheduleKind of [
+        "weekly",
+        "monthly",
+        "seasonal",
+        "streak"
+      ] as const) {
+        const inserted = await insertGamificationJob(client, {
+          duoId: target.duoId,
+          scheduleKind,
+          runAt: now,
+          createdByUserId: target.createdByUserId,
+          jobKey: buildBootstrapJobKey(target.duoId, scheduleKind, now),
+          payload:
+            scheduleKind === "streak"
+              ? {
+                  checkAt: now.toISOString(),
+                  createdByUserId: target.createdByUserId
+                }
+              : {
+                  createdByUserId: target.createdByUserId,
+                  now: now.toISOString(),
+                  questType: scheduleKind
+                }
+        }, true);
+
+        if (inserted) {
+          producedJobs += 1;
+        }
+      }
+    }
+
+    await client.query("COMMIT");
+    return {
+      readyDuos: targets.length,
+      producedJobs
+    };
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function enqueueGamificationJob(
+  pool: QueueDbPool,
+  input: GamificationEnqueueJobInput
+): Promise<boolean> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    const inserted = await insertGamificationJob(client, input, false);
+    await client.query("COMMIT");
+    return inserted;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function insertGamificationJob(
+  client: QueueDbClient,
+  input: GamificationEnqueueJobInput,
+  skipActiveKind: boolean
+): Promise<boolean> {
+  const jobType =
+    input.scheduleKind === "streak"
+      ? "gamification-streak-check"
+      : "gamification-quest-rotation";
+  const jobKey =
+    input.jobKey ??
+    `gamification:${input.duoId}:${input.scheduleKind}:${input.runAt.toISOString()}`;
+  const payload = {
+    createdByUserId: input.createdByUserId,
+    ...(input.scheduleKind === "streak"
+      ? { checkAt: input.runAt.toISOString() }
+      : { questType: input.scheduleKind }),
+    ...(input.payload ?? {})
+  };
+  const result = await client.query<{ id: string }>(
+    `
+      INSERT INTO ops.scheduled_jobs (
+        duo_id,
+        job_key,
+        job_type,
+        run_at,
+        payload
+      )
+      SELECT $1, $2, $3, $4, $5::jsonb
+      WHERE (
+        NOT $7::boolean
+        OR NOT EXISTS (
+          SELECT 1
+          FROM ops.scheduled_jobs AS existing
+          WHERE existing.duo_id = $1
+            AND existing.status IN ('pending', 'claimed', 'failed')
+            AND existing.job_type = $3
+            AND (
+              $3 <> 'gamification-quest-rotation'
+              OR existing.payload ->> 'questType' = $6
+            )
+        )
+      )
+      ON CONFLICT (job_key) DO NOTHING
+      RETURNING id
+    `,
+    [
+      input.duoId,
+      jobKey,
+      jobType,
+      input.runAt,
+      JSON.stringify(payload),
+      input.scheduleKind,
+      skipActiveKind
+    ]
+  );
+
+  return result.rows.length > 0;
+}
+
 async function claimDueGamificationJobs(
   pool: QueueDbPool,
   input: Parameters<GamificationRepository["claimDueGamificationJobs"]>[0]
@@ -1084,12 +1275,48 @@ function mapJob(row: JobRow): GamificationDueJobRecord {
   };
 }
 
+function mapReadyJobTarget(row: ReadyJobTargetRow): GamificationReadyJobTarget {
+  return {
+    duoId: row.duo_id,
+    timezone: row.timezone,
+    createdByUserId: row.created_by_user_id
+  };
+}
+
+function buildBootstrapJobKey(
+  duoId: string,
+  scheduleKind: GamificationJobScheduleKind,
+  now: Date
+): string {
+  return `gamification-bootstrap:${duoId}:${scheduleKind}:${now.toISOString().slice(0, 10)}`;
+}
+
 function getRuntimePool(): QueueDbPool {
   runtimePool ??= createRuntimePool();
   return runtimePool;
 }
 
+function getWorkerPool(): QueueDbPool {
+  const connectionString = process.env.WORKER_DATABASE_URL;
+
+  if (!connectionString) {
+    throw new Error("WORKER_DATABASE_URL is required for gamification jobs.");
+  }
+
+  workerPool ??= createRuntimePool(connectionString);
+  return workerPool;
+}
+
+function isQueueDbPool(
+  input: QueueDbPool | GamificationRepositoryOptions
+): input is QueueDbPool {
+  return typeof (input as QueueDbPool).connect === "function";
+}
+
 function getDefaultGamificationRepository(): GamificationRepository {
-  defaultGamificationRepository ??= createGamificationRepository(getRuntimePool());
+  defaultGamificationRepository ??= createGamificationRepository({
+    runtimePool: getRuntimePool(),
+    workerPoolFactory: getWorkerPool
+  });
   return defaultGamificationRepository;
 }

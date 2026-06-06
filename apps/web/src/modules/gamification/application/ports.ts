@@ -321,6 +321,32 @@ export type GamificationDueJobRecord = {
   payload: Record<string, unknown>;
 };
 
+export type GamificationJobScheduleKind =
+  | "weekly"
+  | "monthly"
+  | "seasonal"
+  | "streak";
+
+export type GamificationReadyJobTarget = {
+  duoId: GamificationDuoId;
+  timezone: string;
+  createdByUserId: GamificationUserId;
+};
+
+export type GamificationEnqueueJobInput = {
+  duoId: GamificationDuoId;
+  scheduleKind: GamificationJobScheduleKind;
+  runAt: Date;
+  createdByUserId: GamificationUserId;
+  jobKey?: string;
+  payload?: Record<string, unknown>;
+};
+
+export type GamificationJobBootstrapResult = {
+  readyDuos: number;
+  producedJobs: number;
+};
+
 export type GamificationRepositoryTransaction = {
   resolveMembership(userId: GamificationUserId): Promise<GamificationMembershipContext | null>;
   readDuoTimezone(duoId: GamificationDuoId): Promise<string>;
@@ -409,6 +435,8 @@ export type GamificationRepository = {
     userId: GamificationUserId,
     callback: (transaction: GamificationRepositoryTransaction) => Promise<T>
   ): Promise<T>;
+  ensureGamificationJobs(now: Date): Promise<GamificationJobBootstrapResult>;
+  enqueueGamificationJob(input: GamificationEnqueueJobInput): Promise<boolean>;
   claimDueGamificationJobs(input: {
     jobTypes: GamificationDueJobRecord["jobType"][];
     now: Date;

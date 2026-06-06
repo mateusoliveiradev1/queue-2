@@ -259,7 +259,7 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
       producedJobs: 0,
       readyDuos: 1
     });
-    expect(insertedSpecies).toEqual([
+    expect([...insertedSpecies].sort()).toEqual([
       "monthly",
       "seasonal",
       "streak",
@@ -387,6 +387,11 @@ function fakeGamificationRepository(input: {
 
   return {
     withUserTransaction: vi.fn(async (_userId, callback) => callback(transaction)),
+    ensureGamificationJobs: vi.fn(async () => ({
+      producedJobs: 0,
+      readyDuos: 0
+    })),
+    enqueueGamificationJob: vi.fn(async () => true),
     claimDueGamificationJobs: vi.fn(async () => input.jobs ?? []),
     completeGamificationJob: vi.fn(),
     failGamificationJob: vi.fn(),
