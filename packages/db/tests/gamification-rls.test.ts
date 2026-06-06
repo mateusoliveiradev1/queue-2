@@ -124,7 +124,84 @@ describe.skipIf(!testDatabaseUrl)("gamification RLS isolation", () => {
       )
     ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
   });
+
+  test("worker enumerates ready duo facts but cannot write duo ownership tables", async () => {
+    const first = await createReadyDuo(pool, "game-worker-a");
+    const second = await createReadyDuo(pool, "game-worker-b");
+
+    const readyTargets = await withWorkerRole(pool, async (client) => {
+      const result = await client.query<{
+        duo_id: string;
+        name: string;
+        paired_at: Date;
+        timezone: string;
+        member_count: string;
+        created_by_user_id: string;
+      }>(`
+        SELECT
+          duo.id AS duo_id,
+          duo.name,
+          duo.paired_at,
+          duo.timezone,
+          count(member.user_id) AS member_count,
+          (array_agg(member.user_id ORDER BY member.member_slot))[1] AS created_by_user_id
+        FROM app.duos AS duo
+        JOIN app.duo_members AS member ON member.duo_id = duo.id
+        WHERE duo.id IN ($1, $2)
+        GROUP BY duo.id, duo.name, duo.paired_at, duo.timezone
+        ORDER BY duo.id
+      `, [first.duoId, second.duoId]);
+
+      return result.rows;
+    });
+
+    expect(readyTargets).toHaveLength(2);
+    expect(readyTargets.every((target) => target.name && target.paired_at)).toBe(true);
+    expect(readyTargets.every((target) => Number(target.member_count) === 2)).toBe(true);
+    expect(readyTargets.map((target) => target.created_by_user_id).sort()).toEqual(
+      [first.ownerUserId, second.ownerUserId].sort()
+    );
+
+    await expect(
+      withWorkerRole(pool, (client) =>
+        client.query("UPDATE app.duos SET name = name WHERE id = $1", [first.duoId])
+      )
+    ).rejects.toThrow(/permission denied/i);
+    await expect(
+      withWorkerRole(pool, (client) =>
+        client.query(
+          "INSERT INTO app.duo_members (duo_id, user_id, member_slot) VALUES ($1, $2, 2)",
+          [first.duoId, makeTestUserId("game-worker-write")]
+        )
+      )
+    ).rejects.toThrow(/permission denied/i);
+    await expect(
+      withWorkerRole(pool, (client) =>
+        client.query("DELETE FROM app.duo_members WHERE duo_id = $1", [first.duoId])
+      )
+    ).rejects.toThrow(/permission denied/i);
+  });
 });
+
+async function withWorkerRole<T>(
+  pool: pg.Pool,
+  callback: (client: pg.PoolClient) => Promise<T>
+): Promise<T> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE queue2_worker");
+    const result = await callback(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
 
 async function createReadyDuo(pool: pg.Pool, label: string) {
   const ownerUserId = makeTestUserId(`${label}-owner`);

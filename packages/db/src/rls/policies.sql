@@ -21,11 +21,15 @@ CREATE POLICY app_profiles_update_own ON app.profiles
 ALTER TABLE app.duos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.duos FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_duos_select_members ON app.duos;
+DROP POLICY IF EXISTS app_duos_select_job_worker ON app.duos;
 DROP POLICY IF EXISTS app_duos_insert_authenticated ON app.duos;
 DROP POLICY IF EXISTS app_duos_update_members ON app.duos;
 CREATE POLICY app_duos_select_members ON app.duos
   FOR SELECT TO PUBLIC
   USING (app.has_duo_membership(app.current_user_id(), id));
+CREATE POLICY app_duos_select_job_worker ON app.duos
+  FOR SELECT TO queue2_worker
+  USING (true);
 CREATE POLICY app_duos_insert_authenticated ON app.duos
   FOR INSERT TO PUBLIC
   WITH CHECK (app.current_user_id() IS NOT NULL);
@@ -37,6 +41,7 @@ CREATE POLICY app_duos_update_members ON app.duos
 ALTER TABLE app.duo_members ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.duo_members FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_duo_members_select_own ON app.duo_members;
+DROP POLICY IF EXISTS app_duo_members_select_job_worker ON app.duo_members;
 DROP POLICY IF EXISTS app_duo_members_insert_pairing_flow ON app.duo_members;
 CREATE POLICY app_duo_members_select_own ON app.duo_members
   FOR SELECT TO PUBLIC
@@ -46,6 +51,9 @@ CREATE POLICY app_duo_members_select_own ON app.duo_members
       ELSE app.has_duo_membership(app.current_user_id(), duo_id)
     END
   );
+CREATE POLICY app_duo_members_select_job_worker ON app.duo_members
+  FOR SELECT TO queue2_worker
+  USING (true);
 CREATE POLICY app_duo_members_insert_pairing_flow ON app.duo_members
   FOR INSERT TO PUBLIC
   WITH CHECK (
@@ -64,6 +72,20 @@ CREATE POLICY app_duo_members_insert_pairing_flow ON app.duo_members
       )
     )
   );
+
+REVOKE SELECT ON app.duos FROM queue2_worker;
+REVOKE UPDATE (name, timezone, xp, level, streak, updated_at)
+  ON app.duos FROM queue2_worker;
+REVOKE INSERT, DELETE, TRUNCATE, REFERENCES, TRIGGER
+  ON app.duos FROM queue2_worker;
+GRANT SELECT (id, name, paired_at, timezone)
+  ON app.duos TO queue2_worker;
+
+REVOKE SELECT ON app.duo_members FROM queue2_worker;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE, REFERENCES, TRIGGER
+  ON app.duo_members FROM queue2_worker;
+GRANT SELECT (duo_id, user_id, member_slot)
+  ON app.duo_members TO queue2_worker;
 
 ALTER TABLE app.pairing_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.pairing_codes FORCE ROW LEVEL SECURITY;

@@ -241,4 +241,85 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
       })
     ]);
   });
+
+  test("grants the job producer only readiness reads on duo ownership tables", async () => {
+    await applyFoundationMigration(pool);
+
+    const policies = await pool.query<{
+      tablename: string;
+      policyname: string;
+      roles: string;
+      qual: string | null;
+    }>(`
+      SELECT tablename, policyname, roles, qual
+      FROM pg_policies
+      WHERE schemaname = 'app'
+        AND policyname IN (
+          'app_duos_select_job_worker',
+          'app_duo_members_select_job_worker'
+        )
+      ORDER BY tablename
+    `);
+    const privileges = await pool.query<{
+      can_read_duo_id: boolean;
+      can_read_duo_name: boolean;
+      can_read_duo_paired_at: boolean;
+      can_read_duo_timezone: boolean;
+      can_read_duo_xp: boolean;
+      can_read_member_duo: boolean;
+      can_read_member_user: boolean;
+      can_read_member_slot: boolean;
+      can_write_duos: boolean;
+      can_write_members: boolean;
+    }>(`
+      SELECT
+        has_column_privilege('queue2_worker', 'app.duos', 'id', 'SELECT') AS can_read_duo_id,
+        has_column_privilege('queue2_worker', 'app.duos', 'name', 'SELECT') AS can_read_duo_name,
+        has_column_privilege('queue2_worker', 'app.duos', 'paired_at', 'SELECT') AS can_read_duo_paired_at,
+        has_column_privilege('queue2_worker', 'app.duos', 'timezone', 'SELECT') AS can_read_duo_timezone,
+        has_column_privilege('queue2_worker', 'app.duos', 'xp', 'SELECT') AS can_read_duo_xp,
+        has_column_privilege('queue2_worker', 'app.duo_members', 'duo_id', 'SELECT') AS can_read_member_duo,
+        has_column_privilege('queue2_worker', 'app.duo_members', 'user_id', 'SELECT') AS can_read_member_user,
+        has_column_privilege('queue2_worker', 'app.duo_members', 'member_slot', 'SELECT') AS can_read_member_slot,
+        (
+          has_table_privilege('queue2_worker', 'app.duos', 'INSERT')
+          OR has_table_privilege('queue2_worker', 'app.duos', 'UPDATE')
+          OR has_table_privilege('queue2_worker', 'app.duos', 'DELETE')
+          OR has_column_privilege('queue2_worker', 'app.duos', 'name', 'UPDATE')
+          OR has_column_privilege('queue2_worker', 'app.duos', 'xp', 'UPDATE')
+        ) AS can_write_duos,
+        (
+          has_table_privilege('queue2_worker', 'app.duo_members', 'INSERT')
+          OR has_table_privilege('queue2_worker', 'app.duo_members', 'UPDATE')
+          OR has_table_privilege('queue2_worker', 'app.duo_members', 'DELETE')
+        ) AS can_write_members
+    `);
+
+    expect(policies.rows).toEqual([
+      {
+        tablename: "duo_members",
+        policyname: "app_duo_members_select_job_worker",
+        roles: "{queue2_worker}",
+        qual: "true"
+      },
+      {
+        tablename: "duos",
+        policyname: "app_duos_select_job_worker",
+        roles: "{queue2_worker}",
+        qual: "true"
+      }
+    ]);
+    expect(privileges.rows[0]).toEqual({
+      can_read_duo_id: true,
+      can_read_duo_name: true,
+      can_read_duo_paired_at: true,
+      can_read_duo_timezone: true,
+      can_read_duo_xp: false,
+      can_read_member_duo: true,
+      can_read_member_user: true,
+      can_read_member_slot: true,
+      can_write_duos: false,
+      can_write_members: false
+    });
+  });
 });

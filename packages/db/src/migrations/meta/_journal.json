@@ -78,6 +78,13 @@
       "when": 1780723200000,
       "tag": "0011_gamification_core",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1780723260000,
+      "tag": "0012_gamification_job_producer",
+      "breakpoints": true
     }
   ]
 }
