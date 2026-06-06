@@ -2,7 +2,7 @@
 phase: 05-gamificacao-coletiva
 artifact: user-setup
 status: Incomplete
-generated: 2026-06-06T11:12:43.285Z
+generated: 2026-06-06T13:13:41.296Z
 ---
 
 # Phase 5 User Setup
@@ -34,7 +34,7 @@ Fixture expectations:
 
 | Variable | Status | Purpose |
 |----------|--------|---------|
-| `TEST_DATABASE_URL` | missing | Isolated Neon/Postgres test database for migrations, RLS and concurrency. |
+| `TEST_DATABASE_URL` | configured | Isolated Neon/Postgres test database for migrations, RLS and concurrency. |
 
 ## Job And Cron Evidence
 
@@ -61,7 +61,7 @@ pnpm phase:5:gate
 
 ### Database
 
-- TEST_DATABASE_URL
+None.
 
 ### Jobs
 

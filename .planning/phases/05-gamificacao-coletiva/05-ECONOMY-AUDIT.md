@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: economy-audit
-generated: 2026-06-06T11:12:43.278Z
+generated: 2026-06-06T13:13:41.289Z
 result: BLOCKED - missing external evidence
 ---
 
@@ -10,9 +10,9 @@ result: BLOCKED - missing external evidence
 
 ## Environment
 
-- Generated: 2026-06-06T11:12:43.278Z
+- Generated: 2026-06-06T13:13:41.289Z
 - Source files scanned: 47
-- DB evidence: blocked
+- DB evidence: configured
 - Browser evidence: blocked
 - Job evidence: blocked
 
@@ -103,7 +103,6 @@ None.
 
 ## Missing External Evidence
 
-- TEST_DATABASE_URL
 - E2E_PHASE5_ZERADO_SLUG
 - E2E_PHASE5_DROPADO_SLUG
 - CRON_SECRET
