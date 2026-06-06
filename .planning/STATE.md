@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-02-PLAN.md
-last_updated: "2026-06-06T09:21:36.396Z"
+stopped_at: Completed 05-03-PLAN.md
+last_updated: "2026-06-06T09:54:17.445Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 41
-  completed_plans: 37
-  percent: 90
+  completed_plans: 38
+  percent: 93
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 05 (gamificacao-coletiva) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-06-06
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -91,6 +91,7 @@ Progress: [█████████░] 90%
 | Phase 04 P06 | 35m | 3 tasks | 11 files |
 | Phase 05 P01 | 27 min | 3 tasks | 19 files |
 | Phase 05-gamificacao-coletiva P02 | 27min | 3 tasks | 25 files |
+| Phase 05-gamificacao-coletiva P03 | 15min | 3 tasks | 16 files |
 
 ## Quick Tasks Completed
 
@@ -245,6 +246,10 @@ Recent decisions affecting current work:
 - [Phase 05-gamificacao-coletiva]: Critical Play rewards are applied inside the Play transaction via a gamification transaction adapter; reward failure returns an explicit use-case failure. — Required by plan 05-02 D-28/D-29 so confirmed actions cannot commit while losing immediate reward effects.
 - [Phase 05-gamificacao-coletiva]: Discovery matches apply non-recurring gamification progress through the public contract but do not grant XP. — Matches can advance achievements or quests per D-25 without introducing a farmable recurring XP path.
 - [Phase 05-gamificacao-coletiva]: Projection rebuild uses the XP ledger and streak state as sources of truth, recording adjustment/rebuild evidence instead of deleting history. — Keeps app.duos projections repairable while preserving audit ledgers required by D-30/D-31.
+- [Phase 05-03]: Dashboard de gamificacao le projecoes e ledger do servidor antes de montar o view model. — O navegador escolhe apenas estados de feedback whitelisted e nunca fornece autoridade de XP/recompensa.
+- [Phase 05-03]: A faixa de gamificacao fica imediatamente abaixo de Jogando Agora e resume desafios/conquistas. — As rotas dedicadas de conquistas e desafios continuam sendo as superficies completas.
+- [Phase 05-03]: Historico de XP usa linguagem de produto para a dupla, nao nomes tecnicos de eventos. — Mantem o ledger discreto e alinhado ao ritual coletivo.
+- [Phase 05-03]: Evidencia browser de acessibilidade fica bloqueada ate fixtures autenticadas estarem configuradas. — O skip exige E2E_BASE_URL, E2E_READY_USER_EMAIL e E2E_READY_USER_PASSWORD.
 
 ### Pending Todos
 
@@ -269,6 +274,7 @@ Recent decisions affecting current work:
 - Phase 04.5 browser evidence blocked until E2E_BASE_URL, ready duo credentials, partner credentials, other-duo credentials, E2E_PHASE4_PRINCIPAL_SLUG and E2E_PHASE4_SECONDARY_SLUG are configured.
 - Phase 04.5 real push delivery requires VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT; exact reminders require CRON_SECRET plus a scheduler/runner with compatible frequency.
 - Phase 04.6 gate result is `BLOCKED - missing external evidence or reminder readiness` until TEST_DATABASE_URL, E2E_PHASE4_PRINCIPAL_SLUG, E2E_PHASE4_SECONDARY_SLUG, CRON_SECRET, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT and compatible runner frequency are configured.
+- Phase 05.3 browser accessibility evidence blocked until E2E_BASE_URL, E2E_READY_USER_EMAIL and E2E_READY_USER_PASSWORD are configured.
 
 ## Deferred Items
 
@@ -281,6 +287,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T09:21:36.390Z
-Stopped at: Completed 05-02-PLAN.md
+Last session: 2026-06-06T09:54:17.439Z
+Stopped at: Completed 05-03-PLAN.md
 Resume file: None
