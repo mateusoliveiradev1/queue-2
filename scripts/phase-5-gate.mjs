@@ -244,7 +244,9 @@ function writePerformanceReview({
     "- Command: `node --experimental-strip-types scripts/performance-explain.ts --phase=5`",
     `- Query/performance result before gate consolidation: ${queryReviewResult}`,
     "- Covered hot paths: dashboard gamification summary, XP ledger, achievements grid, challenges page, quest rotation jobs, streak jobs and reward application mutations.",
-    "- Missing `TEST_DATABASE_URL` remains blocked evidence, not a pass.",
+    missingDbFixtures.length > 0
+      ? "- Missing `TEST_DATABASE_URL` remains blocked evidence, not a pass."
+      : "- `TEST_DATABASE_URL` is configured; isolated migration, RLS, concurrency and query-plan evidence executed.",
     "",
     "## Browser and Accessibility",
     "",

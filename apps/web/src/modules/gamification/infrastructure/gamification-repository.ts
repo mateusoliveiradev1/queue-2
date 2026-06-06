@@ -427,7 +427,7 @@ async function insertAchievementUnlock(
         metadata
       )
       VALUES ($1, $2, $3, $4::uuid, $5, $6::jsonb)
-      ON CONFLICT (duo_id, achievement_slug) DO NOTHING
+      ON CONFLICT DO NOTHING
       RETURNING
         id,
         duo_id,

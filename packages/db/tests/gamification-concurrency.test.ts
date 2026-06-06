@@ -266,7 +266,7 @@ async function insertAchievementUnlock(
           unlocked_by_user_id
         )
         VALUES ($1, $2, 'live-session', $3, $4)
-        ON CONFLICT (duo_id, achievement_slug) DO NOTHING
+        ON CONFLICT DO NOTHING
       `,
       [duoId, achievementSlug, sourceId, userId]
     );

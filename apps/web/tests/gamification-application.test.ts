@@ -88,8 +88,8 @@ describe("gamification application contract", () => {
     expect(gamificationRepositorySource).toContain("import \"server-only\"");
     expect(gamificationRepositorySource).toContain("withAppUserTransaction");
     expect(gamificationRepositorySource).toContain("ON CONFLICT DO NOTHING");
-    expect(gamificationRepositorySource).toContain(
-      "ON CONFLICT (duo_id, achievement_slug) DO NOTHING"
+    expect(gamificationRepositorySource).toMatch(
+      /INSERT INTO app\.gamification_achievement_unlocks[\s\S]*?ON CONFLICT DO NOTHING/
     );
     expect(gamificationRepositorySource).toContain(
       "ON CONFLICT (duo_id, quest_slug, cycle_key) DO UPDATE"

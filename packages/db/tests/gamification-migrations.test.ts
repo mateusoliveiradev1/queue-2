@@ -135,13 +135,13 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
     await applyFoundationMigration(pool);
 
     const sourceConstraint = await pool.query<{ constraint_def: string }>(`
-      SELECT pg_get_constraintdef(constraint.oid) AS constraint_def
-      FROM pg_constraint AS constraint
-      JOIN pg_class AS class ON class.oid = constraint.conrelid
+      SELECT pg_get_constraintdef(constraint_row.oid) AS constraint_def
+      FROM pg_constraint AS constraint_row
+      JOIN pg_class AS class ON class.oid = constraint_row.conrelid
       JOIN pg_namespace AS namespace ON namespace.oid = class.relnamespace
       WHERE namespace.nspname = 'app'
         AND class.relname = 'duo_xp_awards'
-        AND constraint.conname = 'app_duo_xp_awards_source_type_chk'
+        AND constraint_row.conname = 'app_duo_xp_awards_source_type_chk'
     `);
     const privileges = await pool.query<{
       table_name: string;
@@ -160,7 +160,18 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
           AND has_column_privilege('queue2_app_runtime', 'app.duos', 'streak', 'UPDATE')
           AS runtime_can_update_duo_projection,
         has_table_privilege('queue2_app_runtime', 'ops.gamification_projection_rebuilds', 'UPDATE') AS runtime_can_update_rebuilds,
-        has_table_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'UPDATE') AS worker_can_update_rebuilds
+        has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'status', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'reason_code', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'xp_before', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'xp_after', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'level_before', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'level_after', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'streak_before', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'streak_after', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'metadata', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'finished_at', 'UPDATE')
+          AND has_column_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'updated_at', 'UPDATE')
+          AS worker_can_update_rebuilds
       FROM (VALUES
         ('app.gamification_achievement_unlocks'),
         ('app.gamification_quest_cycles'),

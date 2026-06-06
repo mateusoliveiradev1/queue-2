@@ -608,6 +608,7 @@ GRANT SELECT ON ops.gamification_projection_rebuilds TO queue2_app_runtime, queu
 GRANT SELECT, INSERT ON ops.gamification_projection_rebuilds TO queue2_worker;
 GRANT UPDATE (
   status,
+  reason_code,
   xp_before,
   xp_after,
   level_before,
