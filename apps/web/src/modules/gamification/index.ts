@@ -10,6 +10,19 @@ export {
   type AchievementVisibility
 } from "./domain/achievement-catalog";
 export {
+  ACHIEVEMENT_PREDICATES,
+  EMPTY_ACHIEVEMENT_METRICS,
+  auditAchievementReachability,
+  createAchievementPredicateFixture,
+  evaluateAchievements,
+  type AchievementMetric,
+  type AchievementMetricSnapshot,
+  type AchievementMetricSource,
+  type AchievementPredicateDefinition,
+  type AchievementPredicateKey,
+  type AchievementPredicateRegistry
+} from "./domain/achievement-predicates";
+export {
   GAMIFICATION_FACT_SOURCE_TYPES,
   GAMIFICATION_RARITIES,
   MAX_CHAPTER_XP_AWARDS_PER_DUO_DAY,

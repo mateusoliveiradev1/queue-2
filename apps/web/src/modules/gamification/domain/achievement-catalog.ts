@@ -23,7 +23,7 @@ export const ACHIEVEMENT_GROUP_LABELS: Record<AchievementGroup, string> = {
 export type AchievementGroup = (typeof ACHIEVEMENT_GROUPS)[number];
 export type AchievementVisibility = "visible" | "hidden";
 
-export type AchievementSeed = {
+export type AchievementSeed<PredicateKey extends string = string> = {
   slug: string;
   group: AchievementGroup;
   rarity: GamificationRarity;
@@ -80,9 +80,9 @@ export const ACHIEVEMENT_CATALOG = [
   seed("spooky-coop", "comedia", "rare", "visible", "Spooky coop", "A dupla encarou uma temporada assustadora sem virar solo.", "badge-season-spooky", "seasonal-spooky-complete:1"),
   seed("awards-em-casa", "comedia", "rare", "visible", "Awards em casa", "A temporada de premiacoes virou ritual da dupla.", "badge-season-awards", "seasonal-awards-complete:1"),
   seed("aniversario-da-fila", "comedia", "epic", "visible", "Aniversario da fila", "A parceria comemorou mais um ciclo de backlog vivo.", "badge-season-anniversary", "seasonal-anniversary-complete:1"),
-  seed("ponteiro-curioso", "roleta", "common", "visible", "Ponteiro curioso", "A roleta entrou na historia sem dominar a economia.", "badge-roulette-pointer", "roulette-view-count:1"),
-  seed("quase-epico", "roleta", "rare", "hidden", "Quase epico", "A fila guardou tensao para a proxima escolha.", "badge-roulette-almost", "roulette-near-epic-count:1"),
-  seed("case-de-respeito", "roleta", "epic", "visible", "Case de respeito", "Um resultado raro foi tratado como decisao da dupla.", "badge-roulette-case", "roulette-rare-result-count:1"),
+  seed("ponteiro-curioso", "roleta", "common", "visible", "Ponteiro curioso", "Dez jogos deixaram a fila elegivel para uma futura rodada.", "badge-roulette-pointer", "library-growth-count:10"),
+  seed("quase-epico", "roleta", "rare", "hidden", "Quase epico", "Vinte e cinco conquistas prepararam a proxima escolha da dupla.", "badge-roulette-almost", "achievement-count:25"),
+  seed("case-de-respeito", "roleta", "epic", "visible", "Case de respeito", "No nivel 25, a fila ficou pronta para o sorteio.", "badge-roulette-case", "level:25"),
   seed("sem-tilt", "comedia", "common", "visible", "Sem tilt", "Um Dropado confirmado nao virou punicao nem vergonha.", "badge-comedy-no-tilt", "terminal-dropado-count:1"),
   seed("mais-um-so", "comedia", "rare", "hidden", "Mais um so", "A madrugada tentou virar campanha, e a dupla sobreviveu.", "badge-comedy-one-more", "late-session-chain:1"),
   seed("chefao-do-sofa", "comedia", "epic", "visible", "Chefao do sofa", "O sofa virou arena e a dupla segurou a onda.", "badge-comedy-sofa-boss", "couch-boss-count:1"),
@@ -97,7 +97,7 @@ export function getAchievementBySlug(slug: string): AchievementSeed | null {
   return ACHIEVEMENT_CATALOG.find((achievement) => achievement.slug === slug) ?? null;
 }
 
-function seed(
+function seed<const PredicateKey extends string>(
   slug: string,
   group: AchievementGroup,
   rarity: GamificationRarity,
@@ -105,8 +105,8 @@ function seed(
   title: string,
   description: string,
   iconKey: string,
-  predicateKey: string
-): AchievementSeed {
+  predicateKey: PredicateKey
+): AchievementSeed<PredicateKey> {
   return {
     slug,
     group,

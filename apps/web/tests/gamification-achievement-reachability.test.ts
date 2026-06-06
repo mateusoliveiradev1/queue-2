@@ -6,6 +6,7 @@ import {
   auditAchievementReachability,
   createAchievementPredicateFixture,
   evaluateAchievements,
+  type AchievementPredicateKey,
   type AchievementPredicateRegistry
 } from "../src/modules/gamification/domain/achievement-predicates";
 
@@ -30,8 +31,9 @@ describe("gamification achievement reachability", () => {
     });
 
     for (const seed of ACHIEVEMENT_CATALOG) {
-      const definition = ACHIEVEMENT_PREDICATES[seed.predicateKey];
-      const fixture = createAchievementPredicateFixture(seed.predicateKey);
+      const predicateKey = seed.predicateKey as AchievementPredicateKey;
+      const definition = ACHIEVEMENT_PREDICATES[predicateKey];
+      const fixture = createAchievementPredicateFixture(predicateKey);
 
       expect(definition.sources.length).toBeGreaterThan(0);
       expect(definition.sources).not.toEqual(
