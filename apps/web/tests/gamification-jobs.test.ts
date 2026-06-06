@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 
+import type { QueueDbClient, QueueDbPool } from "@queue/db";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -11,6 +12,7 @@ import {
 import {
   isGamificationMaintenanceRequestAuthorized
 } from "../src/modules/gamification/jobs";
+import { createGamificationRepository } from "../src/modules/gamification/infrastructure/gamification-repository";
 import type {
   GamificationAchievementUnlockRecord,
   GamificationDueJobRecord,
@@ -244,7 +246,101 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
     expect(repositorySource).toContain("FOR UPDATE SKIP LOCKED");
     expect(repositorySource).toContain("Math.min(Math.max(input.limit, 1), 100)");
   });
+
+  it("bootstraps four idempotent job species only for ready duos", async () => {
+    const { runtimePool, workerPool, insertedSpecies } = fakeGamificationJobPools();
+    const repository = createGamificationRepository({ runtimePool, workerPool });
+
+    await expect(repository.ensureGamificationJobs(now)).resolves.toEqual({
+      producedJobs: 4,
+      readyDuos: 1
+    });
+    await expect(repository.ensureGamificationJobs(now)).resolves.toEqual({
+      producedJobs: 0,
+      readyDuos: 1
+    });
+    expect(insertedSpecies).toEqual([
+      "monthly",
+      "seasonal",
+      "streak",
+      "weekly"
+    ]);
+  });
+
+  it("keeps the worker pool lazy for normal user transactions", async () => {
+    const { runtimePool, workerPool } = fakeGamificationJobPools();
+    const repository = createGamificationRepository({ runtimePool, workerPool });
+
+    await expect(
+      repository.withUserTransaction("member-1", async () => "runtime-ok")
+    ).resolves.toBe("runtime-ok");
+    expect(runtimePool.connect).toHaveBeenCalledTimes(1);
+    expect(workerPool.connect).not.toHaveBeenCalled();
+  });
 });
+
+function fakeGamificationJobPools(): {
+  runtimePool: QueueDbPool;
+  workerPool: QueueDbPool;
+  insertedSpecies: string[];
+} {
+  const insertedSpecies: string[] = [];
+  const insertedKeys = new Set<string>();
+  const runtimeClient = {
+    query: vi.fn(async () => ({ rows: [] })),
+    release: vi.fn()
+  } as unknown as QueueDbClient;
+  const workerClient = {
+    query: vi.fn(async (sql: string, values: unknown[] = []) => {
+      if (sql === "BEGIN" || sql === "COMMIT" || sql === "ROLLBACK") {
+        return { rows: [] };
+      }
+
+      if (sql.includes("FROM app.duos AS duo")) {
+        return {
+          rows: [
+            {
+              duo_id: "duo-1",
+              timezone: "America/Sao_Paulo",
+              created_by_user_id: "member-1"
+            }
+          ]
+        };
+      }
+
+      if (sql.includes("INSERT INTO ops.scheduled_jobs")) {
+        const jobKey = String(values[1]);
+        const payload = JSON.parse(String(values[4])) as {
+          questType?: string;
+        };
+        const species = payload.questType ?? "streak";
+
+        if (insertedKeys.has(jobKey) || insertedSpecies.includes(species)) {
+          return { rows: [] };
+        }
+
+        insertedKeys.add(jobKey);
+        insertedSpecies.push(species);
+        return { rows: [{ id: `job-${insertedSpecies.length}` }] };
+      }
+
+      throw new Error(`Unexpected worker SQL: ${sql}`);
+    }),
+    release: vi.fn()
+  } as unknown as QueueDbClient;
+  const runtimePool = {
+    connect: vi.fn(async () => runtimeClient)
+  } as unknown as QueueDbPool;
+  const workerPool = {
+    connect: vi.fn(async () => workerClient)
+  } as unknown as QueueDbPool;
+
+  return {
+    runtimePool,
+    workerPool,
+    insertedSpecies
+  };
+}
 
 function fakeGamificationRepository(input: {
   jobs?: GamificationDueJobRecord[];
