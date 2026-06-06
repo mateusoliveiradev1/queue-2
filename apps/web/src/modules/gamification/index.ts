@@ -87,6 +87,7 @@ export {
   type RewardToastViewModel
 } from "./presentation/view-models";
 export { GamificationDashboardBand } from "./presentation/gamification-dashboard-band";
+export { RewardToast } from "./presentation/reward-toast";
 export { XpLedgerPanel } from "./presentation/xp-ledger-panel";
 
 export type {

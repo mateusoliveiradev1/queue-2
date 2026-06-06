@@ -614,6 +614,34 @@ input {
   padding: var(--space-4) var(--space-5);
 }
 
+.reward-inline-state {
+  background: color-mix(in oklch, var(--surface) 82%, black);
+  border: 1px solid color-mix(in oklch, var(--primary) 34%, transparent);
+  border-left: 4px solid var(--primary);
+  border-radius: var(--radius-sharp);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  font-weight: 900;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+  padding: var(--space-4) var(--space-5);
+  text-transform: uppercase;
+}
+
+.reward-inline-state[data-variant="special"] {
+  border-color: color-mix(in oklch, var(--accent) 42%, var(--primary));
+  border-left-color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--primary) 16%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reward-inline-state {
+    transition: none;
+  }
+}
+
 .state-list {
   display: grid;
   gap: var(--space-3);

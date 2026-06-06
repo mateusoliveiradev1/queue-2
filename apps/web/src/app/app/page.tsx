@@ -7,6 +7,7 @@ import { StatusToast } from "../../components/status-toast";
 import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
 import {
   GamificationDashboardBand,
+  RewardToast,
   getGamificationDashboard,
   toGamificationDashboardView
 } from "../../modules/gamification";
@@ -32,6 +33,7 @@ import {
   promotePlayingGameAction,
   reorderPlayingGamesAction
 } from "./phase-4-actions";
+import { getPhase5RewardStatus } from "./phase-5-status";
 
 export const metadata: Metadata = {
   description:
@@ -125,6 +127,8 @@ async function renderDashboardPage({
     : 0;
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
+  const rewardState = getSearchParam(params?.recompensa);
+  const rewardStatus = getPhase5RewardStatus(rewardState);
 
   return measureStage("render", dashboardTimingContext, async () => (
     <AppShell
@@ -141,6 +145,7 @@ async function renderDashboardPage({
           </p>
         </>
       ) : null}
+      <RewardToast reward={rewardStatus} />
 
       <header className="app-header">
         <div>

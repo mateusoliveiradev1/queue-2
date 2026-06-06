@@ -180,6 +180,7 @@ vi.mock("../src/modules/gamification", async () => {
 
   return {
     GamificationDashboardBand: dashboardBand.GamificationDashboardBand,
+    RewardToast: () => null,
     getGamificationDashboard: gamificationModuleMock.getGamificationDashboard,
     toGamificationDashboardView: viewModels.toGamificationDashboardView
   };
