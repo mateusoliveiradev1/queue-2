@@ -1,9 +1,7 @@
-import {
-  SCHEDULED_SESSION_ATTENDANCE_XP,
-  getScheduledSessionAward
-} from "../domain/play-policy";
 import type {
+  PlayGamificationXpAwardRecord,
   PlayRepository,
+  PlayRewardSummary,
   PlayScheduledSessionRecord,
   PlayXpAwardRecord
 } from "./ports";
@@ -12,11 +10,16 @@ export type ConfirmScheduledSessionResult =
   | {
       ok: true;
       scheduledSession: PlayScheduledSessionRecord;
+      reward: PlayRewardSummary | null;
       xpAward: PlayXpAwardRecord | null;
     }
   | {
       ok: false;
-      reason: "membership-required" | "scheduled-session-not-found";
+      reason:
+        | "membership-required"
+        | "reward-application-failed"
+        | "scheduled-session-not-found";
+      rewardFailureReason?: string;
     };
 
 export async function confirmScheduledSessionUseCase(
@@ -26,7 +29,8 @@ export async function confirmScheduledSessionUseCase(
   },
   repository: PlayRepository
 ): Promise<ConfirmScheduledSessionResult> {
-  return repository.withUserTransaction(input.userId, async (transaction) => {
+  try {
+    return await repository.withUserTransaction(input.userId, async (transaction) => {
     const membership = await transaction.resolveMembership(input.userId);
 
     if (!membership) {
@@ -44,24 +48,24 @@ export async function confirmScheduledSessionUseCase(
       return { ok: false, reason: "scheduled-session-not-found" };
     }
 
-    const award = getScheduledSessionAward({
-      awardAlreadyApplied: false,
-      doubleConfirmed: scheduledSession.doubleConfirmed,
-      scheduledSessionId: scheduledSession.id
-    });
-    const xpAward = award.ok
-      ? await transaction.insertXpAward({
-          amount: SCHEDULED_SESSION_ATTENDANCE_XP,
-          awardKey: award.value.awardKey,
-          awardedByUserId: input.userId,
+    const rewardResult = scheduledSession.doubleConfirmed
+      ? await transaction.applyGamificationFact({
           duoId: membership.duoId,
-          metadata: {
-            scheduledStartAt: scheduledSession.scheduledStartAt.toISOString()
-          },
+          actorUserId: input.userId,
+          sourceType: "scheduled-session",
           sourceId: scheduledSession.id,
-          sourceType: "scheduled-session"
+          occurredAt: scheduledSession.scheduledStartAt,
+          confirmedDuoFact: true,
+          metadata: {
+            scheduledStartAt: scheduledSession.scheduledStartAt.toISOString(),
+            timezone: scheduledSession.timezone
+          }
         })
       : null;
+
+    if (rewardResult && !rewardResult.ok) {
+      throw new RewardApplicationError(rewardResult.reason);
+    }
 
     await transaction.insertNotificationItem({
       actionRefId: scheduledSession.id,
@@ -78,7 +82,43 @@ export async function confirmScheduledSessionUseCase(
     return {
       ok: true,
       scheduledSession,
-      xpAward
+      reward: rewardResult?.summary ?? null,
+      xpAward: toPlayXpAward(rewardResult?.ok ? rewardResult.summary.xpAwards[0] : undefined)
     };
   });
+  } catch (error) {
+    if (error instanceof RewardApplicationError) {
+      return {
+        ok: false,
+        reason: "reward-application-failed",
+        rewardFailureReason: error.reason
+      };
+    }
+
+    throw error;
+  }
+}
+
+class RewardApplicationError extends Error {
+  constructor(readonly reason: string) {
+    super(`play_reward_application_failed:${reason}`);
+  }
+}
+
+function toPlayXpAward(
+  award: PlayGamificationXpAwardRecord | undefined
+): PlayXpAwardRecord | null {
+  return award
+    ? {
+        id: award.id,
+        duoId: award.duoId,
+        awardKey: award.awardKey,
+        sourceType: award.sourceType,
+        sourceId: award.sourceId,
+        amount: award.amount,
+        awardedByUserId: award.awardedByUserId,
+        metadata: award.metadata,
+        awardedAt: award.awardedAt
+      }
+    : null;
 }

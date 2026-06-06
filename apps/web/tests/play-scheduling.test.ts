@@ -91,10 +91,10 @@ describe("Phase 04.5 scheduled sessions", () => {
     ).resolves.toEqual({ ok: false, reason: "not-playing" });
   });
 
-  it("awards scheduled-session XP only through the idempotent award ledger", async () => {
-    const insertXpAward = vi.fn<PlayRepositoryTransaction["insertXpAward"]>(
-      async (input) => xpAwardRecord(input)
-    );
+  it("awards scheduled-session XP through gamification", async () => {
+    const applyGamificationFact = vi.fn<
+      PlayRepositoryTransaction["applyGamificationFact"]
+    >(async () => gamificationFactResult());
     const { repository } = makeRepository({
       transaction: {
         confirmScheduledAttendance: vi.fn(async () =>
@@ -105,7 +105,7 @@ describe("Phase 04.5 scheduled sessions", () => {
             pendingUserIds: []
           })
         ),
-        insertXpAward
+        applyGamificationFact
       }
     });
 
@@ -120,16 +120,20 @@ describe("Phase 04.5 scheduled sessions", () => {
     ).resolves.toEqual(
       expect.objectContaining({
         ok: true,
+        reward: expect.objectContaining({
+          totalXpAwarded: 100
+        }),
         xpAward: expect.objectContaining({
           amount: 100,
           awardKey: "scheduled-session:scheduled-1"
         })
       })
     );
-    expect(insertXpAward).toHaveBeenCalledWith(
+    expect(applyGamificationFact).toHaveBeenCalledWith(
       expect.objectContaining({
-        awardKey: "scheduled-session:scheduled-1",
-        sourceType: "scheduled-session"
+        sourceId: "scheduled-1",
+        sourceType: "scheduled-session",
+        confirmedDuoFact: true
       })
     );
   });
@@ -178,6 +182,7 @@ function makeRepository(input: {
     createTerminalRequest: vi.fn(),
     cancelTerminalRequest: vi.fn(),
     confirmTerminalRequest: vi.fn(),
+    applyGamificationFact: vi.fn(async () => gamificationFactResult()),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     createScheduledSession: vi.fn(async (scheduledInput) => scheduledSessionRecord(scheduledInput)),
     updateScheduledSession: vi.fn(async (scheduledInput) => scheduledSessionRecord(scheduledInput)),
@@ -382,5 +387,42 @@ function xpAwardRecord(overrides: Partial<PlayXpAwardRecord> = {}): PlayXpAwardR
     metadata: {},
     awardedAt: new Date("2026-06-05T12:10:00.000Z"),
     ...overrides
+  };
+}
+
+function gamificationFactResult() {
+  const award = {
+    id: "xp-1",
+    duoId: "duo-1",
+    awardKey: "scheduled-session:scheduled-1",
+    sourceType: "scheduled-session" as const,
+    sourceId: "scheduled-1",
+    amount: 100,
+    reasonCode: "scheduled-session-confirmed",
+    awardedByUserId: "member-1",
+    metadata: {},
+    awardedAt: new Date("2026-06-05T12:10:00.000Z")
+  };
+  const level = { level: 1, name: "Lv1 Casuais", xpRequired: 0 };
+
+  return {
+    ok: true as const,
+    duplicate: false,
+    summary: {
+      totalXpAwarded: award.amount,
+      xpAwards: [award],
+      levelUp: null,
+      achievements: [],
+      questProgress: [],
+      streak: null,
+      projection: {
+        duoId: "duo-1",
+        xp: award.amount,
+        level,
+        streak: 0,
+        availableFreezes: 0,
+        updatedAt: new Date("2026-06-05T12:10:00.000Z")
+      }
+    }
   };
 }

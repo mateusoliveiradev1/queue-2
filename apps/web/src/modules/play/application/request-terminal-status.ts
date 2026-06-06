@@ -4,9 +4,12 @@ import {
   type TerminalTargetStatus
 } from "../domain/play-policy";
 import type {
+  PlayGamificationXpAwardRecord,
   PlayRepository,
+  PlayRewardSummary,
   PlayTerminalRequestRecord
 } from "./ports";
+import type { PlayXpAwardRecord } from "./ports";
 
 export type RequestTerminalStatusResult =
   | {
@@ -37,14 +40,18 @@ export type ConfirmTerminalStatusResult =
   | {
       ok: true;
       request: PlayTerminalRequestRecord;
+      reward: PlayRewardSummary | null;
       state: "confirmed";
+      xpAward: PlayXpAwardRecord | null;
     }
   | {
       ok: false;
       reason:
         | "membership-required"
         | "partner-confirmation-required"
+        | "reward-application-failed"
         | "terminal-request-not-pending";
+      rewardFailureReason?: string;
     };
 
 export async function requestTerminalStatusUseCase(
@@ -146,7 +153,8 @@ export async function confirmTerminalStatusUseCase(
   },
   repository: PlayRepository
 ): Promise<ConfirmTerminalStatusResult> {
-  return repository.withUserTransaction(input.userId, async (transaction) => {
+  try {
+    return await repository.withUserTransaction(input.userId, async (transaction) => {
     const membership = await transaction.resolveMembership(input.userId);
 
     if (!membership) {
@@ -159,19 +167,75 @@ export async function confirmTerminalStatusUseCase(
       actorUserId: input.userId
     });
 
-    return request
-      ? {
-          ok: true,
-          request,
-          state: "confirmed"
-        }
-      : {
-          ok: false,
-          reason: "partner-confirmation-required"
-        };
+    if (!request) {
+      return {
+        ok: false,
+        reason: "partner-confirmation-required"
+      };
+    }
+
+    const rewardResult = await transaction.applyGamificationFact({
+      duoId: membership.duoId,
+      actorUserId: input.userId,
+      sourceType: request.targetStatus === "zerado" ? "terminal-zerado" : "terminal-dropado",
+      sourceId: request.id,
+      occurredAt: request.updatedAt,
+      confirmedDuoFact: true,
+      metadata: {
+        libraryGameId: request.libraryGameId,
+        terminalStatus: request.targetStatus
+      }
+    });
+
+    if (!rewardResult.ok) {
+      throw new RewardApplicationError(rewardResult.reason);
+    }
+
+    return {
+      ok: true,
+      request,
+      reward: rewardResult.summary,
+      state: "confirmed",
+      xpAward: toPlayXpAward(rewardResult.summary.xpAwards[0])
+    };
   });
+  } catch (error) {
+    if (error instanceof RewardApplicationError) {
+      return {
+        ok: false,
+        reason: "reward-application-failed",
+        rewardFailureReason: error.reason
+      };
+    }
+
+    throw error;
+  }
 }
 
 function terminalStatusLabel(status: TerminalTargetStatus): string {
   return status === "zerado" ? "Zerado" : "Dropado";
+}
+
+class RewardApplicationError extends Error {
+  constructor(readonly reason: string) {
+    super(`play_reward_application_failed:${reason}`);
+  }
+}
+
+function toPlayXpAward(
+  award: PlayGamificationXpAwardRecord | undefined
+): PlayXpAwardRecord | null {
+  return award
+    ? {
+        id: award.id,
+        duoId: award.duoId,
+        awardKey: award.awardKey,
+        sourceType: award.sourceType,
+        sourceId: award.sourceId,
+        amount: award.amount,
+        awardedByUserId: award.awardedByUserId,
+        metadata: award.metadata,
+        awardedAt: award.awardedAt
+      }
+    : null;
 }

@@ -229,6 +229,7 @@ function makeTimelineRepository(input: {
     createTerminalRequest: vi.fn(),
     cancelTerminalRequest: vi.fn(),
     confirmTerminalRequest: vi.fn(),
+    applyGamificationFact: vi.fn(async () => gamificationFactResult()),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     createScheduledSession: vi.fn(async () => scheduledSessionRecord()),
     updateScheduledSession: vi.fn(async () => scheduledSessionRecord()),
@@ -443,5 +444,42 @@ function xpAwardRecord(overrides: Partial<PlayXpAwardRecord> = {}): PlayXpAwardR
     metadata: {},
     awardedAt: new Date("2026-06-05T12:10:00.000Z"),
     ...overrides
+  };
+}
+
+function gamificationFactResult() {
+  const award = {
+    id: "xp-1",
+    duoId: "duo-1",
+    awardKey: "live-session:session-1",
+    sourceType: "live-session" as const,
+    sourceId: "session-1",
+    amount: 30,
+    reasonCode: "live-session-confirmed",
+    awardedByUserId: "member-1",
+    metadata: {},
+    awardedAt: new Date("2026-06-05T12:10:00.000Z")
+  };
+  const level = { level: 1, name: "Lv1 Casuais", xpRequired: 0 };
+
+  return {
+    ok: true as const,
+    duplicate: false,
+    summary: {
+      totalXpAwarded: award.amount,
+      xpAwards: [award],
+      levelUp: null,
+      achievements: [],
+      questProgress: [],
+      streak: null,
+      projection: {
+        duoId: "duo-1",
+        xp: award.amount,
+        level,
+        streak: 0,
+        availableFreezes: 0,
+        updatedAt: new Date("2026-06-05T12:10:00.000Z")
+      }
+    }
   };
 }

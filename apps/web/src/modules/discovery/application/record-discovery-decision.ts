@@ -5,6 +5,8 @@ import {
   type DiscoveryLibraryHandoffStatus
 } from "../domain/discovery-policy";
 import type {
+  DiscoveryGamificationEffect,
+  DiscoveryMatchRecord,
   DiscoveryLibraryHandoffInput,
   DiscoveryLibraryHandoffResult,
   DiscoveryRepository,
@@ -41,9 +43,17 @@ type LibraryGateway = {
   >;
 };
 
+type DiscoveryGamificationGateway = {
+  applyMatchFact(input: {
+    userId: string;
+    match: DiscoveryMatchRecord;
+  }): Promise<DiscoveryGamificationEffect>;
+};
+
 export async function recordDiscoveryDecisionUseCase(
   input: RecordDiscoveryDecisionInput,
-  repository: Pick<DiscoveryRepository, "recordDecision">
+  repository: Pick<DiscoveryRepository, "recordDecision">,
+  gamification?: DiscoveryGamificationGateway
 ): Promise<RecordDiscoveryDecisionResult> {
   if (!isDiscoveryDecision(input.decision)) {
     return { ok: false, reason: "invalid-decision" };
@@ -53,7 +63,19 @@ export async function recordDiscoveryDecisionUseCase(
     return { ok: false, reason: "invalid-source-mode" };
   }
 
-  return repository.recordDecision(input);
+  const result = await repository.recordDecision(input);
+
+  if (!result.ok || result.state.kind !== "match-created" || !gamification) {
+    return result;
+  }
+
+  return {
+    ...result,
+    gamification: await gamification.applyMatchFact({
+      userId: input.userId,
+      match: result.state.match
+    })
+  };
 }
 
 export async function handoffDiscoveryMatchToLibraryUseCase(
@@ -104,7 +126,27 @@ export async function recordDiscoveryDecision(
   input: RecordDiscoveryDecisionInput
 ): Promise<RecordDiscoveryDecisionResult> {
   const { discoveryRepository } = await import("../infrastructure/discovery-repository");
-  const result = await recordDiscoveryDecisionUseCase(input, discoveryRepository);
+  const result = await recordDiscoveryDecisionUseCase(input, discoveryRepository, {
+    applyMatchFact: async ({ userId, match }) => {
+      const { applyGamificationFact } = await import("../../gamification");
+      const reward = await applyGamificationFact({
+        duoId: match.duoId,
+        actorUserId: userId,
+        sourceType: "discovery-match",
+        sourceId: match.id,
+        occurredAt: match.matchedAt,
+        confirmedDuoFact: true,
+        metadata: {
+          catalogGameId: match.catalogGameId,
+          createdFrom: match.createdFrom
+        }
+      });
+
+      return reward.ok
+        ? { ok: true, reward: reward.summary }
+        : { ok: false, reason: reward.reason };
+    }
+  });
 
   if (result.ok && result.state.kind === "match-created") {
     const { sendMatchNotification } = await import("./send-match-notification");

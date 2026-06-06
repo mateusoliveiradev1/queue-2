@@ -245,6 +245,7 @@ function makeTerminalRepository(input: {
     ),
     cancelTerminalRequest: vi.fn(async () => null),
     confirmTerminalRequest: vi.fn(async () => null),
+    applyGamificationFact: vi.fn(async () => gamificationFactResult()),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     createScheduledSession: vi.fn(async () => scheduledSessionRecord()),
     updateScheduledSession: vi.fn(async () => scheduledSessionRecord()),
@@ -455,5 +456,42 @@ function xpAwardRecord(overrides: Partial<PlayXpAwardRecord> = {}): PlayXpAwardR
     metadata: {},
     awardedAt: new Date("2026-06-05T12:10:00.000Z"),
     ...overrides
+  };
+}
+
+function gamificationFactResult() {
+  const award = {
+    id: "xp-1",
+    duoId: "duo-1",
+    awardKey: "terminal-zerado:terminal-1",
+    sourceType: "terminal-zerado" as const,
+    sourceId: "terminal-1",
+    amount: 250,
+    reasonCode: "terminal-zerado-confirmed",
+    awardedByUserId: "member-2",
+    metadata: {},
+    awardedAt: new Date("2026-06-05T12:10:00.000Z")
+  };
+  const level = { level: 1, name: "Lv1 Casuais", xpRequired: 0 };
+
+  return {
+    ok: true as const,
+    duplicate: false,
+    summary: {
+      totalXpAwarded: award.amount,
+      xpAwards: [award],
+      levelUp: null,
+      achievements: [],
+      questProgress: [],
+      streak: null,
+      projection: {
+        duoId: "duo-1",
+        xp: award.amount,
+        level,
+        streak: 0,
+        availableFreezes: 0,
+        updatedAt: new Date("2026-06-05T12:10:00.000Z")
+      }
+    }
   };
 }

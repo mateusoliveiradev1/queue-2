@@ -7,6 +7,10 @@ import {
   type QueueDbPool
 } from "@queue/db";
 
+import {
+  applyGamificationFactToTransaction,
+  createGamificationTransaction
+} from "../../gamification/index.server";
 import type {
   ActivePlayGameRecord,
   CurrentPlayGameRecord,
@@ -425,6 +429,8 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     cancelTerminalRequest: (input) => cancelTerminalRequest(client, input),
     confirmTerminalRequest: (input) => confirmTerminalRequest(client, input),
     readDuoTimezone: (input) => readDuoTimezone(client, input.duoId),
+    applyGamificationFact: (input) =>
+      applyGamificationFactToTransaction(input, createGamificationTransaction(client)),
     createScheduledSession: (input) => createScheduledSession(client, input),
     updateScheduledSession: (input) => updateScheduledSession(client, input),
     cancelScheduledSession: (input) => cancelScheduledSession(client, input),
@@ -1728,11 +1734,11 @@ async function applyConfirmedSessionEffects(
     duoId: string;
     sessionId: string;
     actorUserId: string;
-    xpAmount: number;
   }
 ): Promise<{
   progress: PlayProgressRecord;
   xpAward: PlayXpAwardRecord | null;
+  reward: null;
   session: PlaySessionRecord;
 } | null> {
   const sessionResult = await client.query<SessionRow>(
@@ -1775,23 +1781,10 @@ async function applyConfirmedSessionEffects(
     actorUserId: input.actorUserId,
     durationSeconds: session.durationSeconds ?? 0
   });
-  const xpAward = input.xpAmount > 0
-    ? await insertXpAward(client, {
-        duoId: input.duoId,
-        awardKey: `${session.kind}-session:${session.id}`,
-        sourceType: session.kind === "live" ? "live-session" : "offline-session",
-        sourceId: session.id,
-        amount: input.xpAmount,
-        awardedByUserId: input.actorUserId,
-        metadata: {
-          durationSeconds: session.durationSeconds ?? 0
-        }
-      })
-    : null;
-
   return {
     progress,
-    xpAward,
+    xpAward: null,
+    reward: null,
     session
   };
 }
@@ -1952,6 +1945,7 @@ async function setChapterCompletion(
 ): Promise<{
   chapter: PlayChapterRecord;
   xpAward: PlayXpAwardRecord | null;
+  reward: null;
 } | null> {
   const result = await client.query<ChapterRow>(
     `
@@ -1984,21 +1978,7 @@ async function setChapterCompletion(
   }
 
   const chapter = mapChapter(row);
-  const xpAward = input.completed
-    ? await insertXpAward(client, {
-        duoId: input.duoId,
-        awardKey: `chapter:${chapter.id}`,
-        sourceType: "chapter",
-        sourceId: chapter.id,
-        amount: 25,
-        awardedByUserId: input.actorUserId,
-        metadata: {
-          title: chapter.title
-        }
-      })
-    : null;
-
-  return { chapter, xpAward };
+  return { chapter, xpAward: null, reward: null };
 }
 
 async function cancelPendingSessionConfirmation(

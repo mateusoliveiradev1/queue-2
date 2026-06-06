@@ -7,6 +7,13 @@ import type {
   TerminalTargetStatus
 } from "../domain/play-policy";
 import type { TimelineMilestoneKind } from "../domain/milestone-policy";
+import type {
+  GamificationApplyFactResult,
+  GamificationFactInput,
+  GamificationFactSourceType,
+  GamificationRewardSummary,
+  GamificationXpLedgerRecord
+} from "../../gamification";
 
 export type PlayUserId = string;
 export type PlayDuoId = string;
@@ -215,12 +222,7 @@ export type PlayNotificationInput = {
 export type PlayXpAwardInput = {
   duoId: PlayDuoId;
   awardKey: string;
-  sourceType:
-    | "chapter"
-    | "live-session"
-    | "offline-session"
-    | "scheduled-session"
-    | "terminal-status";
+  sourceType: GamificationFactSourceType | "terminal-status";
   sourceId: string;
   amount: number;
   awardedByUserId?: PlayUserId | null;
@@ -231,6 +233,14 @@ export type PlayXpAwardRecord = PlayXpAwardInput & {
   id: string;
   awardedAt: Date;
 };
+
+export type PlayRewardSummary = GamificationRewardSummary;
+
+export type PlayGamificationFactResult = GamificationApplyFactResult;
+
+export type PlayGamificationFactInput = GamificationFactInput;
+
+export type PlayGamificationXpAwardRecord = GamificationXpLedgerRecord;
 
 export type PlayTerminalRequestRecord = {
   id: string;
@@ -457,10 +467,10 @@ export type PlayRepositoryTransaction = {
     duoId: PlayDuoId;
     sessionId: string;
     actorUserId: PlayUserId;
-    xpAmount: number;
   }): Promise<{
     progress: PlayProgressRecord;
     xpAward: PlayXpAwardRecord | null;
+    reward?: PlayRewardSummary | null;
     session: PlaySessionRecord;
   } | null>;
   updateProgressPercent(input: {
@@ -483,6 +493,7 @@ export type PlayRepositoryTransaction = {
   }): Promise<{
     chapter: PlayChapterRecord;
     xpAward: PlayXpAwardRecord | null;
+    reward?: PlayRewardSummary | null;
   } | null>;
   createTerminalRequest(input: {
     duoId: PlayDuoId;
@@ -500,6 +511,7 @@ export type PlayRepositoryTransaction = {
     requestId: string;
     actorUserId: PlayUserId;
   }): Promise<PlayTerminalRequestRecord | null>;
+  applyGamificationFact(input: PlayGamificationFactInput): Promise<PlayGamificationFactResult>;
   readDuoTimezone(input: {
     duoId: PlayDuoId;
   }): Promise<string>;

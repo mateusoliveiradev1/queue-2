@@ -1,9 +1,8 @@
-import {
-  LIVE_SESSION_CONFIRMATION_XP
-} from "../domain/play-policy";
 import type {
+  PlayGamificationXpAwardRecord,
   PlayProgressRecord,
   PlayRepository,
+  PlayRewardSummary,
   PlaySessionDetailRecord,
   PlayXpAwardRecord
 } from "./ports";
@@ -14,11 +13,17 @@ export type ConfirmPlaySessionResult =
       state: "waiting-partner" | "confirmed";
       detail: PlaySessionDetailRecord;
       progress?: PlayProgressRecord;
+      reward?: PlayRewardSummary | null;
       xpAward?: PlayXpAwardRecord | null;
     }
   | {
       ok: false;
-      reason: "already-confirmed" | "membership-required" | "session-not-found";
+      reason:
+        | "already-confirmed"
+        | "membership-required"
+        | "reward-application-failed"
+        | "session-not-found";
+      rewardFailureReason?: string;
     };
 
 export async function confirmPlaySessionUseCase(
@@ -28,7 +33,8 @@ export async function confirmPlaySessionUseCase(
   },
   repository: PlayRepository
 ): Promise<ConfirmPlaySessionResult> {
-  return repository.withUserTransaction(input.userId, async (transaction) => {
+  try {
+    return await repository.withUserTransaction(input.userId, async (transaction) => {
     const membership = await transaction.resolveMembership(input.userId);
 
     if (!membership) {
@@ -94,16 +100,73 @@ export async function confirmPlaySessionUseCase(
     const effect = await transaction.applyConfirmedSessionEffects({
       duoId: membership.duoId,
       sessionId: input.sessionId,
-      actorUserId: input.userId,
-      xpAmount: detail.kind === "live" ? LIVE_SESSION_CONFIRMATION_XP : 0
+      actorUserId: input.userId
     });
+
+    if (!effect) {
+      return { ok: false, reason: "session-not-found" };
+    }
+
+    const rewardResult = await transaction.applyGamificationFact({
+      duoId: membership.duoId,
+      actorUserId: input.userId,
+      sourceType: detail.kind === "live" ? "live-session" : "offline-session",
+      sourceId: input.sessionId,
+      occurredAt: detail.endedAt ?? detail.startedAt,
+      confirmedDuoFact: true,
+      metadata: {
+        durationSeconds: detail.durationSeconds ?? 0,
+        kind: detail.kind,
+        libraryGameId: detail.libraryGameId
+      }
+    });
+
+    if (!rewardResult.ok) {
+      throw new RewardApplicationError(rewardResult.reason);
+    }
 
     return {
       ok: true,
       state: "confirmed",
       detail,
-      progress: effect?.progress,
-      xpAward: effect?.xpAward ?? null
+      progress: effect.progress,
+      reward: rewardResult.summary,
+      xpAward: toPlayXpAward(rewardResult.summary.xpAwards[0])
     };
   });
+  } catch (error) {
+    if (error instanceof RewardApplicationError) {
+      return {
+        ok: false,
+        reason: "reward-application-failed",
+        rewardFailureReason: error.reason
+      };
+    }
+
+    throw error;
+  }
+}
+
+class RewardApplicationError extends Error {
+  constructor(readonly reason: string) {
+    super(`play_reward_application_failed:${reason}`);
+  }
+}
+
+function toPlayXpAward(
+  award: PlayGamificationXpAwardRecord | undefined
+): PlayXpAwardRecord | null {
+  return award
+    ? {
+        id: award.id,
+        duoId: award.duoId,
+        awardKey: award.awardKey,
+        sourceType: award.sourceType,
+        sourceId: award.sourceId,
+        amount: award.amount,
+        awardedByUserId: award.awardedByUserId,
+        metadata: award.metadata,
+        awardedAt: award.awardedAt
+      }
+    : null;
 }

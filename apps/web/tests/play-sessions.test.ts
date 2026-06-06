@@ -237,7 +237,7 @@ describe("Phase 04.3 play session lifecycle", () => {
       xpAward: xpAwardRecord({
         duoId: input.duoId,
         sourceId: input.sessionId,
-        amount: input.xpAmount,
+        amount: 0,
         awardedByUserId: input.actorUserId
       }),
       session: playSessionRecord({
@@ -252,6 +252,7 @@ describe("Phase 04.3 play session lifecycle", () => {
     const { repository, transaction } = makePlayRepository({
       transaction: {
         applyConfirmedSessionEffects,
+        applyGamificationFact: vi.fn(async () => gamificationFactResult()),
         markNotificationsActioned,
         readSessionDetail
       }
@@ -275,6 +276,9 @@ describe("Phase 04.3 play session lifecycle", () => {
       progress: expect.objectContaining({
         confirmedCoopSeconds: 3_600
       }),
+      reward: expect.objectContaining({
+        totalXpAwarded: 30
+      }),
       xpAward: expect.objectContaining({
         amount: 30,
         sourceType: "live-session"
@@ -288,8 +292,7 @@ describe("Phase 04.3 play session lifecycle", () => {
     expect(applyConfirmedSessionEffects).toHaveBeenCalledWith({
       duoId: "duo-1",
       sessionId: "session-1",
-      actorUserId: "member-2",
-      xpAmount: 30
+      actorUserId: "member-2"
     });
     expect(markNotificationsActioned).toHaveBeenCalledWith({
       duoId: "duo-1",
@@ -425,6 +428,7 @@ function makePlayRepository(input: {
     createTerminalRequest: vi.fn(),
     cancelTerminalRequest: vi.fn(),
     confirmTerminalRequest: vi.fn(),
+    applyGamificationFact: vi.fn(async () => gamificationFactResult()),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     createScheduledSession: vi.fn(async () => scheduledSessionRecord()),
     updateScheduledSession: vi.fn(async () => scheduledSessionRecord()),
@@ -668,5 +672,46 @@ function xpAwardRecord(overrides: Partial<PlayXpAwardRecord> = {}): PlayXpAwardR
     metadata: {},
     awardedAt: new Date("2026-06-05T12:10:00.000Z"),
     ...overrides
+  };
+}
+
+function gamificationFactResult() {
+  const award = {
+    id: "xp-1",
+    duoId: "duo-1",
+    awardKey: "live-session:session-1",
+    sourceType: "live-session" as const,
+    sourceId: "session-1",
+    amount: 30,
+    reasonCode: "live-session-confirmed",
+    awardedByUserId: "member-2",
+    metadata: {},
+    awardedAt: new Date("2026-06-05T12:10:00.000Z")
+  };
+  const level = {
+    level: 1,
+    name: "Lv1 Casuais",
+    xpRequired: 0
+  };
+
+  return {
+    ok: true as const,
+    duplicate: false,
+    summary: {
+      totalXpAwarded: award.amount,
+      xpAwards: [award],
+      levelUp: null,
+      achievements: [],
+      questProgress: [],
+      streak: null,
+      projection: {
+        duoId: "duo-1",
+        xp: award.amount,
+        level,
+        streak: 0,
+        availableFreezes: 0,
+        updatedAt: new Date("2026-06-05T12:10:00.000Z")
+      }
+    }
   };
 }

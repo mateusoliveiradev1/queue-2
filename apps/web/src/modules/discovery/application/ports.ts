@@ -19,6 +19,7 @@ import type {
   CatalogGameCardView,
   SearchCatalogGamesInput
 } from "../../catalog";
+import type { GamificationRewardSummary } from "../../gamification";
 import type { LibraryStatus } from "../../library";
 
 export type DiscoveryCatalogGameId = string;
@@ -216,12 +217,23 @@ export type DiscoveryDecisionActionState =
       match: DiscoveryMatchRecord;
     };
 
+export type DiscoveryGamificationEffect =
+  | {
+      ok: true;
+      reward: GamificationRewardSummary;
+    }
+  | {
+      ok: false;
+      reason: string;
+    };
+
 export type RecordDiscoveryDecisionResult =
   | {
       ok: true;
       state: DiscoveryDecisionActionState;
       decision: DiscoveryDecisionRecord;
       effect: DiscoveryDecisionEffect;
+      gamification?: DiscoveryGamificationEffect;
       matchPolicy: DiscoveryMatchPolicyResult;
       match: DiscoveryMatchRecord | null;
     }
