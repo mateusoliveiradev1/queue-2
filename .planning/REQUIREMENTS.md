@@ -169,7 +169,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **GAME-09**: Duo receives three weekly quests that reset Monday at 00:00 in the duo timezone
 - [x] **GAME-10**: Duo receives one monthly quest
 - [x] **GAME-11**: Duo can receive seasonal quests such as Spooky, Awards and Anniversary
-- [ ] **GAME-12**: User can view weekly, monthly and seasonal quest progress on the challenges page
+- [x] **GAME-12**: User can view weekly, monthly and seasonal quest progress on the challenges page
 - [x] **GAME-13**: Duo maintains a collaborative play streak
 - [x] **GAME-14**: User sees animated flame and freezing states for the streak
 - [x] **GAME-15**: Duo earns one Streak Freeze every ten levels
@@ -380,7 +380,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GAME-09 | Phase 5 | Complete |
 | GAME-10 | Phase 5 | Complete |
 | GAME-11 | Phase 5 | Complete |
-| GAME-12 | Phase 5 | Pending |
+| GAME-12 | Phase 5 | Complete |
 | GAME-13 | Phase 5 | Complete |
 | GAME-14 | Phase 5 | Complete |
 | GAME-15 | Phase 5 | Complete |

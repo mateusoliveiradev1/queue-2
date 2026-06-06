@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-04-PLAN.md
-last_updated: "2026-06-06T10:17:31.737Z"
+stopped_at: Completed 05-05-PLAN.md
+last_updated: "2026-06-06T10:56:02.660Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 41
-  completed_plans: 39
-  percent: 95
+  completed_plans: 40
+  percent: 98
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 05 (gamificacao-coletiva) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-06-06
 
-Progress: [██████████] 95%
+Progress: [██████████] 98%
 
 ## Performance Metrics
 
@@ -93,6 +93,7 @@ Progress: [██████████] 95%
 | Phase 05-gamificacao-coletiva P02 | 27min | 3 tasks | 25 files |
 | Phase 05-gamificacao-coletiva P03 | 15min | 3 tasks | 16 files |
 | Phase 05-gamificacao-coletiva P04 | 18min | 3 tasks | 15 files |
+| Phase 05-gamificacao-coletiva P05 | 17min | 3 tasks | 27 files |
 
 ## Quick Tasks Completed
 
@@ -255,6 +256,9 @@ Recent decisions affecting current work:
 - [Phase 05-04]: Locked hidden achievements expose mystery copy, synthetic view keys and no slug, predicate or source IDs until unlocked.
 - [Phase 05-04]: Seven-item mobile app navigation uses horizontally scrollable min-width tracks to avoid text overlap.
 - [Phase 05-04]: app.conquistas is registered in performance route allowlists and budgets so static server timing labels stay allowlisted.
+- [Phase 05-gamificacao-coletiva]: 05-05: Reused existing achievement catalog seeds for monthly and seasonal permanent seals instead of adding schema or cosmetic inventory.
+- [Phase 05-gamificacao-coletiva]: 05-05: Gamification maintenance jobs require createdByUserId payloads so mutations run through existing duo-scoped RLS user context.
+- [Phase 05-gamificacao-coletiva]: 05-05: Challenge UI remains read-only; progress, XP, Freeze consumption and seal unlocks stay server-authoritative.
 
 ### Pending Todos
 
@@ -292,6 +296,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T10:17:31.731Z
-Stopped at: Completed 05-04-PLAN.md
+Last session: 2026-06-06T10:55:54.642Z
+Stopped at: Completed 05-05-PLAN.md
 Resume file: None
