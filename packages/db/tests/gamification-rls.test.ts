@@ -126,8 +126,6 @@ describe.skipIf(!testDatabaseUrl)("gamification RLS isolation", () => {
   });
 });
 
-type ReadyDuo = Awaited<ReturnType<typeof createReadyDuo>>;
-
 async function createReadyDuo(pool: pg.Pool, label: string) {
   const ownerUserId = makeTestUserId(`${label}-owner`);
   const partnerUserId = makeTestUserId(`${label}-partner`);

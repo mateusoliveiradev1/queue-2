@@ -75,6 +75,9 @@ const playModuleMock = vi.hoisted(() => ({
   getGamePlayDetail: vi.fn(),
   getGameTimeline: vi.fn()
 }));
+const gamificationModuleMock = vi.hoisted(() => ({
+  getGamificationDashboard: vi.fn(async () => null)
+}));
 const navigationMock = vi.hoisted(() => ({
   back: vi.fn(),
   forward: vi.fn(),
@@ -229,6 +232,15 @@ vi.mock("../src/modules/play", async () => {
     getGamePlayDetail: playModuleMock.getGamePlayDetail,
     getGameTimeline: playModuleMock.getGameTimeline,
     toPlayingNowView: viewModels.toPlayingNowView
+  };
+});
+
+vi.mock("../src/modules/gamification", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/modules/gamification")>();
+
+  return {
+    ...actual,
+    getGamificationDashboard: gamificationModuleMock.getGamificationDashboard
   };
 });
 

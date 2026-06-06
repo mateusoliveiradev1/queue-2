@@ -85,7 +85,7 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
     );
   });
 
-  test("runtime and worker roles can update only Phase 1 duo settings columns", async () => {
+  test("runtime and worker roles can update only duo settings and gamification projections", async () => {
     const privileges = await pool.query<{
       role_name: string;
       column_name: string;
@@ -122,13 +122,13 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
       expect(rolePrivileges).toEqual({
         created_at: false,
         id: false,
-        level: false,
+        level: true,
         name: true,
         paired_at: false,
-        streak: false,
+        streak: true,
         timezone: true,
         updated_at: true,
-        xp: false
+        xp: true
       });
       expect(
         privileges.rows

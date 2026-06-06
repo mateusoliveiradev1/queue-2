@@ -196,6 +196,8 @@ describe("performance budgets", () => {
       "api.discovery.search",
       "app.biblioteca",
       "app.catalogo",
+      "app.conquistas",
+      "app.desafios",
       "app.descobrir",
       "app.home",
       "app.jogo"

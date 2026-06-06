@@ -130,13 +130,17 @@ describe.skipIf(!testDatabaseUrl)("play migration foundation", () => {
       table_name: string;
       can_delete: boolean;
       runtime_can_update_jobs: boolean;
-      worker_can_update_jobs: boolean;
+      worker_can_update_job_status: boolean;
+      worker_can_update_job_key: boolean;
     }>(`
       SELECT
         expected.table_name,
         has_table_privilege('queue2_app_runtime', expected.table_name, 'DELETE') AS can_delete,
         has_table_privilege('queue2_app_runtime', 'ops.scheduled_jobs', 'UPDATE') AS runtime_can_update_jobs,
-        has_table_privilege('queue2_worker', 'ops.scheduled_jobs', 'UPDATE') AS worker_can_update_jobs
+        has_column_privilege('queue2_worker', 'ops.scheduled_jobs', 'status', 'UPDATE')
+          AS worker_can_update_job_status,
+        has_column_privilege('queue2_worker', 'ops.scheduled_jobs', 'job_key', 'UPDATE')
+          AS worker_can_update_job_key
       FROM (VALUES
         ('app.play_active_games'),
         ('app.play_sessions'),
@@ -164,7 +168,8 @@ describe.skipIf(!testDatabaseUrl)("play migration foundation", () => {
         .every((row) => row.can_delete === false)
     ).toBe(true);
     expect(privileges.rows.every((row) => row.runtime_can_update_jobs === false)).toBe(true);
-    expect(privileges.rows.every((row) => row.worker_can_update_jobs === true)).toBe(true);
+    expect(privileges.rows.every((row) => row.worker_can_update_job_status === true)).toBe(true);
+    expect(privileges.rows.every((row) => row.worker_can_update_job_key === false)).toBe(true);
   });
 
   test("security-sensitive play tables carry owner and audit comments", async () => {
@@ -196,7 +201,7 @@ describe.skipIf(!testDatabaseUrl)("play migration foundation", () => {
       }),
       expect.objectContaining({
         table_name: "app.push_subscriptions",
-        comment: expect.stringContaining("server")
+        comment: expect.stringContaining("browser push subscriptions")
       }),
       expect.objectContaining({
         table_name: "ops.scheduled_jobs",

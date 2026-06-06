@@ -138,8 +138,6 @@ describe.skipIf(!testDatabaseUrl)("gamification database-backed concurrency inva
   });
 });
 
-type ReadyDuo = Awaited<ReturnType<typeof createReadyDuo>>;
-
 async function createReadyDuo(pool: pg.Pool, label: string) {
   const ownerUserId = makeTestUserId(`${label}-owner`);
   const partnerUserId = makeTestUserId(`${label}-partner`);

@@ -71,6 +71,9 @@ const playModuleMock = vi.hoisted(() => ({
   getCurrentPlay: vi.fn(),
   getDuoNotifications: vi.fn()
 }));
+const gamificationModuleMock = vi.hoisted(() => ({
+  getGamificationDashboard: vi.fn(async () => null)
+}));
 
 vi.mock("../src/platform/auth/session", () => ({
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
@@ -181,6 +184,15 @@ vi.mock("../src/modules/play", async () => {
     getCurrentPlay: playModuleMock.getCurrentPlay,
     getDuoNotifications: playModuleMock.getDuoNotifications,
     toPlayingNowView: viewModels.toPlayingNowView
+  };
+});
+
+vi.mock("../src/modules/gamification", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../src/modules/gamification")>();
+
+  return {
+    ...actual,
+    getGamificationDashboard: gamificationModuleMock.getGamificationDashboard
   };
 });
 
