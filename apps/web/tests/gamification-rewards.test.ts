@@ -174,6 +174,124 @@ describe("gamification reward application", () => {
     );
   });
 
+  it("advances quests atomically by source key, caps the goal and links one reward", async () => {
+    let currentValue = 2;
+    let completedAt: Date | null = null;
+    let rewardAwardId: string | null = null;
+    const seenSources = new Set<string>();
+    const advanceQuestProgress = vi.fn(async (input: {
+      completedAt: Date;
+      duoId: string;
+      goal: number;
+      increment: number;
+      questCycleId: string;
+      sourceKey: string;
+    }) => {
+      const advanced = !completedAt && !seenSources.has(input.sourceKey);
+      const previousValue = currentValue;
+
+      if (advanced) {
+        seenSources.add(input.sourceKey);
+        currentValue = Math.min(input.goal, currentValue + input.increment);
+      }
+
+      const completedNow =
+        advanced && !completedAt && previousValue < input.goal && currentValue >= input.goal;
+
+      if (completedNow) {
+        completedAt = input.completedAt;
+      }
+
+      return {
+        advanced,
+        completedNow,
+        progress: questProgressRecord({
+          currentValue,
+          completedAt,
+          rewardAwardId,
+          metadata: { sourceKeys: [...seenSources] }
+        })
+      };
+    });
+    const linkQuestProgressReward = vi.fn(async (input: {
+      rewardAwardId: string;
+    }) => {
+      rewardAwardId ??= input.rewardAwardId;
+
+      return questProgressRecord({
+        currentValue,
+        completedAt,
+        rewardAwardId,
+        metadata: { sourceKeys: [...seenSources] }
+      });
+    });
+    const { repository } = fakeGamificationRepository({
+      questCycles: [
+        questCycleRecord({
+          questSlug: "mes-da-fila",
+          questType: "monthly",
+          cycleKey: "monthly:2026-06"
+        })
+      ],
+      advanceQuestProgress,
+      linkQuestProgressReward
+    });
+    const applySource = (sourceId: string) =>
+      applyGamificationFact(
+        {
+          duoId: "duo-1",
+          actorUserId: "member-1",
+          sourceType: "scheduled-session",
+          sourceId,
+          occurredAt: now,
+          confirmedDuoFact: true
+        },
+        repository
+      );
+
+    const sourceA = "00000000-0000-4000-8000-000000000701";
+    const sourceB = "00000000-0000-4000-8000-000000000702";
+    const sourceC = "00000000-0000-4000-8000-000000000703";
+    const first = await applySource(sourceA);
+    const second = await applySource(sourceB);
+    const replay = await applySource(sourceA);
+    const capped = await applySource(sourceC);
+
+    if (!first.ok || !second.ok || !replay.ok || !capped.ok) {
+      throw new Error("expected quest sources to be processed");
+    }
+
+    expect(first.summary.questProgress[0]).toEqual(
+      expect.objectContaining({ currentValue: 3, completed: false, xpAwarded: 0 })
+    );
+    expect(second.summary.questProgress[0]).toEqual(
+      expect.objectContaining({ currentValue: 4, completed: true, xpAwarded: 240 })
+    );
+    expect(replay.summary.questProgress[0]).toEqual(
+      expect.objectContaining({ currentValue: 4, completed: true, xpAwarded: 0 })
+    );
+    expect(capped.summary.questProgress[0]).toEqual(
+      expect.objectContaining({ currentValue: 4, completed: true, xpAwarded: 0 })
+    );
+    expect(advanceQuestProgress).toHaveBeenCalledTimes(4);
+    expect(advanceQuestProgress).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        sourceKey: `scheduled-session:${sourceA}`,
+        increment: 1,
+        goal: 4
+      })
+    );
+    expect(linkQuestProgressReward).toHaveBeenCalledTimes(1);
+    expect(linkQuestProgressReward).toHaveBeenCalledWith(
+      expect.objectContaining({
+        duoId: "duo-1",
+        questCycleId: "00000000-0000-4000-8000-000000000011",
+        rewardAwardId: expect.any(String)
+      })
+    );
+  });
+
   it("unlocks permanent monthly and seasonal seals only from completed quest rewards", async () => {
     const { repository, transaction } = fakeGamificationRepository({
       questCycles: [
@@ -636,6 +754,26 @@ function fakeGamificationRepository(input: {
   achievementMetrics?: AchievementMetricSnapshot;
   insertXpLedgerAward?: GamificationRepositoryTransaction["insertXpLedgerAward"];
   insertAchievementUnlock?: GamificationRepositoryTransaction["insertAchievementUnlock"];
+  advanceQuestProgress?: (input: {
+    completedAt: Date;
+    duoId: string;
+    goal: number;
+    increment: number;
+    lastSourceId: string;
+    lastSourceType: string;
+    metadata?: Record<string, unknown>;
+    questCycleId: string;
+    sourceKey: string;
+  }) => Promise<{
+    advanced: boolean;
+    completedNow: boolean;
+    progress: GamificationQuestProgressRecord;
+  }>;
+  linkQuestProgressReward?: (input: {
+    duoId: string;
+    questCycleId: string;
+    rewardAwardId: string;
+  }) => Promise<GamificationQuestProgressRecord>;
   lockProjection?: (
     duoId: string
   ) => Promise<GamificationProjectionRecord | null>;
@@ -732,6 +870,10 @@ function fakeGamificationRepository(input: {
     insertAdjustment: vi.fn(),
     sumXpLedgerAwards: vi.fn(async () => input.ledgerXp ?? projection.xp)
   };
+  Object.assign(transaction, {
+    advanceQuestProgress: input.advanceQuestProgress,
+    linkQuestProgressReward: input.linkQuestProgressReward
+  });
 
   return {
     transaction,
