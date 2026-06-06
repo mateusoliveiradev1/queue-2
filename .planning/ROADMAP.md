@@ -19,7 +19,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 03.2: Biblioteca Escalavel e Backlog Operacional (INSERTED)** - A Biblioteca vira uma superficie escalavel de backlog, filtros, status e arquivo da dupla antes de Jogando. (completed 2026-06-05)
 - [x] **Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)** - O app fica perceptivelmente rapido em producao antes de novas funcionalidades ampliarem o custo operacional. (completed 2026-06-05; production gate passed)
 - [x] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop. (completed 2026-06-05; external DB/browser/reminder readiness blockers recorded)
-- [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
+- [ ] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks. (11/11 plans complete; human/external verification pending)
 - [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
 - [ ] **Phase 7: Hall, Stats E Lancamento** - A dupla revisita sua historia e o produto recebe acabamento publico completo.
 
@@ -187,7 +187,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. A dupla pode desbloquear e filtrar aproximadamente 50 conquistas customizadas por grupo e raridade.
   4. Desafios semanais, mensais e sazonais rotacionam no horario correto e mostram progresso atual.
   5. Streaks exibem chama, freezing, backup ate 04:00 e Streak Freeze a cada dez niveis, enquanto raridade aparece de forma consistente.
-**Plans**: 05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07, 05-08, 05-09, 05-10, 05-11 (6/11 complete; 5 gap-closure plans ready)
+**Plans**: 05-01, 05-02, 05-03, 05-04, 05-05, 05-06, 05-07, 05-08, 05-09, 05-10, 05-11 (11/11 complete; automated gates passed; human/external evidence pending)
 
 **Plan Waves**:
   - **Wave 1:** `05-01` - Gamification schema, forced RLS, public module, policy/catalog/repository foundation.
@@ -256,6 +256,6 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 03.2. Biblioteca Escalavel e Backlog Operacional | 4/4 | Complete   | 2026-06-05 |
 | 03.3. Performance de Producao e UX de Latencia | 4/4 | Complete | 2026-06-05 |
 | 4. Jogando Agora, Sessoes E Agendamento | 6/6 | Complete | 2026-06-05 |
-| 5. Gamificacao Coletiva | 6/6 | In Progress | - |
+| 5. Gamificacao Coletiva | 11/11 | Human verification | - |
 | 6. Roleta E Economia | 0/TBD | Not started | - |
 | 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |

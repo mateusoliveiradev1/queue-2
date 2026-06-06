@@ -2,7 +2,7 @@
 phase: 05-gamificacao-coletiva
 artifact: user-setup
 status: Incomplete
-generated: 2026-06-06T21:17:27.369Z
+generated: 2026-06-06T21:37:21.555Z
 ---
 
 # Phase 5 User Setup
