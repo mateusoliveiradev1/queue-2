@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
-status: executing
-stopped_at: Completed 04-06-PLAN.md
-last_updated: "2026-06-05T17:43:17.347Z"
+status: planning
+stopped_at: Phase 5 context gathered
+last_updated: "2026-06-06T03:49:16.503Z"
 last_activity: 2026-06-05
 progress:
   total_phases: 12
@@ -274,6 +274,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-05T17:43:17.347Z
-Stopped at: Completed 04-06-PLAN.md
-Resume file: None
+Last session: 2026-06-06T03:49:16.495Z
+Stopped at: Phase 5 context gathered
+Resume file: .planning/phases/05-gamificacao-coletiva/05-CONTEXT.md
