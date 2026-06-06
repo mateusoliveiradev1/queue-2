@@ -58,6 +58,7 @@ export type GamificationLedgerEntryView = {
   amountLabel: string;
   reasonLabel: string;
   awardedAtLabel: string;
+  awardedAtIso: string;
 };
 
 export type RewardToastViewModel = {
@@ -105,7 +106,8 @@ export function toGamificationDashboardView(
       id: entry.id,
       amountLabel: `${entry.amount > 0 ? "+" : ""}${formatNumber(entry.amount)} XP`,
       reasonLabel: ledgerReasonLabel(entry.reasonCode, entry.sourceType),
-      awardedAtLabel: formatDate(entry.awardedAt)
+      awardedAtLabel: formatDate(entry.awardedAt),
+      awardedAtIso: entry.awardedAt.toISOString()
     })),
     links: {
       achievementsHref: "/app/conquistas",

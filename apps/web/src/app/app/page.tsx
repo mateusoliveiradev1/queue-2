@@ -5,6 +5,11 @@ import { RoulettePointer } from "@queue/ui";
 import { AppShell } from "../../components/app-shell";
 import { StatusToast } from "../../components/status-toast";
 import { formatPairingDate, getDuoDashboard } from "../../modules/duo";
+import {
+  GamificationDashboardBand,
+  getGamificationDashboard,
+  toGamificationDashboardView
+} from "../../modules/gamification";
 import { getLibraryOverview, toLibraryOverviewView } from "../../modules/library";
 import {
   getCurrentPlay,
@@ -74,6 +79,7 @@ async function renderDashboardPage({
     libraryResult,
     currentPlayResult,
     notificationsResult,
+    gamificationDashboard,
     params
   ] = await measureStage(
     "database",
@@ -84,6 +90,7 @@ async function renderDashboardPage({
         getLibraryOverview(session.user.id),
         getCurrentPlay(session.user.id),
         getDuoNotifications({ userId: session.user.id }),
+        getGamificationDashboard({ userId: session.user.id }),
         searchParams
       ])
   );
@@ -112,6 +119,7 @@ async function renderDashboardPage({
         secondaries: [],
         limit: 3
       });
+  const gamification = toGamificationDashboardView(gamificationDashboard);
   const totalGames = library
     ? library.counts.wishlist + library.counts.jogando + library.counts.pausado
     : 0;
@@ -152,6 +160,8 @@ async function renderDashboardPage({
         reorderAction={reorderPlayingGamesAction}
         view={playingNow}
       />
+
+      <GamificationDashboardBand view={gamification} />
 
       <section className="surface-band app-section" aria-labelledby="duo-context">
         <div className="section-heading">

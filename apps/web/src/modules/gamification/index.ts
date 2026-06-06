@@ -86,6 +86,8 @@ export {
   type GamificationStreakView,
   type RewardToastViewModel
 } from "./presentation/view-models";
+export { GamificationDashboardBand } from "./presentation/gamification-dashboard-band";
+export { XpLedgerPanel } from "./presentation/xp-ledger-panel";
 
 export type {
   GamificationAdjustmentInput,

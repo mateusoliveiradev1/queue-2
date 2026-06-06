@@ -61,6 +61,11 @@ const phase4MissingEnv = missingEnv([
   "E2E_PHASE4_PRINCIPAL_SLUG",
   "E2E_PHASE4_SECONDARY_SLUG"
 ]);
+const phase5DashboardMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -71,6 +76,7 @@ reportMissingEnv("Phase 2 detail accessibility", phase2DetailMissingEnv);
 reportMissingEnv("Phase 03.2 Biblioteca accessibility", phase32LibraryMissingEnv);
 reportMissingEnv("Phase 03.3 performance feedback accessibility", phase33PerformanceMissingEnv);
 reportMissingEnv("Phase 4 Jogando Agora accessibility", phase4MissingEnv);
+reportMissingEnv("Phase 5 gamification dashboard accessibility", phase5DashboardMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -330,6 +336,40 @@ test.describe("Phase 4 Jogando Agora accessibility", () => {
       page.locator(".notification-center"),
       "Schedule form overlaps Central da Dupla on mobile"
     );
+    await expectNoAxeViolations(page);
+  });
+});
+
+test.describe("Phase 5 gamification dashboard accessibility", () => {
+  test.skip(
+    phase5DashboardMissingEnv.length > 0,
+    `Missing Phase 5 dashboard accessibility fixture: ${phase5DashboardMissingEnv.join(", ")}`
+  );
+
+  test("dashboard band is reachable, reduced-motion safe and axe-clean", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app");
+
+    const playingNow = page.locator(".playing-now");
+    const gamification = page.locator(".gamification-dashboard-band");
+    await expect(playingNow).toBeVisible();
+    await expect(gamification).toBeVisible();
+    await expect(gamification.getByRole("heading", { name: /progresso da dupla/i })).toBeVisible();
+    await expect(gamification.getByRole("link", { name: /conquistas/i })).toHaveAttribute(
+      "href",
+      "/app/conquistas"
+    );
+    await expect(gamification.getByRole("link", { name: /desafios/i })).toHaveAttribute(
+      "href",
+      "/app/desafios"
+    );
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+    await expectStaticFeedbackMark(gamification.locator(".gamification-streak-mark").first());
+    await expectNoOverlap(playingNow, gamification, "Gamification band overlaps Jogando Agora on mobile");
     await expectNoAxeViolations(page);
   });
 });

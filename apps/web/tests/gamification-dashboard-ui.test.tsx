@@ -1,14 +1,12 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import {
-  getGamificationDashboard,
-  getLevelForXp,
-  toGamificationDashboardView
-} from "../src/modules/gamification";
+import { getGamificationDashboard } from "../src/modules/gamification/application/get-gamification-dashboard";
 import type {
   GamificationAchievementUnlockRecord,
+  GamificationDashboardRecord,
   GamificationMembershipContext,
   GamificationProjectionRecord,
   GamificationQuestCycleRecord,
@@ -17,6 +15,177 @@ import type {
   GamificationRepositoryTransaction,
   GamificationXpLedgerRecord
 } from "../src/modules/gamification/application/ports";
+import { getLevelForXp } from "../src/modules/gamification/domain/level-curve";
+import { GamificationDashboardBand } from "../src/modules/gamification/presentation/gamification-dashboard-band";
+import { toGamificationDashboardView } from "../src/modules/gamification/presentation/view-models";
+import type {
+  CurrentPlayGameRecord,
+  CurrentPlayRecord
+} from "../src/modules/play/application/ports";
+
+const authSessionMock = vi.hoisted(() => ({
+  currentSession: {
+    session: {
+      id: "session-current",
+      token: "session-token-current",
+      userId: "user-1",
+      createdAt: new Date("2026-06-06T09:00:00.000Z"),
+      updatedAt: new Date("2026-06-06T10:00:00.000Z"),
+      expiresAt: new Date("2026-06-20T09:00:00.000Z")
+    },
+    user: {
+      id: "user-1",
+      email: "jogador@example.com",
+      emailVerified: true,
+      name: "Jogador da fila",
+      image: null,
+      createdAt: new Date("2026-06-06T09:00:00.000Z"),
+      updatedAt: new Date("2026-06-06T09:00:00.000Z")
+    }
+  }
+}));
+
+const duoModuleMock = vi.hoisted(() => ({
+  ready: {
+    routeState: "ready" as const,
+    profileDisplayName: "Jogador da fila",
+    duo: {
+      id: "duo-1",
+      name: "Dupla do sofa",
+      pairedAt: new Date("2026-06-03T10:00:00.000Z"),
+      timezone: "America/Sao_Paulo",
+      notificationsEnabled: true,
+      audioEnabled: true,
+      members: [
+        {
+          userId: "user-1",
+          displayName: "Jogador da fila",
+          memberSlot: 1 as const,
+          joinedAt: new Date("2026-06-03T09:00:00.000Z")
+        },
+        {
+          userId: "user-2",
+          displayName: "Parceiro da fila",
+          memberSlot: 2 as const,
+          joinedAt: new Date("2026-06-03T10:00:00.000Z")
+        }
+      ]
+    },
+    activePairingCode: null
+  },
+  getDuoDashboard: vi.fn()
+}));
+
+const libraryModuleMock = vi.hoisted(() => ({
+  getLibraryOverview: vi.fn(),
+  toLibraryOverviewView: vi.fn()
+}));
+
+const playModuleMock = vi.hoisted(() => ({
+  getCurrentPlay: vi.fn(),
+  getDuoNotifications: vi.fn()
+}));
+
+const gamificationModuleMock = vi.hoisted(() => ({
+  getGamificationDashboard: vi.fn()
+}));
+
+const navigationMock = vi.hoisted(() => ({
+  back: vi.fn(),
+  forward: vi.fn(),
+  prefetch: vi.fn(),
+  push: vi.fn(),
+  refresh: vi.fn(),
+  replace: vi.fn()
+}));
+
+const phase4ActionMock = vi.hoisted(() => ({
+  promotePlayingGameAction: vi.fn(async () => ({
+    ok: true,
+    state: "principal-promovido"
+  })),
+  reorderPlayingGamesAction: vi.fn(async () => ({
+    ok: true,
+    state: "ordem-atualizada"
+  }))
+}));
+
+const phase2ActionMock = vi.hoisted(() => ({
+  moveLibraryGameAction: vi.fn(async () => undefined)
+}));
+
+vi.mock("../src/platform/auth/session", () => ({
+  requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
+}));
+
+vi.mock("next/image", () => ({
+  default: ({
+    alt,
+    className,
+    src
+  }: {
+    alt: string;
+    className?: string;
+    src: string;
+  }) => <img alt={alt} className={className} src={src} />
+}));
+
+vi.mock("next/navigation", () => ({
+  redirect: vi.fn((path: string) => {
+    throw new Error(`Unexpected redirect to ${path}`);
+  }),
+  useRouter: () => navigationMock
+}));
+
+vi.mock("../src/modules/duo", () => ({
+  formatPairingDate: vi.fn(() => "03/06/2026"),
+  getDuoDashboard: duoModuleMock.getDuoDashboard
+}));
+
+vi.mock("../src/modules/library", () => ({
+  getLibraryOverview: libraryModuleMock.getLibraryOverview,
+  toLibraryOverviewView: libraryModuleMock.toLibraryOverviewView
+}));
+
+vi.mock("../src/app/app/phase-2-actions", () => phase2ActionMock);
+vi.mock("../src/app/app/phase-4-actions", () => phase4ActionMock);
+
+vi.mock("../src/modules/play", async () => {
+  const dashboard = await vi.importActual<
+    typeof import("../src/modules/play/presentation/playing-now-dashboard")
+  >("../src/modules/play/presentation/playing-now-dashboard");
+  const viewModels = await vi.importActual<
+    typeof import("../src/modules/play/presentation/view-models")
+  >("../src/modules/play/presentation/view-models");
+  const notifications = await vi.importActual<
+    typeof import("../src/modules/play/presentation/notification-center")
+  >("../src/modules/play/presentation/notification-center");
+
+  return {
+    NotificationCenter: notifications.NotificationCenter,
+    PlayingNowDashboard: dashboard.PlayingNowDashboard,
+    getCurrentPlay: playModuleMock.getCurrentPlay,
+    getDuoNotifications: playModuleMock.getDuoNotifications,
+    toPlayingNowView: viewModels.toPlayingNowView
+  };
+});
+
+vi.mock("../src/modules/gamification", async () => {
+  const dashboardBand = await vi.importActual<
+    typeof import("../src/modules/gamification/presentation/gamification-dashboard-band")
+  >("../src/modules/gamification/presentation/gamification-dashboard-band");
+  const viewModels = await vi.importActual<
+    typeof import("../src/modules/gamification/presentation/view-models")
+  >("../src/modules/gamification/presentation/view-models");
+
+  return {
+    GamificationDashboardBand: dashboardBand.GamificationDashboardBand,
+    getGamificationDashboard: gamificationModuleMock.getGamificationDashboard,
+    toGamificationDashboardView: viewModels.toGamificationDashboardView
+  };
+});
+
+import DashboardPage from "../src/app/app/page";
 
 const now = new Date("2026-06-06T15:00:00.000Z");
 const dashboardUseCaseSource = readFileSync(
@@ -27,6 +196,51 @@ const dashboardViewModelSource = readFileSync(
   "src/modules/gamification/presentation/view-models.ts",
   "utf8"
 );
+const dashboardBandSource = readFileSync(
+  "src/modules/gamification/presentation/gamification-dashboard-band.tsx",
+  "utf8"
+);
+const pageSource = readFileSync("src/app/app/page.tsx", "utf8");
+const globalCssSource = readFileSync("src/app/globals.css", "utf8");
+
+afterEach(() => {
+  cleanup();
+});
+
+beforeEach(() => {
+  navigationMock.refresh.mockClear();
+  duoModuleMock.getDuoDashboard.mockResolvedValue(duoModuleMock.ready);
+  libraryModuleMock.getLibraryOverview.mockResolvedValue({
+    ok: true,
+    overview: {}
+  });
+  libraryModuleMock.toLibraryOverviewView.mockReturnValue({
+    counts: {
+      wishlist: 1,
+      jogando: 1,
+      pausado: 0
+    },
+    commonPlatformLabels: ["PC"],
+    groups: {
+      wishlist: [],
+      jogando: [],
+      pausado: []
+    },
+    lockedStatuses: []
+  });
+  playModuleMock.getCurrentPlay.mockResolvedValue({
+    ok: true,
+    currentPlay: currentPlayRecord()
+  });
+  playModuleMock.getDuoNotifications.mockResolvedValue({
+    ok: true,
+    center: {
+      unreadCount: 0,
+      items: []
+    }
+  });
+  gamificationModuleMock.getGamificationDashboard.mockResolvedValue(dashboardRecord());
+});
 
 describe("Phase 05.3 gamification dashboard contract", () => {
   it("builds a bounded duo-shared dashboard read model for /app", async () => {
@@ -198,6 +412,64 @@ describe("Phase 05.3 gamification dashboard contract", () => {
     expect(view.ledger).toEqual([]);
     expect(JSON.stringify(view)).not.toMatch(/perdeu|atrasou|culpa|ranking|individual/i);
   });
+
+  it("renders the dashboard band with XP, streak, quests, achievements and ledger", () => {
+    const { container } = render(
+      <GamificationDashboardBand view={toGamificationDashboardView(dashboardRecord())} />
+    );
+
+    expect(screen.getByRole("heading", { name: /progresso da dupla/i })).toBeInTheDocument();
+    expect(screen.getByText("300 XP da dupla")).toBeInTheDocument();
+    expect(screen.getByText("Lv3 Primeiro Save")).toBeInTheDocument();
+    expect(screen.getByText("Chama ativa")).toBeInTheDocument();
+    expect(screen.getByText("Sessao confirmada")).toBeInTheDocument();
+    expect(screen.getByText("Capitulo da semana")).toBeInTheDocument();
+    expect(screen.getByText("Descoberta em dupla")).toBeInTheDocument();
+    expect(screen.getByText("Primeiro save")).toBeInTheDocument();
+    expect(screen.getByText("Sessao ao vivo confirmada")).toBeInTheDocument();
+    expect(screen.getByText("Desafio concluido pela dupla")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /conquistas/i })).toHaveAttribute(
+      "href",
+      "/app/conquistas"
+    );
+    expect(screen.getByRole("link", { name: /desafios/i })).toHaveAttribute(
+      "href",
+      "/app/desafios"
+    );
+    expect(container.textContent).not.toMatch(/live-session|source_id|xp individual|ranking/i);
+  });
+
+  it("renders gamification immediately after PlayingNowDashboard on /app", async () => {
+    const { container } = render(await DashboardPage());
+    const playingNow = container.querySelector(".playing-now");
+    const gamification = container.querySelector(".gamification-dashboard-band");
+    const metricGrid = container.querySelector(".metric-grid");
+
+    expect(playingNow).not.toBeNull();
+    expect(gamification).not.toBeNull();
+    expect(metricGrid).not.toBeNull();
+    expect(appearsBefore(playingNow as Element, gamification as Element)).toBe(true);
+    expect(appearsBefore(gamification as Element, metricGrid as Element)).toBe(true);
+    expect(gamificationModuleMock.getGamificationDashboard).toHaveBeenCalledWith({
+      userId: "user-1"
+    });
+    expect(screen.getByRole("heading", { name: /jogando agora/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /progresso da dupla/i })).toBeInTheDocument();
+  });
+
+  it("keeps the Phase 05.3 UI source contract explicit", () => {
+    expect(pageSource).toContain("PlayingNowDashboard");
+    expect(pageSource).toContain("GamificationDashboardBand");
+    expect(pageSource).toMatch(/<PlayingNowDashboard[\s\S]*<GamificationDashboardBand/);
+    expect(dashboardViewModelSource).toContain("/app/conquistas");
+    expect(dashboardViewModelSource).toContain("/app/desafios");
+    expect(dashboardBandSource).not.toMatch(/modal|overlay|individual/i);
+    expect(globalCssSource).toContain(".gamification-dashboard-band");
+    expect(globalCssSource).toContain("queue2-streak-glow");
+    expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
+    expect(globalCssSource).toContain(".gamification-streak-panel[data-state=\"freezing\"]");
+    expect(gamificationCssRules(globalCssSource)).not.toMatch(/letter-spacing:\s*-/);
+  });
 });
 
 function fakeGamificationRepository(input: {
@@ -252,6 +524,144 @@ function fakeGamificationRepository(input: {
       recordProjectionRebuild: vi.fn()
     }
   };
+}
+
+function dashboardRecord(
+  overrides: Partial<GamificationDashboardRecord> = {}
+): GamificationDashboardRecord {
+  return {
+    duoId: "duo-1",
+    xp: 300,
+    level: getLevelForXp(300),
+    nextLevel: getLevelForXp(430),
+    xpIntoLevel: 38,
+    xpForNextLevel: 168,
+    progressRatio: 0.22,
+    streak: {
+      current: 3,
+      availableFreezes: 1
+    },
+    activeQuests: [
+      {
+        questSlug: "sessao-confirmada",
+        questType: "weekly",
+        cycleKey: "weekly:2026-06-01",
+        title: "Sessao confirmada",
+        description: "Confirmem uma sessao coop real nesta semana.",
+        currentValue: 1,
+        goalValue: 1,
+        completed: true,
+        windowEndAt: new Date("2026-06-08T04:00:00.000Z")
+      },
+      {
+        questSlug: "capitulo-da-semana",
+        questType: "weekly",
+        cycleKey: "weekly:2026-06-01",
+        title: "Capitulo da semana",
+        description: "Concluam um capitulo manual sem transformar progresso em tarefa.",
+        currentValue: 0,
+        goalValue: 1,
+        completed: false,
+        windowEndAt: new Date("2026-06-08T04:00:00.000Z")
+      },
+      {
+        questSlug: "descoberta-em-dupla",
+        questType: "weekly",
+        cycleKey: "weekly:2026-06-01",
+        title: "Descoberta em dupla",
+        description: "Criem um match real ou levem um jogo novo para a fila.",
+        currentValue: 0,
+        goalValue: 1,
+        completed: false,
+        windowEndAt: new Date("2026-06-08T04:00:00.000Z")
+      }
+    ],
+    recentAchievements: [
+      {
+        slug: "primeiro-save",
+        title: "Primeiro save",
+        rarity: "common",
+        unlockedAt: now
+      }
+    ],
+    recentLedger: [
+      {
+        id: "award-session",
+        amount: 30,
+        reasonCode: "live-session-confirmed",
+        sourceType: "live-session",
+        awardedAt: now
+      },
+      {
+        id: "award-quest",
+        amount: 80,
+        reasonCode: "quest-complete",
+        sourceType: "quest",
+        awardedAt: now
+      }
+    ],
+    updatedAt: now,
+    ...overrides
+  };
+}
+
+function currentPlayRecord(): CurrentPlayRecord {
+  const principal = activeGame({
+    id: "active-principal",
+    libraryGameId: "library-principal",
+    role: "principal",
+    position: 1
+  });
+
+  return {
+    limit: 3,
+    principal,
+    secondaries: [],
+    games: [principal]
+  };
+}
+
+function activeGame(overrides: Partial<CurrentPlayGameRecord>): CurrentPlayGameRecord {
+  return {
+    id: "active-game",
+    duoId: "duo-1",
+    libraryGameId: "library-game",
+    catalogGameId: "catalog-game",
+    role: "principal",
+    position: 1,
+    libraryStatus: "jogando",
+    updatedAt: now,
+    catalogGame: {
+      id: "catalog-game",
+      slug: "it-takes-two",
+      name: "It Takes Two",
+      coverUrl: null,
+      source: "rawg",
+      sourceUrl: "https://rawg.io/games/it-takes-two",
+      sourceUpdatedAt: now,
+      syncedAt: now,
+      hasReliableTimeEstimate: true,
+      hasVerifiedAvailability: false
+    },
+    progress: {
+      confirmedCoopSeconds: 1_800,
+      subjectivePercent: 25
+    },
+    ...overrides
+  };
+}
+
+function appearsBefore(first: Element, second: Element): boolean {
+  return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
+}
+
+function gamificationCssRules(source: string): string {
+  return (
+    source
+      .match(/[^{}]+{[^{}]*}/g)
+      ?.filter((rule) => rule.slice(0, rule.indexOf("{")).includes("gamification-"))
+      .join("\n") ?? ""
+  );
 }
 
 function projectionRecord(

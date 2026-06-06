@@ -1294,6 +1294,313 @@ input {
   outline-offset: 3px;
 }
 
+.gamification-dashboard-band {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--surface) 90%, black),
+      color-mix(in oklch, var(--bg) 84%, var(--accent) 7%)
+    );
+  border: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-5);
+  overflow: hidden;
+  padding: clamp(20px, 4vw, 32px);
+}
+
+.gamification-band-heading {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  justify-content: space-between;
+}
+
+.gamification-band-heading h2,
+.gamification-subheading h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.gamification-band-heading h2 {
+  font-size: 2.65rem;
+  line-height: 0.95;
+}
+
+.gamification-subheading {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.gamification-subheading h3 {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.gamification-band-actions,
+.gamification-band-layout,
+.gamification-summary-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.gamification-band-actions {
+  grid-template-columns: repeat(2, minmax(132px, 1fr));
+}
+
+.gamification-band-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.42fr);
+}
+
+.gamification-level-panel,
+.gamification-streak-panel,
+.gamification-summary-column,
+.xp-ledger-panel {
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+  padding-top: var(--space-4);
+}
+
+.gamification-level-panel strong,
+.gamification-streak-panel strong {
+  color: var(--ink);
+  display: block;
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  letter-spacing: 0;
+  line-height: 0.95;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.gamification-xp-total {
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.gamification-progress,
+.gamification-mini-progress {
+  background: color-mix(in oklch, var(--bg) 70%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-pill);
+  height: 12px;
+  overflow: hidden;
+}
+
+.gamification-progress span,
+.gamification-mini-progress span {
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    color-mix(in oklch, var(--rarity-rare) 76%, var(--primary))
+  );
+  display: block;
+  height: 100%;
+  width: var(--gamification-progress, 0%);
+}
+
+.gamification-streak-panel {
+  align-items: center;
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.gamification-streak-panel p {
+  color: var(--ink-muted);
+  line-height: 1.35;
+  margin: var(--space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.gamification-streak-mark {
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--primary) 58%, transparent);
+  border-radius: var(--radius-sharp);
+  display: block;
+  position: relative;
+  width: 48px;
+}
+
+.gamification-streak-mark::before {
+  background: var(--primary);
+  content: "";
+  inset: 10px 14px 8px;
+  position: absolute;
+  transform: skewY(-10deg);
+}
+
+.gamification-streak-panel[data-state="active"] .gamification-streak-mark {
+  animation: queue2-streak-glow 1300ms ease-in-out infinite;
+  border-color: color-mix(in oklch, var(--primary) 82%, white);
+}
+
+.gamification-streak-panel[data-state="freezing"] .gamification-streak-mark {
+  border-color: color-mix(in oklch, var(--rarity-rare) 82%, white);
+}
+
+.gamification-streak-panel[data-state="freezing"] .gamification-streak-mark::before {
+  background: var(--rarity-rare);
+}
+
+.gamification-summary-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gamification-quest-list,
+.gamification-achievement-list,
+.xp-ledger-list {
+  display: grid;
+  gap: var(--space-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gamification-quest-row,
+.gamification-achievement-row,
+.xp-ledger-entry {
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 14%, transparent);
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  padding-top: var(--space-3);
+}
+
+.gamification-quest-row {
+  grid-template-columns: minmax(0, 1fr) minmax(126px, 0.38fr);
+}
+
+.gamification-quest-row strong,
+.gamification-achievement-row strong,
+.xp-ledger-entry strong {
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.94rem;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.gamification-quest-row p {
+  color: var(--ink-muted);
+  line-height: 1.35;
+  margin: var(--space-2) 0 0;
+  overflow-wrap: anywhere;
+}
+
+.gamification-quest-progress {
+  align-content: start;
+  display: grid;
+  gap: var(--space-2);
+}
+
+.gamification-quest-progress span,
+.gamification-quest-progress time,
+.xp-ledger-entry time,
+.gamification-achievement-row span {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.gamification-mini-progress {
+  height: 8px;
+}
+
+.gamification-achievement-row {
+  align-items: center;
+  grid-template-columns: 36px minmax(0, 1fr);
+}
+
+.gamification-achievement-mark {
+  aspect-ratio: 1;
+  border: 1px solid var(--rarity-common);
+  border-radius: var(--radius-sharp);
+  display: block;
+  position: relative;
+}
+
+.gamification-achievement-mark::before {
+  background: currentColor;
+  color: var(--rarity-common);
+  content: "";
+  inset: 10px;
+  position: absolute;
+}
+
+.gamification-achievement-row[data-rarity="rare"] .gamification-achievement-mark {
+  border-color: var(--rarity-rare);
+  color: var(--rarity-rare);
+}
+
+.gamification-achievement-row[data-rarity="epic"] .gamification-achievement-mark {
+  border-color: var(--rarity-epic);
+  color: var(--rarity-epic);
+}
+
+.gamification-achievement-row[data-rarity="legendary"] .gamification-achievement-mark {
+  border-color: var(--rarity-legendary);
+  color: var(--rarity-legendary);
+}
+
+.xp-ledger-entry {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.xp-ledger-entry time {
+  grid-column: 1 / -1;
+}
+
+.xp-ledger-entry__reason {
+  color: var(--ink);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.gamification-empty-line {
+  border: 1px dashed color-mix(in oklch, var(--ink-muted) 24%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink-muted);
+  line-height: 1.45;
+  margin: 0;
+  padding: var(--space-4);
+}
+
+.gamification-dashboard-band :where(.queue2-button, a):focus-visible {
+  outline: 3px solid color-mix(in oklch, var(--primary) 72%, white);
+  outline-offset: 3px;
+}
+
+@keyframes queue2-streak-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklch, var(--primary) 30%, transparent);
+  }
+
+  50% {
+    box-shadow: 0 0 0 8px color-mix(in oklch, var(--primary) 0%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gamification-streak-panel[data-state="active"] .gamification-streak-mark {
+    animation: none;
+    box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--primary) 34%, transparent);
+  }
+}
+
 .play-panel {
   display: grid;
   gap: 18px;
@@ -3742,6 +4049,8 @@ input {
   .ritual-grid,
   .settings-grid,
   .playing-now-layout,
+  .gamification-band-layout,
+  .gamification-summary-grid,
   .library-overview-grid,
   .detail-library-panel,
   .game-session-layout,
@@ -3821,6 +4130,19 @@ input {
   .playing-facts {
     grid-template-columns: 1fr;
   }
+
+  .gamification-band-heading {
+    align-items: start;
+  }
+
+  .gamification-band-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .gamification-quest-row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 560px) {
@@ -3843,6 +4165,18 @@ input {
 
   .playing-now {
     padding: var(--space-4);
+  }
+
+  .gamification-dashboard-band {
+    padding: var(--space-4);
+  }
+
+  .gamification-band-heading h2 {
+    font-size: 2rem;
+  }
+
+  .gamification-band-actions {
+    grid-template-columns: 1fr;
   }
 
   .playing-now-heading h2,
