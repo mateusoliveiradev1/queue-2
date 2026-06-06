@@ -18,6 +18,7 @@
     "catalog:sync": "node --conditions react-server --experimental-strip-types scripts/catalog-sync.ts",
     "catalog:refresh": "node --experimental-strip-types scripts/catalog-refresh.ts",
     "catalog:seed-curation": "node --conditions react-server --experimental-strip-types scripts/catalog-curation-seed.ts",
+    "gamification:maintenance": "node --experimental-strip-types scripts/gamification-maintenance.ts",
     "play:reminders": "node --experimental-strip-types scripts/play-reminders.ts",
     "check:architecture": "turbo run check:architecture",
     "check:secrets": "node scripts/check-secrets.mjs",

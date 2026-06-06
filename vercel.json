@@ -3,6 +3,10 @@
     {
       "path": "/api/jobs/catalog/refresh",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/jobs/gamification/maintenance",
+      "schedule": "15 8 * * *"
     }
   ]
 }
