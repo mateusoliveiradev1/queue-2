@@ -8,6 +8,7 @@ import {
   applyGamificationFact,
   getGamificationDashboard,
   getLevelForXp,
+  getLevelThreshold,
   rebuildGamificationProjections
 } from "../src/modules/gamification";
 import type { AchievementMetricSnapshot } from "../src/modules/gamification";
@@ -300,6 +301,112 @@ describe("gamification reward application", () => {
     expect(transaction.insertXpLedgerAward).not.toHaveBeenCalled();
   });
 
+  it("locks the duo projection before derived reads and trusts the authoritative returned level", async () => {
+    const locked = projectionRecord({ xp: 100, level: getLevelForXp(100) });
+    const authoritative = projectionRecord({ xp: 500, level: getLevelForXp(500) });
+    const lockProjection = vi.fn(async () => locked);
+    const updateProjection = vi.fn(async () => authoritative);
+    const { repository, transaction } = fakeGamificationRepository({
+      lockProjection,
+      updateProjection
+    });
+
+    const result = await applyGamificationFact(
+      {
+        duoId: "duo-1",
+        actorUserId: "member-1",
+        sourceType: "live-session",
+        sourceId: "00000000-0000-4000-8000-000000001010",
+        occurredAt: now,
+        confirmedDuoFact: true,
+        metadata: { durationSeconds: 1_800 }
+      },
+      repository
+    );
+
+    expect(result).toEqual(expect.objectContaining({ ok: true, duplicate: false }));
+
+    if (!result.ok) {
+      throw new Error(result.reason);
+    }
+
+    expect(lockProjection).toHaveBeenCalledWith("duo-1");
+    expect(transaction.readProjection).not.toHaveBeenCalled();
+    expect(lockProjection.mock.invocationCallOrder[0]).toBeLessThan(
+      (transaction.readDuoTimezone as ReturnType<typeof vi.fn>).mock
+        .invocationCallOrder[0]!
+    );
+    expect(result.summary.levelUp?.currentLevel).toEqual(authoritative.level);
+    expect(updateProjection).toHaveBeenCalledWith(
+      expect.not.objectContaining({ nextLevel: expect.anything() })
+    );
+  });
+
+  it("records a level milestone freeze once across a replay", async () => {
+    const levelTenThreshold = getLevelThreshold(10);
+    const locked = projectionRecord({
+      xp: levelTenThreshold - 20,
+      level: getLevelForXp(levelTenThreshold - 20)
+    });
+    const insertXpLedgerAward = vi
+      .fn<GamificationRepositoryTransaction["insertXpLedgerAward"]>()
+      .mockResolvedValueOnce(
+        xpAwardRecord({
+          amount: 30,
+          sourceId: "00000000-0000-4000-8000-000000001111"
+        })
+      )
+      .mockResolvedValueOnce(null);
+    let availableFreezes = 0;
+    const updateProjection = vi.fn(async (input: {
+      availableFreezes?: number;
+      duoId: string;
+      streak?: number;
+      xpDelta: number;
+    }) => {
+      availableFreezes = input.availableFreezes ?? availableFreezes;
+      return projectionRecord({
+        xp: levelTenThreshold + 10,
+        level: getLevelForXp(levelTenThreshold + 10),
+        availableFreezes
+      });
+    });
+    const { repository, transaction } = fakeGamificationRepository({
+      insertXpLedgerAward,
+      lockProjection: vi.fn(async () => locked),
+      updateProjection
+    });
+    const fact = {
+      duoId: "duo-1",
+      actorUserId: "member-1",
+      sourceType: "live-session" as const,
+      sourceId: "00000000-0000-4000-8000-000000001111",
+      occurredAt: now,
+      confirmedDuoFact: true,
+      metadata: { durationSeconds: 1_800 }
+    };
+
+    const first = await applyGamificationFact(fact, repository);
+    const replay = await applyGamificationFact(fact, repository);
+
+    if (!first.ok || !replay.ok) {
+      throw new Error("expected level crossing and replay to succeed");
+    }
+
+    expect(first.summary.streak).toEqual(
+      expect.objectContaining({
+        earnedFreezes: 1,
+        availableFreezes: 1
+      })
+    );
+    expect(replay.duplicate).toBe(true);
+    expect(
+      (transaction.insertStreakEvent as ReturnType<typeof vi.fn>).mock.calls.filter(
+        ([event]) => event.eventType === "freeze-earned"
+      )
+    ).toHaveLength(1);
+  });
+
   it("reads duo-scoped metrics after projection updates and unlocks threshold and composite predicates", async () => {
     const { repository, transaction } = fakeGamificationRepository({
       achievementMetrics: achievementMetrics({
@@ -530,6 +637,17 @@ function fakeGamificationRepository(input: {
   achievementMetrics?: AchievementMetricSnapshot;
   insertXpLedgerAward?: GamificationRepositoryTransaction["insertXpLedgerAward"];
   insertAchievementUnlock?: GamificationRepositoryTransaction["insertAchievementUnlock"];
+  lockProjection?: (
+    duoId: string
+  ) => Promise<GamificationProjectionRecord | null>;
+  updateProjection?: (
+    input: {
+      availableFreezes?: number;
+      duoId: string;
+      streak?: number;
+      xpDelta: number;
+    }
+  ) => Promise<GamificationProjectionRecord>;
   recordProjectionRebuild?: GamificationRepository["recordProjectionRebuild"];
 } = {}): {
   repository: GamificationRepository;
@@ -554,6 +672,7 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => projection),
+    lockProjection: input.lockProjection ?? vi.fn(async () => projection),
     readAchievementMetrics: vi.fn(
       async () => input.achievementMetrics ?? achievementMetrics()
     ),
@@ -568,16 +687,20 @@ function fakeGamificationRepository(input: {
           awardedAt: now
         })
       ),
-    updateProjection: vi.fn(async (updateInput) =>
-      projectionRecord({
-        duoId: updateInput.duoId,
-        xp: Math.max(0, projection.xp + updateInput.xpDelta),
-        level: updateInput.nextLevel,
-        streak: updateInput.streak ?? projection.streak,
-        availableFreezes: updateInput.availableFreezes ?? projection.availableFreezes,
-        updatedAt: now
-      })
-    ),
+    updateProjection:
+      input.updateProjection ??
+      vi.fn(async (updateInput) => {
+        const xp = Math.max(0, projection.xp + updateInput.xpDelta);
+        return projectionRecord({
+          duoId: updateInput.duoId,
+          xp,
+          level: getLevelForXp(xp),
+          streak: updateInput.streak ?? projection.streak,
+          availableFreezes:
+            updateInput.availableFreezes ?? projection.availableFreezes,
+          updatedAt: now
+        });
+      }),
     readAchievementUnlocks: vi.fn(async () => achievementUnlocks),
     readRecentXpLedgerAwards: vi.fn(async () => []),
     insertAchievementUnlock:
