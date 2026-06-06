@@ -129,9 +129,8 @@ describe("gamification level curve", () => {
 });
 
 describe("gamification achievement catalog", () => {
-  it("ships approximately 50 seeds with valid groups, rarity, visibility and no emoji dependency", () => {
-    expect(ACHIEVEMENT_CATALOG.length).toBeGreaterThanOrEqual(48);
-    expect(ACHIEVEMENT_CATALOG.length).toBeLessThanOrEqual(52);
+  it("ships exactly 50 seeds with valid groups, rarity, visibility and no emoji dependency", () => {
+    expect(ACHIEVEMENT_CATALOG).toHaveLength(50);
 
     const groups = new Set(ACHIEVEMENT_GROUPS);
     const rarities = new Set(GAMIFICATION_RARITIES);
