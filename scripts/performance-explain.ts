@@ -500,6 +500,195 @@ export const phase4ReviewQueries: ReviewQuery[] = [
   }
 ];
 
+export const phase5ReviewQueries: ReviewQuery[] = [
+  {
+    name: "Gamification dashboard summary",
+    surface: "/app",
+    mode: "read-analyze",
+    queryCount: 4,
+    expectedIndexes: [
+      "app_gamification_streak_events_duo_day_idx",
+      "app_gamification_quest_cycles_window_idx",
+      "app_gamification_achievement_unlocks_grid_idx",
+      "app_duo_xp_awards_duo_awarded_idx"
+    ],
+    sql: `
+      SELECT duo.id, duo.xp, duo.level, duo.streak, streak.available_freezes
+      FROM app.duos AS duo
+      LEFT JOIN app.gamification_streak_state AS streak
+        ON streak.duo_id = duo.id
+      WHERE duo.id = $1::uuid
+      LIMIT 1
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Gamification XP ledger history",
+    surface: "XP ledger panel",
+    mode: "read-analyze",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_duo_xp_awards_duo_awarded_idx",
+      "app_duo_xp_awards_key_uidx",
+      "app_duo_xp_awards_source_uidx"
+    ],
+    sql: `
+      SELECT id, reason_code, source_type, amount, awarded_at
+      FROM app.duo_xp_awards
+      WHERE duo_id = $1::uuid
+      ORDER BY awarded_at DESC
+      LIMIT 5
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Achievements grid",
+    surface: "/app/conquistas",
+    mode: "read-analyze",
+    queryCount: 2,
+    expectedIndexes: [
+      "app_gamification_achievement_catalog_grid_idx",
+      "app_gamification_achievement_unlocks_duo_slug_uidx",
+      "app_gamification_achievement_unlocks_grid_idx"
+    ],
+    sql: `
+      SELECT catalog.slug, catalog.group_key, catalog.rarity, unlock.unlocked_at
+      FROM app.gamification_achievement_catalog AS catalog
+      LEFT JOIN app.gamification_achievement_unlocks AS unlock
+        ON unlock.achievement_slug = catalog.slug
+       AND unlock.duo_id = $1::uuid
+      WHERE catalog.active = true
+        AND ($2::text IS NULL OR catalog.rarity = $2)
+      ORDER BY catalog.group_key ASC, catalog.rarity ASC, catalog.slug ASC
+      LIMIT 60
+    `,
+    params: ["00000000-0000-0000-0000-000000000001", null]
+  },
+  {
+    name: "Challenges page",
+    surface: "/app/desafios",
+    mode: "read-analyze",
+    queryCount: 3,
+    expectedIndexes: [
+      "app_gamification_quest_cycles_window_idx",
+      "app_gamification_quest_progress_cycle_uidx",
+      "app_gamification_quest_templates_active_idx",
+      "app_gamification_streak_events_duo_day_idx"
+    ],
+    sql: `
+      SELECT cycle.id, cycle.quest_slug, cycle.quest_type, progress.current_value, progress.completed_at
+      FROM app.gamification_quest_cycles AS cycle
+      LEFT JOIN app.gamification_quest_progress AS progress
+        ON progress.quest_cycle_id = cycle.id
+       AND progress.duo_id = cycle.duo_id
+      WHERE cycle.duo_id = $1::uuid
+        AND cycle.status = 'active'
+        AND cycle.window_end_at > now()
+      ORDER BY cycle.quest_type ASC, cycle.window_start_at DESC
+      LIMIT 12
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Quest rotation jobs",
+    surface: "/api/jobs/gamification/maintenance quest rotation",
+    mode: "mutation-static",
+    queryCount: 2,
+    expectedIndexes: [
+      "ops_scheduled_jobs_due_idx",
+      "ops_scheduled_jobs_duo_type_idx",
+      "ops_scheduled_jobs_key_uidx",
+      "app_gamification_quest_cycles_duo_slug_cycle_uidx"
+    ],
+    sql: `
+      WITH due_jobs AS (
+        SELECT id
+        FROM ops.scheduled_jobs
+        WHERE status IN ('pending', 'failed')
+          AND job_type = 'gamification-quest-rotation'
+          AND run_at <= now()
+        ORDER BY run_at ASC, id ASC
+        LIMIT 25
+        FOR UPDATE SKIP LOCKED
+      )
+      UPDATE ops.scheduled_jobs AS job
+      SET status = 'claimed',
+          attempts = attempts + 1,
+          locked_at = now(),
+          locked_by = 'query-review'
+      FROM due_jobs
+      WHERE job.id = due_jobs.id
+    `
+  },
+  {
+    name: "Streak maintenance jobs",
+    surface: "/api/jobs/gamification/maintenance streak",
+    mode: "mutation-static",
+    queryCount: 2,
+    expectedIndexes: [
+      "ops_scheduled_jobs_due_idx",
+      "ops_scheduled_jobs_duo_type_idx",
+      "app_gamification_streak_events_key_uidx",
+      "app_gamification_streak_events_duo_day_idx"
+    ],
+    sql: `
+      INSERT INTO app.gamification_streak_events (
+        duo_id,
+        event_key,
+        event_type,
+        duo_day,
+        source_type,
+        source_id,
+        freeze_delta
+      )
+      VALUES (
+        gen_random_uuid(),
+        'query-review-freeze',
+        'freeze-consumed',
+        current_date,
+        'streak',
+        gen_random_uuid(),
+        -1
+      )
+      ON CONFLICT DO NOTHING
+    `
+  },
+  {
+    name: "Reward application mutation",
+    surface: "applyGamificationFact",
+    mode: "mutation-static",
+    queryCount: 5,
+    expectedIndexes: [
+      "app_duo_xp_awards_key_uidx",
+      "app_duo_xp_awards_source_uidx",
+      "app_gamification_achievement_unlocks_duo_slug_uidx",
+      "app_gamification_quest_progress_cycle_uidx",
+      "app_gamification_reward_notifications_duo_created_idx"
+    ],
+    sql: `
+      INSERT INTO app.duo_xp_awards (
+        duo_id,
+        award_key,
+        source_type,
+        source_id,
+        amount,
+        reason_code,
+        awarded_by_user_id
+      )
+      VALUES (
+        gen_random_uuid(),
+        'query-review-award',
+        'quest',
+        gen_random_uuid(),
+        80,
+        'quest-complete',
+        'query-review-user'
+      )
+      ON CONFLICT DO NOTHING
+    `
+  }
+];
+
 const queryReviewConfig = getQueryReviewConfig(requestedPhase);
 const queryReviewPath = queryReviewConfig.path;
 
@@ -780,6 +969,22 @@ function getQueryReviewConfig(phase: string): QueryReviewConfig {
       plan: "06",
       queries: phase4ReviewQueries,
       title: "Phase 4 Performance Review"
+    };
+  }
+
+  if (phase === "5" || phase === "05") {
+    return {
+      artifact: "performance-review",
+      command: "node --experimental-strip-types scripts/performance-explain.ts --phase=5",
+      label: "Phase 5",
+      path: resolve(
+        workspaceRoot,
+        ".planning/phases/05-gamificacao-coletiva/05-PERFORMANCE-REVIEW.md"
+      ),
+      phase: "05",
+      plan: "06",
+      queries: phase5ReviewQueries,
+      title: "Phase 5 Performance Review"
     };
   }
 

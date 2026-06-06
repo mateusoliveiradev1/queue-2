@@ -58,6 +58,7 @@ describe.skipIf(!testDatabaseUrl)("gamification RLS isolation", () => {
     await insertProjectionRebuild(pool, first.duoId);
 
     await expect(readGamificationCounts(pool, first.partnerUserId)).resolves.toEqual({
+      awards: 1,
       unlocks: 1,
       questCycles: 1,
       questProgress: 1,
@@ -68,6 +69,7 @@ describe.skipIf(!testDatabaseUrl)("gamification RLS isolation", () => {
       rebuilds: 1
     });
     await expect(readGamificationCounts(pool, second.ownerUserId)).resolves.toEqual({
+      awards: 0,
       unlocks: 0,
       questCycles: 0,
       questProgress: 0,
@@ -83,10 +85,42 @@ describe.skipIf(!testDatabaseUrl)("gamification RLS isolation", () => {
     const first = await createReadyDuo(pool, "game-cross-a");
     const second = await createReadyDuo(pool, "game-cross-b");
     const achievementSlug = await insertAchievementSeed(pool, "game-cross-achievement");
+    const questSlug = await insertQuestSeed(pool, "game-cross-quest");
+    const secondQuestCycleId = await withRuntimeUser(pool, second.ownerUserId, (client) =>
+      insertQuestCycle(client, second.duoId, questSlug)
+    );
+    const secondAwardId = await withRuntimeUser(pool, second.ownerUserId, (client) =>
+      insertQuestXpAward(client, second.duoId, secondQuestCycleId, second.ownerUserId)
+    );
 
     await expect(
       withRuntimeUser(pool, first.ownerUserId, (client) =>
         insertAchievementUnlock(client, second.duoId, achievementSlug, first.ownerUserId)
+      )
+    ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
+    await expect(
+      withRuntimeUser(pool, first.ownerUserId, (client) =>
+        insertQuestXpAward(client, second.duoId, randomUUID(), first.ownerUserId)
+      )
+    ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
+    await expect(
+      withRuntimeUser(pool, first.ownerUserId, (client) =>
+        insertQuestCycle(client, second.duoId, questSlug)
+      )
+    ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
+    await expect(
+      withRuntimeUser(pool, first.ownerUserId, (client) =>
+        insertQuestProgress(client, second.duoId, secondQuestCycleId, secondAwardId)
+      )
+    ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
+    await expect(
+      withRuntimeUser(pool, first.ownerUserId, (client) =>
+        insertStreakEvent(client, second.duoId, first.ownerUserId)
+      )
+    ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
+    await expect(
+      withRuntimeUser(pool, first.ownerUserId, (client) =>
+        insertRewardNotification(client, second.duoId, first.ownerUserId)
       )
     ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
   });
@@ -110,6 +144,7 @@ async function createReadyDuo(pool: pg.Pool, label: string) {
 async function readGamificationCounts(pool: pg.Pool, userId: string) {
   return withRuntimeUser(pool, userId, async (client) => {
     const result = await client.query<{
+      awards: string;
       unlocks: string;
       quest_cycles: string;
       quest_progress: string;
@@ -120,6 +155,7 @@ async function readGamificationCounts(pool: pg.Pool, userId: string) {
       rebuilds: string;
     }>(`
       SELECT
+        (SELECT count(*) FROM app.duo_xp_awards) AS awards,
         (SELECT count(*) FROM app.gamification_achievement_unlocks) AS unlocks,
         (SELECT count(*) FROM app.gamification_quest_cycles) AS quest_cycles,
         (SELECT count(*) FROM app.gamification_quest_progress) AS quest_progress,
@@ -132,6 +168,7 @@ async function readGamificationCounts(pool: pg.Pool, userId: string) {
     const row = result.rows[0]!;
 
     return {
+      awards: Number(row.awards),
       unlocks: Number(row.unlocks),
       questCycles: Number(row.quest_cycles),
       questProgress: Number(row.quest_progress),
