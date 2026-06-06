@@ -136,6 +136,131 @@ describe.skipIf(!testDatabaseUrl)("gamification database-backed concurrency inva
     await expect(readAvailableFreezes(pool, duo.ownerUserId, duo.duoId)).resolves.toBe(0);
     await expect(readFreezeConsumptionCount(pool, duo.ownerUserId, duo.duoId, sourceId)).resolves.toBe(1);
   });
+
+  test("ready duo jobs flow through worker claim, completion and one local-time successor", async () => {
+    const saoPaulo = await createReadyDuo(pool, "game-job-chain-sao-paulo");
+    const newYork = await createReadyDuo(pool, "game-job-chain-new-york");
+    await configureReadyDuo(
+      pool,
+      saoPaulo.duoId,
+      "Dupla Sao Paulo",
+      "America/Sao_Paulo"
+    );
+    await configureReadyDuo(
+      pool,
+      newYork.duoId,
+      "Dupla New York",
+      "America/New_York"
+    );
+    const prefix = `gamification-chain:${randomUUID()}`;
+    const referenceAt = new Date("2026-06-06T15:00:00.000Z");
+    const produced = await produceInitialGamificationJobsAsWorker(pool, {
+      duoIds: [saoPaulo.duoId, newYork.duoId],
+      prefix,
+      referenceAt
+    });
+
+    expect(produced).toBe(8);
+
+    const claimed = await claimChainJobsAsWorker(pool, {
+      prefix,
+      referenceAt
+    });
+
+    expect(claimed).toHaveLength(4);
+    expect(
+      claimed.map((job) => `${job.duo_id}:${job.schedule_kind}`).sort()
+    ).toEqual([
+      `${newYork.duoId}:streak`,
+      `${newYork.duoId}:weekly`,
+      `${saoPaulo.duoId}:streak`,
+      `${saoPaulo.duoId}:weekly`
+    ].sort());
+
+    const weeklyQuestSlug = await insertQuestSeed(pool, "game-job-chain");
+    const expectedSuccessors = new Map<string, Date>([
+      [`${saoPaulo.duoId}:weekly`, new Date("2026-06-08T03:00:00.000Z")],
+      [`${saoPaulo.duoId}:streak`, new Date("2026-06-07T07:00:00.000Z")],
+      [`${newYork.duoId}:weekly`, new Date("2026-06-08T04:00:00.000Z")],
+      [`${newYork.duoId}:streak`, new Date("2026-06-07T08:00:00.000Z")]
+    ]);
+
+    for (const job of claimed) {
+      const nextRunAt = expectedSuccessors.get(
+        `${job.duo_id}:${job.schedule_kind}`
+      );
+
+      expect(nextRunAt).toBeDefined();
+
+      if (job.schedule_kind === "weekly") {
+        const actorUserId =
+          job.duo_id === saoPaulo.duoId
+            ? saoPaulo.ownerUserId
+            : newYork.ownerUserId;
+        const windowStartAt =
+          job.duo_id === saoPaulo.duoId
+            ? new Date("2026-06-01T03:00:00.000Z")
+            : new Date("2026-06-01T04:00:00.000Z");
+
+        await insertQuestCycleAt(
+          pool,
+          actorUserId,
+          job.duo_id,
+          weeklyQuestSlug,
+          `chain:${prefix.slice(-12)}:${job.duo_id === saoPaulo.duoId ? "sp" : "ny"}`,
+          windowStartAt,
+          nextRunAt!
+        );
+      }
+
+      await enqueueChainSuccessorAsWorker(pool, {
+        createdByUserId: job.created_by_user_id,
+        duoId: job.duo_id,
+        nextRunAt: nextRunAt!,
+        prefix,
+        scheduleKind: job.schedule_kind
+      });
+      await completeChainJobAsWorker(pool, job.id);
+      await enqueueChainSuccessorAsWorker(pool, {
+        createdByUserId: job.created_by_user_id,
+        duoId: job.duo_id,
+        nextRunAt: nextRunAt!,
+        prefix,
+        scheduleKind: job.schedule_kind
+      });
+    }
+
+    const rows = await readChainJobs(pool, prefix);
+
+    for (const duo of [saoPaulo, newYork]) {
+      const duoRows = rows.filter((row) => row.duo_id === duo.duoId);
+
+      expect(duoRows).toHaveLength(6);
+      expect(
+        duoRows.filter((row) => row.status === "completed")
+      ).toHaveLength(2);
+
+      for (const scheduleKind of ["weekly", "streak"] as const) {
+        const successorRows = duoRows.filter(
+          (row) =>
+            row.schedule_kind === scheduleKind
+            && row.job_key.includes(":successor:")
+        );
+        const expectedRunAt = expectedSuccessors.get(
+          `${duo.duoId}:${scheduleKind}`
+        );
+
+        expect(successorRows).toHaveLength(1);
+        expect(successorRows[0]?.status).toBe("pending");
+        expect(successorRows[0]?.run_at.toISOString()).toBe(
+          expectedRunAt?.toISOString()
+        );
+        expect(formatCivilHour(successorRows[0]!.run_at, duo.duoId === saoPaulo.duoId
+          ? "America/Sao_Paulo"
+          : "America/New_York")).toBe(scheduleKind === "weekly" ? "00:00" : "04:00");
+      }
+    }
+  });
 });
 
 async function createReadyDuo(pool: pg.Pool, label: string) {
@@ -149,6 +274,337 @@ async function createReadyDuo(pool: pg.Pool, label: string) {
     ...duo,
     partnerUserId
   };
+}
+
+type ChainScheduleKind = "weekly" | "monthly" | "seasonal" | "streak";
+
+type ChainJobRow = {
+  id: string;
+  duo_id: string;
+  job_key: string;
+  status: "pending" | "claimed" | "completed" | "failed";
+  run_at: Date;
+  schedule_kind: ChainScheduleKind;
+  created_by_user_id: string;
+};
+
+type ClaimedChainJobRow = Omit<ChainJobRow, "schedule_kind"> & {
+  schedule_kind: "weekly" | "streak";
+};
+
+async function configureReadyDuo(
+  pool: pg.Pool,
+  duoId: string,
+  name: string,
+  timezone: string
+): Promise<void> {
+  await pool.query(
+    `
+      UPDATE app.duos
+      SET name = $2,
+          timezone = $3,
+          paired_at = COALESCE(paired_at, now())
+      WHERE id = $1
+    `,
+    [duoId, name, timezone]
+  );
+}
+
+async function produceInitialGamificationJobsAsWorker(
+  pool: pg.Pool,
+  input: {
+    duoIds: string[];
+    prefix: string;
+    referenceAt: Date;
+  }
+): Promise<number> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE queue2_worker");
+    const targets = await client.query<{
+      duo_id: string;
+      created_by_user_id: string;
+    }>(
+      `
+        SELECT
+          duo.id AS duo_id,
+          (array_agg(member.user_id ORDER BY member.member_slot))[1] AS created_by_user_id
+        FROM app.duos AS duo
+        JOIN app.duo_members AS member ON member.duo_id = duo.id
+        WHERE duo.id = ANY($1::uuid[])
+          AND duo.paired_at IS NOT NULL
+          AND btrim(COALESCE(duo.name, '')) <> ''
+        GROUP BY duo.id
+        HAVING count(*) = 2
+          AND count(DISTINCT member.user_id) = 2
+          AND count(DISTINCT member.member_slot) = 2
+      `,
+      [input.duoIds]
+    );
+    let produced = 0;
+
+    for (const target of targets.rows) {
+      for (const scheduleKind of [
+        "weekly",
+        "monthly",
+        "seasonal",
+        "streak"
+      ] as const) {
+        const result = await client.query(
+          `
+            INSERT INTO ops.scheduled_jobs (
+              duo_id,
+              job_key,
+              job_type,
+              run_at,
+              payload
+            )
+            VALUES ($1, $2, $3, $4, $5::jsonb)
+            ON CONFLICT (job_key) DO NOTHING
+            RETURNING id
+          `,
+          [
+            target.duo_id,
+            `${input.prefix}:${target.duo_id}:initial:${scheduleKind}`,
+            scheduleKind === "streak"
+              ? "gamification-streak-check"
+              : "gamification-quest-rotation",
+            input.referenceAt,
+            JSON.stringify({
+              createdByUserId: target.created_by_user_id,
+              ...(scheduleKind === "streak"
+                ? { checkAt: input.referenceAt.toISOString() }
+                : { questType: scheduleKind })
+            })
+          ]
+        );
+
+        produced += result.rows.length;
+      }
+    }
+
+    await client.query("COMMIT");
+    return produced;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function claimChainJobsAsWorker(
+  pool: pg.Pool,
+  input: {
+    prefix: string;
+    referenceAt: Date;
+  }
+): Promise<ClaimedChainJobRow[]> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE queue2_worker");
+    const result = await client.query<ClaimedChainJobRow>(
+      `
+        WITH due_jobs AS (
+          SELECT id
+          FROM ops.scheduled_jobs
+          WHERE status = 'pending'
+            AND job_key LIKE $1
+            AND (
+              job_type = 'gamification-streak-check'
+              OR payload ->> 'questType' = 'weekly'
+            )
+          ORDER BY duo_id, job_type
+          FOR UPDATE SKIP LOCKED
+        )
+        UPDATE ops.scheduled_jobs AS job
+        SET status = 'claimed',
+            attempts = attempts + 1,
+            locked_at = $2,
+            locked_by = 'integration-chain',
+            updated_at = now()
+        FROM due_jobs
+        WHERE job.id = due_jobs.id
+        RETURNING
+          job.id,
+          job.duo_id,
+          job.job_key,
+          job.status,
+          job.run_at,
+          COALESCE(job.payload ->> 'questType', 'streak') AS schedule_kind,
+          job.payload ->> 'createdByUserId' AS created_by_user_id
+      `,
+      [`${input.prefix}%`, input.referenceAt]
+    );
+
+    await client.query("COMMIT");
+    return result.rows;
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function enqueueChainSuccessorAsWorker(
+  pool: pg.Pool,
+  input: {
+    createdByUserId: string;
+    duoId: string;
+    nextRunAt: Date;
+    prefix: string;
+    scheduleKind: "weekly" | "streak";
+  }
+): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE queue2_worker");
+    await client.query(
+      `
+        INSERT INTO ops.scheduled_jobs (
+          duo_id,
+          job_key,
+          job_type,
+          run_at,
+          payload
+        )
+        VALUES ($1, $2, $3, $4, $5::jsonb)
+        ON CONFLICT (job_key) DO NOTHING
+      `,
+      [
+        input.duoId,
+        `${input.prefix}:${input.duoId}:successor:${input.scheduleKind}:${input.nextRunAt.toISOString()}`,
+        input.scheduleKind === "streak"
+          ? "gamification-streak-check"
+          : "gamification-quest-rotation",
+        input.nextRunAt,
+        JSON.stringify({
+          createdByUserId: input.createdByUserId,
+          ...(input.scheduleKind === "streak"
+            ? { checkAt: input.nextRunAt.toISOString() }
+            : { questType: input.scheduleKind })
+        })
+      ]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function completeChainJobAsWorker(
+  pool: pg.Pool,
+  jobId: string
+): Promise<void> {
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+    await client.query("SET LOCAL ROLE queue2_worker");
+    await client.query(
+      `
+        UPDATE ops.scheduled_jobs
+        SET status = 'completed',
+            processed_at = now(),
+            locked_at = NULL,
+            locked_by = NULL,
+            updated_at = now()
+        WHERE id = $1
+      `,
+      [jobId]
+    );
+    await client.query("COMMIT");
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function readChainJobs(
+  pool: pg.Pool,
+  prefix: string
+): Promise<ChainJobRow[]> {
+  const result = await pool.query<ChainJobRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        job_key,
+        status,
+        run_at,
+        COALESCE(payload ->> 'questType', 'streak') AS schedule_kind,
+        payload ->> 'createdByUserId' AS created_by_user_id
+      FROM ops.scheduled_jobs
+      WHERE job_key LIKE $1
+      ORDER BY duo_id, run_at, job_key
+    `,
+    [`${prefix}%`]
+  );
+
+  return result.rows;
+}
+
+async function insertQuestCycleAt(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string,
+  questSlug: string,
+  cycleKey: string,
+  windowStartAt: Date,
+  windowEndAt: Date
+): Promise<void> {
+  await withRuntimeUser(pool, userId, async (client) => {
+    await client.query(
+      `
+        INSERT INTO app.gamification_quest_cycles (
+          duo_id,
+          quest_slug,
+          quest_type,
+          cycle_key,
+          window_start_at,
+          window_end_at,
+          timezone
+        )
+        SELECT
+          $1,
+          $2,
+          'weekly',
+          $3,
+          $4,
+          $5,
+          duo.timezone
+        FROM app.duos AS duo
+        WHERE duo.id = $1
+        ON CONFLICT (duo_id, quest_slug, cycle_key) DO NOTHING
+      `,
+      [duoId, questSlug, cycleKey, windowStartAt, windowEndAt]
+    );
+  });
+}
+
+function formatCivilHour(date: Date, timezone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    hour: "2-digit",
+    hourCycle: "h23",
+    minute: "2-digit",
+    timeZone: timezone
+  }).formatToParts(date);
+  const value = (type: "hour" | "minute") =>
+    parts.find((part) => part.type === type)?.value;
+
+  return `${value("hour")}:${value("minute")}`;
 }
 
 async function insertAchievementSeed(pool: pg.Pool, label: string): Promise<string> {

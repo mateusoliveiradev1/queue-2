@@ -285,7 +285,7 @@ function writePerformanceReview({
     "",
     "- Source security command: `pnpm --filter @queue/web test -- gamification-security`",
     "- DB integration command: `pnpm --filter @queue/db test:integration -- gamification-rls gamification-concurrency performance-hot-paths`",
-    "- DB coverage targets ledger, unlocks, quests, streak, reward notifications, projection rebuilds, duplicate rewards, quest races and Streak Freeze consumption.",
+    "- DB coverage targets ledger, unlocks, quests, streak, reward notifications, projection rebuilds, duplicate rewards, quest races, Streak Freeze consumption and the timezone-aware producer-to-successor chain.",
     "",
     "## Economy and Copy Audit",
     "",

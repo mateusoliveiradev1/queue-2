@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: performance-review
-generated: 2026-06-06T20:39:24.657Z
+generated: 2026-06-06T21:00:32.417Z
 result: BLOCKED - missing external evidence
 ---
 
@@ -10,7 +10,7 @@ result: BLOCKED - missing external evidence
 
 ## Environment
 
-- Generated: 2026-06-06T20:39:24.657Z
+- Generated: 2026-06-06T21:00:32.417Z
 - Evidence environment: root Phase 5 gate command
 - Credentials: process-only; no credential values written to this artifact
 - DB fixture status: configured
@@ -33,7 +33,7 @@ result: BLOCKED - missing external evidence
 
 - Source security command: `pnpm --filter @queue/web test -- gamification-security`
 - DB integration command: `pnpm --filter @queue/db test:integration -- gamification-rls gamification-concurrency performance-hot-paths`
-- DB coverage targets ledger, unlocks, quests, streak, reward notifications, projection rebuilds, duplicate rewards, quest races and Streak Freeze consumption.
+- DB coverage targets ledger, unlocks, quests, streak, reward notifications, projection rebuilds, duplicate rewards, quest races, Streak Freeze consumption and the timezone-aware producer-to-successor chain.
 
 ## Economy and Copy Audit
 
@@ -45,14 +45,14 @@ result: BLOCKED - missing external evidence
 
 | Command | Status | Duration |
 |---------|--------|----------|
-| Architecture | passed | 876ms |
-| Web typecheck | passed | 1484ms |
-| DB typecheck | passed | 869ms |
-| Focused gamification tests | passed | 1633ms |
-| DB integration evidence | passed | 7313ms |
-| Apply Phase 5 migrations | passed | 706ms |
-| Phase 5 schema drift | passed | 179ms |
-| Phase 5 query and performance review | passed | 249ms |
+| Architecture | passed | 933ms |
+| Web typecheck | passed | 1590ms |
+| DB typecheck | passed | 894ms |
+| Focused gamification tests | passed | 1771ms |
+| DB integration evidence | passed | 6940ms |
+| Apply Phase 5 migrations | passed | 1328ms |
+| Phase 5 schema drift | passed | 180ms |
+| Phase 5 query and performance review | passed | 216ms |
 | Browser E2E and accessibility | skipped | 0ms |
 
 ## Missing DB Fixtures
