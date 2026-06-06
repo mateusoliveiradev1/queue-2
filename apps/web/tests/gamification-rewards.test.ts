@@ -135,7 +135,7 @@ describe("gamification reward application", () => {
     expect(result.summary.totalXpAwarded).toBe(0);
     expect(result.summary.achievements).toEqual([]);
     expect(transaction.updateProjection).not.toHaveBeenCalled();
-    expect(transaction.upsertQuestProgress).not.toHaveBeenCalled();
+    expect(transaction.advanceQuestProgress).not.toHaveBeenCalled();
     expect(transaction.insertAchievementUnlock).not.toHaveBeenCalled();
   });
 
@@ -754,26 +754,8 @@ function fakeGamificationRepository(input: {
   achievementMetrics?: AchievementMetricSnapshot;
   insertXpLedgerAward?: GamificationRepositoryTransaction["insertXpLedgerAward"];
   insertAchievementUnlock?: GamificationRepositoryTransaction["insertAchievementUnlock"];
-  advanceQuestProgress?: (input: {
-    completedAt: Date;
-    duoId: string;
-    goal: number;
-    increment: number;
-    lastSourceId: string;
-    lastSourceType: string;
-    metadata?: Record<string, unknown>;
-    questCycleId: string;
-    sourceKey: string;
-  }) => Promise<{
-    advanced: boolean;
-    completedNow: boolean;
-    progress: GamificationQuestProgressRecord;
-  }>;
-  linkQuestProgressReward?: (input: {
-    duoId: string;
-    questCycleId: string;
-    rewardAwardId: string;
-  }) => Promise<GamificationQuestProgressRecord>;
+  advanceQuestProgress?: GamificationRepositoryTransaction["advanceQuestProgress"];
+  linkQuestProgressReward?: GamificationRepositoryTransaction["linkQuestProgressReward"];
   lockProjection?: (
     duoId: string
   ) => Promise<GamificationProjectionRecord | null>;
@@ -802,6 +784,9 @@ function fakeGamificationRepository(input: {
   const projection = input.projection ?? projectionRecord();
   const questCycles = input.questCycles ?? [];
   const questProgress = input.questProgress ?? [];
+  const questProgressByCycleId = new Map(
+    questProgress.map((progress) => [progress.questCycleId, progress])
+  );
   const achievementUnlocks = input.achievementUnlocks ?? [];
   let awardSequence = 0;
 
@@ -852,17 +837,69 @@ function fakeGamificationRepository(input: {
     readActiveQuestCycles: vi.fn(async () => questCycles),
     readQuestProgressForCycles: vi.fn(async () => questProgress),
     upsertQuestCycle: vi.fn(async () => questCycleRecord()),
-    upsertQuestProgress: vi.fn(async (progressInput) =>
-      questProgressRecord({
-        duoId: progressInput.duoId,
-        questCycleId: progressInput.questCycleId,
-        currentValue: progressInput.currentValue,
-        completedAt: progressInput.completedAt ?? null,
-        rewardAwardId: progressInput.rewardAwardId ?? null,
-        metadata: progressInput.metadata ?? {},
-        updatedAt: now
-      })
-    ),
+    advanceQuestProgress:
+      input.advanceQuestProgress ??
+      vi.fn(async (progressInput) => {
+        const existing =
+          questProgressByCycleId.get(progressInput.questCycleId) ??
+          questProgressRecord({
+            duoId: progressInput.duoId,
+            questCycleId: progressInput.questCycleId
+          });
+        const sourceKeys = Array.isArray(existing.metadata.sourceKeys)
+          ? existing.metadata.sourceKeys.filter(
+              (sourceKey): sourceKey is string => typeof sourceKey === "string"
+            )
+          : [];
+        const advanced =
+          !existing.completedAt && !sourceKeys.includes(progressInput.sourceKey);
+        const currentValue = advanced
+          ? Math.min(
+              progressInput.goal,
+              existing.currentValue + progressInput.increment
+            )
+          : existing.currentValue;
+        const completedNow =
+          advanced &&
+          !existing.completedAt &&
+          existing.currentValue < progressInput.goal &&
+          currentValue >= progressInput.goal;
+        const progress = questProgressRecord({
+          ...existing,
+          currentValue,
+          completedAt: completedNow ? progressInput.completedAt : existing.completedAt,
+          metadata: advanced
+            ? {
+                ...existing.metadata,
+                ...progressInput.metadata,
+                sourceKeys: [...sourceKeys, progressInput.sourceKey],
+                lastSourceKey: progressInput.sourceKey
+              }
+            : existing.metadata,
+          updatedAt: now
+        });
+        questProgressByCycleId.set(progressInput.questCycleId, progress);
+
+        return { advanced, completedNow, progress };
+      }),
+    linkQuestProgressReward:
+      input.linkQuestProgressReward ??
+      vi.fn(async (rewardInput) => {
+        const existing =
+          questProgressByCycleId.get(rewardInput.questCycleId) ??
+          questProgressRecord({
+            duoId: rewardInput.duoId,
+            questCycleId: rewardInput.questCycleId
+          });
+        const progress = questProgressRecord({
+          ...existing,
+          rewardAwardId: existing.rewardAwardId ?? rewardInput.rewardAwardId,
+          updatedAt: now
+        });
+        questProgressByCycleId.set(rewardInput.questCycleId, progress);
+
+        return progress;
+      }),
     readStreakState: vi.fn(async () => input.streakState ?? null),
     insertStreakEvent: vi.fn(async () => true),
     upsertStreakState: vi.fn(async (state) => state),
@@ -870,10 +907,6 @@ function fakeGamificationRepository(input: {
     insertAdjustment: vi.fn(),
     sumXpLedgerAwards: vi.fn(async () => input.ledgerXp ?? projection.xp)
   };
-  Object.assign(transaction, {
-    advanceQuestProgress: input.advanceQuestProgress,
-    linkQuestProgressReward: input.linkQuestProgressReward
-  });
 
   return {
     transaction,

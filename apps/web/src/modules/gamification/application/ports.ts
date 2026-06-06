@@ -275,6 +275,12 @@ export type GamificationQuestProgressRecord = {
   updatedAt: Date;
 };
 
+export type GamificationQuestAdvanceResult = {
+  advanced: boolean;
+  completedNow: boolean;
+  progress: GamificationQuestProgressRecord;
+};
+
 export type GamificationStreakStateRecord = {
   duoId: GamificationDuoId;
   currentStreak: number;
@@ -408,15 +414,21 @@ export type GamificationRepositoryTransaction = {
     windowEndAt: Date;
     timezone: string;
   }): Promise<GamificationQuestCycleRecord>;
-  upsertQuestProgress(input: {
+  advanceQuestProgress(input: {
     duoId: GamificationDuoId;
     questCycleId: GamificationUuid;
-    currentValue: number;
-    completedAt?: Date | null;
-    rewardAwardId?: GamificationUuid | null;
-    lastSourceType?: GamificationFactSourceType | null;
-    lastSourceId?: GamificationUuid | null;
+    sourceKey: string;
+    increment: number;
+    goal: number;
+    completedAt: Date;
+    lastSourceType: GamificationFactSourceType;
+    lastSourceId: GamificationUuid;
     metadata?: Record<string, unknown>;
+  }): Promise<GamificationQuestAdvanceResult>;
+  linkQuestProgressReward(input: {
+    duoId: GamificationDuoId;
+    questCycleId: GamificationUuid;
+    rewardAwardId: GamificationUuid;
   }): Promise<GamificationQuestProgressRecord>;
   readStreakState(duoId: GamificationDuoId): Promise<GamificationStreakStateRecord | null>;
   insertStreakEvent(input: {

@@ -250,13 +250,6 @@ async function applyQuestProgress(
   xpAwards: GamificationXpLedgerRecord[]
 ): Promise<GamificationQuestProgressSummary[]> {
   const cycles = await transaction.readActiveQuestCycles(input.duoId);
-  const progressRecords = await transaction.readQuestProgressForCycles({
-    duoId: input.duoId,
-    questCycleIds: cycles.map((cycle) => cycle.id)
-  });
-  const progressByCycleId = new Map(
-    progressRecords.map((progress) => [progress.questCycleId, progress])
-  );
   const summaries: GamificationQuestProgressSummary[] = [];
 
   for (const cycle of cycles) {
@@ -266,21 +259,21 @@ async function applyQuestProgress(
       continue;
     }
 
-    const existing = progressByCycleId.get(cycle.id);
-    const sourceKeys = readStringArray(existing?.metadata, "sourceKeys");
     const sourceKey = `${input.sourceType}:${input.sourceId}`;
-
-    if (sourceKeys.includes(sourceKey)) {
-      summaries.push(questSummary(cycle, template, existing, 0));
-      continue;
-    }
-
-    const currentValue = Math.min(
-      template.goalValue,
-      (existing?.currentValue ?? 0) + 1
-    );
-    const completedNow = !existing?.completedAt && currentValue >= template.goalValue;
-    const questAward = completedNow
+    const advancement = await transaction.advanceQuestProgress({
+      duoId: input.duoId,
+      questCycleId: cycle.id,
+      sourceKey,
+      increment: 1,
+      goal: template.goalValue,
+      completedAt: input.occurredAt,
+      lastSourceType: input.sourceType,
+      lastSourceId: input.sourceId,
+      metadata: {
+        eligibilityKey: template.eligibilityKey
+      }
+    });
+    const questAward = advancement.completedNow
       ? await transaction.insertXpLedgerAward({
           duoId: input.duoId,
           awardKey: `quest:${cycle.id}`,
@@ -303,20 +296,13 @@ async function applyQuestProgress(
       xpAwards.push(questAward);
     }
 
-    const progress = await transaction.upsertQuestProgress({
-      duoId: input.duoId,
-      questCycleId: cycle.id,
-      currentValue,
-      completedAt: completedNow ? input.occurredAt : existing?.completedAt,
-      rewardAwardId: questAward?.id ?? existing?.rewardAwardId,
-      lastSourceType: input.sourceType,
-      lastSourceId: input.sourceId,
-      metadata: {
-        sourceKeys: [...sourceKeys, sourceKey],
-        lastSourceKey: sourceKey,
-        eligibilityKey: template.eligibilityKey
-      }
-    });
+    const progress = questAward
+      ? await transaction.linkQuestProgressReward({
+          duoId: input.duoId,
+          questCycleId: cycle.id,
+          rewardAwardId: questAward.id
+        })
+      : advancement.progress;
 
     summaries.push(questSummary(cycle, template, progress, questAward?.amount ?? 0));
   }
@@ -650,17 +636,6 @@ function readNumber(
   const value = metadata?.[key];
 
   return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function readStringArray(
-  metadata: Record<string, unknown> | undefined,
-  key: string
-): string[] {
-  const value = metadata?.[key];
-
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
 }
 
 function withProjectedAchievementCount(

@@ -320,7 +320,12 @@ function fakeGamificationRepository(input: {
     readActiveQuestCycles: vi.fn(async () => input.cycles ?? []),
     readQuestProgressForCycles: vi.fn(async () => input.progress ?? []),
     upsertQuestCycle: vi.fn(async () => questCycleRecord()),
-    upsertQuestProgress: vi.fn(async () => questProgressRecord()),
+    advanceQuestProgress: vi.fn(async () => ({
+      advanced: true,
+      completedNow: false,
+      progress: questProgressRecord()
+    })),
+    linkQuestProgressReward: vi.fn(async () => questProgressRecord()),
     readStreakState: vi.fn(async () =>
       input.streakState === undefined ? null : input.streakState
     ),

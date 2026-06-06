@@ -92,6 +92,11 @@ type QuestProgressRow = {
   updated_at: Date;
 };
 
+type QuestAdvanceRow = QuestProgressRow & {
+  advanced: boolean;
+  completed_now: boolean;
+};
+
 type StreakStateRow = {
   duo_id: string;
   current_streak: number;
@@ -243,7 +248,8 @@ export function createGamificationTransaction(
     readActiveQuestCycles: (duoId) => readActiveQuestCycles(client, duoId),
     readQuestProgressForCycles: (input) => readQuestProgressForCycles(client, input),
     upsertQuestCycle: (input) => upsertQuestCycle(client, input),
-    upsertQuestProgress: (input) => upsertQuestProgress(client, input),
+    advanceQuestProgress: (input) => advanceQuestProgress(client, input),
+    linkQuestProgressReward: (input) => linkQuestProgressReward(client, input),
     readStreakState: (duoId) => readStreakState(client, duoId),
     insertStreakEvent: (input) => insertStreakEvent(client, input),
     upsertStreakState: (input) => upsertStreakState(client, input),
@@ -1035,31 +1041,132 @@ async function upsertQuestCycle(
   return mapQuestCycle(row);
 }
 
-async function upsertQuestProgress(
+async function advanceQuestProgress(
   client: QueueDbClient,
-  input: Parameters<GamificationRepositoryTransaction["upsertQuestProgress"]>[0]
-): Promise<GamificationQuestProgressRecord> {
-  const result = await client.query<QuestProgressRow>(
+  input: Parameters<GamificationRepositoryTransaction["advanceQuestProgress"]>[0]
+): Promise<Awaited<ReturnType<GamificationRepositoryTransaction["advanceQuestProgress"]>>> {
+  await client.query(
     `
       INSERT INTO app.gamification_quest_progress (
         duo_id,
         quest_cycle_id,
         current_value,
-        completed_at,
-        reward_award_id,
-        last_source_type,
-        last_source_id,
         metadata
       )
-      VALUES ($1, $2::uuid, $3, $4, $5::uuid, $6, $7::uuid, $8::jsonb)
-      ON CONFLICT (duo_id, quest_cycle_id) DO UPDATE
-      SET current_value = GREATEST(app.gamification_quest_progress.current_value, excluded.current_value),
-          completed_at = COALESCE(app.gamification_quest_progress.completed_at, excluded.completed_at),
-          reward_award_id = COALESCE(app.gamification_quest_progress.reward_award_id, excluded.reward_award_id),
-          last_source_type = COALESCE(excluded.last_source_type, app.gamification_quest_progress.last_source_type),
-          last_source_id = COALESCE(excluded.last_source_id, app.gamification_quest_progress.last_source_id),
-          metadata = app.gamification_quest_progress.metadata || excluded.metadata,
-          updated_at = now()
+      VALUES ($1, $2::uuid, 0, '{}'::jsonb)
+      ON CONFLICT (duo_id, quest_cycle_id) DO NOTHING
+    `,
+    [input.duoId, input.questCycleId]
+  );
+
+  const result = await client.query<QuestAdvanceRow>(
+    `
+      WITH previous AS MATERIALIZED (
+        SELECT
+          progress.*,
+          progress.completed_at IS NULL
+            AND NOT (
+              COALESCE(progress.metadata -> 'sourceKeys', '[]'::jsonb) ? $3
+            ) AS should_advance
+        FROM app.gamification_quest_progress AS progress
+        WHERE progress.duo_id = $1
+          AND progress.quest_cycle_id = $2::uuid
+        FOR UPDATE
+      ),
+      updated AS (
+        UPDATE app.gamification_quest_progress AS progress
+        SET current_value = LEAST($5, previous.current_value + $4),
+            completed_at = CASE
+              WHEN previous.current_value < $5
+                AND LEAST($5, previous.current_value + $4) >= $5
+                THEN $6
+              ELSE previous.completed_at
+            END,
+            last_source_type = $7,
+            last_source_id = $8::uuid,
+            metadata = previous.metadata
+              || $9::jsonb
+              || jsonb_build_object(
+                'sourceKeys',
+                COALESCE(previous.metadata -> 'sourceKeys', '[]'::jsonb)
+                  || jsonb_build_array($3),
+                'lastSourceKey',
+                $3
+              ),
+            updated_at = now()
+        FROM previous
+        WHERE progress.id = previous.id
+          AND previous.should_advance
+        RETURNING
+          progress.id,
+          progress.duo_id,
+          progress.quest_cycle_id,
+          progress.current_value,
+          progress.completed_at,
+          progress.reward_award_id,
+          progress.metadata,
+          progress.updated_at,
+          true AS advanced,
+          previous.current_value < $5
+            AND progress.current_value >= $5 AS completed_now
+      )
+      SELECT *
+      FROM updated
+      UNION ALL
+      SELECT
+        previous.id,
+        previous.duo_id,
+        previous.quest_cycle_id,
+        previous.current_value,
+        previous.completed_at,
+        previous.reward_award_id,
+        previous.metadata,
+        previous.updated_at,
+        false AS advanced,
+        false AS completed_now
+      FROM previous
+      WHERE NOT EXISTS (SELECT 1 FROM updated)
+      LIMIT 1
+    `,
+    [
+      input.duoId,
+      input.questCycleId,
+      input.sourceKey,
+      input.increment,
+      input.goal,
+      input.completedAt,
+      input.lastSourceType,
+      input.lastSourceId,
+      JSON.stringify(input.metadata ?? {})
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("gamification_quest_progress_advance_failed");
+  }
+
+  return {
+    advanced: row.advanced,
+    completedNow: row.completed_now,
+    progress: mapQuestProgress(row)
+  };
+}
+
+async function linkQuestProgressReward(
+  client: QueueDbClient,
+  input: Parameters<GamificationRepositoryTransaction["linkQuestProgressReward"]>[0]
+): Promise<GamificationQuestProgressRecord> {
+  const result = await client.query<QuestProgressRow>(
+    `
+      UPDATE app.gamification_quest_progress
+      SET reward_award_id = COALESCE(reward_award_id, $3::uuid),
+          updated_at = CASE
+            WHEN reward_award_id IS NULL THEN now()
+            ELSE updated_at
+          END
+      WHERE duo_id = $1
+        AND quest_cycle_id = $2::uuid
       RETURNING
         id,
         duo_id,
@@ -1070,21 +1177,12 @@ async function upsertQuestProgress(
         metadata,
         updated_at
     `,
-    [
-      input.duoId,
-      input.questCycleId,
-      input.currentValue,
-      input.completedAt ?? null,
-      input.rewardAwardId ?? null,
-      input.lastSourceType ?? null,
-      input.lastSourceId ?? null,
-      JSON.stringify(input.metadata ?? {})
-    ]
+    [input.duoId, input.questCycleId, input.rewardAwardId]
   );
   const row = result.rows[0];
 
   if (!row) {
-    throw new Error("gamification_quest_progress_upsert_failed");
+    throw new Error("gamification_quest_progress_reward_link_failed");
   }
 
   return mapQuestProgress(row);
