@@ -36,6 +36,7 @@ export const performanceRouteKeys = [
   "app.biblioteca",
   "app.descobrir",
   "app.conquistas",
+  "app.desafios",
   "app.jogo",
   "api.discovery.search",
   "unknown"
@@ -195,6 +196,10 @@ export function normalizeRouteKey(input: unknown): PerformanceRouteKey {
 
   if (path === "/app/conquistas") {
     return "app.conquistas";
+  }
+
+  if (path === "/app/desafios") {
+    return "app.desafios";
   }
 
   if (path.startsWith("/app/jogo/")) {

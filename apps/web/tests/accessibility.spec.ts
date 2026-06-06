@@ -71,6 +71,11 @@ const phase5AchievementsMissingEnv = missingEnv([
   "E2E_READY_USER_EMAIL",
   "E2E_READY_USER_PASSWORD"
 ]);
+const phase5ChallengesMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -83,6 +88,7 @@ reportMissingEnv("Phase 03.3 performance feedback accessibility", phase33Perform
 reportMissingEnv("Phase 4 Jogando Agora accessibility", phase4MissingEnv);
 reportMissingEnv("Phase 5 gamification dashboard accessibility", phase5DashboardMissingEnv);
 reportMissingEnv("Phase 5 achievements accessibility", phase5AchievementsMissingEnv);
+reportMissingEnv("Phase 5 challenges accessibility", phase5ChallengesMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -163,7 +169,8 @@ test.describe("Authenticated accessibility", () => {
     "/app/catalogo",
     "/app/descobrir",
     "/app/biblioteca",
-    "/app/conquistas"
+    "/app/conquistas",
+    "/app/desafios"
   ]) {
     test(`${route} has no WCAG A/AA axe violations`, async ({ page }) => {
       await login(page, readyActor);
@@ -207,6 +214,55 @@ test.describe("Phase 5 achievements accessibility", () => {
     await firstCard.focus();
     await expect(firstCard).toBeFocused();
     await expectStaticFeedbackMark(page.locator(".achievement-badge-icon").first());
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+    await expectNoAxeViolations(page);
+  });
+});
+
+test.describe("Phase 5 challenges accessibility", () => {
+  test.skip(
+    phase5ChallengesMissingEnv.length > 0,
+    `Missing Phase 5 challenges accessibility fixture: ${phase5ChallengesMissingEnv.join(", ")}`
+  );
+
+  test("challenges route is filterable, focusable, reduced-motion safe and axe-clean", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/desafios?periodo=semana");
+
+    const route = page.locator(".challenges-route");
+    await expect(route).toBeVisible();
+    await expect(page.getByRole("heading", { name: /desafios da dupla/i })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: /navegacao principal mobile/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /desafios/i }).first()).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+
+    const filter = page.getByRole("navigation", { name: /filtrar desafios por periodo/i });
+    await expect(filter.getByRole("link", { name: /semana/i })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    await filter.getByRole("link", { name: /todos/i }).focus();
+    await expect(filter.getByRole("link", { name: /todos/i })).toBeFocused();
+
+    const streakPanel = page.locator(".challenge-streak-panel");
+    await expect(streakPanel).toBeVisible();
+    await expectStaticFeedbackMark(page.locator(".challenge-streak-mark").first());
+
+    const firstCard = page.locator(".challenge-card").first();
+    if ((await firstCard.count()) > 0) {
+      await expect(firstCard).toBeVisible();
+      await firstCard.focus();
+      await expect(firstCard).toBeFocused();
+    } else {
+      await expect(page.locator(".challenge-empty-state").first()).toBeVisible();
+    }
+
     await expect
       .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
       .toBe(true);

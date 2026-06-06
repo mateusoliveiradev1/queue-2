@@ -7,6 +7,7 @@ type AppShellPage =
   | "descobrir"
   | "biblioteca"
   | "conquistas"
+  | "desafios"
   | "perfil"
   | "dupla";
 
@@ -16,6 +17,7 @@ const navigation = [
   { href: "/app/descobrir", label: "Descobrir", page: "descobrir" },
   { href: "/app/biblioteca", label: "Biblioteca", page: "biblioteca" },
   { href: "/app/conquistas", label: "Conquistas", page: "conquistas" },
+  { href: "/app/desafios", label: "Desafios", page: "desafios" },
   { href: "/app/dupla", label: "Dupla", page: "dupla" },
   { href: "/app/perfil", label: "Perfil", page: "perfil" }
 ] as const;

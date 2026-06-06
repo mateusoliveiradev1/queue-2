@@ -77,10 +77,15 @@ export {
   getAchievementsFromTransaction
 } from "./application/get-achievements";
 export {
+  getChallenges,
+  getChallengesFromTransaction
+} from "./application/get-challenges";
+export {
   rebuildGamificationProjections,
   rebuildGamificationProjectionsInTransaction
 } from "./application/rebuild-gamification-projections";
 export {
+  toChallengeRouteView,
   toAchievementRouteView,
   toGamificationDashboardView,
   toRewardToastView,
@@ -88,6 +93,11 @@ export {
   type AchievementGroupView,
   type AchievementRarityFilterOptionView,
   type AchievementRouteViewModel,
+  type ChallengePeriodFilterOptionView,
+  type ChallengeQuestCardViewModel,
+  type ChallengeRouteViewModel,
+  type ChallengeSectionViewModel,
+  type ChallengeStreakPanelViewModel,
   type GamificationAchievementView,
   type GamificationDashboardViewModel,
   type GamificationLedgerEntryView,
@@ -97,9 +107,11 @@ export {
 } from "./presentation/view-models";
 export { GamificationDashboardBand } from "./presentation/gamification-dashboard-band";
 export { AchievementBadgeIcon } from "./presentation/achievement-badge-icon";
+export { ChallengeBoard } from "./presentation/challenge-board";
 export { AchievementGrid } from "./presentation/achievement-grid";
 export { AchievementRarityFilter } from "./presentation/achievement-rarity-filter";
 export { RewardToast } from "./presentation/reward-toast";
+export { StreakPanel } from "./presentation/streak-panel";
 export { XpLedgerPanel } from "./presentation/xp-ledger-panel";
 
 export type {
@@ -110,6 +122,9 @@ export type {
   GamificationAchievementsRecord,
   GamificationAchievementSummary,
   GamificationApplyFactResult,
+  GamificationChallengeQuestRecord,
+  GamificationChallengeSectionRecord,
+  GamificationChallengesRecord,
   GamificationDashboardRecord,
   GamificationDueJobRecord,
   GamificationDuoId,

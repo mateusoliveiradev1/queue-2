@@ -147,6 +147,43 @@ export type GamificationDashboardRecord = {
   updatedAt: Date;
 };
 
+export type GamificationChallengeQuestRecord = {
+  questSlug: string;
+  questType: QuestType;
+  cycleKey: string;
+  title: string;
+  description: string;
+  currentValue: number;
+  goalValue: number;
+  completed: boolean;
+  completedAt: Date | null;
+  xpReward: number;
+  windowStartAt: Date;
+  windowEndAt: Date;
+  timezone: string;
+  seasonalKey?: "spooky" | "awards" | "anniversary";
+};
+
+export type GamificationChallengeSectionRecord = {
+  questType: QuestType;
+  quests: GamificationChallengeQuestRecord[];
+  expectedSlots: number;
+};
+
+export type GamificationChallengesRecord = {
+  duoId: GamificationDuoId;
+  timezone: string;
+  generatedAt: Date;
+  streak: {
+    current: number;
+    longest: number;
+    availableFreezes: number;
+    lastActivityDuoDay: string | null;
+    cutoffHour: number;
+  };
+  sections: GamificationChallengeSectionRecord[];
+};
+
 export type GamificationProjectionRebuildResult =
   | {
       ok: true;

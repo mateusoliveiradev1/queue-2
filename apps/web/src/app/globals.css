@@ -1876,6 +1876,302 @@ input {
   opacity: 0.72;
 }
 
+.challenges-route {
+  display: grid;
+  gap: var(--space-6);
+  min-width: 0;
+}
+
+.challenge-streak-panel {
+  align-items: center;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--surface) 86%, black),
+      color-mix(in oklch, var(--bg) 88%, transparent)
+    );
+  border: 1px solid color-mix(in oklch, var(--primary) 22%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: 88px minmax(0, 1fr) minmax(220px, 0.5fr);
+  min-width: 0;
+  padding: var(--space-5);
+}
+
+.challenge-streak-mark {
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in oklch, var(--primary) 58%, transparent);
+  border-radius: var(--radius-sharp);
+  display: block;
+  position: relative;
+  width: 88px;
+}
+
+.challenge-streak-mark::before {
+  background: var(--primary);
+  content: "";
+  inset: 16px 24px 12px;
+  position: absolute;
+}
+
+.challenge-streak-panel[data-state="active"] .challenge-streak-mark {
+  animation: queue2-streak-glow 1300ms ease-in-out infinite;
+  border-color: color-mix(in oklch, var(--primary) 82%, white);
+}
+
+.challenge-streak-panel[data-state="freezing"] .challenge-streak-mark {
+  border-color: color-mix(in oklch, var(--rarity-rare) 82%, white);
+}
+
+.challenge-streak-panel[data-state="freezing"] .challenge-streak-mark::before {
+  background: var(--rarity-rare);
+}
+
+.challenge-streak-copy,
+.challenge-board,
+.challenge-section-list,
+.challenge-section,
+.challenge-card {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.challenge-streak-copy h2,
+.challenge-section h2,
+.challenge-card h3 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  letter-spacing: 0;
+  line-height: 1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.challenge-streak-copy h2 {
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.challenge-streak-copy strong {
+  color: var(--primary);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 6vw, 4rem);
+  letter-spacing: 0;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+
+.challenge-streak-copy p,
+.challenge-section p,
+.challenge-card p,
+.challenge-empty-state p {
+  color: var(--ink-muted);
+  line-height: 1.45;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.challenge-streak-meta {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  min-width: 0;
+}
+
+.challenge-streak-meta div {
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  display: grid;
+  gap: var(--space-1);
+  padding-top: var(--space-3);
+}
+
+.challenge-streak-meta dt,
+.challenge-streak-meta dd,
+.challenge-card-meta span,
+.challenge-card-meta time,
+.challenge-seasonal-seal {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.challenge-streak-meta dt {
+  color: var(--primary);
+}
+
+.challenge-filter-bar {
+  align-items: center;
+  background: color-mix(in oklch, var(--surface) 78%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, auto);
+  padding: var(--space-4);
+}
+
+.challenge-period-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: end;
+}
+
+.challenge-period-filter a {
+  align-items: center;
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 24%, transparent);
+  border-radius: var(--radius-pill);
+  color: var(--ink-muted);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.challenge-period-filter a[aria-current="page"] {
+  background: color-mix(in oklch, var(--primary) 14%, transparent);
+  border-color: color-mix(in oklch, var(--primary) 62%, transparent);
+  color: var(--ink);
+}
+
+.challenge-section {
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  padding-top: var(--space-5);
+}
+
+.challenge-section h2 {
+  font-size: clamp(1.8rem, 5vw, 3rem);
+}
+
+.challenge-card-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.challenge-card-grid li {
+  min-width: 0;
+}
+
+.challenge-card {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in oklch, var(--surface) 84%, black),
+      color-mix(in oklch, var(--bg) 82%, transparent)
+    );
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 17%, transparent);
+  border-left: 4px solid color-mix(in oklch, var(--primary) 74%, transparent);
+  border-radius: var(--radius-sharp);
+  min-height: 268px;
+  padding: var(--space-4);
+}
+
+.challenge-card[data-completed="true"] {
+  border-left-color: var(--primary);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--primary) 18%, transparent);
+}
+
+.challenge-card:focus-visible,
+.challenge-period-filter a:focus-visible,
+.challenge-streak-panel:focus-within {
+  outline: 3px solid color-mix(in oklch, var(--primary) 72%, white);
+  outline-offset: 3px;
+}
+
+.challenge-card-heading {
+  align-items: start;
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr) max-content;
+  min-width: 0;
+}
+
+.challenge-card-heading h3 {
+  font-size: 1.3rem;
+  margin-top: var(--space-2);
+}
+
+.challenge-card-heading > span,
+.challenge-seasonal-seal {
+  background: color-mix(in oklch, var(--primary) 14%, transparent);
+  border: 1px solid color-mix(in oklch, var(--primary) 42%, transparent);
+  border-radius: var(--radius-pill);
+  color: var(--ink);
+  display: inline-flex;
+  justify-self: end;
+  min-height: 32px;
+  padding: var(--space-1) var(--space-3);
+}
+
+.challenge-progress {
+  background: color-mix(in oklch, var(--bg) 70%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-pill);
+  height: 10px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.challenge-progress span {
+  background: linear-gradient(
+    90deg,
+    var(--primary),
+    color-mix(in oklch, var(--rarity-rare) 76%, var(--primary))
+  );
+  display: block;
+  height: 100%;
+  width: var(--challenge-progress, 0%);
+}
+
+.challenge-card-meta {
+  display: grid;
+  gap: var(--space-2);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.challenge-card[data-completed="true"] .challenge-card-meta span:first-child {
+  color: var(--primary);
+}
+
+.challenge-seasonal-seal {
+  border-radius: var(--radius-sharp);
+  justify-self: start;
+}
+
+.challenge-empty-state {
+  border: 1px dashed color-mix(in oklch, var(--ink-muted) 24%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-2);
+  min-height: 132px;
+  padding: var(--space-5);
+}
+
+.challenge-empty-state strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  letter-spacing: 0;
+  line-height: 1;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
 @keyframes queue2-streak-glow {
   0%,
   100% {
@@ -1888,7 +2184,8 @@ input {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gamification-streak-panel[data-state="active"] .gamification-streak-mark {
+  .gamification-streak-panel[data-state="active"] .gamification-streak-mark,
+  .challenge-streak-panel[data-state="active"] .challenge-streak-mark {
     animation: none;
     box-shadow: inset 0 0 0 3px color-mix(in oklch, var(--primary) 34%, transparent);
   }
@@ -4253,7 +4550,7 @@ input {
     bottom: 0;
     display: grid;
     gap: var(--space-1);
-    grid-template-columns: repeat(7, minmax(72px, 1fr));
+    grid-template-columns: repeat(8, minmax(72px, 1fr));
     left: 0;
     overflow-x: auto;
     padding: var(--space-2) var(--space-2);
@@ -4347,6 +4644,9 @@ input {
   .gamification-summary-grid,
   .achievements-summary-grid,
   .achievement-filter-bar,
+  .challenge-filter-bar,
+  .challenge-streak-panel,
+  .challenge-card-meta,
   .library-overview-grid,
   .detail-library-panel,
   .game-session-layout,
@@ -4443,6 +4743,22 @@ input {
   .achievement-rarity-filter {
     justify-content: start;
   }
+
+  .challenge-period-filter {
+    justify-content: start;
+  }
+
+  .challenge-streak-mark {
+    width: 72px;
+  }
+
+  .challenge-card-heading {
+    grid-template-columns: 1fr;
+  }
+
+  .challenge-card-heading > span {
+    justify-self: start;
+  }
 }
 
 @media (max-width: 560px) {
@@ -4475,6 +4791,12 @@ input {
     grid-template-columns: 60px minmax(0, 1fr);
     min-height: 0;
     padding: var(--space-3);
+  }
+
+  .challenge-streak-panel,
+  .challenge-card,
+  .challenge-empty-state {
+    padding: var(--space-4);
   }
 
   .achievement-badge-icon {

@@ -1,5 +1,6 @@
 import type {
   GamificationAchievementsRecord,
+  GamificationChallengesRecord,
   GamificationDashboardRecord,
   GamificationRewardSummary
 } from "../application/ports";
@@ -111,6 +112,58 @@ export type AchievementCardView = {
   unlockedAtLabel: string | null;
 };
 
+export type ChallengeRouteViewModel = {
+  generatedAtLabel: string;
+  timezoneLabel: string;
+  selectedPeriod: QuestType | null;
+  filterOptions: ChallengePeriodFilterOptionView[];
+  streak: ChallengeStreakPanelViewModel;
+  sections: ChallengeSectionViewModel[];
+};
+
+export type ChallengePeriodFilterOptionView = {
+  label: string;
+  href: string;
+  selected: boolean;
+  period: QuestType | null;
+};
+
+export type ChallengeStreakPanelViewModel = {
+  state: "empty" | "active" | "freezing";
+  title: string;
+  valueLabel: string;
+  supportLabel: string;
+  freezeLabel: string;
+  cutoffLabel: string;
+  lastActivityLabel: string;
+  assistiveLabel: string;
+};
+
+export type ChallengeSectionViewModel = {
+  type: QuestType;
+  title: string;
+  description: string;
+  expectedSlotsLabel: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  quests: ChallengeQuestCardViewModel[];
+};
+
+export type ChallengeQuestCardViewModel = {
+  slug: string;
+  title: string;
+  description: string;
+  typeLabel: string;
+  progressLabel: string;
+  progressPercent: number;
+  rewardLabel: string;
+  windowLabel: string;
+  freshnessLabel: string;
+  statusLabel: string;
+  completed: boolean;
+  seasonalSealLabel: string | null;
+};
+
 export function toGamificationDashboardView(
   dashboard: GamificationDashboardRecord | null
 ): GamificationDashboardViewModel {
@@ -155,6 +208,38 @@ export function toGamificationDashboardView(
       achievementsHref: "/app/conquistas",
       challengesHref: "/app/desafios"
     }
+  };
+}
+
+export function toChallengeRouteView(
+  challenges: GamificationChallengesRecord,
+  buildHref: (period: QuestType | null) => string = defaultChallengeHref,
+  selectedPeriod: QuestType | null = null
+): ChallengeRouteViewModel {
+  const visibleSections = challenges.sections
+    .filter((section) => selectedPeriod === null || section.questType === selectedPeriod)
+    .map((section) => toChallengeSectionView(section));
+
+  return {
+    generatedAtLabel: `Atualizado em ${formatDateTime(challenges.generatedAt)}`,
+    timezoneLabel: `Janelas calculadas em ${challenges.timezone}`,
+    selectedPeriod,
+    filterOptions: [
+      {
+        label: "Todos",
+        href: buildHref(null),
+        selected: selectedPeriod === null,
+        period: null
+      },
+      ...(["weekly", "monthly", "seasonal"] as const).map((period) => ({
+        label: questTypePluralLabels[period],
+        href: buildHref(period),
+        selected: selectedPeriod === period,
+        period
+      }))
+    ],
+    streak: toChallengeStreakView(challenges.streak),
+    sections: visibleSections
   };
 }
 
@@ -289,6 +374,94 @@ function emptyDashboardView(): GamificationDashboardViewModel {
   };
 }
 
+function toChallengeSectionView(
+  section: GamificationChallengesRecord["sections"][number]
+): ChallengeSectionViewModel {
+  return {
+    type: section.questType,
+    title: challengeSectionLabels[section.questType].title,
+    description: challengeSectionLabels[section.questType].description,
+    expectedSlotsLabel: challengeSlotLabel(section.questType, section.expectedSlots),
+    emptyTitle: challengeSectionLabels[section.questType].emptyTitle,
+    emptyDescription: challengeSectionLabels[section.questType].emptyDescription,
+    quests: section.quests.map(toChallengeQuestView)
+  };
+}
+
+function toChallengeQuestView(
+  quest: GamificationChallengesRecord["sections"][number]["quests"][number]
+): ChallengeQuestCardViewModel {
+  const goalValue = Math.max(quest.goalValue, 1);
+  const currentValue = Math.min(Math.max(quest.currentValue, 0), goalValue);
+
+  return {
+    slug: quest.questSlug,
+    title: quest.title,
+    description: quest.description,
+    typeLabel: questTypeLabels[quest.questType],
+    progressLabel: quest.completed
+      ? "Concluido pela dupla"
+      : `${currentValue}/${goalValue} progresso confirmado`,
+    progressPercent: Math.round((currentValue / goalValue) * 100),
+    rewardLabel: `+${formatNumber(quest.xpReward)} XP da dupla`,
+    windowLabel: `${formatDate(quest.windowStartAt)} ate ${formatDate(quest.windowEndAt)}`,
+    freshnessLabel: `Renova em ${formatDate(quest.windowEndAt)} (${quest.timezone})`,
+    statusLabel: quest.completed ? "Recompensa registrada" : "Em andamento leve",
+    completed: quest.completed,
+    seasonalSealLabel: quest.completed && quest.questType === "seasonal"
+      ? `Selo ${quest.seasonalKey ?? "sazonal"} guardado na historia da dupla`
+      : null
+  };
+}
+
+function toChallengeStreakView(
+  streak: GamificationChallengesRecord["streak"]
+): ChallengeStreakPanelViewModel {
+  if (streak.current > 0) {
+    return {
+      state: "active",
+      title: "Chama da dupla",
+      valueLabel: formatDays(streak.current),
+      supportLabel: `Maior sequencia: ${formatDays(streak.longest)}`,
+      freezeLabel:
+        streak.availableFreezes > 0
+          ? `${streak.availableFreezes} Streak Freeze em reserva`
+          : "Sem Freeze em reserva agora",
+      cutoffLabel: `Dia da dupla fecha as ${formatHour(streak.cutoffHour)}`,
+      lastActivityLabel: streak.lastActivityDuoDay
+        ? `Ultimo fato: ${formatDate(parseDuoDay(streak.lastActivityDuoDay))}`
+        : "A proxima confirmacao registra o primeiro dia.",
+      assistiveLabel: `Streak coletivo ativo por ${formatDays(streak.current)}.`
+    };
+  }
+
+  if (streak.availableFreezes > 0) {
+    return {
+      state: "freezing",
+      title: "Freeze pronto",
+      valueLabel: "0 dias",
+      supportLabel: "A reserva existe para manter o ritual tranquilo.",
+      freezeLabel: `${streak.availableFreezes} Streak Freeze em reserva`,
+      cutoffLabel: `Dia da dupla fecha as ${formatHour(streak.cutoffHour)}`,
+      lastActivityLabel: streak.lastActivityDuoDay
+        ? `Ultimo fato: ${formatDate(parseDuoDay(streak.lastActivityDuoDay))}`
+        : "Sem sequencia confirmada ainda.",
+      assistiveLabel: "A dupla tem Streak Freeze em reserva, sem cobranca por atividade."
+    };
+  }
+
+  return {
+    state: "empty",
+    title: "Streak em espera",
+    valueLabel: "0 dias",
+    supportLabel: "Comeca com sessoes, capitulos ou combinados confirmados.",
+    freezeLabel: "Streak Freeze chega a cada dez niveis.",
+    cutoffLabel: `Dia da dupla fecha as ${formatHour(streak.cutoffHour)}`,
+    lastActivityLabel: "Nenhum fato de streak confirmado ainda.",
+    assistiveLabel: "Nenhuma sequencia confirmada ainda."
+  };
+}
+
 function toStreakView(streak: {
   current: number;
   availableFreezes: number;
@@ -381,10 +554,61 @@ function defaultAchievementHref(rarity: GamificationRarity | null): string {
   return rarity ? `/app/conquistas?raridade=${rarity}` : "/app/conquistas";
 }
 
+function defaultChallengeHref(period: QuestType | null): string {
+  const params: Record<QuestType, string> = {
+    weekly: "semana",
+    monthly: "mes",
+    seasonal: "sazonal"
+  };
+
+  return period ? `/app/desafios?periodo=${params[period]}` : "/app/desafios";
+}
+
 const questTypeLabels: Record<QuestType, string> = {
   weekly: "Semanal",
   monthly: "Mensal",
   seasonal: "Sazonal"
+};
+
+const questTypePluralLabels: Record<QuestType, string> = {
+  weekly: "Semana",
+  monthly: "Mes",
+  seasonal: "Sazonais"
+};
+
+const challengeSectionLabels: Record<
+  QuestType,
+  {
+    title: string;
+    description: string;
+    emptyTitle: string;
+    emptyDescription: string;
+  }
+> = {
+  weekly: {
+    title: "Tres desafios da semana",
+    description:
+      "Pequenos convites para a dupla manter a fila viva com fatos confirmados.",
+    emptyTitle: "A semana ainda vai entrar na fila",
+    emptyDescription:
+      "Quando a rotacao semanal rodar, tres convites aparecem aqui sem guardar historico de incompletos."
+  },
+  monthly: {
+    title: "Desafio do mes",
+    description:
+      "Um marco um pouco maior para celebrar constancia sem transformar lazer em lista.",
+    emptyTitle: "O mes ainda nao tem desafio ativo",
+    emptyDescription:
+      "A proxima manutencao cria o ciclo mensal para a dupla no timezone configurado."
+  },
+  seasonal: {
+    title: "Sazonais no ar",
+    description:
+      "Spooky, Awards e aniversario aparecem quando o calendario da dupla combina com o ciclo.",
+    emptyTitle: "Nenhum sazonal ativo agora",
+    emptyDescription:
+      "Sazonais entram como eventos explicitos; quando passam, nao deixam marca de pendencia."
+  }
 };
 
 const rarityLabels: Record<GamificationRarity, string> = {
@@ -408,4 +632,34 @@ function formatDate(date: Date): string {
     month: "2-digit",
     year: "numeric"
   }).format(date);
+}
+
+function formatDateTime(date: Date): string {
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "2-digit",
+    year: "numeric"
+  }).format(date);
+}
+
+function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, "0")}:00`;
+}
+
+function parseDuoDay(duoDay: string): Date {
+  return new Date(`${duoDay}T00:00:00.000Z`);
+}
+
+function challengeSlotLabel(questType: QuestType, expectedSlots: number): string {
+  if (questType === "weekly") {
+    return `${expectedSlots} slots semanais`;
+  }
+
+  if (questType === "monthly") {
+    return "1 slot mensal";
+  }
+
+  return "Sementes sazonais explicitas";
 }
