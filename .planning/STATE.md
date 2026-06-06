@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-08-PLAN.md; next 05-09-PLAN.md
-last_updated: "2026-06-06T21:02:47.880Z"
+stopped_at: Completed 05-09-PLAN.md; next 05-11-PLAN.md
+last_updated: "2026-06-06T21:19:03.895Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 46
-  completed_plans: 44
-  percent: 96
+  completed_plans: 45
+  percent: 98
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 05 (gamificacao-coletiva) — EXECUTING
-Plan: 9 of 11
+Plan: 11 of 11
 Status: Ready to execute
 Last activity: 2026-06-06
 
-Progress: [██████████] 96%
+Progress: [██████████] 98%
 
 ## Performance Metrics
 
@@ -98,6 +98,7 @@ Progress: [██████████] 96%
 | Phase 05 P07 | 15min | 3 tasks | 15 files |
 | Phase 05 P10 | 5min | 3 tasks | 8 files |
 | Phase 05 P08 | 11min | 3 tasks | 11 files |
+| Phase 05 P09 | 15min | 3 tasks | 18 files |
 
 ## Quick Tasks Completed
 
@@ -272,6 +273,8 @@ Recent decisions affecting current work:
 - [Phase 05]: Play reward redirects are derived only from validated game slugs or the fixed /app fallback. — Prevents open redirects while preserving feedback from session, chapter, scheduled attendance and terminal confirmations.
 - [Phase 05]: Recurring gamification jobs enqueue a deterministic successor before completing the current job. — Retries converge without duplicate chains while successful jobs remain self-sustaining.
 - [Phase 05]: Seasonal quest schedules use explicit June, October and December catalog windows. — Keeps D-12 auditable and prevents implicit seasons from changing job cadence.
+- [Phase 05]: All 50 achievement seeds are evaluated through 49 typed predicate definitions backed by authoritative duo facts. — The shared streak-days:7 key intentionally serves two badges while the executable audit remains seed-complete.
+- [Phase 05]: Pre-Roulette achievements retain their visual group but use library growth, collective achievement count and level 25. — Makes the complete v1 catalog reachable without fabricating roulette results before Phase 6.
 
 ### Pending Todos
 
@@ -310,6 +313,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T21:02:47.872Z
-Stopped at: Completed 05-08-PLAN.md; next 05-09-PLAN.md
-Resume file: .planning/phases/05-gamificacao-coletiva/05-09-PLAN.md
+Last session: 2026-06-06T21:19:03.888Z
+Stopped at: Completed 05-09-PLAN.md; next 05-11-PLAN.md
+Resume file: .planning/phases/05-gamificacao-coletiva/05-11-PLAN.md
