@@ -1,6 +1,7 @@
 import {
   getDuoDayKey
 } from "../domain/streak-policy";
+import { getNextStreakCheckAt } from "../domain/gamification-schedule";
 import type {
   GamificationDueJobRecord,
   GamificationRepository,
@@ -24,7 +25,7 @@ export type RunStreakJobsResult = {
 
 type StreakCheckPayload = {
   createdByUserId: GamificationUserId;
-  checkAt: Date | null;
+  checkAt: Date;
 };
 
 export async function runStreakJobsUseCase(
@@ -57,20 +58,34 @@ export async function runStreakJobsUseCase(
       }
 
       const result = await processStreakCheckJob({
-        checkAt: payload.checkAt ?? job.runAt,
+        checkAt: payload.checkAt,
         job,
         payload,
         repository
       });
 
-      if (result === "freeze-consumed") {
+      if (result.outcome === "freeze-consumed") {
         freezesConsumed += 1;
-      } else if (result === "reset") {
+      } else if (result.outcome === "reset") {
         streaksReset += 1;
       } else {
         skipped += 1;
       }
 
+      const nextRunAt = getNextStreakCheckAt({
+        after: payload.checkAt,
+        timezone: result.timezone
+      });
+      await repository.enqueueGamificationJob({
+        createdByUserId: payload.createdByUserId,
+        duoId: job.duoId,
+        jobKey: buildSuccessorJobKey(job.duoId, nextRunAt),
+        payload: {
+          checkAt: nextRunAt.toISOString()
+        },
+        runAt: nextRunAt,
+        scheduleKind: "streak"
+      });
       await repository.completeGamificationJob(job.id);
       completed += 1;
     } catch (error) {
@@ -99,25 +114,30 @@ async function processStreakCheckJob(input: {
   job: GamificationDueJobRecord;
   payload: StreakCheckPayload;
   repository: GamificationRepository;
-}): Promise<"freeze-consumed" | "reset" | "skipped"> {
+}): Promise<{
+  outcome: "freeze-consumed" | "reset" | "skipped";
+  timezone: string;
+}> {
   let outcome: "freeze-consumed" | "reset" | "skipped" = "skipped";
+  let timezone: string | null = null;
 
   await input.repository.withUserTransaction(input.payload.createdByUserId, async (transaction) => {
     const membership = await transaction.resolveMembership(input.payload.createdByUserId);
 
     if (!membership) {
-      return;
+      throw new Error("gamification_job_membership_required");
     }
 
     if (membership.duoId !== input.job.duoId) {
       throw new Error("gamification_job_duo_mismatch");
     }
 
-    const [timezone, projection, state] = await Promise.all([
+    const [resolvedTimezone, projection, state] = await Promise.all([
       transaction.readDuoTimezone(membership.duoId),
       transaction.readProjection(membership.duoId),
       transaction.readStreakState(membership.duoId)
     ]);
+    timezone = resolvedTimezone;
 
     if (!projection) {
       throw new Error("projection_not_found");
@@ -129,7 +149,7 @@ async function processStreakCheckJob(input: {
 
     const currentDuoDay = getDuoDayKey({
       occurredAt: input.checkAt,
-      timezone
+      timezone: resolvedTimezone
     });
     const gap = daysBetween(state.lastActivityDuoDay, currentDuoDay);
 
@@ -206,18 +226,25 @@ async function processStreakCheckJob(input: {
     outcome = "reset";
   });
 
-  return outcome;
+  if (!timezone) {
+    throw new Error("gamification_job_timezone_required");
+  }
+
+  return {
+    outcome,
+    timezone
+  };
 }
 
 function parseStreakCheckPayload(payload: Record<string, unknown>): StreakCheckPayload | null {
   const createdByUserId = payload.createdByUserId;
   const checkAt = parseOptionalDate(payload.checkAt);
 
-  if (typeof createdByUserId !== "string" || !createdByUserId.trim()) {
-    return null;
-  }
-
-  if (payload.checkAt !== undefined && !checkAt) {
+  if (
+    typeof createdByUserId !== "string"
+    || !createdByUserId.trim()
+    || !checkAt
+  ) {
     return null;
   }
 
@@ -263,6 +290,10 @@ function addDuoDays(duoDay: string, days: number): string {
   date.setUTCDate(date.getUTCDate() + days);
 
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+}
+
+function buildSuccessorJobKey(duoId: string, nextRunAt: Date): string {
+  return `gamification:${duoId}:streak:${nextRunAt.toISOString()}`;
 }
 
 function retryAt(now: Date, attempts: number): Date {

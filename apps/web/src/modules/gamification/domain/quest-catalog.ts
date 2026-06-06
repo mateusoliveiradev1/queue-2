@@ -221,10 +221,13 @@ function getSeasonalWindowForDate(
   const localDate = formatCivilDate(local.year, local.month, local.day);
 
   for (const startYear of [local.year - 1, local.year]) {
-    const window = getSeasonalWindowDates(startYear, seasonalKey);
+    const seasonalWindow = getSeasonalWindowDates(startYear, seasonalKey);
 
-    if (localDate >= window.startsOn && localDate < window.endsOn) {
-      return window;
+    if (
+      localDate >= seasonalWindow.startsOn
+      && localDate < seasonalWindow.endsOn
+    ) {
+      return seasonalWindow;
     }
   }
 

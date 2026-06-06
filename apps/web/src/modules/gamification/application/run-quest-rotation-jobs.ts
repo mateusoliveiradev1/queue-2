@@ -4,8 +4,13 @@ import {
   SEASONAL_QUEST_SEEDS,
   getQuestTemplate,
   getQuestWindow,
+  isSeasonalQuestActive,
   type QuestType
 } from "../domain/quest-catalog";
+import {
+  getNextQuestRotationAt,
+  getQuestWindowInstants
+} from "../domain/gamification-schedule";
 import type {
   GamificationDueJobRecord,
   GamificationRepository,
@@ -29,7 +34,7 @@ export type RunQuestRotationJobsResult = {
 type QuestRotationPayload = {
   createdByUserId: GamificationUserId;
   now: Date | null;
-  questTypes: QuestType[];
+  questType: QuestType;
 };
 
 export async function runQuestRotationJobsUseCase(
@@ -69,6 +74,21 @@ export async function runQuestRotationJobsUseCase(
 
       cyclesUpserted += result.cyclesUpserted;
       skipped += result.skipped;
+      const nextRunAt = getNextQuestRotationAt({
+        after: payload.now ?? job.runAt,
+        questType: payload.questType,
+        timezone: result.timezone
+      });
+      await repository.enqueueGamificationJob({
+        createdByUserId: payload.createdByUserId,
+        duoId: job.duoId,
+        jobKey: buildSuccessorJobKey(job.duoId, payload.questType, nextRunAt),
+        payload: {
+          questType: payload.questType
+        },
+        runAt: nextRunAt,
+        scheduleKind: payload.questType
+      });
       await repository.completeGamificationJob(job.id);
       completed += 1;
     } catch (error) {
@@ -99,38 +119,41 @@ async function processQuestRotationJob(input: {
 }): Promise<{
   cyclesUpserted: number;
   skipped: number;
+  timezone: string;
 }> {
   let cyclesUpserted = 0;
   let skipped = 0;
+  let timezone: string | null = null;
 
   await input.repository.withUserTransaction(input.payload.createdByUserId, async (transaction) => {
     const membership = await transaction.resolveMembership(input.payload.createdByUserId);
 
     if (!membership) {
-      skipped += 1;
-      return;
+      throw new Error("gamification_job_membership_required");
     }
 
     if (membership.duoId !== input.job.duoId) {
       throw new Error("gamification_job_duo_mismatch");
     }
 
-    const timezone = await transaction.readDuoTimezone(membership.duoId);
-
-    for (const questType of input.payload.questTypes) {
-      cyclesUpserted += await rotateQuestType({
-        duoId: membership.duoId,
-        now: input.referenceDate,
-        questType,
-        timezone,
-        transaction
-      });
-    }
+    timezone = await transaction.readDuoTimezone(membership.duoId);
+    cyclesUpserted += await rotateQuestType({
+      duoId: membership.duoId,
+      now: input.referenceDate,
+      questType: input.payload.questType,
+      timezone,
+      transaction
+    });
   });
+
+  if (!timezone) {
+    throw new Error("gamification_job_timezone_required");
+  }
 
   return {
     cyclesUpserted,
-    skipped
+    skipped,
+    timezone
   };
 }
 
@@ -151,12 +174,25 @@ async function rotateQuestType(input: {
       continue;
     }
 
+    if (
+      template.type === "seasonal"
+      && template.seasonalKey
+      && !isSeasonalQuestActive({
+        now: input.now,
+        seasonalKey: template.seasonalKey,
+        timezone: input.timezone
+      })
+    ) {
+      continue;
+    }
+
     const window = getQuestWindow({
       now: input.now,
       seasonalKey: template.seasonalKey,
       timezone: input.timezone,
       type: template.type
     });
+    const instants = getQuestWindowInstants(window);
 
     await input.transaction.upsertQuestCycle({
       cycleKey: window.cycleKey,
@@ -164,8 +200,8 @@ async function rotateQuestType(input: {
       questSlug: template.slug,
       questType: template.type,
       timezone: input.timezone,
-      windowEndAt: duoWindowDate(window.endsOn),
-      windowStartAt: duoWindowDate(window.startsOn)
+      windowEndAt: instants.endsAt,
+      windowStartAt: instants.startsAt
     });
     count += 1;
   }
@@ -188,9 +224,13 @@ function getQuestSlugsForType(questType: QuestType): readonly string[] {
 function parseQuestRotationPayload(payload: Record<string, unknown>): QuestRotationPayload | null {
   const createdByUserId = payload.createdByUserId;
   const now = parseOptionalDate(payload.now);
-  const questTypes = parseQuestTypes(payload.questTypes);
+  const questType = payload.questType;
 
-  if (typeof createdByUserId !== "string" || !createdByUserId.trim() || !questTypes) {
+  if (
+    typeof createdByUserId !== "string"
+    || !createdByUserId.trim()
+    || !isQuestType(questType)
+  ) {
     return null;
   }
 
@@ -201,22 +241,8 @@ function parseQuestRotationPayload(payload: Record<string, unknown>): QuestRotat
   return {
     createdByUserId,
     now,
-    questTypes
+    questType
   };
-}
-
-function parseQuestTypes(input: unknown): QuestType[] | null {
-  if (input === undefined) {
-    return ["weekly", "monthly", "seasonal"];
-  }
-
-  const values = Array.isArray(input) ? input : [input];
-
-  if (values.every(isQuestType)) {
-    return values;
-  }
-
-  return null;
 }
 
 function isQuestType(input: unknown): input is QuestType {
@@ -237,8 +263,12 @@ function parseOptionalDate(input: unknown): Date | null {
   return Number.isFinite(date.getTime()) ? date : null;
 }
 
-function duoWindowDate(value: string): Date {
-  return new Date(`${value}T00:00:00.000Z`);
+function buildSuccessorJobKey(
+  duoId: string,
+  questType: QuestType,
+  nextRunAt: Date
+): string {
+  return `gamification:${duoId}:${questType}:${nextRunAt.toISOString()}`;
 }
 
 function retryAt(now: Date, attempts: number): Date {
