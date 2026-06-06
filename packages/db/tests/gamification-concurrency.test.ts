@@ -67,6 +67,127 @@ describe.skipIf(!testDatabaseUrl)("gamification database-backed concurrency inva
     ).resolves.toBe(1);
   });
 
+  test("concurrent distinct XP facts preserve the final level and emit one level-up", async () => {
+    const duo = await createReadyDuo(pool, "game-projection-serialization");
+    const sourceA = randomUUID();
+    const sourceB = randomUUID();
+
+    try {
+      await seedDuoProjection(pool, duo.duoId, 110);
+
+      await withTimeout(
+        Promise.all([
+          applySerializedXpFact(
+            pool,
+            duo.ownerUserId,
+            duo.duoId,
+            sourceA,
+            20
+          ),
+          applySerializedXpFact(
+            pool,
+            duo.partnerUserId,
+            duo.duoId,
+            sourceB,
+            30
+          )
+        ]),
+        10_000
+      );
+      await withTimeout(
+        applySerializedXpFact(
+          pool,
+          duo.ownerUserId,
+          duo.duoId,
+          sourceA,
+          20
+        ),
+        10_000
+      );
+
+      const state = await readProjectionConcurrencyState(
+        pool,
+        duo.ownerUserId,
+        duo.duoId
+      );
+
+      expect(state.awardCount).toBe(2);
+      expect(state.awardTotal).toBe(50);
+      expect(state.xp).toBe(160);
+      expect(state.level).toBe(getLevelForXpForTest(state.xp));
+      expect(state.levelUpCount).toBe(1);
+    } finally {
+      await cleanupDuoFixture(pool, duo);
+    }
+  });
+
+  test("concurrent quest sources add, cap and reward exactly once across replay", async () => {
+    const duo = await createReadyDuo(pool, "game-quest-atomic-progress");
+    const questSlug = await insertQuestSeed(pool, "game-quest-atomic-progress");
+    await configureQuestTemplate(pool, questSlug, 4, 240);
+    const questCycleId = await insertQuestCycleReturningId(
+      pool,
+      duo.ownerUserId,
+      duo.duoId,
+      questSlug,
+      "week:2026-06-15"
+    );
+    const sourceA = randomUUID();
+    const sourceB = randomUUID();
+
+    try {
+      await seedQuestProgress(pool, duo.ownerUserId, duo.duoId, questCycleId, 2);
+
+      await withTimeout(
+        Promise.all([
+          applyAtomicQuestFact(
+            pool,
+            duo.ownerUserId,
+            duo.duoId,
+            questCycleId,
+            sourceA
+          ),
+          applyAtomicQuestFact(
+            pool,
+            duo.partnerUserId,
+            duo.duoId,
+            questCycleId,
+            sourceB
+          )
+        ]),
+        10_000
+      );
+      await withTimeout(
+        applyAtomicQuestFact(
+          pool,
+          duo.ownerUserId,
+          duo.duoId,
+          questCycleId,
+          sourceA
+        ),
+        10_000
+      );
+
+      const state = await readQuestConcurrencyState(
+        pool,
+        duo.ownerUserId,
+        duo.duoId,
+        questCycleId
+      );
+
+      expect(state.currentValue).toBe(4);
+      expect(state.completedAt).not.toBeNull();
+      expect(state.sourceKeys.sort()).toEqual(
+        [`scheduled-session:${sourceA}`, `scheduled-session:${sourceB}`].sort()
+      );
+      expect(state.rewardAwardId).not.toBeNull();
+      expect(state.rewardAwardCount).toBe(1);
+      expect(state.questNotificationCount).toBe(1);
+    } finally {
+      await cleanupDuoFixture(pool, duo);
+    }
+  });
+
   test("duplicate achievement unlock attempts converge to one unlock", async () => {
     const duo = await createReadyDuo(pool, "game-achievement-idempotency");
     const achievementSlug = await insertAchievementSeed(pool, "game-achievement-idempotency");
@@ -274,6 +395,563 @@ async function createReadyDuo(pool: pg.Pool, label: string) {
     ...duo,
     partnerUserId
   };
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeout: NodeJS.Timeout | undefined;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_resolve, reject) => {
+        timeout = setTimeout(
+          () => reject(new Error(`concurrency_test_timeout_${timeoutMs}ms`)),
+          timeoutMs
+        );
+      })
+    ]);
+  } finally {
+    if (timeout) {
+      clearTimeout(timeout);
+    }
+  }
+}
+
+function getLevelForXpForTest(totalXp: number): number {
+  const normalizedXp = Math.max(0, Math.floor(totalXp));
+  let threshold = 0;
+  let level = 1;
+
+  for (let candidate = 2; candidate <= 50; candidate += 1) {
+    threshold += Math.round(120 * 1.18 ** (candidate - 2));
+
+    if (normalizedXp < threshold) {
+      break;
+    }
+
+    level = candidate;
+  }
+
+  return level;
+}
+
+async function seedDuoProjection(
+  pool: pg.Pool,
+  duoId: string,
+  xp: number
+): Promise<void> {
+  await pool.query(
+    `
+      UPDATE app.duos
+      SET xp = $2,
+          level = $3,
+          updated_at = now()
+      WHERE id = $1
+    `,
+    [duoId, xp, getLevelForXpForTest(xp)]
+  );
+  await pool.query(
+    `
+      INSERT INTO app.gamification_streak_state (duo_id)
+      VALUES ($1)
+      ON CONFLICT (duo_id) DO NOTHING
+    `,
+    [duoId]
+  );
+}
+
+async function applySerializedXpFact(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string,
+  sourceId: string,
+  amount: number
+): Promise<void> {
+  await withRuntimeUser(pool, userId, async (client) => {
+    await client.query(
+      `
+        INSERT INTO app.gamification_streak_state (duo_id)
+        SELECT id
+        FROM app.duos
+        WHERE id = $1
+        ON CONFLICT (duo_id) DO NOTHING
+      `,
+      [duoId]
+    );
+    const locked = await client.query<{ level: number }>(
+      `
+        SELECT duo.level
+        FROM app.duos AS duo
+        INNER JOIN app.gamification_streak_state AS streak
+          ON streak.duo_id = duo.id
+        WHERE duo.id = $1
+        FOR UPDATE OF duo, streak
+      `,
+      [duoId]
+    );
+    const award = await client.query<{ amount: number }>(
+      `
+        INSERT INTO app.duo_xp_awards (
+          duo_id,
+          award_key,
+          source_type,
+          source_id,
+          amount,
+          reason_code,
+          awarded_by_user_id
+        )
+        VALUES ($1, $2, 'live-session', $3, $4, 'concurrency-level', $5)
+        ON CONFLICT DO NOTHING
+        RETURNING amount
+      `,
+      [duoId, `concurrency-level:${sourceId}`, sourceId, amount, userId]
+    );
+    const inserted = award.rows[0];
+
+    if (!inserted) {
+      return;
+    }
+
+    const projection = await client.query<{ xp: number }>(
+      `
+        UPDATE app.duos
+        SET xp = xp + $2,
+            updated_at = now()
+        WHERE id = $1
+        RETURNING xp
+      `,
+      [duoId, inserted.amount]
+    );
+    const nextXp = Number(projection.rows[0]!.xp);
+    const nextLevel = getLevelForXpForTest(nextXp);
+
+    await client.query(
+      `
+        UPDATE app.duos
+        SET level = $2,
+            updated_at = CASE
+              WHEN level IS DISTINCT FROM $2 THEN now()
+              ELSE updated_at
+            END
+        WHERE id = $1
+          AND level IS DISTINCT FROM $2
+      `,
+      [duoId, nextLevel]
+    );
+
+    if (nextLevel > Number(locked.rows[0]!.level)) {
+      await client.query(
+        `
+          INSERT INTO app.gamification_reward_notifications (
+            duo_id,
+            actor_user_id,
+            notification_type,
+            intensity,
+            title,
+            body,
+            action_ref_type,
+            action_ref_id,
+            metadata
+          )
+          VALUES (
+            $1,
+            $2,
+            'level-up',
+            'special',
+            'Nivel da dupla subiu',
+            'Concorrencia serializada.',
+            'live-session',
+            $3,
+            '{"test":"projection-concurrency"}'::jsonb
+          )
+        `,
+        [duoId, userId, sourceId]
+      );
+    }
+  });
+}
+
+async function readProjectionConcurrencyState(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string
+): Promise<{
+  awardCount: number;
+  awardTotal: number;
+  level: number;
+  levelUpCount: number;
+  xp: number;
+}> {
+  return withRuntimeUser(pool, userId, async (client) => {
+    const result = await client.query<{
+      award_count: string;
+      award_total: string;
+      level: number;
+      level_up_count: string;
+      xp: number;
+    }>(
+      `
+        SELECT
+          duo.xp,
+          duo.level,
+          (
+            SELECT count(*)
+            FROM app.duo_xp_awards AS award
+            WHERE award.duo_id = duo.id
+              AND award.reason_code = 'concurrency-level'
+          ) AS award_count,
+          (
+            SELECT COALESCE(sum(award.amount), 0)
+            FROM app.duo_xp_awards AS award
+            WHERE award.duo_id = duo.id
+              AND award.reason_code = 'concurrency-level'
+          ) AS award_total,
+          (
+            SELECT count(*)
+            FROM app.gamification_reward_notifications AS notification
+            WHERE notification.duo_id = duo.id
+              AND notification.notification_type = 'level-up'
+              AND notification.metadata @> '{"test":"projection-concurrency"}'::jsonb
+          ) AS level_up_count
+        FROM app.duos AS duo
+        WHERE duo.id = $1
+      `,
+      [duoId]
+    );
+    const row = result.rows[0]!;
+
+    return {
+      awardCount: Number(row.award_count),
+      awardTotal: Number(row.award_total),
+      level: Number(row.level),
+      levelUpCount: Number(row.level_up_count),
+      xp: Number(row.xp)
+    };
+  });
+}
+
+async function seedQuestProgress(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string,
+  questCycleId: string,
+  currentValue: number
+): Promise<void> {
+  await withRuntimeUser(pool, userId, async (client) => {
+    await client.query(
+      `
+        INSERT INTO app.gamification_quest_progress (
+          duo_id,
+          quest_cycle_id,
+          current_value,
+          metadata
+        )
+        VALUES ($1, $2, $3, '{"sourceKeys":[]}'::jsonb)
+        ON CONFLICT (duo_id, quest_cycle_id) DO UPDATE
+        SET current_value = EXCLUDED.current_value,
+            completed_at = NULL,
+            reward_award_id = NULL,
+            last_source_type = NULL,
+            last_source_id = NULL,
+            metadata = EXCLUDED.metadata,
+            updated_at = now()
+      `,
+      [duoId, questCycleId, currentValue]
+    );
+  });
+}
+
+async function configureQuestTemplate(
+  pool: pg.Pool,
+  questSlug: string,
+  goalValue: number,
+  xpReward: number
+): Promise<void> {
+  await pool.query(
+    `
+      UPDATE app.gamification_quest_templates
+      SET goal_value = $2,
+          xp_reward = $3
+      WHERE slug = $1
+    `,
+    [questSlug, goalValue, xpReward]
+  );
+}
+
+async function applyAtomicQuestFact(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string,
+  questCycleId: string,
+  sourceId: string
+): Promise<void> {
+  await withRuntimeUser(pool, userId, async (client) => {
+    await client.query(
+      `
+        INSERT INTO app.gamification_streak_state (duo_id)
+        SELECT id
+        FROM app.duos
+        WHERE id = $1
+        ON CONFLICT (duo_id) DO NOTHING
+      `,
+      [duoId]
+    );
+    await client.query(
+      `
+        SELECT duo.id
+        FROM app.duos AS duo
+        INNER JOIN app.gamification_streak_state AS streak
+          ON streak.duo_id = duo.id
+        WHERE duo.id = $1
+        FOR UPDATE OF duo, streak
+      `,
+      [duoId]
+    );
+    await client.query(
+      `
+        INSERT INTO app.gamification_quest_progress (
+          duo_id,
+          quest_cycle_id,
+          current_value,
+          metadata
+        )
+        VALUES ($1, $2::uuid, 0, '{}'::jsonb)
+        ON CONFLICT (duo_id, quest_cycle_id) DO NOTHING
+      `,
+      [duoId, questCycleId]
+    );
+    const sourceKey = `scheduled-session:${sourceId}`;
+    const progress = await client.query<{
+      completed_now: boolean;
+    }>(
+      `
+        WITH previous AS MATERIALIZED (
+          SELECT
+            progress.*,
+            progress.completed_at IS NULL
+              AND NOT (
+                COALESCE(progress.metadata -> 'sourceKeys', '[]'::jsonb) ? $3
+              ) AS should_advance
+          FROM app.gamification_quest_progress AS progress
+          WHERE progress.duo_id = $1
+            AND progress.quest_cycle_id = $2::uuid
+          FOR UPDATE
+        ),
+        updated AS (
+          UPDATE app.gamification_quest_progress AS progress
+          SET current_value = LEAST(4, previous.current_value + 1),
+              completed_at = CASE
+                WHEN previous.current_value < 4
+                  AND LEAST(4, previous.current_value + 1) >= 4
+                  THEN now()
+                ELSE previous.completed_at
+              END,
+              last_source_type = 'scheduled-session',
+              last_source_id = $4::uuid,
+              metadata = previous.metadata
+                || '{"eligibilityKey":"monthly-confirmed-facts"}'::jsonb
+                || jsonb_build_object(
+                  'sourceKeys',
+                  COALESCE(previous.metadata -> 'sourceKeys', '[]'::jsonb)
+                    || jsonb_build_array($3),
+                  'lastSourceKey',
+                  $3
+                ),
+              updated_at = now()
+          FROM previous
+          WHERE progress.id = previous.id
+            AND previous.should_advance
+          RETURNING
+            progress.id,
+            progress.current_value,
+            progress.completed_at,
+            progress.reward_award_id,
+            progress.metadata,
+            progress.updated_at,
+            true AS advanced,
+            previous.current_value < 4
+              AND progress.current_value >= 4 AS completed_now
+        )
+        SELECT completed_now
+        FROM updated
+        UNION ALL
+        SELECT false AS completed_now
+        FROM previous
+        WHERE NOT EXISTS (SELECT 1 FROM updated)
+        LIMIT 1
+      `,
+      [duoId, questCycleId, sourceKey, sourceId]
+    );
+
+    if (!progress.rows[0]?.completed_now) {
+      return;
+    }
+
+    const award = await client.query<{ id: string; amount: number }>(
+      `
+        INSERT INTO app.duo_xp_awards (
+          duo_id,
+          award_key,
+          source_type,
+          source_id,
+          amount,
+          reason_code,
+          awarded_by_user_id,
+          metadata
+        )
+        VALUES (
+          $1,
+          $2,
+          'quest',
+          $3::uuid,
+          240,
+          'quest-complete',
+          $4,
+          '{"test":"quest-concurrency"}'::jsonb
+        )
+        ON CONFLICT DO NOTHING
+        RETURNING id, amount
+      `,
+      [duoId, `quest:${questCycleId}`, questCycleId, userId]
+    );
+    const reward = award.rows[0];
+
+    if (!reward) {
+      return;
+    }
+
+    await client.query(
+      `
+        UPDATE app.gamification_quest_progress
+        SET reward_award_id = COALESCE(reward_award_id, $3::uuid),
+            updated_at = CASE
+              WHEN reward_award_id IS NULL THEN now()
+              ELSE updated_at
+            END
+        WHERE duo_id = $1
+          AND quest_cycle_id = $2::uuid
+      `,
+      [duoId, questCycleId, reward.id]
+    );
+    const projection = await client.query<{ xp: number }>(
+      `
+        UPDATE app.duos
+        SET xp = xp + $2,
+            updated_at = now()
+        WHERE id = $1
+        RETURNING xp
+      `,
+      [duoId, reward.amount]
+    );
+
+    await client.query(
+      `
+        UPDATE app.duos
+        SET level = $2
+        WHERE id = $1
+      `,
+      [duoId, getLevelForXpForTest(Number(projection.rows[0]!.xp))]
+    );
+    await client.query(
+      `
+        INSERT INTO app.gamification_reward_notifications (
+          duo_id,
+          actor_user_id,
+          notification_type,
+          intensity,
+          title,
+          body,
+          action_ref_type,
+          action_ref_id,
+          metadata
+        )
+        VALUES (
+          $1,
+          $2,
+          'quest-complete',
+          'special',
+          'Desafio concluido',
+          '+240 XP para a dupla.',
+          'quest',
+          $3::uuid,
+          '{"test":"quest-concurrency"}'::jsonb
+        )
+      `,
+      [duoId, userId, questCycleId]
+    );
+  });
+}
+
+async function readQuestConcurrencyState(
+  pool: pg.Pool,
+  userId: string,
+  duoId: string,
+  questCycleId: string
+): Promise<{
+  completedAt: Date | null;
+  currentValue: number;
+  questNotificationCount: number;
+  rewardAwardCount: number;
+  rewardAwardId: string | null;
+  sourceKeys: string[];
+}> {
+  return withRuntimeUser(pool, userId, async (client) => {
+    const result = await client.query<{
+      completed_at: Date | null;
+      current_value: number;
+      quest_notification_count: string;
+      reward_award_count: string;
+      reward_award_id: string | null;
+      source_keys: string[];
+    }>(
+      `
+        SELECT
+          progress.current_value,
+          progress.completed_at,
+          progress.reward_award_id,
+          COALESCE(progress.metadata -> 'sourceKeys', '[]'::jsonb) AS source_keys,
+          (
+            SELECT count(*)
+            FROM app.duo_xp_awards AS award
+            WHERE award.duo_id = progress.duo_id
+              AND award.source_type = 'quest'
+              AND award.source_id = progress.quest_cycle_id
+          ) AS reward_award_count,
+          (
+            SELECT count(*)
+            FROM app.gamification_reward_notifications AS notification
+            WHERE notification.duo_id = progress.duo_id
+              AND notification.notification_type = 'quest-complete'
+              AND notification.action_ref_id = progress.quest_cycle_id
+          ) AS quest_notification_count
+        FROM app.gamification_quest_progress AS progress
+        WHERE progress.duo_id = $1
+          AND progress.quest_cycle_id = $2::uuid
+      `,
+      [duoId, questCycleId]
+    );
+    const row = result.rows[0]!;
+
+    return {
+      completedAt: row.completed_at,
+      currentValue: Number(row.current_value),
+      questNotificationCount: Number(row.quest_notification_count),
+      rewardAwardCount: Number(row.reward_award_count),
+      rewardAwardId: row.reward_award_id,
+      sourceKeys: row.source_keys
+    };
+  });
+}
+
+async function cleanupDuoFixture(
+  pool: pg.Pool,
+  duo: Awaited<ReturnType<typeof createReadyDuo>>
+): Promise<void> {
+  await pool.query("DELETE FROM app.duos WHERE id = $1", [duo.duoId]);
+  await pool.query(
+    `DELETE FROM auth."user" WHERE id = ANY($1::text[])`,
+    [[duo.ownerUserId, duo.partnerUserId]]
+  );
 }
 
 type ChainScheduleKind = "weekly" | "monthly" | "seasonal" | "streak";
