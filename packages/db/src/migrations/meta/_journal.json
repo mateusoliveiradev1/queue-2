@@ -85,6 +85,13 @@
       "when": 1780723260000,
       "tag": "0012_gamification_job_producer",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780723320000,
+      "tag": "0013_gamification_job_enqueue",
+      "breakpoints": true
     }
   ]
 }

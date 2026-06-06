@@ -10,7 +10,8 @@ import {
   runStreakJobsUseCase
 } from "../src/modules/gamification/application/run-streak-jobs";
 import {
-  isGamificationMaintenanceRequestAuthorized
+  isGamificationMaintenanceRequestAuthorized,
+  runGamificationMaintenanceJobs
 } from "../src/modules/gamification/jobs";
 import { createGamificationRepository } from "../src/modules/gamification/infrastructure/gamification-repository";
 import type {
@@ -276,6 +277,54 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
     ).resolves.toBe("runtime-ok");
     expect(runtimePool.connect).toHaveBeenCalledTimes(1);
     expect(workerPool.connect).not.toHaveBeenCalled();
+  });
+
+  it("produces jobs before either maintenance consumer claims work", async () => {
+    const callOrder: string[] = [];
+    const repository = fakeGamificationRepository();
+    repository.ensureGamificationJobs = vi.fn(async () => {
+      callOrder.push("produce");
+      return { readyDuos: 1, producedJobs: 4 };
+    });
+    repository.claimDueGamificationJobs = vi.fn(async ({ jobTypes }) => {
+      callOrder.push(`claim:${jobTypes[0]}`);
+      return [];
+    });
+
+    await expect(
+      runGamificationMaintenanceJobs(
+        {
+          now,
+          workerId: "test-maintenance"
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: true,
+      producedJobs: 4,
+      questRotation: {
+        ok: true,
+        claimed: 0,
+        completed: 0,
+        failed: 0,
+        cyclesUpserted: 0,
+        skipped: 0
+      },
+      streakCheck: {
+        ok: true,
+        claimed: 0,
+        completed: 0,
+        failed: 0,
+        freezesConsumed: 0,
+        streaksReset: 0,
+        skipped: 0
+      }
+    });
+    expect(callOrder).toEqual([
+      "produce",
+      "claim:gamification-quest-rotation",
+      "claim:gamification-streak-check"
+    ]);
   });
 });
 

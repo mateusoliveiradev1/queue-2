@@ -321,5 +321,36 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
       can_write_duos: false,
       can_write_members: false
     });
+
+    const enqueuePolicy = await pool.query<{
+      policyname: string;
+      roles: string;
+      with_check: string | null;
+    }>(`
+      SELECT policyname, roles, with_check
+      FROM pg_policies
+      WHERE schemaname = 'ops'
+        AND tablename = 'scheduled_jobs'
+        AND policyname = 'ops_scheduled_jobs_insert_gamification_worker'
+    `);
+
+    expect(enqueuePolicy.rows).toHaveLength(1);
+    expect(enqueuePolicy.rows[0]?.roles).toBe("{queue2_worker}");
+    expect(enqueuePolicy.rows[0]?.with_check).toContain("gamification-quest-rotation");
+    expect(enqueuePolicy.rows[0]?.with_check).toContain("gamification-streak-check");
+    expect(enqueuePolicy.rows[0]?.with_check).toContain("createdByUserId");
+    expect(
+      await pool.query(`
+        SELECT has_table_privilege(
+          'queue2_worker',
+          'ops.scheduled_jobs',
+          'INSERT'
+        ) AS can_enqueue
+      `)
+    ).toEqual(
+      expect.objectContaining({
+        rows: [{ can_enqueue: true }]
+      })
+    );
   });
 });

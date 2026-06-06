@@ -2,7 +2,7 @@
 phase: 05-gamificacao-coletiva
 artifact: user-setup
 status: Incomplete
-generated: 2026-06-06T13:13:41.296Z
+generated: 2026-06-06T20:39:24.657Z
 ---
 
 # Phase 5 User Setup
@@ -34,7 +34,16 @@ Fixture expectations:
 
 | Variable | Status | Purpose |
 |----------|--------|---------|
-| `TEST_DATABASE_URL` | configured | Isolated Neon/Postgres test database for migrations, RLS and concurrency. |
+| `TEST_DATABASE_URL` | configured | Isolated Neon/Postgres database for migration, RLS and concurrency tests. |
+| `WORKER_DATABASE_URL` | configured | Pooled connection string authenticated as the least-privileged queue2_worker role. |
+| `DIRECT_DATABASE_URL` | configured | Direct owner/migrator connection used only to apply reviewed migrations. |
+
+Worker credential setup:
+
+1. Apply reviewed migrations with `DIRECT_DATABASE_URL`; never use the web runtime connection.
+2. In Neon Console, open Roles and reset/provision the password for `queue2_worker` after the role exists.
+3. Copy the pooled `queue2_worker` connection string into `WORKER_DATABASE_URL` for the app/cron environment.
+4. Verify the worker can read readiness columns and `ops.scheduled_jobs`, but cannot write `app.duos` or `app.duo_members`.
 
 ## Job And Cron Evidence
 
@@ -47,7 +56,9 @@ Fixture expectations:
 
 ```bash
 pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts
-pnpm --filter @queue/db test:integration -- gamification-rls gamification-concurrency performance-hot-paths
+pnpm --filter @queue/db test:integration -- gamification-migrations gamification-rls gamification-concurrency performance-hot-paths
+pnpm --filter @queue/db drizzle:migrate
+gsd-sdk query verify.schema-drift 05
 node --experimental-strip-types scripts/performance-explain.ts --phase=5
 pnpm phase:5:gate
 ```

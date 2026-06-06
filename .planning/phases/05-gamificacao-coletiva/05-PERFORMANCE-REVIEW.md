@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: performance-review
-generated: 2026-06-06T13:13:41.296Z
+generated: 2026-06-06T20:39:24.657Z
 result: BLOCKED - missing external evidence
 ---
 
@@ -10,7 +10,7 @@ result: BLOCKED - missing external evidence
 
 ## Environment
 
-- Generated: 2026-06-06T13:13:41.296Z
+- Generated: 2026-06-06T20:39:24.657Z
 - Evidence environment: root Phase 5 gate command
 - Credentials: process-only; no credential values written to this artifact
 - DB fixture status: configured
@@ -22,7 +22,7 @@ result: BLOCKED - missing external evidence
 - Command: `node --experimental-strip-types scripts/performance-explain.ts --phase=5`
 - Query/performance result before gate consolidation: PASSED
 - Covered hot paths: dashboard gamification summary, XP ledger, achievements grid, challenges page, quest rotation jobs, streak jobs and reward application mutations.
-- `TEST_DATABASE_URL` is configured; isolated migration, RLS, concurrency and query-plan evidence executed.
+- Test, worker and direct database credentials are configured; migration, RLS, concurrency and query-plan evidence executed.
 
 ## Browser and Accessibility
 
@@ -45,12 +45,14 @@ result: BLOCKED - missing external evidence
 
 | Command | Status | Duration |
 |---------|--------|----------|
-| Architecture | passed | 887ms |
-| Web typecheck | passed | 1519ms |
-| DB typecheck | passed | 757ms |
-| Focused gamification tests | passed | 1657ms |
-| DB integration evidence | passed | 5520ms |
-| Phase 5 query and performance review | passed | 253ms |
+| Architecture | passed | 876ms |
+| Web typecheck | passed | 1484ms |
+| DB typecheck | passed | 869ms |
+| Focused gamification tests | passed | 1633ms |
+| DB integration evidence | passed | 7313ms |
+| Apply Phase 5 migrations | passed | 706ms |
+| Phase 5 schema drift | passed | 179ms |
+| Phase 5 query and performance review | passed | 249ms |
 | Browser E2E and accessibility | skipped | 0ms |
 
 ## Missing DB Fixtures

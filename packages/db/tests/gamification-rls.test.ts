@@ -162,6 +162,63 @@ describe.skipIf(!testDatabaseUrl)("gamification RLS isolation", () => {
       [first.ownerUserId, second.ownerUserId].sort()
     );
 
+    const jobKey = `gamification-bootstrap:${first.duoId}:streak:${randomUUID()}`;
+    const insertedJobId = await withWorkerRole(pool, async (client) => {
+      const result = await client.query<{ id: string }>(
+        `
+          INSERT INTO ops.scheduled_jobs (
+            duo_id,
+            job_key,
+            job_type,
+            run_at,
+            payload
+          )
+          VALUES (
+            $1,
+            $2,
+            'gamification-streak-check',
+            now(),
+            jsonb_build_object(
+              'createdByUserId',
+              $3::text,
+              'checkAt',
+              now()::text
+            )
+          )
+          RETURNING id
+        `,
+        [first.duoId, jobKey, first.ownerUserId]
+      );
+
+      return result.rows[0]!.id;
+    });
+    expect(insertedJobId).toBeTruthy();
+    await pool.query("DELETE FROM ops.scheduled_jobs WHERE id = $1", [insertedJobId]);
+
+    await expect(
+      withWorkerRole(pool, (client) =>
+        client.query(
+          `
+            INSERT INTO ops.scheduled_jobs (
+              duo_id,
+              job_key,
+              job_type,
+              run_at,
+              payload
+            )
+            VALUES (
+              $1,
+              $2,
+              'play-session-reminder',
+              now(),
+              jsonb_build_object('createdByUserId', $3::text)
+            )
+          `,
+          [first.duoId, `play-probe:${randomUUID()}`, first.ownerUserId]
+        )
+      )
+    ).rejects.toThrow(/row-level security|violates row-level security|new row violates/i);
+
     await expect(
       withWorkerRole(pool, (client) =>
         client.query("UPDATE app.duos SET name = name WHERE id = $1", [first.duoId])

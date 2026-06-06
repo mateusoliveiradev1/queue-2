@@ -26,10 +26,16 @@ const e2eFixtureVars = [
   "E2E_PHASE5_ZERADO_SLUG",
   "E2E_PHASE5_DROPADO_SLUG"
 ];
-const dbFixtureVars = ["TEST_DATABASE_URL"];
+const dbFixtureVars = [
+  "TEST_DATABASE_URL",
+  "WORKER_DATABASE_URL",
+  "DIRECT_DATABASE_URL"
+];
+const migrationCredentialVars = ["WORKER_DATABASE_URL", "DIRECT_DATABASE_URL"];
 const jobEvidenceVars = ["CRON_SECRET", "GAMIFICATION_RUNNER_FREQUENCY_MINUTES"];
 const missingE2eFixtures = missingVars(e2eFixtureVars);
 const missingDbFixtures = missingVars(dbFixtureVars);
+const missingMigrationCredentials = missingVars(migrationCredentialVars);
 const missingJobEvidence = missingVars(jobEvidenceVars);
 
 if (missingE2eFixtures.length > 0) {
@@ -37,7 +43,7 @@ if (missingE2eFixtures.length > 0) {
 }
 
 if (missingDbFixtures.length > 0) {
-  console.warn("Phase 5 DB gate BLOCKED setup. Missing: TEST_DATABASE_URL.");
+  console.error(`Phase 5 DB gate FAILED setup. Missing: ${missingDbFixtures.join(", ")}.`);
 }
 
 if (missingJobEvidence.length > 0) {
@@ -89,9 +95,24 @@ const commands = [
       "@queue/db",
       "test:integration",
       "gamification-rls",
+      "gamification-migrations",
       "gamification-concurrency",
       "performance-hot-paths"
     ]
+  },
+  {
+    name: "Apply Phase 5 migrations",
+    command: pnpmBin,
+    args: ["--filter", "@queue/db", "drizzle:migrate"],
+    skipWhen: missingMigrationCredentials.length > 0,
+    skipReason: `missing migration credentials: ${missingMigrationCredentials.join(", ")}`
+  },
+  {
+    name: "Phase 5 schema drift",
+    command: "gsd-sdk",
+    args: ["query", "verify.schema-drift", "05"],
+    skipWhen: missingMigrationCredentials.length > 0,
+    skipReason: `missing migration credentials: ${missingMigrationCredentials.join(", ")}`
   },
   {
     name: "Phase 5 query and performance review",
@@ -126,13 +147,16 @@ writeUserSetup({
 });
 
 const failedCommands = commandResults.filter((result) => result.status !== 0);
+const missingRequiredDatabaseCredentials = missingDbFixtures.length > 0;
 const blockers = [
   ...missingDbFixtures,
   ...missingE2eFixtures,
   ...missingJobEvidence
 ];
 const result =
-  failedCommands.length > 0 || economyAudit.result === "FAILED"
+  failedCommands.length > 0 ||
+  missingRequiredDatabaseCredentials ||
+  economyAudit.result === "FAILED"
     ? "FAILED"
     : blockers.length > 0
       ? "BLOCKED - missing external evidence"
@@ -153,7 +177,11 @@ console.log(`Performance artifact: ${performanceReviewPath}`);
 console.log(`Economy artifact: ${economyAuditPath}`);
 console.log(`Setup artifact: ${userSetupPath}`);
 
-if (failedCommands.length > 0 || economyAudit.result === "FAILED") {
+if (
+  failedCommands.length > 0 ||
+  missingRequiredDatabaseCredentials ||
+  economyAudit.result === "FAILED"
+) {
   process.exitCode = 1;
 }
 
@@ -245,8 +273,8 @@ function writePerformanceReview({
     `- Query/performance result before gate consolidation: ${queryReviewResult}`,
     "- Covered hot paths: dashboard gamification summary, XP ledger, achievements grid, challenges page, quest rotation jobs, streak jobs and reward application mutations.",
     missingDbFixtures.length > 0
-      ? "- Missing `TEST_DATABASE_URL` remains blocked evidence, not a pass."
-      : "- `TEST_DATABASE_URL` is configured; isolated migration, RLS, concurrency and query-plan evidence executed.",
+      ? "- Missing database credentials fail the gate; skipped database checks are not passing evidence."
+      : "- Test, worker and direct database credentials are configured; migration, RLS, concurrency and query-plan evidence executed.",
     "",
     "## Browser and Accessibility",
     "",
@@ -439,7 +467,14 @@ function writeUserSetup({
     "",
     "| Variable | Status | Purpose |",
     "|----------|--------|---------|",
-    ...dbFixtureVars.map((name) => `| \`${name}\` | ${process.env[name] ? "configured" : "missing"} | Isolated Neon/Postgres test database for migrations, RLS and concurrency. |`),
+    ...dbFixtureVars.map((name) => `| \`${name}\` | ${process.env[name] ? "configured" : "missing"} | ${fixturePurpose(name)} |`),
+    "",
+    "Worker credential setup:",
+    "",
+    "1. Apply reviewed migrations with `DIRECT_DATABASE_URL`; never use the web runtime connection.",
+    "2. In Neon Console, open Roles and reset/provision the password for `queue2_worker` after the role exists.",
+    "3. Copy the pooled `queue2_worker` connection string into `WORKER_DATABASE_URL` for the app/cron environment.",
+    "4. Verify the worker can read readiness columns and `ops.scheduled_jobs`, but cannot write `app.duos` or `app.duo_members`.",
     "",
     "## Job And Cron Evidence",
     "",
@@ -451,7 +486,9 @@ function writeUserSetup({
     "",
     "```bash",
     "pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts",
-    "pnpm --filter @queue/db test:integration -- gamification-rls gamification-concurrency performance-hot-paths",
+    "pnpm --filter @queue/db test:integration -- gamification-migrations gamification-rls gamification-concurrency performance-hot-paths",
+    "pnpm --filter @queue/db drizzle:migrate",
+    "gsd-sdk query verify.schema-drift 05",
     "node --experimental-strip-types scripts/performance-explain.ts --phase=5",
     "pnpm phase:5:gate",
     "```",
@@ -706,6 +743,12 @@ function fixturePurpose(name) {
       return "Bearer secret for gamification maintenance route.";
     case "GAMIFICATION_RUNNER_FREQUENCY_MINUTES":
       return "Operational cadence evidence for quest and streak jobs.";
+    case "TEST_DATABASE_URL":
+      return "Isolated Neon/Postgres database for migration, RLS and concurrency tests.";
+    case "WORKER_DATABASE_URL":
+      return "Pooled connection string authenticated as the least-privileged queue2_worker role.";
+    case "DIRECT_DATABASE_URL":
+      return "Direct owner/migrator connection used only to apply reviewed migrations.";
     default:
       return "Phase 5 setup value.";
   }

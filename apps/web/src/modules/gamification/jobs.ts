@@ -9,6 +9,7 @@ import {
   runStreakJobsUseCase,
   type RunStreakJobsResult
 } from "./application/run-streak-jobs";
+import type { GamificationRepository } from "./application/ports";
 
 export {
   runQuestRotationJobsUseCase,
@@ -21,6 +22,7 @@ export {
 
 export type RunGamificationMaintenanceResult = {
   ok: true;
+  producedJobs: number;
   questRotation: RunQuestRotationJobsResult;
   streakCheck: RunStreakJobsResult;
 };
@@ -30,16 +32,19 @@ export async function runGamificationMaintenanceJobs(input: {
   questLimit?: number;
   streakLimit?: number;
   workerId?: string;
-} = {}): Promise<RunGamificationMaintenanceResult> {
+} = {},
+repository: GamificationRepository = gamificationRepository
+): Promise<RunGamificationMaintenanceResult> {
   const now = input.now ?? new Date();
   const workerId = input.workerId ?? "gamification-maintenance";
+  const bootstrap = await repository.ensureGamificationJobs(now);
   const questRotation = await runQuestRotationJobsUseCase(
     {
       limit: input.questLimit,
       now,
       workerId: `${workerId}:quest-rotation`
     },
-    gamificationRepository
+    repository
   );
   const streakCheck = await runStreakJobsUseCase(
     {
@@ -47,11 +52,12 @@ export async function runGamificationMaintenanceJobs(input: {
       now,
       workerId: `${workerId}:streak-check`
     },
-    gamificationRepository
+    repository
   );
 
   return {
     ok: true,
+    producedJobs: bootstrap.producedJobs,
     questRotation,
     streakCheck
   };

@@ -627,6 +627,7 @@ ALTER TABLE ops.scheduled_jobs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ops.scheduled_jobs FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS ops_scheduled_jobs_select_members ON ops.scheduled_jobs;
 DROP POLICY IF EXISTS ops_scheduled_jobs_insert_members ON ops.scheduled_jobs;
+DROP POLICY IF EXISTS ops_scheduled_jobs_insert_gamification_worker ON ops.scheduled_jobs;
 DROP POLICY IF EXISTS ops_scheduled_jobs_select_worker ON ops.scheduled_jobs;
 DROP POLICY IF EXISTS ops_scheduled_jobs_update_worker ON ops.scheduled_jobs;
 CREATE POLICY ops_scheduled_jobs_select_members ON ops.scheduled_jobs
@@ -635,6 +636,16 @@ CREATE POLICY ops_scheduled_jobs_select_members ON ops.scheduled_jobs
 CREATE POLICY ops_scheduled_jobs_insert_members ON ops.scheduled_jobs
   FOR INSERT TO PUBLIC
   WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_scheduled_jobs_insert_gamification_worker ON ops.scheduled_jobs
+  FOR INSERT TO queue2_worker
+  WITH CHECK (
+    job_type IN (
+      'gamification-quest-rotation',
+      'gamification-streak-check'
+    )
+    AND jsonb_typeof(payload) = 'object'
+    AND nullif(btrim(payload ->> 'createdByUserId'), '') IS NOT NULL
+  );
 CREATE POLICY ops_scheduled_jobs_select_worker ON ops.scheduled_jobs
   FOR SELECT TO queue2_worker
   USING (true);

@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: economy-audit
-generated: 2026-06-06T13:13:41.289Z
+generated: 2026-06-06T20:39:24.649Z
 result: BLOCKED - missing external evidence
 ---
 
@@ -10,7 +10,7 @@ result: BLOCKED - missing external evidence
 
 ## Environment
 
-- Generated: 2026-06-06T13:13:41.289Z
+- Generated: 2026-06-06T20:39:24.649Z
 - Source files scanned: 47
 - DB evidence: configured
 - Browser evidence: blocked
