@@ -3,12 +3,14 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import {
+  EMPTY_ACHIEVEMENT_METRICS,
   MAX_CHAPTER_XP_AWARDS_PER_DUO_DAY,
   applyGamificationFact,
   getGamificationDashboard,
   getLevelForXp,
   rebuildGamificationProjections
 } from "../src/modules/gamification";
+import type { AchievementMetricSnapshot } from "../src/modules/gamification";
 import type {
   GamificationAchievementUnlockRecord,
   GamificationDueJobRecord,
@@ -29,7 +31,12 @@ describe("gamification reward application", () => {
   it("applies shared XP, quest progress, achievements, streak and level-up once", async () => {
     const { repository, transaction } = fakeGamificationRepository({
       projection: projectionRecord({ xp: 110, level: getLevelForXp(110) }),
-      questCycles: [questCycleRecord()]
+      questCycles: [questCycleRecord()],
+      achievementMetrics: achievementMetrics({
+        confirmedSessionCount: 1,
+        doubleConfirmationCount: 1,
+        questCompleteCount: 1
+      })
     });
 
     const result = await applyGamificationFact(
@@ -188,7 +195,15 @@ describe("gamification reward application", () => {
           questCycleId: "00000000-0000-4000-8000-000000000121",
           currentValue: 3
         })
-      ]
+      ],
+      achievementMetrics: achievementMetrics({
+        confirmedSessionCount: 1,
+        doubleConfirmationCount: 1,
+        monthlyQuestCompleteCount: 1,
+        questCompleteCount: 2,
+        seasonalQuestCompleteCount: 1,
+        seasonalSpookyCompleteCount: 1
+      })
     });
 
     const result = await applyGamificationFact(
@@ -283,6 +298,131 @@ describe("gamification reward application", () => {
     expect(result.summary.totalXpAwarded).toBe(0);
     expect(result.summary.skippedXpReason).toBe("chapter-daily-cap-reached");
     expect(transaction.insertXpLedgerAward).not.toHaveBeenCalled();
+  });
+
+  it("reads duo-scoped metrics after projection updates and unlocks threshold and composite predicates", async () => {
+    const { repository, transaction } = fakeGamificationRepository({
+      achievementMetrics: achievementMetrics({
+        alignedPlayDayCount: 1,
+        doubleConfirmationCount: 1
+      })
+    });
+
+    const result = await applyGamificationFact(
+      {
+        duoId: "duo-1",
+        actorUserId: "member-1",
+        sourceType: "chapter",
+        sourceId: "00000000-0000-4000-8000-000000000606",
+        occurredAt: now,
+        confirmedDuoFact: true,
+        metadata: {
+          chapterTitle: "Chefe",
+          libraryGameId: "00000000-0000-4000-8000-000000000777"
+        }
+      },
+      repository
+    );
+
+    expect(result).toEqual(expect.objectContaining({ ok: true, duplicate: false }));
+
+    if (!result.ok) {
+      throw new Error(result.reason);
+    }
+
+    expect(transaction.readAchievementMetrics).toHaveBeenCalledWith("duo-1", {
+      timezone: "America/Sao_Paulo"
+    });
+    expect(
+      (transaction.updateProjection as ReturnType<typeof vi.fn>).mock.invocationCallOrder[0]
+    ).toBeLessThan(
+      (transaction.readAchievementMetrics as ReturnType<typeof vi.fn>).mock
+        .invocationCallOrder[0]!
+    );
+    expect(result.summary.achievements.map((achievement) => achievement.slug)).toContain(
+      "dois-controles-um-plano"
+    );
+  });
+
+  it("returns only achievement unlocks that were inserted for the current fact", async () => {
+    const insertAchievementUnlock = vi.fn(async () => null);
+    const { repository, transaction } = fakeGamificationRepository({
+      achievementMetrics: achievementMetrics({
+        confirmedSessionCount: 1,
+        doubleConfirmationCount: 1
+      }),
+      insertAchievementUnlock
+    });
+
+    const result = await applyGamificationFact(
+      {
+        duoId: "duo-1",
+        actorUserId: "member-1",
+        sourceType: "live-session",
+        sourceId: "00000000-0000-4000-8000-000000000707",
+        occurredAt: now,
+        confirmedDuoFact: true,
+        metadata: { durationSeconds: 1_800 }
+      },
+      repository
+    );
+
+    expect(result).toEqual(expect.objectContaining({ ok: true, duplicate: false }));
+
+    if (!result.ok) {
+      throw new Error(result.reason);
+    }
+
+    expect(insertAchievementUnlock).toHaveBeenCalled();
+    expect(result.summary.achievements).toEqual([]);
+    expect(transaction.insertRewardNotification).not.toHaveBeenCalledWith(
+      expect.objectContaining({ notificationType: "achievement" })
+    );
+  });
+
+  it("keeps Dropado and Discovery XP-neutral while evaluating their real facts", async () => {
+    const dropado = fakeGamificationRepository({
+      achievementMetrics: achievementMetrics({ terminalDropadoCount: 1 })
+    });
+    const discovery = fakeGamificationRepository({
+      achievementMetrics: achievementMetrics({ discoveryMatchCount: 1 })
+    });
+
+    const dropadoResult = await applyGamificationFact(
+      {
+        duoId: "duo-1",
+        actorUserId: "member-1",
+        sourceType: "terminal-dropado",
+        sourceId: "00000000-0000-4000-8000-000000000808",
+        occurredAt: now,
+        confirmedDuoFact: true
+      },
+      dropado.repository
+    );
+    const discoveryResult = await applyGamificationFact(
+      {
+        duoId: "duo-1",
+        actorUserId: "member-1",
+        sourceType: "discovery-match",
+        sourceId: "00000000-0000-4000-8000-000000000909",
+        occurredAt: now,
+        confirmedDuoFact: true
+      },
+      discovery.repository
+    );
+
+    if (!dropadoResult.ok || !discoveryResult.ok) {
+      throw new Error("expected neutral facts to remain valid");
+    }
+
+    expect(dropadoResult.summary.totalXpAwarded).toBe(0);
+    expect(dropadoResult.summary.achievements.map((achievement) => achievement.slug)).toContain(
+      "sem-tilt"
+    );
+    expect(discoveryResult.summary.totalXpAwarded).toBe(0);
+    expect(
+      discoveryResult.summary.achievements.map((achievement) => achievement.slug)
+    ).toContain("radar-ligado");
   });
 
   it("builds a duo-scoped dashboard read model without individual XP fields", async () => {
@@ -387,7 +527,9 @@ function fakeGamificationRepository(input: {
   streakState?: GamificationStreakStateRecord | null;
   awardsForDuoDay?: number;
   ledgerXp?: number;
+  achievementMetrics?: AchievementMetricSnapshot;
   insertXpLedgerAward?: GamificationRepositoryTransaction["insertXpLedgerAward"];
+  insertAchievementUnlock?: GamificationRepositoryTransaction["insertAchievementUnlock"];
   recordProjectionRebuild?: GamificationRepository["recordProjectionRebuild"];
 } = {}): {
   repository: GamificationRepository;
@@ -412,6 +554,9 @@ function fakeGamificationRepository(input: {
     resolveMembership: vi.fn(async () => membership),
     readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => projection),
+    readAchievementMetrics: vi.fn(
+      async () => input.achievementMetrics ?? achievementMetrics()
+    ),
     countXpAwardsForDuoDay: vi.fn(async () => input.awardsForDuoDay ?? 0),
     insertXpLedgerAward:
       input.insertXpLedgerAward ??
@@ -435,13 +580,15 @@ function fakeGamificationRepository(input: {
     ),
     readAchievementUnlocks: vi.fn(async () => achievementUnlocks),
     readRecentXpLedgerAwards: vi.fn(async () => []),
-    insertAchievementUnlock: vi.fn(async (unlockInput) =>
-      achievementUnlockRecord({
-        ...unlockInput,
-        metadata: unlockInput.metadata ?? {},
-        unlockedAt: now
-      })
-    ),
+    insertAchievementUnlock:
+      input.insertAchievementUnlock ??
+      vi.fn(async (unlockInput) =>
+        achievementUnlockRecord({
+          ...unlockInput,
+          metadata: unlockInput.metadata ?? {},
+          unlockedAt: now
+        })
+      ),
     readActiveQuestCycles: vi.fn(async () => questCycles),
     readQuestProgressForCycles: vi.fn(async () => questProgress),
     upsertQuestCycle: vi.fn(async () => questCycleRecord()),
@@ -584,6 +731,15 @@ function jobRecord(
     runAt: now,
     attempts: 0,
     payload: {},
+    ...overrides
+  };
+}
+
+function achievementMetrics(
+  overrides: Partial<AchievementMetricSnapshot> = {}
+): AchievementMetricSnapshot {
+  return {
+    ...EMPTY_ACHIEVEMENT_METRICS,
     ...overrides
   };
 }
