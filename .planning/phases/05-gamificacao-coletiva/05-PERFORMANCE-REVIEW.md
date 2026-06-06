@@ -2,74 +2,81 @@
 phase: 05
 plan: 06
 artifact: performance-review
-generated: 2026-06-06T11:06:05.706Z
-result: BLOCKED - missing TEST_DATABASE_URL
+generated: 2026-06-06T11:12:43.286Z
+result: BLOCKED - missing external evidence
 ---
 
-# Phase 5 Performance Review
+# Phase 5 Performance and Evidence Review
 
 ## Environment
 
-- Generated: 2026-06-06T11:06:05.706Z
-- Database evidence: missing
-- Evidence source: local TEST_DATABASE_URL
-- Parameter values: redacted from artifact
+- Generated: 2026-06-06T11:12:43.286Z
+- Evidence environment: root Phase 5 gate command
+- Credentials: process-only; no credential values written to this artifact
+- DB fixture status: missing
+- E2E fixture status: missing
+- Job evidence status: missing
 
 ## Query Review
 
-| Query | Surface | Count | Mode | Plan Status | Expected Indexes | Action Taken |
-|-------|---------|-------|------|-------------|------------------|--------------|
-| Gamification dashboard summary | /app | 4 | read-analyze | blocked | app_gamification_streak_events_duo_day_idx, app_gamification_quest_cycles_window_idx, app_gamification_achievement_unlocks_grid_idx, app_duo_xp_awards_duo_awarded_idx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
-| Gamification XP ledger history | XP ledger panel | 1 | read-analyze | blocked | app_duo_xp_awards_duo_awarded_idx, app_duo_xp_awards_key_uidx, app_duo_xp_awards_source_uidx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
-| Achievements grid | /app/conquistas | 2 | read-analyze | blocked | app_gamification_achievement_catalog_grid_idx, app_gamification_achievement_unlocks_duo_slug_uidx, app_gamification_achievement_unlocks_grid_idx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
-| Challenges page | /app/desafios | 3 | read-analyze | blocked | app_gamification_quest_cycles_window_idx, app_gamification_quest_progress_cycle_uidx, app_gamification_quest_templates_active_idx, app_gamification_streak_events_duo_day_idx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
-| Quest rotation jobs | /api/jobs/gamification/maintenance quest rotation | 2 | mutation-static | blocked | ops_scheduled_jobs_due_idx, ops_scheduled_jobs_duo_type_idx, ops_scheduled_jobs_key_uidx, app_gamification_quest_cycles_duo_slug_cycle_uidx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
-| Streak maintenance jobs | /api/jobs/gamification/maintenance streak | 2 | mutation-static | blocked | ops_scheduled_jobs_due_idx, ops_scheduled_jobs_duo_type_idx, app_gamification_streak_events_key_uidx, app_gamification_streak_events_duo_day_idx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
-| Reward application mutation | applyGamificationFact | 5 | mutation-static | blocked | app_duo_xp_awards_key_uidx, app_duo_xp_awards_source_uidx, app_gamification_achievement_unlocks_duo_slug_uidx, app_gamification_quest_progress_cycle_uidx, app_gamification_reward_notifications_duo_created_idx | Skipped runtime plan review because TEST_DATABASE_URL is missing. |
+- Command: `node --experimental-strip-types scripts/performance-explain.ts --phase=5`
+- Query/performance result before gate consolidation: BLOCKED - missing TEST_DATABASE_URL
+- Covered hot paths: dashboard gamification summary, XP ledger, achievements grid, challenges page, quest rotation jobs, streak jobs and reward application mutations.
+- Missing `TEST_DATABASE_URL` remains blocked evidence, not a pass.
 
-## Plan Summaries
+## Browser and Accessibility
 
-### Gamification dashboard summary
+- Command: `pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts`
+- Coverage defined for both duo members, partner-confirmed `Zerado`, neutral `Dropado`, other-duo isolation, dashboard/Conquistas/Desafios mobile overlap and reduced-motion reward/streak feedback.
 
-- Status: blocked
-- Summary: No database connection available.
+## Security and RLS
 
-### Gamification XP ledger history
+- Source security command: `pnpm --filter @queue/web test -- gamification-security`
+- DB integration command: `pnpm --filter @queue/db test:integration -- gamification-rls gamification-concurrency performance-hot-paths`
+- DB coverage targets ledger, unlocks, quests, streak, reward notifications, projection rebuilds, duplicate rewards, quest races and Streak Freeze consumption.
 
-- Status: blocked
-- Summary: No database connection available.
+## Economy and Copy Audit
 
-### Achievements grid
+- Result: BLOCKED - missing external evidence
+- Findings: 0
+- Artifact: `05-ECONOMY-AUDIT.md`
 
-- Status: blocked
-- Summary: No database connection available.
+## Command Status
 
-### Challenges page
+| Command | Status | Duration |
+|---------|--------|----------|
+| Architecture | passed | 861ms |
+| Web typecheck | passed | 1483ms |
+| DB typecheck | passed | 783ms |
+| Focused gamification tests | passed | 1585ms |
+| DB integration evidence | passed | 837ms |
+| Phase 5 query and performance review | passed | 50ms |
+| Browser E2E and accessibility | skipped | 0ms |
 
-- Status: blocked
-- Summary: No database connection available.
+## Missing DB Fixtures
 
-### Quest rotation jobs
+- TEST_DATABASE_URL
 
-- Status: blocked
-- Summary: No database connection available.
+## Missing E2E Fixtures
 
-### Streak maintenance jobs
+- E2E_PHASE5_ZERADO_SLUG
+- E2E_PHASE5_DROPADO_SLUG
 
-- Status: blocked
-- Summary: No database connection available.
+## Missing Job Evidence
 
-### Reward application mutation
+- CRON_SECRET
+- GAMIFICATION_RUNNER_FREQUENCY_MINUTES
 
-- Status: blocked
-- Summary: No database connection available.
+## Blockers
 
-## Findings
+- TEST_DATABASE_URL
+- E2E_PHASE5_ZERADO_SLUG
+- E2E_PHASE5_DROPADO_SLUG
+- CRON_SECRET
+- GAMIFICATION_RUNNER_FREQUENCY_MINUTES
 
-- TEST_DATABASE_URL is required for runtime EXPLAIN evidence.
-
-## Result: BLOCKED - missing TEST_DATABASE_URL
+## Result: BLOCKED - missing external evidence
 
 ## Next Actions
 
-- Provide TEST_DATABASE_URL for an isolated Neon/test Postgres database, then rerun `node --experimental-strip-types scripts/performance-explain.ts --phase=5`.
+- Provide missing fixtures/evidence inputs, rerun `pnpm phase:5:gate`, and review this artifact before claiming Phase 5 external evidence.

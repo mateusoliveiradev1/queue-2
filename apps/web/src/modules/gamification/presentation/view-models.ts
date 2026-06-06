@@ -317,7 +317,7 @@ export function toRewardToastView(
     return {
       key: `achievement:${achievement.slug}:${achievement.unlockedAt.toISOString()}`,
       title: "Conquista da dupla",
-      body: `${achievement.title} desbloqueada sem ranking interno.`,
+      body: `${achievement.title} desbloqueada para os dois.`,
       variant: "special",
       inlineLabel: "Conquista desbloqueada para os dois."
     };

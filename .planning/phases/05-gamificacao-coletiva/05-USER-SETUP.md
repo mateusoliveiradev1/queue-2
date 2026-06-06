@@ -2,6 +2,7 @@
 phase: 05-gamificacao-coletiva
 artifact: user-setup
 status: Incomplete
+generated: 2026-06-06T11:12:43.285Z
 ---
 
 # Phase 5 User Setup
@@ -10,19 +11,17 @@ Use this setup before treating Phase 5 browser, database, job or production evid
 
 ## Browser And UAT Fixtures
 
-Create three authenticated product users backed by real QUEUE/2 data:
-
-| Variable | Purpose |
-|----------|---------|
-| `E2E_BASE_URL` | Base URL for the local, preview or production app under test. |
-| `E2E_READY_USER_EMAIL` | First member of a ready duo with Phase 5 gamification state. |
-| `E2E_READY_USER_PASSWORD` | Password for the first ready duo member. |
-| `E2E_READY_PARTNER_EMAIL` | Second member of the same ready duo. |
-| `E2E_READY_PARTNER_PASSWORD` | Password for the same-duo partner. |
-| `E2E_OTHER_DUO_USER_EMAIL` | Member of a different duo for isolation checks. |
-| `E2E_OTHER_DUO_USER_PASSWORD` | Password for the other-duo member. |
-| `E2E_PHASE5_ZERADO_SLUG` | Jogando game slug prepared for a partner-confirmed `Zerado` flow. |
-| `E2E_PHASE5_DROPADO_SLUG` | Jogando game slug prepared for a partner-confirmed `Dropado` neutral-flow check. |
+| Variable | Status | Purpose |
+|----------|--------|---------|
+| `E2E_BASE_URL` | configured | Base URL for the app under browser test. |
+| `E2E_READY_USER_EMAIL` | configured | First member of a ready duo with Phase 5 state. |
+| `E2E_READY_USER_PASSWORD` | configured | First member of a ready duo with Phase 5 state. |
+| `E2E_READY_PARTNER_EMAIL` | configured | Second member of the same ready duo. |
+| `E2E_READY_PARTNER_PASSWORD` | configured | Second member of the same ready duo. |
+| `E2E_OTHER_DUO_USER_EMAIL` | configured | Different-duo actor for isolation checks. |
+| `E2E_OTHER_DUO_USER_PASSWORD` | configured | Different-duo actor for isolation checks. |
+| `E2E_PHASE5_ZERADO_SLUG` | missing | Jogando game prepared for partner-confirmed Zerado reward flow. |
+| `E2E_PHASE5_DROPADO_SLUG` | missing | Jogando game prepared for neutral Dropado confirmation flow. |
 
 Fixture expectations:
 
@@ -33,21 +32,16 @@ Fixture expectations:
 
 ## Database Evidence
 
-| Variable | Purpose |
-|----------|---------|
-| `TEST_DATABASE_URL` | Isolated Neon/Postgres test database where migrations can be applied and RLS/concurrency tests can mutate data safely. |
-
-Run the Phase 5 DB targets only against a disposable test branch. If `TEST_DATABASE_URL` is missing, the Phase 5 gate records `BLOCKED - missing TEST_DATABASE_URL`.
+| Variable | Status | Purpose |
+|----------|--------|---------|
+| `TEST_DATABASE_URL` | missing | Isolated Neon/Postgres test database for migrations, RLS and concurrency. |
 
 ## Job And Cron Evidence
 
-| Variable | Purpose |
-|----------|---------|
-| `CRON_SECRET` | Bearer secret required by `/api/jobs/gamification/maintenance`. |
-| `GAMIFICATION_MAINTENANCE_URL` | Optional absolute URL for `pnpm gamification:maintenance`; defaults to local route when omitted. |
-| `GAMIFICATION_RUNNER_FREQUENCY_MINUTES` | Optional runner cadence evidence for quest rotation and streak checks. |
-
-The gate does not write secret values to artifacts. It records only whether each variable was present.
+| Variable | Status | Purpose |
+|----------|--------|---------|
+| `CRON_SECRET` | missing | Bearer secret for gamification maintenance route. |
+| `GAMIFICATION_RUNNER_FREQUENCY_MINUTES` | missing | Operational cadence evidence for quest and streak jobs. |
 
 ## Verification Commands
 
@@ -57,6 +51,22 @@ pnpm --filter @queue/db test:integration -- gamification-rls gamification-concur
 node --experimental-strip-types scripts/performance-explain.ts --phase=5
 pnpm phase:5:gate
 ```
+
+## Missing Variables
+
+### Browser
+
+- E2E_PHASE5_ZERADO_SLUG
+- E2E_PHASE5_DROPADO_SLUG
+
+### Database
+
+- TEST_DATABASE_URL
+
+### Jobs
+
+- CRON_SECRET
+- GAMIFICATION_RUNNER_FREQUENCY_MINUTES
 
 ## Current Status
 
