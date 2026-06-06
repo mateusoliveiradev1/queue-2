@@ -76,6 +76,17 @@ const phase5ChallengesMissingEnv = missingEnv([
   "E2E_READY_USER_EMAIL",
   "E2E_READY_USER_PASSWORD"
 ]);
+const phase5FullMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD",
+  "E2E_READY_PARTNER_EMAIL",
+  "E2E_READY_PARTNER_PASSWORD",
+  "E2E_OTHER_DUO_USER_EMAIL",
+  "E2E_OTHER_DUO_USER_PASSWORD",
+  "E2E_PHASE5_ZERADO_SLUG",
+  "E2E_PHASE5_DROPADO_SLUG"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -89,6 +100,7 @@ reportMissingEnv("Phase 4 Jogando Agora accessibility", phase4MissingEnv);
 reportMissingEnv("Phase 5 gamification dashboard accessibility", phase5DashboardMissingEnv);
 reportMissingEnv("Phase 5 achievements accessibility", phase5AchievementsMissingEnv);
 reportMissingEnv("Phase 5 challenges accessibility", phase5ChallengesMissingEnv);
+reportMissingEnv("Phase 5 full gamification accessibility", phase5FullMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -478,6 +490,50 @@ test.describe("Phase 5 gamification dashboard accessibility", () => {
   });
 });
 
+test.describe("Phase 5 full gamification accessibility", () => {
+  test.skip(
+    phase5FullMissingEnv.length > 0,
+    `BLOCKED setup - missing Phase 5 accessibility fixtures: ${phase5FullMissingEnv.join(", ")}`
+  );
+
+  test("dashboard, Conquistas and Desafios are axe-clean on desktop and avoid competitive copy", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await login(page, readyActor);
+
+    for (const route of ["/app", "/app/conquistas", "/app/desafios"]) {
+      await page.goto(route);
+      await expect(page.locator("body")).not.toContainText(/XP individual|ranking|placar individual|pior jogador/i);
+      await expectNoAxeViolations(page);
+    }
+  });
+
+  test("mobile reduced-motion Phase 5 surfaces keep visible controls non-overlapping", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+
+    await page.goto("/app");
+    await expect(page.locator(".gamification-dashboard-band")).toBeVisible();
+    await expectNoOverlap(
+      page.locator(".playing-now"),
+      page.locator(".gamification-dashboard-band"),
+      "Gamification dashboard overlaps Jogando Agora"
+    );
+    await expectNoVisibleControlOverlap(page);
+
+    await page.goto("/app/conquistas?raridade=rare");
+    await expect(page.locator(".achievements-route")).toBeVisible();
+    await expectStaticFeedbackMark(page.locator(".achievement-badge-icon").first());
+    await expectNoVisibleControlOverlap(page);
+
+    await page.goto("/app/desafios?periodo=semana");
+    await expect(page.locator(".challenges-route")).toBeVisible();
+    await expectStaticFeedbackMark(page.locator(".challenge-streak-mark").first());
+    await expectNoVisibleControlOverlap(page);
+    await expectNoAxeViolations(page);
+  });
+});
+
 test.describe("Phase 2 detail accessibility", () => {
   test.skip(
     phase2DetailMissingEnv.length > 0,
@@ -561,6 +617,49 @@ async function expectNoOverlap(
     firstBox!.y + firstBox!.height > secondBox!.y;
 
   expect(overlaps, message).toBe(false);
+}
+
+async function expectNoVisibleControlOverlap(page: Page): Promise<void> {
+  const controls = page.locator(
+    "button:visible, a:visible, input:visible, select:visible, textarea:visible"
+  );
+  const count = await controls.count();
+  const boxes: Array<{
+    box: {
+      x: number;
+      y: number;
+      width: number;
+      height: number;
+    };
+    index: number;
+  }> = [];
+
+  for (let index = 0; index < count; index += 1) {
+    const box = await controls.nth(index).boundingBox();
+
+    if (box) {
+      boxes.push({ box, index });
+    }
+  }
+
+  for (let firstIndex = 0; firstIndex < boxes.length; firstIndex += 1) {
+    for (let secondIndex = firstIndex + 1; secondIndex < boxes.length; secondIndex += 1) {
+      const first = boxes[firstIndex];
+      const second = boxes[secondIndex];
+
+      if (!first || !second) {
+        continue;
+      }
+
+      const overlaps =
+        first.box.x < second.box.x + second.box.width &&
+        first.box.x + first.box.width > second.box.x &&
+        first.box.y < second.box.y + second.box.height &&
+        first.box.y + first.box.height > second.box.y;
+
+      expect(overlaps, `Visible control ${first.index} overlaps ${second.index}`).toBe(false);
+    }
+  }
 }
 
 async function login(page: Page, actor: E2EActor): Promise<void> {
