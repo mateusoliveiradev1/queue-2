@@ -1,4 +1,5 @@
 import type {
+  GamificationAchievementsRecord,
   GamificationDashboardRecord,
   GamificationRewardSummary
 } from "../application/ports";
@@ -69,6 +70,47 @@ export type RewardToastViewModel = {
   inlineLabel: string;
 };
 
+export type AchievementRouteViewModel = {
+  totalLabel: string;
+  unlockedLabel: string;
+  hiddenLabel: string;
+  updatedAtLabel: string;
+  selectedRarity: GamificationRarity | null;
+  filterOptions: AchievementRarityFilterOptionView[];
+  groups: AchievementGroupView[];
+  links: {
+    dashboardHref: string;
+    challengesHref: string;
+  };
+};
+
+export type AchievementRarityFilterOptionView = {
+  label: string;
+  href: string;
+  selected: boolean;
+  rarity: GamificationRarity | null;
+};
+
+export type AchievementGroupView = {
+  group: string;
+  label: string;
+  achievements: AchievementCardView[];
+};
+
+export type AchievementCardView = {
+  viewKey: string;
+  title: string;
+  description: string;
+  rarity: GamificationRarity;
+  rarityLabel: string;
+  groupLabel: string;
+  iconKey: string;
+  state: "locked-visible" | "locked-hidden" | "unlocked";
+  stateLabel: string;
+  progressHint: string;
+  unlockedAtLabel: string | null;
+};
+
 export function toGamificationDashboardView(
   dashboard: GamificationDashboardRecord | null
 ): GamificationDashboardViewModel {
@@ -111,6 +153,57 @@ export function toGamificationDashboardView(
     })),
     links: {
       achievementsHref: "/app/conquistas",
+      challengesHref: "/app/desafios"
+    }
+  };
+}
+
+export function toAchievementRouteView(
+  achievements: GamificationAchievementsRecord,
+  buildHref: (rarity: GamificationRarity | null) => string = defaultAchievementHref
+): AchievementRouteViewModel {
+  return {
+    totalLabel: `${formatNumber(achievements.totalCount)} conquistas sem placar individual`,
+    unlockedLabel: `${formatNumber(achievements.unlockedCount)} desbloqueadas pela dupla`,
+    hiddenLabel: `${formatNumber(achievements.hiddenLockedCount)} segredos ainda trancados`,
+    updatedAtLabel:
+      achievements.unlockedCount > 0
+        ? `Ultimo desbloqueio em ${formatDate(achievements.updatedAt)}`
+        : "Sem desbloqueios confirmados ainda.",
+    selectedRarity: achievements.selectedRarity,
+    filterOptions: [
+      {
+        label: "Todas",
+        href: buildHref(null),
+        selected: achievements.selectedRarity === null,
+        rarity: null
+      },
+      ...achievements.rarityOptions.map((rarity) => ({
+        label: rarityLabels[rarity],
+        href: buildHref(rarity),
+        selected: achievements.selectedRarity === rarity,
+        rarity
+      }))
+    ],
+    groups: achievements.groups.map((group) => ({
+      group: group.group,
+      label: group.label,
+      achievements: group.achievements.map((achievement) => ({
+        viewKey: achievement.viewKey,
+        title: achievement.title,
+        description: achievement.description,
+        rarity: achievement.rarity,
+        rarityLabel: rarityLabels[achievement.rarity],
+        groupLabel: group.label,
+        iconKey: achievement.iconKey,
+        state: achievement.state,
+        stateLabel: achievement.state === "unlocked" ? "Desbloqueada" : "Bloqueada",
+        progressHint: achievement.progressHint,
+        unlockedAtLabel: achievement.unlockedAt ? formatDate(achievement.unlockedAt) : null
+      }))
+    })),
+    links: {
+      dashboardHref: "/app",
       challengesHref: "/app/desafios"
     }
   };
@@ -282,6 +375,10 @@ function ledgerReasonLabel(
     default:
       return "Progresso compartilhado registrado";
   }
+}
+
+function defaultAchievementHref(rarity: GamificationRarity | null): string {
+  return rarity ? `/app/conquistas?raridade=${rarity}` : "/app/conquistas";
 }
 
 const questTypeLabels: Record<QuestType, string> = {

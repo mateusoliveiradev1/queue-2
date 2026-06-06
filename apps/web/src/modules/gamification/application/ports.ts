@@ -171,6 +171,38 @@ export type GamificationProjectionRebuildResult =
       reason: "membership-required" | "duo-mismatch" | "projection-not-found";
     };
 
+export type GamificationAchievementReadModel = {
+  viewKey: string;
+  slug: string | null;
+  group: string;
+  rarity: "common" | "rare" | "epic" | "legendary";
+  visibility: "visible" | "hidden";
+  state: "locked-visible" | "locked-hidden" | "unlocked";
+  title: string;
+  description: string;
+  iconKey: string;
+  progressHint: string;
+  unlockedAt: Date | null;
+};
+
+export type GamificationAchievementGroupReadModel = {
+  group: string;
+  label: string;
+  achievements: GamificationAchievementReadModel[];
+};
+
+export type GamificationAchievementsRecord = {
+  duoId: GamificationDuoId;
+  selectedRarity: "common" | "rare" | "epic" | "legendary" | null;
+  rarityOptions: Array<"common" | "rare" | "epic" | "legendary">;
+  totalCount: number;
+  visibleCount: number;
+  unlockedCount: number;
+  hiddenLockedCount: number;
+  groups: GamificationAchievementGroupReadModel[];
+  updatedAt: Date;
+};
+
 export type GamificationAchievementUnlockRecord = {
   id: GamificationUuid;
   duoId: GamificationDuoId;

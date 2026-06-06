@@ -73,12 +73,21 @@ export {
   getGamificationDashboardFromTransaction
 } from "./application/get-gamification-dashboard";
 export {
+  getAchievements,
+  getAchievementsFromTransaction
+} from "./application/get-achievements";
+export {
   rebuildGamificationProjections,
   rebuildGamificationProjectionsInTransaction
 } from "./application/rebuild-gamification-projections";
 export {
+  toAchievementRouteView,
   toGamificationDashboardView,
   toRewardToastView,
+  type AchievementCardView,
+  type AchievementGroupView,
+  type AchievementRarityFilterOptionView,
+  type AchievementRouteViewModel,
   type GamificationAchievementView,
   type GamificationDashboardViewModel,
   type GamificationLedgerEntryView,
@@ -92,7 +101,10 @@ export { XpLedgerPanel } from "./presentation/xp-ledger-panel";
 
 export type {
   GamificationAdjustmentInput,
+  GamificationAchievementGroupReadModel,
+  GamificationAchievementReadModel,
   GamificationAchievementUnlockRecord,
+  GamificationAchievementsRecord,
   GamificationAchievementSummary,
   GamificationApplyFactResult,
   GamificationDashboardRecord,
