@@ -128,7 +128,7 @@ export function createGamificationRepository(
   return {
     withUserTransaction: (userId, callback) =>
       withAppUserTransaction(pool, userId, (client) =>
-        callback(createTransaction(client))
+        callback(createGamificationTransaction(client))
       ),
     claimDueGamificationJobs: (input) => claimDueGamificationJobs(pool, input),
     completeGamificationJob: (jobId) => completeGamificationJob(pool, jobId),
@@ -137,22 +137,28 @@ export function createGamificationRepository(
   };
 }
 
-function createTransaction(client: QueueDbClient): GamificationRepositoryTransaction {
+export function createGamificationTransaction(
+  client: QueueDbClient
+): GamificationRepositoryTransaction {
   return {
     resolveMembership: (userId) => resolveMembership(client, userId),
+    readDuoTimezone: (duoId) => readDuoTimezone(client, duoId),
     readProjection: (duoId) => readProjection(client, duoId),
+    countXpAwardsForDuoDay: (input) => countXpAwardsForDuoDay(client, input),
     insertXpLedgerAward: (input) => insertXpLedgerAward(client, input),
     updateProjection: (input) => updateProjection(client, input),
     readAchievementUnlocks: (duoId) => readAchievementUnlocks(client, duoId),
     insertAchievementUnlock: (input) => insertAchievementUnlock(client, input),
     readActiveQuestCycles: (duoId) => readActiveQuestCycles(client, duoId),
+    readQuestProgressForCycles: (input) => readQuestProgressForCycles(client, input),
     upsertQuestCycle: (input) => upsertQuestCycle(client, input),
     upsertQuestProgress: (input) => upsertQuestProgress(client, input),
     readStreakState: (duoId) => readStreakState(client, duoId),
     insertStreakEvent: (input) => insertStreakEvent(client, input),
     upsertStreakState: (input) => upsertStreakState(client, input),
     insertRewardNotification: (input) => insertRewardNotification(client, input),
-    insertAdjustment: (input) => insertAdjustment(client, input)
+    insertAdjustment: (input) => insertAdjustment(client, input),
+    sumXpLedgerAwards: (duoId) => sumXpLedgerAwards(client, duoId)
   };
 }
 
@@ -189,6 +195,23 @@ async function resolveMembership(
   };
 }
 
+async function readDuoTimezone(
+  client: QueueDbClient,
+  duoId: string
+): Promise<string> {
+  const result = await client.query<{ timezone: string }>(
+    `
+      SELECT timezone
+      FROM app.duos
+      WHERE id = $1
+      LIMIT 1
+    `,
+    [duoId]
+  );
+
+  return result.rows[0]?.timezone ?? "America/Sao_Paulo";
+}
+
 async function readProjection(
   client: QueueDbClient,
   duoId: string
@@ -213,6 +236,24 @@ async function readProjection(
   const row = result.rows[0];
 
   return row ? mapProjection(row) : null;
+}
+
+async function countXpAwardsForDuoDay(
+  client: QueueDbClient,
+  input: Parameters<GamificationRepositoryTransaction["countXpAwardsForDuoDay"]>[0]
+): Promise<number> {
+  const result = await client.query<{ count: string }>(
+    `
+      SELECT count(*) AS count
+      FROM app.duo_xp_awards
+      WHERE duo_id = $1
+        AND source_type = $2
+        AND ((awarded_at AT TIME ZONE $4)::date)::text = $3
+    `,
+    [input.duoId, input.sourceType, input.duoDay, input.timezone]
+  );
+
+  return Number(result.rows[0]?.count ?? 0);
 }
 
 async function insertXpLedgerAward(
@@ -409,6 +450,35 @@ async function readActiveQuestCycles(
   return result.rows.map(mapQuestCycle);
 }
 
+async function readQuestProgressForCycles(
+  client: QueueDbClient,
+  input: Parameters<GamificationRepositoryTransaction["readQuestProgressForCycles"]>[0]
+): Promise<GamificationQuestProgressRecord[]> {
+  if (input.questCycleIds.length === 0) {
+    return [];
+  }
+
+  const result = await client.query<QuestProgressRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        quest_cycle_id,
+        current_value,
+        completed_at,
+        reward_award_id,
+        metadata,
+        updated_at
+      FROM app.gamification_quest_progress
+      WHERE duo_id = $1
+        AND quest_cycle_id = ANY($2::uuid[])
+    `,
+    [input.duoId, input.questCycleIds]
+  );
+
+  return result.rows.map(mapQuestProgress);
+}
+
 async function upsertQuestCycle(
   client: QueueDbClient,
   input: Parameters<GamificationRepositoryTransaction["upsertQuestCycle"]>[0]
@@ -543,8 +613,8 @@ async function readStreakState(
 async function insertStreakEvent(
   client: QueueDbClient,
   input: Parameters<GamificationRepositoryTransaction["insertStreakEvent"]>[0]
-): Promise<void> {
-  await client.query(
+): Promise<boolean> {
+  const result = await client.query<{ id: string }>(
     `
       INSERT INTO app.gamification_streak_events (
         duo_id,
@@ -560,6 +630,7 @@ async function insertStreakEvent(
       )
       VALUES ($1, $2, $3, $4::date, $5, $6::uuid, $7, $8, $9, $10::jsonb)
       ON CONFLICT (duo_id, event_key) DO NOTHING
+      RETURNING id
     `,
     [
       input.duoId,
@@ -574,6 +645,8 @@ async function insertStreakEvent(
       JSON.stringify(input.metadata ?? {})
     ]
   );
+
+  return result.rows.length > 0;
 }
 
 async function upsertStreakState(
@@ -687,6 +760,22 @@ async function insertAdjustment(
       JSON.stringify(input.metadata ?? {})
     ]
   );
+}
+
+async function sumXpLedgerAwards(
+  client: QueueDbClient,
+  duoId: string
+): Promise<number> {
+  const result = await client.query<{ total: string | null }>(
+    `
+      SELECT COALESCE(sum(amount), 0)::text AS total
+      FROM app.duo_xp_awards
+      WHERE duo_id = $1
+    `,
+    [duoId]
+  );
+
+  return Number(result.rows[0]?.total ?? 0);
 }
 
 async function claimDueGamificationJobs(

@@ -12,6 +12,7 @@ export {
 export {
   GAMIFICATION_FACT_SOURCE_TYPES,
   GAMIFICATION_RARITIES,
+  MAX_CHAPTER_XP_AWARDS_PER_DUO_DAY,
   MIN_XP_SESSION_SECONDS,
   RARITY_STYLE_TOKENS,
   REWARD_NOTIFICATION_INTENSITIES,
@@ -63,21 +64,36 @@ export {
   type StreakTransition,
   type StreakTransitionInput
 } from "./domain/streak-policy";
+export {
+  applyGamificationFact,
+  applyGamificationFactToTransaction
+} from "./application/apply-gamification-fact";
+export {
+  getGamificationDashboard,
+  getGamificationDashboardFromTransaction
+} from "./application/get-gamification-dashboard";
 
 export type {
   GamificationAdjustmentInput,
   GamificationAchievementUnlockRecord,
+  GamificationAchievementSummary,
+  GamificationApplyFactResult,
+  GamificationDashboardRecord,
   GamificationDueJobRecord,
   GamificationDuoId,
   GamificationFactInput,
+  GamificationLevelUpSummary,
   GamificationMembershipContext,
   GamificationProjectionRecord,
   GamificationQuestCycleRecord,
   GamificationQuestProgressRecord,
+  GamificationQuestProgressSummary,
   GamificationRepository,
   GamificationRepositoryTransaction,
   GamificationRewardNotificationInput,
+  GamificationRewardSummary,
   GamificationStreakStateRecord,
+  GamificationStreakSummary,
   GamificationUserId,
   GamificationUuid,
   GamificationXpLedgerRecord

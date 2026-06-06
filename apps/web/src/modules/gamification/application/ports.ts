@@ -49,6 +49,97 @@ export type GamificationProjectionRecord = {
   updatedAt: Date;
 };
 
+export type GamificationLevelUpSummary = {
+  previousLevel: LevelDefinition;
+  currentLevel: LevelDefinition;
+};
+
+export type GamificationAchievementSummary = {
+  slug: string;
+  title: string;
+  rarity: "common" | "rare" | "epic" | "legendary";
+  unlockedAt: Date;
+};
+
+export type GamificationQuestProgressSummary = {
+  questSlug: string;
+  questType: QuestType;
+  cycleKey: string;
+  currentValue: number;
+  goalValue: number;
+  completed: boolean;
+  xpAwarded: number;
+};
+
+export type GamificationStreakSummary = {
+  previousStreak: number;
+  currentStreak: number;
+  availableFreezes: number;
+  earnedFreezes: number;
+  consumedFreeze: boolean;
+  reset: boolean;
+  duoDay: string;
+};
+
+export type GamificationRewardSummary = {
+  totalXpAwarded: number;
+  xpAwards: GamificationXpLedgerRecord[];
+  levelUp: GamificationLevelUpSummary | null;
+  achievements: GamificationAchievementSummary[];
+  questProgress: GamificationQuestProgressSummary[];
+  streak: GamificationStreakSummary | null;
+  projection: GamificationProjectionRecord;
+  skippedXpReason?:
+    | "source-does-not-award-xp"
+    | "session-too-short"
+    | "chapter-daily-cap-reached"
+    | "invalid-adjustment";
+};
+
+export type GamificationApplyFactResult =
+  | {
+      ok: true;
+      duplicate: boolean;
+      summary: GamificationRewardSummary;
+    }
+  | {
+      ok: false;
+      reason:
+        | "actor-required"
+        | "membership-required"
+        | "duo-mismatch"
+        | "projection-not-found"
+        | "unconfirmed-fact"
+        | "invalid-adjustment";
+    };
+
+export type GamificationDashboardRecord = {
+  duoId: GamificationDuoId;
+  xp: number;
+  level: LevelDefinition;
+  nextLevel: LevelDefinition | null;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+  progressRatio: number;
+  streak: {
+    current: number;
+    availableFreezes: number;
+  };
+  activeQuests: Array<{
+    questSlug: string;
+    questType: QuestType;
+    cycleKey: string;
+    title: string;
+    description: string;
+    currentValue: number;
+    goalValue: number;
+    completed: boolean;
+    windowEndAt: Date;
+  }>;
+  recentAchievements: GamificationAchievementSummary[];
+  updatedAt: Date;
+};
+
 export type GamificationAchievementUnlockRecord = {
   id: GamificationUuid;
   duoId: GamificationDuoId;
@@ -132,7 +223,14 @@ export type GamificationDueJobRecord = {
 
 export type GamificationRepositoryTransaction = {
   resolveMembership(userId: GamificationUserId): Promise<GamificationMembershipContext | null>;
+  readDuoTimezone(duoId: GamificationDuoId): Promise<string>;
   readProjection(duoId: GamificationDuoId): Promise<GamificationProjectionRecord | null>;
+  countXpAwardsForDuoDay(input: {
+    duoId: GamificationDuoId;
+    sourceType: GamificationFactSourceType;
+    duoDay: string;
+    timezone: string;
+  }): Promise<number>;
   insertXpLedgerAward(input: {
     duoId: GamificationDuoId;
     awardKey: string;
@@ -160,6 +258,10 @@ export type GamificationRepositoryTransaction = {
     metadata?: Record<string, unknown>;
   }): Promise<GamificationAchievementUnlockRecord | null>;
   readActiveQuestCycles(duoId: GamificationDuoId): Promise<GamificationQuestCycleRecord[]>;
+  readQuestProgressForCycles(input: {
+    duoId: GamificationDuoId;
+    questCycleIds: GamificationUuid[];
+  }): Promise<GamificationQuestProgressRecord[]>;
   upsertQuestCycle(input: {
     duoId: GamificationDuoId;
     questSlug: string;
@@ -191,10 +293,11 @@ export type GamificationRepositoryTransaction = {
     deltaDays?: number;
     freezeDelta?: number;
     metadata?: Record<string, unknown>;
-  }): Promise<void>;
+  }): Promise<boolean>;
   upsertStreakState(input: GamificationStreakStateRecord): Promise<GamificationStreakStateRecord>;
   insertRewardNotification(input: GamificationRewardNotificationInput): Promise<void>;
   insertAdjustment(input: GamificationAdjustmentInput): Promise<void>;
+  sumXpLedgerAwards(duoId: GamificationDuoId): Promise<number>;
 };
 
 export type GamificationRepository = {

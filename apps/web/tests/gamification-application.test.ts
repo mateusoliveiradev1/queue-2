@@ -162,19 +162,23 @@ function fakeGamificationRepository(input: {
       : input.membership;
   const transaction: GamificationRepositoryTransaction = {
     resolveMembership: vi.fn(async () => membership),
+    readDuoTimezone: vi.fn(async () => "America/Sao_Paulo"),
     readProjection: vi.fn(async () => projectionRecord()),
+    countXpAwardsForDuoDay: vi.fn(async () => 0),
     insertXpLedgerAward: input.insertXpLedgerAward ?? vi.fn(async () => xpAwardRecord()),
     updateProjection: input.updateProjection ?? vi.fn(async () => projectionRecord()),
     readAchievementUnlocks: vi.fn(async () => [achievementUnlockRecord()]),
     insertAchievementUnlock: vi.fn(async () => achievementUnlockRecord()),
     readActiveQuestCycles: vi.fn(async () => [questCycleRecord()]),
+    readQuestProgressForCycles: vi.fn(async () => [questProgressRecord()]),
     upsertQuestCycle: vi.fn(async () => questCycleRecord()),
     upsertQuestProgress: vi.fn(async () => questProgressRecord()),
     readStreakState: vi.fn(async () => streakStateRecord()),
-    insertStreakEvent: vi.fn(),
+    insertStreakEvent: vi.fn(async () => true),
     upsertStreakState: vi.fn(async (state) => state),
     insertRewardNotification: vi.fn(),
-    insertAdjustment: vi.fn()
+    insertAdjustment: vi.fn(),
+    sumXpLedgerAwards: vi.fn(async () => 0)
   };
 
   return {
