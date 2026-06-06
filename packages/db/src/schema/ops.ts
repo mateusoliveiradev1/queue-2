@@ -190,3 +190,47 @@ export const scheduledJobs = opsSchema.table(
     )
   ]
 );
+
+export const gamificationProjectionRebuilds = opsSchema.table(
+  "gamification_projection_rebuilds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    rebuildKey: text("rebuild_key").notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("running"),
+    reasonCode: varchar("reason_code", { length: 80 }).notNull(),
+    xpBefore: integer("xp_before"),
+    xpAfter: integer("xp_after"),
+    levelBefore: integer("level_before"),
+    levelAfter: integer("level_after"),
+    streakBefore: integer("streak_before"),
+    streakAfter: integer("streak_after"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("ops_gamification_projection_rebuilds_key_uidx").on(
+      table.duoId,
+      table.rebuildKey
+    ),
+    index("ops_gamification_projection_rebuilds_duo_started_idx").on(
+      table.duoId,
+      table.startedAt
+    ),
+    index("ops_gamification_projection_rebuilds_status_idx")
+      .on(table.status, table.startedAt)
+      .where(sql`${table.status} = 'running'`),
+    check(
+      "ops_gamification_projection_rebuilds_status_chk",
+      sql`${table.status} IN ('running', 'completed', 'failed')`
+    ),
+    check(
+      "ops_gamification_projection_rebuilds_reason_chk",
+      sql`char_length(${table.reasonCode}) BETWEEN 1 AND 80`
+    )
+  ]
+);

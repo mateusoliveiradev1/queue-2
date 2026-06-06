@@ -620,3 +620,148 @@ CREATE POLICY ops_scheduled_jobs_update_worker ON ops.scheduled_jobs
   FOR UPDATE TO queue2_worker
   USING (true)
   WITH CHECK (true);
+
+ALTER TABLE app.gamification_achievement_unlocks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_achievement_unlocks FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_achievement_unlocks_select_members ON app.gamification_achievement_unlocks;
+DROP POLICY IF EXISTS app_gamification_achievement_unlocks_insert_members ON app.gamification_achievement_unlocks;
+CREATE POLICY app_gamification_achievement_unlocks_select_members ON app.gamification_achievement_unlocks
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_achievement_unlocks_insert_members ON app.gamification_achievement_unlocks
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      unlocked_by_user_id IS NULL
+      OR unlocked_by_user_id = app.current_user_id()
+    )
+  );
+
+ALTER TABLE app.gamification_quest_cycles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_quest_cycles FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_quest_cycles_select_members ON app.gamification_quest_cycles;
+DROP POLICY IF EXISTS app_gamification_quest_cycles_insert_members ON app.gamification_quest_cycles;
+DROP POLICY IF EXISTS app_gamification_quest_cycles_update_members ON app.gamification_quest_cycles;
+CREATE POLICY app_gamification_quest_cycles_select_members ON app.gamification_quest_cycles
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_quest_cycles_insert_members ON app.gamification_quest_cycles
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_quest_cycles_update_members ON app.gamification_quest_cycles
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.gamification_quest_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_quest_progress FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_quest_progress_select_members ON app.gamification_quest_progress;
+DROP POLICY IF EXISTS app_gamification_quest_progress_insert_members ON app.gamification_quest_progress;
+DROP POLICY IF EXISTS app_gamification_quest_progress_update_members ON app.gamification_quest_progress;
+CREATE POLICY app_gamification_quest_progress_select_members ON app.gamification_quest_progress
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_quest_progress_insert_members ON app.gamification_quest_progress
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_quest_progress_update_members ON app.gamification_quest_progress
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.gamification_streak_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_streak_events FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_streak_events_select_members ON app.gamification_streak_events;
+DROP POLICY IF EXISTS app_gamification_streak_events_insert_members ON app.gamification_streak_events;
+CREATE POLICY app_gamification_streak_events_select_members ON app.gamification_streak_events
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_streak_events_insert_members ON app.gamification_streak_events
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      actor_user_id IS NULL
+      OR actor_user_id = app.current_user_id()
+    )
+  );
+
+ALTER TABLE app.gamification_streak_state ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_streak_state FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_streak_state_select_members ON app.gamification_streak_state;
+DROP POLICY IF EXISTS app_gamification_streak_state_insert_members ON app.gamification_streak_state;
+DROP POLICY IF EXISTS app_gamification_streak_state_update_members ON app.gamification_streak_state;
+CREATE POLICY app_gamification_streak_state_select_members ON app.gamification_streak_state
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_streak_state_insert_members ON app.gamification_streak_state
+  FOR INSERT TO PUBLIC
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_streak_state_update_members ON app.gamification_streak_state
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.gamification_reward_notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_reward_notifications FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_reward_notifications_select_members ON app.gamification_reward_notifications;
+DROP POLICY IF EXISTS app_gamification_reward_notifications_insert_members ON app.gamification_reward_notifications;
+DROP POLICY IF EXISTS app_gamification_reward_notifications_update_members ON app.gamification_reward_notifications;
+CREATE POLICY app_gamification_reward_notifications_select_members ON app.gamification_reward_notifications
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_reward_notifications_insert_members ON app.gamification_reward_notifications
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      actor_user_id IS NULL
+      OR actor_user_id = app.current_user_id()
+    )
+    AND (
+      recipient_user_id IS NULL
+      OR app.has_duo_membership(recipient_user_id, duo_id)
+    )
+  );
+CREATE POLICY app_gamification_reward_notifications_update_members ON app.gamification_reward_notifications
+  FOR UPDATE TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id))
+  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+
+ALTER TABLE app.gamification_adjustments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE app.gamification_adjustments FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS app_gamification_adjustments_select_members ON app.gamification_adjustments;
+DROP POLICY IF EXISTS app_gamification_adjustments_insert_members ON app.gamification_adjustments;
+CREATE POLICY app_gamification_adjustments_select_members ON app.gamification_adjustments
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_gamification_adjustments_insert_members ON app.gamification_adjustments
+  FOR INSERT TO PUBLIC
+  WITH CHECK (
+    app.has_duo_membership(app.current_user_id(), duo_id)
+    AND (
+      actor_user_id IS NULL
+      OR actor_user_id = app.current_user_id()
+    )
+  );
+
+ALTER TABLE ops.gamification_projection_rebuilds ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ops.gamification_projection_rebuilds FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS ops_gamification_projection_rebuilds_select_members ON ops.gamification_projection_rebuilds;
+DROP POLICY IF EXISTS ops_gamification_projection_rebuilds_select_worker ON ops.gamification_projection_rebuilds;
+DROP POLICY IF EXISTS ops_gamification_projection_rebuilds_insert_worker ON ops.gamification_projection_rebuilds;
+DROP POLICY IF EXISTS ops_gamification_projection_rebuilds_update_worker ON ops.gamification_projection_rebuilds;
+CREATE POLICY ops_gamification_projection_rebuilds_select_members ON ops.gamification_projection_rebuilds
+  FOR SELECT TO PUBLIC
+  USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY ops_gamification_projection_rebuilds_select_worker ON ops.gamification_projection_rebuilds
+  FOR SELECT TO queue2_worker
+  USING (true);
+CREATE POLICY ops_gamification_projection_rebuilds_insert_worker ON ops.gamification_projection_rebuilds
+  FOR INSERT TO queue2_worker
+  WITH CHECK (true);
+CREATE POLICY ops_gamification_projection_rebuilds_update_worker ON ops.gamification_projection_rebuilds
+  FOR UPDATE TO queue2_worker
+  USING (true)
+  WITH CHECK (true);

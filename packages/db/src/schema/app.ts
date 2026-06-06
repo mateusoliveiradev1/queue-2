@@ -1,6 +1,7 @@
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -955,6 +956,7 @@ export const duoXpAwards = appSchema.table(
     sourceType: varchar("source_type", { length: 40 }).notNull(),
     sourceId: uuid("source_id").notNull(),
     amount: integer("amount").notNull(),
+    reasonCode: varchar("reason_code", { length: 80 }).notNull().default("play-award"),
     awardedByUserId: text("awarded_by_user_id").references(() => authUsers.id, {
       onDelete: "set null"
     }),
@@ -971,8 +973,414 @@ export const duoXpAwards = appSchema.table(
     index("app_duo_xp_awards_duo_awarded_idx").on(table.duoId, table.awardedAt),
     check(
       "app_duo_xp_awards_source_type_chk",
-      sql`${table.sourceType} IN ('chapter', 'live-session', 'offline-session', 'scheduled-session', 'terminal-status')`
+      sql`
+        ${table.sourceType} IN (
+          'chapter',
+          'live-session',
+          'offline-session',
+          'scheduled-session',
+          'terminal-status',
+          'terminal-zerado',
+          'terminal-dropado',
+          'discovery-match',
+          'quest',
+          'achievement',
+          'streak',
+          'adjustment'
+        )
+      `
     ),
     check("app_duo_xp_awards_amount_positive_chk", sql`${table.amount} > 0`)
+  ]
+);
+
+export const gamificationAchievementCatalog = appSchema.table(
+  "gamification_achievement_catalog",
+  {
+    slug: varchar("slug", { length: 80 }).primaryKey(),
+    groupKey: varchar("group_key", { length: 32 }).notNull(),
+    rarity: varchar("rarity", { length: 16 }).notNull(),
+    visibility: varchar("visibility", { length: 16 }).notNull().default("visible"),
+    title: varchar("title", { length: 120 }).notNull(),
+    description: text("description").notNull(),
+    iconKey: varchar("icon_key", { length: 80 }).notNull(),
+    predicate: jsonb("predicate").notNull().default(sql`'{}'::jsonb`),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index("app_gamification_achievement_catalog_grid_idx").on(
+      table.active,
+      table.groupKey,
+      table.rarity,
+      table.slug
+    ),
+    check(
+      "app_gamification_achievement_catalog_group_chk",
+      sql`${table.groupKey} IN ('story', 'coop-sincronia', 'compromisso', 'descoberta', 'streak', 'roleta', 'comedia')`
+    ),
+    check(
+      "app_gamification_achievement_catalog_rarity_chk",
+      sql`${table.rarity} IN ('common', 'rare', 'epic', 'legendary')`
+    ),
+    check(
+      "app_gamification_achievement_catalog_visibility_chk",
+      sql`${table.visibility} IN ('visible', 'hidden')`
+    ),
+    check(
+      "app_gamification_achievement_catalog_copy_chk",
+      sql`
+        char_length(${table.title}) BETWEEN 1 AND 120
+        AND char_length(${table.description}) BETWEEN 1 AND 500
+        AND char_length(${table.iconKey}) BETWEEN 1 AND 80
+      `
+    )
+  ]
+);
+
+export const gamificationAchievementUnlocks = appSchema.table(
+  "gamification_achievement_unlocks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    achievementSlug: varchar("achievement_slug", { length: 80 })
+      .notNull()
+      .references(() => gamificationAchievementCatalog.slug, { onDelete: "restrict" }),
+    sourceType: varchar("source_type", { length: 40 }).notNull(),
+    sourceId: uuid("source_id").notNull(),
+    unlockedByUserId: text("unlocked_by_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    unlockedAt: timestamp("unlocked_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_gamification_achievement_unlocks_duo_slug_uidx").on(
+      table.duoId,
+      table.achievementSlug
+    ),
+    uniqueIndex("app_gamification_achievement_unlocks_source_uidx").on(
+      table.duoId,
+      table.achievementSlug,
+      table.sourceType,
+      table.sourceId
+    ),
+    index("app_gamification_achievement_unlocks_grid_idx").on(
+      table.duoId,
+      table.unlockedAt,
+      table.achievementSlug
+    ),
+    check(
+      "app_gamification_achievement_unlocks_source_type_chk",
+      sql`
+        ${table.sourceType} IN (
+          'chapter',
+          'live-session',
+          'offline-session',
+          'scheduled-session',
+          'terminal-status',
+          'terminal-zerado',
+          'terminal-dropado',
+          'discovery-match',
+          'quest',
+          'streak',
+          'adjustment'
+        )
+      `
+    )
+  ]
+);
+
+export const gamificationQuestTemplates = appSchema.table(
+  "gamification_quest_templates",
+  {
+    slug: varchar("slug", { length: 80 }).primaryKey(),
+    questType: varchar("quest_type", { length: 16 }).notNull(),
+    seasonalKey: varchar("seasonal_key", { length: 32 }),
+    title: varchar("title", { length: 120 }).notNull(),
+    description: text("description").notNull(),
+    goalValue: integer("goal_value").notNull(),
+    xpReward: integer("xp_reward").notNull(),
+    eligibility: jsonb("eligibility").notNull().default(sql`'{}'::jsonb`),
+    scheduleMetadata: jsonb("schedule_metadata").notNull().default(sql`'{}'::jsonb`),
+    active: boolean("active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index("app_gamification_quest_templates_active_idx").on(
+      table.active,
+      table.questType,
+      table.seasonalKey,
+      table.slug
+    ),
+    check(
+      "app_gamification_quest_templates_type_chk",
+      sql`${table.questType} IN ('weekly', 'monthly', 'seasonal')`
+    ),
+    check(
+      "app_gamification_quest_templates_seasonal_shape_chk",
+      sql`
+        (${table.questType} = 'seasonal' AND ${table.seasonalKey} IS NOT NULL)
+        OR (${table.questType} <> 'seasonal' AND ${table.seasonalKey} IS NULL)
+      `
+    ),
+    check(
+      "app_gamification_quest_templates_goal_reward_chk",
+      sql`${table.goalValue} > 0 AND ${table.xpReward} > 0`
+    ),
+    check(
+      "app_gamification_quest_templates_copy_chk",
+      sql`
+        char_length(${table.title}) BETWEEN 1 AND 120
+        AND char_length(${table.description}) BETWEEN 1 AND 500
+      `
+    )
+  ]
+);
+
+export const gamificationQuestCycles = appSchema.table(
+  "gamification_quest_cycles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    questSlug: varchar("quest_slug", { length: 80 })
+      .notNull()
+      .references(() => gamificationQuestTemplates.slug, { onDelete: "restrict" }),
+    questType: varchar("quest_type", { length: 16 }).notNull(),
+    cycleKey: varchar("cycle_key", { length: 80 }).notNull(),
+    windowStartAt: timestamp("window_start_at", { withTimezone: true }).notNull(),
+    windowEndAt: timestamp("window_end_at", { withTimezone: true }).notNull(),
+    timezone: text("timezone").notNull(),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    selectedAt: timestamp("selected_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_gamification_quest_cycles_duo_slug_cycle_uidx").on(
+      table.duoId,
+      table.questSlug,
+      table.cycleKey
+    ),
+    index("app_gamification_quest_cycles_window_idx").on(
+      table.duoId,
+      table.status,
+      table.questType,
+      table.windowStartAt,
+      table.windowEndAt
+    ),
+    check(
+      "app_gamification_quest_cycles_type_chk",
+      sql`${table.questType} IN ('weekly', 'monthly', 'seasonal')`
+    ),
+    check(
+      "app_gamification_quest_cycles_status_chk",
+      sql`${table.status} IN ('active', 'completed', 'expired', 'cancelled')`
+    ),
+    check("app_gamification_quest_cycles_window_chk", sql`${table.windowEndAt} > ${table.windowStartAt}`)
+  ]
+);
+
+export const gamificationQuestProgress = appSchema.table(
+  "gamification_quest_progress",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    questCycleId: uuid("quest_cycle_id")
+      .notNull()
+      .references(() => gamificationQuestCycles.id, { onDelete: "cascade" }),
+    currentValue: integer("current_value").notNull().default(0),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    rewardAwardId: uuid("reward_award_id").references(() => duoXpAwards.id, {
+      onDelete: "set null"
+    }),
+    lastSourceType: varchar("last_source_type", { length: 40 }),
+    lastSourceId: uuid("last_source_id"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_gamification_quest_progress_cycle_uidx").on(
+      table.duoId,
+      table.questCycleId
+    ),
+    uniqueIndex("app_gamification_quest_progress_reward_uidx")
+      .on(table.rewardAwardId)
+      .where(sql`${table.rewardAwardId} IS NOT NULL`),
+    index("app_gamification_quest_progress_duo_updated_idx").on(
+      table.duoId,
+      table.updatedAt
+    ),
+    check("app_gamification_quest_progress_value_chk", sql`${table.currentValue} >= 0`),
+    check(
+      "app_gamification_quest_progress_source_shape_chk",
+      sql`
+        (${table.lastSourceType} IS NULL AND ${table.lastSourceId} IS NULL)
+        OR (${table.lastSourceType} IS NOT NULL AND ${table.lastSourceId} IS NOT NULL)
+      `
+    )
+  ]
+);
+
+export const gamificationStreakEvents = appSchema.table(
+  "gamification_streak_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    eventKey: text("event_key").notNull(),
+    eventType: varchar("event_type", { length: 24 }).notNull(),
+    duoDay: date("duo_day").notNull(),
+    sourceType: varchar("source_type", { length: 40 }),
+    sourceId: uuid("source_id"),
+    actorUserId: text("actor_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    deltaDays: integer("delta_days").notNull().default(0),
+    freezeDelta: integer("freeze_delta").notNull().default(0),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_gamification_streak_events_key_uidx").on(
+      table.duoId,
+      table.eventKey
+    ),
+    uniqueIndex("app_gamification_streak_events_source_uidx")
+      .on(table.duoId, table.eventType, table.sourceType, table.sourceId)
+      .where(sql`${table.sourceId} IS NOT NULL`),
+    index("app_gamification_streak_events_duo_day_idx").on(
+      table.duoId,
+      table.duoDay,
+      table.createdAt
+    ),
+    check(
+      "app_gamification_streak_events_type_chk",
+      sql`${table.eventType} IN ('activity', 'freeze-earned', 'freeze-consumed', 'streak-reset', 'rebuild')`
+    ),
+    check(
+      "app_gamification_streak_events_source_shape_chk",
+      sql`
+        (${table.sourceType} IS NULL AND ${table.sourceId} IS NULL)
+        OR (${table.sourceType} IS NOT NULL AND ${table.sourceId} IS NOT NULL)
+      `
+    )
+  ]
+);
+
+export const gamificationStreakState = appSchema.table(
+  "gamification_streak_state",
+  {
+    duoId: uuid("duo_id")
+      .primaryKey()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    currentStreak: integer("current_streak").notNull().default(0),
+    longestStreak: integer("longest_streak").notNull().default(0),
+    availableFreezes: integer("available_freezes").notNull().default(0),
+    lastActivityDuoDay: date("last_activity_duo_day"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    check(
+      "app_gamification_streak_state_non_negative_chk",
+      sql`
+        ${table.currentStreak} >= 0
+        AND ${table.longestStreak} >= 0
+        AND ${table.availableFreezes} >= 0
+      `
+    )
+  ]
+);
+
+export const gamificationRewardNotifications = appSchema.table(
+  "gamification_reward_notifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    recipientUserId: text("recipient_user_id").references(() => authUsers.id, {
+      onDelete: "cascade"
+    }),
+    actorUserId: text("actor_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    notificationType: varchar("notification_type", { length: 32 }).notNull(),
+    intensity: varchar("intensity", { length: 16 }).notNull().default("standard"),
+    title: varchar("title", { length: 120 }).notNull(),
+    body: text("body"),
+    actionRefType: varchar("action_ref_type", { length: 40 }),
+    actionRefId: uuid("action_ref_id"),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    readAt: timestamp("read_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    index("app_gamification_reward_notifications_duo_created_idx").on(
+      table.duoId,
+      table.createdAt
+    ),
+    index("app_gamification_reward_notifications_recipient_idx").on(
+      table.duoId,
+      table.recipientUserId,
+      table.readAt,
+      table.createdAt
+    ),
+    index("app_gamification_reward_notifications_action_idx")
+      .on(table.duoId, table.actionRefType, table.actionRefId)
+      .where(sql`${table.actionRefId} IS NOT NULL`),
+    check(
+      "app_gamification_reward_notifications_type_chk",
+      sql`${table.notificationType} IN ('xp-award', 'level-up', 'achievement', 'quest-complete', 'streak-freeze', 'adjustment')`
+    ),
+    check(
+      "app_gamification_reward_notifications_intensity_chk",
+      sql`${table.intensity} IN ('quiet', 'standard', 'special', 'legendary')`
+    ),
+    check(
+      "app_gamification_reward_notifications_title_length_chk",
+      sql`char_length(${table.title}) BETWEEN 1 AND 120`
+    )
+  ]
+);
+
+export const gamificationAdjustments = appSchema.table(
+  "gamification_adjustments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    adjustmentKey: text("adjustment_key").notNull(),
+    amountDelta: integer("amount_delta").notNull(),
+    reasonCode: varchar("reason_code", { length: 80 }).notNull(),
+    actorUserId: text("actor_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_gamification_adjustments_key_uidx").on(
+      table.duoId,
+      table.adjustmentKey
+    ),
+    index("app_gamification_adjustments_duo_created_idx").on(
+      table.duoId,
+      table.createdAt
+    ),
+    check("app_gamification_adjustments_delta_chk", sql`${table.amountDelta} <> 0`),
+    check(
+      "app_gamification_adjustments_reason_chk",
+      sql`char_length(${table.reasonCode}) BETWEEN 1 AND 80`
+    )
   ]
 );

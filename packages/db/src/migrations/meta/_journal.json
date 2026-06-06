@@ -71,6 +71,13 @@
       "when": 1780500540000,
       "tag": "0010_play_active_reorder",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780723200000,
+      "tag": "0011_gamification_core",
+      "breakpoints": true
     }
   ]
 }
