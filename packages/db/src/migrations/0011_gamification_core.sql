@@ -575,6 +575,8 @@ CREATE POLICY ops_gamification_projection_rebuilds_update_worker ON ops.gamifica
 GRANT SELECT ON app.gamification_achievement_catalog TO queue2_app_runtime, queue2_worker, queue2_readonly;
 GRANT SELECT ON app.gamification_quest_templates TO queue2_app_runtime, queue2_worker, queue2_readonly;
 
+GRANT UPDATE (xp, level, streak, updated_at) ON app.duos TO queue2_app_runtime, queue2_worker;
+
 GRANT SELECT, INSERT ON app.gamification_achievement_unlocks TO queue2_app_runtime, queue2_worker;
 GRANT SELECT ON app.gamification_achievement_unlocks TO queue2_readonly;
 

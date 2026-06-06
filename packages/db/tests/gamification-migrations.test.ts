@@ -147,6 +147,7 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
       table_name: string;
       runtime_can_delete: boolean;
       runtime_can_insert_seed: boolean;
+      runtime_can_update_duo_projection: boolean;
       runtime_can_update_rebuilds: boolean;
       worker_can_update_rebuilds: boolean;
     }>(`
@@ -154,6 +155,10 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
         expected.table_name,
         has_table_privilege('queue2_app_runtime', expected.table_name, 'DELETE') AS runtime_can_delete,
         has_table_privilege('queue2_app_runtime', 'app.gamification_achievement_catalog', 'INSERT') AS runtime_can_insert_seed,
+        has_column_privilege('queue2_app_runtime', 'app.duos', 'xp', 'UPDATE')
+          AND has_column_privilege('queue2_app_runtime', 'app.duos', 'level', 'UPDATE')
+          AND has_column_privilege('queue2_app_runtime', 'app.duos', 'streak', 'UPDATE')
+          AS runtime_can_update_duo_projection,
         has_table_privilege('queue2_app_runtime', 'ops.gamification_projection_rebuilds', 'UPDATE') AS runtime_can_update_rebuilds,
         has_table_privilege('queue2_worker', 'ops.gamification_projection_rebuilds', 'UPDATE') AS worker_can_update_rebuilds
       FROM (VALUES
@@ -173,6 +178,7 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
     expect(sourceConstraint.rows[0]?.constraint_def).toContain("discovery-match");
     expect(privileges.rows.every((row) => row.runtime_can_delete === false)).toBe(true);
     expect(privileges.rows.every((row) => row.runtime_can_insert_seed === false)).toBe(true);
+    expect(privileges.rows.every((row) => row.runtime_can_update_duo_projection === true)).toBe(true);
     expect(privileges.rows.every((row) => row.runtime_can_update_rebuilds === false)).toBe(true);
     expect(privileges.rows.every((row) => row.worker_can_update_rebuilds === true)).toBe(true);
   });
