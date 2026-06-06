@@ -129,7 +129,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **PLAY-02**: Duo can keep up to three games in Jogando at the same time
 - [x] **PLAY-03**: Duo can designate exactly one Jogando game as Principal and up to two as secondary
 - [x] **PLAY-04**: Duo can drag to reorder the Principal and secondary games
-- [ ] **PLAY-05**: Dashboard shows the duo XP, level, streak, active quests and recent achievements
+- [x] **PLAY-05**: Dashboard shows the duo XP, level, streak, active quests and recent achievements
 - [x] **PLAY-06**: Duo can compare accumulated coop time with the game's estimated completion time
 - [x] **PLAY-07**: Duo can create and complete manual chapters for a game
 - [x] **PLAY-08**: Duo receives 25 XP once for each completed manual chapter
@@ -346,7 +346,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLAY-02 | Phase 4 | Complete |
 | PLAY-03 | Phase 4 | Complete |
 | PLAY-04 | Phase 4 | Complete |
-| PLAY-05 | Phase 5 | Pending |
+| PLAY-05 | Phase 5 | Complete |
 | PLAY-06 | Phase 4 | Complete |
 | PLAY-07 | Phase 4 | Complete |
 | PLAY-08 | Phase 4 | Complete |

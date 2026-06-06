@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 05-01-PLAN.md
-last_updated: "2026-06-06T08:49:56.163Z"
+stopped_at: Completed 05-02-PLAN.md
+last_updated: "2026-06-06T09:21:36.396Z"
 last_activity: 2026-06-06
 progress:
   total_phases: 12
   completed_phases: 9
   total_plans: 41
-  completed_plans: 36
-  percent: 88
+  completed_plans: 37
+  percent: 90
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 05 (gamificacao-coletiva) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-06-06
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -90,6 +90,7 @@ Progress: [█████████░] 88%
 | Phase 04 P05 | 45m | 3 tasks | 32 files |
 | Phase 04 P06 | 35m | 3 tasks | 11 files |
 | Phase 05 P01 | 27 min | 3 tasks | 19 files |
+| Phase 05-gamificacao-coletiva P02 | 27min | 3 tasks | 25 files |
 
 ## Quick Tasks Completed
 
@@ -241,6 +242,9 @@ Recent decisions affecting current work:
 - [Phase 04-06]: Phase 4 E2E uses product-authenticated ready duo, partner and other-duo fixtures. - No test-only session bypass was introduced.
 - [Phase 05-01]: app.duo_xp_awards remains the canonical shared XP ledger for Phase 5. — Avoids a parallel reward ledger and keeps play, discovery and gamification facts in one audit trail.
 - [Phase 05-01]: Gamification user-facing persistence is server-only and uses withAppUserTransaction. — Preserves runtime RLS/least privilege while worker job claims stay bounded with FOR UPDATE SKIP LOCKED.
+- [Phase 05-gamificacao-coletiva]: Critical Play rewards are applied inside the Play transaction via a gamification transaction adapter; reward failure returns an explicit use-case failure. — Required by plan 05-02 D-28/D-29 so confirmed actions cannot commit while losing immediate reward effects.
+- [Phase 05-gamificacao-coletiva]: Discovery matches apply non-recurring gamification progress through the public contract but do not grant XP. — Matches can advance achievements or quests per D-25 without introducing a farmable recurring XP path.
+- [Phase 05-gamificacao-coletiva]: Projection rebuild uses the XP ledger and streak state as sources of truth, recording adjustment/rebuild evidence instead of deleting history. — Keeps app.duos projections repairable while preserving audit ledgers required by D-30/D-31.
 
 ### Pending Todos
 
@@ -277,6 +281,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-06T08:49:56.156Z
-Stopped at: Completed 05-01-PLAN.md
+Last session: 2026-06-06T09:21:36.390Z
+Stopped at: Completed 05-02-PLAN.md
 Resume file: None
