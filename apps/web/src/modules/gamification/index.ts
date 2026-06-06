@@ -96,6 +96,9 @@ export {
   type RewardToastViewModel
 } from "./presentation/view-models";
 export { GamificationDashboardBand } from "./presentation/gamification-dashboard-band";
+export { AchievementBadgeIcon } from "./presentation/achievement-badge-icon";
+export { AchievementGrid } from "./presentation/achievement-grid";
+export { AchievementRarityFilter } from "./presentation/achievement-rarity-filter";
 export { RewardToast } from "./presentation/reward-toast";
 export { XpLedgerPanel } from "./presentation/xp-ledger-panel";
 

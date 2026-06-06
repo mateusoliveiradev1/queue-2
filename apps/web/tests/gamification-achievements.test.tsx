@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach } from "vitest";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -18,6 +20,7 @@ import type {
   GamificationRepositoryTransaction,
   GamificationXpLedgerRecord
 } from "../src/modules/gamification/application/ports";
+import { AchievementGrid } from "../src/modules/gamification/presentation/achievement-grid";
 import { getLevelForXp } from "../src/modules/gamification/domain/level-curve";
 
 const now = new Date("2026-06-06T15:00:00.000Z");
@@ -29,6 +32,19 @@ const viewModelSource = readFileSync(
   "src/modules/gamification/presentation/view-models.ts",
   "utf8"
 );
+const iconSource = readFileSync(
+  "src/modules/gamification/presentation/achievement-badge-icon.tsx",
+  "utf8"
+);
+const gridSource = readFileSync(
+  "src/modules/gamification/presentation/achievement-grid.tsx",
+  "utf8"
+);
+const globalCssSource = readFileSync("src/app/globals.css", "utf8");
+
+afterEach(() => {
+  cleanup();
+});
 
 describe("Phase 05.4 achievement read model", () => {
   it("builds grouped route-ready achievements from server unlock rows", async () => {
@@ -126,6 +142,40 @@ describe("Phase 05.4 achievement read model", () => {
     expect(view.unlockedLabel).toContain("pela dupla");
     expect(JSON.stringify(view)).not.toMatch(/predicateKey|sourceId|xp individual|ranking/i);
     expect(viewModelSource).toContain("toAchievementRouteView");
+  });
+});
+
+describe("Phase 05.4 achievement presentation", () => {
+  it("renders SVG badge cards, rarity filters and keyboard-focusable achievements", async () => {
+    const { repository } = fakeGamificationRepository({
+      achievementUnlocks: [achievementUnlockRecord({ achievementSlug: "primeiro-save" })]
+    });
+    const record = await getAchievements({ userId: "member-1" }, repository);
+    const view = toAchievementRouteView(record!);
+    const { container } = render(<AchievementGrid view={view} />);
+
+    expect(screen.getByRole("navigation", { name: /filtrar conquistas por raridade/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /rara/i })).toHaveAttribute(
+      "href",
+      "/app/conquistas?raridade=rare"
+    );
+    expect(container.querySelectorAll(".achievement-badge-icon")).toHaveLength(
+      record!.groups.flatMap((group) => group.achievements).length
+    );
+    expect(container.querySelector(".achievement-card")?.getAttribute("tabindex")).toBe("0");
+    expect(container.textContent).toContain("Primeiro save");
+    expect(container.textContent).toContain("Conquista oculta");
+  });
+
+  it("keeps the UI source specific to QUEUE/2 and free of emoji-dependent badges", () => {
+    expect(iconSource).toContain("<svg");
+    expect(iconSource).not.toMatch(emojiRegex);
+    expect(gridSource).not.toMatch(emojiRegex);
+    expect(globalCssSource).toContain("--rarity-rare");
+    expect(globalCssSource).toContain(".achievement-rarity-filter a[aria-current=\"page\"]");
+    expect(globalCssSource).toContain(".achievement-card:focus-visible");
+    expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
+    expect(globalCssSource).not.toMatch(/letter-spacing:\s*-/);
   });
 });
 
