@@ -85,7 +85,7 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
     );
   });
 
-  test("runtime and worker roles can update only duo settings and gamification projections", async () => {
+  test("runtime updates duo settings and projections while worker remains read-only", async () => {
     const privileges = await pool.query<{
       role_name: string;
       column_name: string;
@@ -119,17 +119,31 @@ describe.skipIf(!testDatabaseUrl)("runtime role privileges", () => {
           .map((row) => [row.column_name, row.can_update])
       );
 
-      expect(rolePrivileges).toEqual({
-        created_at: false,
-        id: false,
-        level: true,
-        name: true,
-        paired_at: false,
-        streak: true,
-        timezone: true,
-        updated_at: true,
-        xp: true
-      });
+      expect(rolePrivileges).toEqual(
+        roleName === "queue2_app_runtime"
+          ? {
+              created_at: false,
+              id: false,
+              level: true,
+              name: true,
+              paired_at: false,
+              streak: true,
+              timezone: true,
+              updated_at: true,
+              xp: true
+            }
+          : {
+              created_at: false,
+              id: false,
+              level: false,
+              name: false,
+              paired_at: false,
+              streak: false,
+              timezone: false,
+              updated_at: false,
+              xp: false
+            }
+      );
       expect(
         privileges.rows
           .filter((row) => row.role_name === roleName)
