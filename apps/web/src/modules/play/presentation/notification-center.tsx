@@ -24,7 +24,11 @@ export function NotificationCenter({
         {unreadCount}
       </span>
       {items.length ? (
-        <ol className="notification-list">
+        <ol
+          aria-label="Pendencias recentes da Central da Dupla"
+          className="notification-list"
+          tabIndex={0}
+        >
           {items.map((item) => (
             <NotificationItem item={item} key={item.id} />
           ))}

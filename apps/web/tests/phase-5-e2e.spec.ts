@@ -194,6 +194,7 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
 });
 
 async function login(page: Page, actor: E2EActor): Promise<void> {
+  await page.context().clearCookies();
   await page.goto("/login");
   await page.getByLabel(/^email$/i).fill(actor.email);
   await page.getByLabel(/^senha$/i).fill(actor.password);

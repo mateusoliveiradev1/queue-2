@@ -2688,6 +2688,11 @@ input {
   scrollbar-width: thin;
 }
 
+.notification-list:focus-visible {
+  box-shadow: var(--focus-ring);
+  outline: 2px solid transparent;
+}
+
 .notification-item {
   border-block-start: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   display: grid;
