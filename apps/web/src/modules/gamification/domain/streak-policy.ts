@@ -19,6 +19,7 @@ export type StreakTransition = {
   nextStreak: number;
   availableFreezes: number;
   consumedFreeze: boolean;
+  consumedFreezes: number;
   reset: boolean;
 };
 
@@ -48,11 +49,15 @@ export function isStreakEligibleFact(factType: string): factType is StreakFactTy
 export function evaluateStreakTransition(
   input: StreakTransitionInput
 ): StreakTransition {
+  const currentStreak = Math.max(0, input.currentStreak);
+  const availableFreezes = Math.max(0, input.availableFreezes);
+
   if (!input.lastActivityDuoDay) {
     return {
       nextStreak: 1,
-      availableFreezes: input.availableFreezes,
+      availableFreezes,
       consumedFreeze: false,
+      consumedFreezes: 0,
       reset: false
     };
   }
@@ -61,35 +66,42 @@ export function evaluateStreakTransition(
 
   if (gap <= 0) {
     return {
-      nextStreak: input.currentStreak,
-      availableFreezes: input.availableFreezes,
+      nextStreak: currentStreak,
+      availableFreezes,
       consumedFreeze: false,
+      consumedFreezes: 0,
       reset: false
     };
   }
 
   if (gap === 1) {
     return {
-      nextStreak: input.currentStreak + 1,
-      availableFreezes: input.availableFreezes,
+      nextStreak: currentStreak + 1,
+      availableFreezes,
       consumedFreeze: false,
+      consumedFreezes: 0,
       reset: false
     };
   }
 
-  if (input.availableFreezes > 0) {
+  const missedDuoDays = gap - 1;
+  const consumedFreezes = Math.min(availableFreezes, missedDuoDays);
+
+  if (consumedFreezes === missedDuoDays) {
     return {
-      nextStreak: input.currentStreak,
-      availableFreezes: input.availableFreezes - 1,
-      consumedFreeze: true,
+      nextStreak: currentStreak + 1,
+      availableFreezes: availableFreezes - consumedFreezes,
+      consumedFreeze: consumedFreezes > 0,
+      consumedFreezes,
       reset: false
     };
   }
 
   return {
     nextStreak: 1,
-    availableFreezes: 0,
-    consumedFreeze: false,
+    availableFreezes: availableFreezes - consumedFreezes,
+    consumedFreeze: consumedFreezes > 0,
+    consumedFreezes,
     reset: true
   };
 }

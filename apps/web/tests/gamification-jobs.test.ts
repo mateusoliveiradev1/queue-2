@@ -378,6 +378,7 @@ describe("Phase 05.5 gamification maintenance jobs", () => {
     expect(questRunnerSource).not.toContain("duoWindowDate");
     expect(questRunnerSource).not.toContain("T00:00:00.000Z");
     expect(streakRunnerSource).toContain("getNextStreakCheckAt");
+    expect(streakRunnerSource).not.toContain("Promise.all");
   });
 
   it("bootstraps four idempotent job species only for ready duos", async () => {

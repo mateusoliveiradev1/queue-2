@@ -24,8 +24,12 @@ export function StreakPanel({
           <dd>{streak.freezeLabel}</dd>
         </div>
         <div>
-          <dt>Fechamento</dt>
-          <dd>{streak.cutoffLabel}</dd>
+          <dt>Protecao</dt>
+          <dd>{streak.protectionLabel}</dd>
+        </div>
+        <div>
+          <dt>Ritmo</dt>
+          <dd>{streak.nextCheckLabel}</dd>
         </div>
         <div>
           <dt>Ultimo fato</dt>

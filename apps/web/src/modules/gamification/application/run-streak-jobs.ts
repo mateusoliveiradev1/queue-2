@@ -138,10 +138,8 @@ async function processStreakCheckJob(input: {
       throw new Error("projection_not_found");
     }
 
-    const [resolvedTimezone, state] = await Promise.all([
-      transaction.readDuoTimezone(membership.duoId),
-      transaction.readStreakState(membership.duoId)
-    ]);
+    const resolvedTimezone = await transaction.readDuoTimezone(membership.duoId);
+    const state = await transaction.readStreakState(membership.duoId);
     timezone = resolvedTimezone;
 
     if (!state?.lastActivityDuoDay || state.currentStreak <= 0) {

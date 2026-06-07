@@ -336,9 +336,10 @@ describe("gamification streak policy", () => {
         availableFreezes: 1
       })
     ).toEqual({
-      nextStreak: 5,
+      nextStreak: 6,
       availableFreezes: 0,
       consumedFreeze: true,
+      consumedFreezes: 1,
       reset: false
     });
   });

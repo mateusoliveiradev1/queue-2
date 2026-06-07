@@ -153,6 +153,12 @@ describe("Phase 05.4 achievement read model", () => {
 
     expect(view.totalLabel).toContain("sem placar individual");
     expect(view.unlockedLabel).toContain("pela dupla");
+    expect(view.summaryCards.map((card) => card.tone)).toEqual([
+      "catalog",
+      "unlocked",
+      "secret"
+    ]);
+    expect(view.groups[0]?.progressLabel).toMatch(/memorias abertas neste grupo/);
     expect(JSON.stringify(view)).not.toMatch(/predicateKey|sourceId|xp individual|ranking/i);
     expect(viewModelSource).toContain("toAchievementRouteView");
   });
@@ -178,6 +184,11 @@ describe("Phase 05.4 achievement presentation", () => {
     expect(container.querySelector(".achievement-card")?.getAttribute("tabindex")).toBe("0");
     expect(container.textContent).toContain("Primeiro save");
     expect(container.textContent).toContain("Conquista oculta");
+    expect(container.textContent).toContain("Memoria aberta");
+    expect(container.querySelector(".achievement-group-progress")).toHaveAttribute(
+      "role",
+      "progressbar"
+    );
   });
 
   it("keeps the UI source specific to QUEUE/2 and free of emoji-dependent badges", () => {
@@ -186,6 +197,8 @@ describe("Phase 05.4 achievement presentation", () => {
     expect(gridSource).not.toMatch(emojiRegex);
     expect(globalCssSource).toContain("--rarity-rare");
     expect(globalCssSource).toContain(".achievement-rarity-filter a[aria-current=\"page\"]");
+    expect(globalCssSource).toContain(".achievement-group-progress");
+    expect(globalCssSource).toContain(".achievement-card__rail");
     expect(globalCssSource).toContain(".achievement-card:focus-visible");
     expect(globalCssSource).toContain("prefers-reduced-motion: reduce");
     expect(globalCssSource).not.toMatch(/letter-spacing:\s*-/);

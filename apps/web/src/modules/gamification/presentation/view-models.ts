@@ -72,6 +72,7 @@ export type RewardToastViewModel = {
 };
 
 export type AchievementRouteViewModel = {
+  summaryCards: AchievementSummaryCardView[];
   totalLabel: string;
   unlockedLabel: string;
   hiddenLabel: string;
@@ -85,6 +86,13 @@ export type AchievementRouteViewModel = {
   };
 };
 
+export type AchievementSummaryCardView = {
+  label: string;
+  value: string;
+  detail: string;
+  tone: "catalog" | "unlocked" | "secret";
+};
+
 export type AchievementRarityFilterOptionView = {
   label: string;
   href: string;
@@ -95,6 +103,8 @@ export type AchievementRarityFilterOptionView = {
 export type AchievementGroupView = {
   group: string;
   label: string;
+  progressLabel: string;
+  progressPercent: number;
   achievements: AchievementCardView[];
 };
 
@@ -108,6 +118,7 @@ export type AchievementCardView = {
   iconKey: string;
   state: "locked-visible" | "locked-hidden" | "unlocked";
   stateLabel: string;
+  trailLabel: string;
   progressHint: string;
   unlockedAtLabel: string | null;
 };
@@ -136,6 +147,8 @@ export type ChallengeStreakPanelViewModel = {
   freezeLabel: string;
   cutoffLabel: string;
   lastActivityLabel: string;
+  nextCheckLabel: string;
+  protectionLabel: string;
   assistiveLabel: string;
 };
 
@@ -238,7 +251,7 @@ export function toChallengeRouteView(
         period
       }))
     ],
-    streak: toChallengeStreakView(challenges.streak),
+    streak: toChallengeStreakView(challenges.streak, challenges.timezone),
     sections: visibleSections
   };
 }
@@ -247,10 +260,36 @@ export function toAchievementRouteView(
   achievements: GamificationAchievementsRecord,
   buildHref: (rarity: GamificationRarity | null) => string = defaultAchievementHref
 ): AchievementRouteViewModel {
+  const totalLabel = `${formatNumber(achievements.totalCount)} conquistas sem placar individual`;
+  const unlockedLabel = `${formatNumber(achievements.unlockedCount)} desbloqueadas pela dupla`;
+  const hiddenLabel = `${formatNumber(achievements.hiddenLockedCount)} segredos ainda trancados`;
+
   return {
-    totalLabel: `${formatNumber(achievements.totalCount)} conquistas sem placar individual`,
-    unlockedLabel: `${formatNumber(achievements.unlockedCount)} desbloqueadas pela dupla`,
-    hiddenLabel: `${formatNumber(achievements.hiddenLockedCount)} segredos ainda trancados`,
+    summaryCards: [
+      {
+        label: "Acervo",
+        value: formatNumber(achievements.totalCount),
+        detail: "conquistas da dupla, sem disputa interna",
+        tone: "catalog"
+      },
+      {
+        label: "Memorias abertas",
+        value: formatNumber(achievements.unlockedCount),
+        detail: achievements.unlockedCount === 1
+          ? "marco confirmado pelos dois"
+          : "marcos confirmados pelos dois",
+        tone: "unlocked"
+      },
+      {
+        label: "Segredos",
+        value: formatNumber(achievements.hiddenLockedCount),
+        detail: "ocultos ate o fato certo acontecer",
+        tone: "secret"
+      }
+    ],
+    totalLabel,
+    unlockedLabel,
+    hiddenLabel,
     updatedAtLabel:
       achievements.unlockedCount > 0
         ? `Ultimo desbloqueio em ${formatDate(achievements.updatedAt)}`
@@ -273,6 +312,8 @@ export function toAchievementRouteView(
     groups: achievements.groups.map((group) => ({
       group: group.group,
       label: group.label,
+      progressLabel: achievementGroupProgressLabel(group.achievements),
+      progressPercent: achievementGroupProgressPercent(group.achievements),
       achievements: group.achievements.map((achievement) => ({
         viewKey: achievement.viewKey,
         title: achievement.title,
@@ -282,7 +323,8 @@ export function toAchievementRouteView(
         groupLabel: group.label,
         iconKey: achievement.iconKey,
         state: achievement.state,
-        stateLabel: achievement.state === "unlocked" ? "Desbloqueada" : "Bloqueada",
+        stateLabel: achievementStateLabel(achievement.state),
+        trailLabel: achievementTrailLabel(achievement.state),
         progressHint: achievement.progressHint,
         unlockedAtLabel: achievement.unlockedAt ? formatDate(achievement.unlockedAt) : null
       }))
@@ -388,6 +430,55 @@ function toChallengeSectionView(
   };
 }
 
+function achievementGroupProgressLabel(
+  achievements: GamificationAchievementsRecord["groups"][number]["achievements"]
+): string {
+  const total = achievements.length;
+  const unlocked = achievements.filter((achievement) => achievement.state === "unlocked").length;
+
+  if (total === 0) {
+    return "Sem conquistas neste filtro.";
+  }
+
+  return `${formatNumber(unlocked)}/${formatNumber(total)} memorias abertas neste grupo`;
+}
+
+function achievementGroupProgressPercent(
+  achievements: GamificationAchievementsRecord["groups"][number]["achievements"]
+): number {
+  if (achievements.length === 0) {
+    return 0;
+  }
+
+  const unlocked = achievements.filter((achievement) => achievement.state === "unlocked").length;
+
+  return Math.round((unlocked / achievements.length) * 100);
+}
+
+function achievementStateLabel(state: AchievementCardView["state"]): string {
+  if (state === "unlocked") {
+    return "Memoria aberta";
+  }
+
+  if (state === "locked-hidden") {
+    return "Segredo guardado";
+  }
+
+  return "Na fila da dupla";
+}
+
+function achievementTrailLabel(state: AchievementCardView["state"]): string {
+  if (state === "unlocked") {
+    return "Confirmada no servidor";
+  }
+
+  if (state === "locked-hidden") {
+    return "Requisito oculto";
+  }
+
+  return "Progresso coletivo";
+}
+
 function toChallengeQuestView(
   quest: GamificationChallengesRecord["sections"][number]["quests"][number]
 ): ChallengeQuestCardViewModel {
@@ -415,8 +506,11 @@ function toChallengeQuestView(
 }
 
 function toChallengeStreakView(
-  streak: GamificationChallengesRecord["streak"]
+  streak: GamificationChallengesRecord["streak"],
+  timezone = "timezone da dupla"
 ): ChallengeStreakPanelViewModel {
+  const nextCheckLabel = `Proxima manutencao diaria: ${formatHour(streak.cutoffHour)} (${timezone})`;
+
   if (streak.current > 0) {
     return {
       state: "active",
@@ -431,6 +525,11 @@ function toChallengeStreakView(
       lastActivityLabel: streak.lastActivityDuoDay
         ? `Ultimo fato: ${formatDate(parseDuoDay(streak.lastActivityDuoDay))}`
         : "A proxima confirmacao registra o primeiro dia.",
+      nextCheckLabel,
+      protectionLabel:
+        streak.availableFreezes > 0
+          ? "Freeze cobre dias sem fato antes de qualquer reset."
+          : "Sem Freeze: um fato real por duo-day mantem a chama.",
       assistiveLabel: `Streak coletivo ativo por ${formatDays(streak.current)}.`
     };
   }
@@ -446,6 +545,8 @@ function toChallengeStreakView(
       lastActivityLabel: streak.lastActivityDuoDay
         ? `Ultimo fato: ${formatDate(parseDuoDay(streak.lastActivityDuoDay))}`
         : "Sem sequencia confirmada ainda.",
+      nextCheckLabel,
+      protectionLabel: "Freeze fica guardado ate existir uma sequencia para proteger.",
       assistiveLabel: "A dupla tem Streak Freeze em reserva, sem cobranca por atividade."
     };
   }
@@ -458,6 +559,8 @@ function toChallengeStreakView(
     freezeLabel: "Streak Freeze chega a cada dez niveis.",
     cutoffLabel: `Dia da dupla fecha as ${formatHour(streak.cutoffHour)}`,
     lastActivityLabel: "Nenhum fato de streak confirmado ainda.",
+    nextCheckLabel,
+    protectionLabel: "A primeira sessao, capitulo ou combinado confirmado abre a sequencia.",
     assistiveLabel: "Nenhuma sequencia confirmada ainda."
   };
 }

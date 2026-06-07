@@ -372,8 +372,29 @@ async function applyStreak(
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       actorUserId: input.actorUserId,
-      freezeDelta: -1,
-      metadata: { previousDuoDay: baseState.lastActivityDuoDay }
+      freezeDelta: -transition.consumedFreezes,
+      metadata: {
+        consumedFreezes: transition.consumedFreezes,
+        previousDuoDay: baseState.lastActivityDuoDay
+      }
+    });
+  }
+
+  if (transition.reset) {
+    await transaction.insertStreakEvent({
+      duoId: input.duoId,
+      eventKey: `streak-reset:${input.sourceType}:${input.sourceId}`,
+      eventType: "streak-reset",
+      duoDay,
+      sourceType: input.sourceType,
+      sourceId: input.sourceId,
+      actorUserId: input.actorUserId,
+      deltaDays: -baseState.currentStreak,
+      freezeDelta: 0,
+      metadata: {
+        previousDuoDay: baseState.lastActivityDuoDay,
+        reason: "fact-gap-reset"
+      }
     });
   }
 

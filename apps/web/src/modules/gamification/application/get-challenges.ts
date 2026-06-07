@@ -50,11 +50,9 @@ export async function getChallengesFromTransaction(
     return null;
   }
 
-  const [timezone, cycles, streakState] = await Promise.all([
-    transaction.readDuoTimezone(membership.duoId),
-    transaction.readActiveQuestCycles(membership.duoId),
-    transaction.readStreakState(membership.duoId)
-  ]);
+  const timezone = await transaction.readDuoTimezone(membership.duoId);
+  const cycles = await transaction.readActiveQuestCycles(membership.duoId);
+  const streakState = await transaction.readStreakState(membership.duoId);
   const progress = await transaction.readQuestProgressForCycles({
     duoId: membership.duoId,
     questCycleIds: cycles.map((cycle) => cycle.id)

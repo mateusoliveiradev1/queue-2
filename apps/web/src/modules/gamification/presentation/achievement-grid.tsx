@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 import { AchievementBadgeIcon } from "./achievement-badge-icon";
 import { AchievementRarityFilter } from "./achievement-rarity-filter";
 import type {
@@ -13,18 +15,13 @@ export function AchievementGrid({
   return (
     <section className="achievements-route" aria-labelledby="achievements-route-title">
       <div className="achievements-summary-grid" aria-label="Resumo de conquistas">
-        <div>
-          <span className="muted">Catalogo</span>
-          <strong>{view.totalLabel}</strong>
-        </div>
-        <div>
-          <span className="muted">Historico</span>
-          <strong>{view.unlockedLabel}</strong>
-        </div>
-        <div>
-          <span className="muted">Segredos</span>
-          <strong>{view.hiddenLabel}</strong>
-        </div>
+        {view.summaryCards.map((card) => (
+          <div data-tone={card.tone} key={card.tone}>
+            <span className="muted">{card.label}</span>
+            <strong>{card.value}</strong>
+            <p>{card.detail}</p>
+          </div>
+        ))}
       </div>
 
       <div className="achievement-filter-bar">
@@ -42,9 +39,25 @@ export function AchievementGrid({
             key={group.group}
             aria-labelledby={`achievement-group-${group.group}`}
           >
-            <div className="section-heading">
-              <p className="eyebrow">Grupo</p>
-              <h2 id={`achievement-group-${group.group}`}>{group.label}</h2>
+            <div className="achievement-group-heading">
+              <div className="section-heading">
+                <p className="eyebrow">Grupo</p>
+                <h2 id={`achievement-group-${group.group}`}>{group.label}</h2>
+              </div>
+              <div
+                aria-label={group.progressLabel}
+                aria-valuemax={100}
+                aria-valuemin={0}
+                aria-valuenow={group.progressPercent}
+                className="achievement-group-progress"
+                role="progressbar"
+                style={{
+                  "--achievement-group-progress": `${group.progressPercent}%`
+                } as CSSProperties}
+              >
+                <span aria-hidden="true" />
+                <p>{group.progressLabel}</p>
+              </div>
             </div>
             <ol className="achievement-card-grid">
               {group.achievements.map((achievement) => (
@@ -75,12 +88,15 @@ function AchievementCard({
         data-state={achievement.state}
         tabIndex={0}
       >
-        <AchievementBadgeIcon
-          iconKey={achievement.iconKey}
-          label={`${achievement.title}, ${achievement.rarityLabel}`}
-          locked={locked}
-          rarity={achievement.rarity}
-        />
+        <div className="achievement-card__rail">
+          <AchievementBadgeIcon
+            iconKey={achievement.iconKey}
+            label={`${achievement.title}, ${achievement.rarityLabel}`}
+            locked={locked}
+            rarity={achievement.rarity}
+          />
+          <span>{achievement.stateLabel}</span>
+        </div>
         <div className="achievement-card__copy">
           <div>
             <p className="eyebrow">
@@ -90,7 +106,7 @@ function AchievementCard({
             <p>{achievement.description}</p>
           </div>
           <div className="achievement-card__meta">
-            <span>{achievement.stateLabel}</span>
+            <span>{achievement.trailLabel}</span>
             {achievement.unlockedAtLabel ? (
               <time>{achievement.unlockedAtLabel}</time>
             ) : null}

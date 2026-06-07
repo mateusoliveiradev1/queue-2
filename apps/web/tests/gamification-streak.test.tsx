@@ -49,9 +49,10 @@ describe("Phase 05.5 Streak policy and presentation", () => {
     });
 
     expect(transition).toEqual({
-      nextStreak: 8,
+      nextStreak: 9,
       availableFreezes: 0,
       consumedFreeze: true,
+      consumedFreezes: 1,
       reset: false
     });
     const challengeStreakCopy = viewModelSource.slice(
@@ -61,6 +62,23 @@ describe("Phase 05.5 Streak policy and presentation", () => {
 
     expect(challengeStreakCopy).toContain("A reserva existe para manter o ritual tranquilo");
     expect(challengeStreakCopy).not.toMatch(/culpa|fracasso|puni[cç]ao|ranking|perdeu/i);
+  });
+
+  it("resets cleanly when missed duo days exceed available Freezes", () => {
+    expect(
+      evaluateStreakTransition({
+        currentDuoDay: "2026-06-10",
+        lastActivityDuoDay: "2026-06-06",
+        currentStreak: 8,
+        availableFreezes: 2
+      })
+    ).toEqual({
+      nextStreak: 1,
+      availableFreezes: 0,
+      consumedFreeze: true,
+      consumedFreezes: 2,
+      reset: true
+    });
   });
 
   it("renders active and freezing Streak states without client actions", () => {
@@ -75,6 +93,7 @@ describe("Phase 05.5 Streak policy and presentation", () => {
     expect(screen.getByLabelText(/Streak coletivo ativo/i)).toBeInTheDocument();
     expect(screen.getByText("8 dias")).toBeInTheDocument();
     expect(screen.getByText("1 Streak Freeze em reserva")).toBeInTheDocument();
+    expect(screen.getByText(/Proxima manutencao diaria/i)).toBeInTheDocument();
 
     rerender(
       <StreakPanel
@@ -115,6 +134,8 @@ function streakView(
     freezeLabel: "1 Streak Freeze em reserva",
     cutoffLabel: "Dia da dupla fecha as 04:00",
     lastActivityLabel: "Ultimo fato: 06/06/2026",
+    nextCheckLabel: "Proxima manutencao diaria: 04:00 (America/Sao_Paulo)",
+    protectionLabel: "Freeze cobre dias sem fato antes de qualquer reset.",
     assistiveLabel: "Streak coletivo ativo por 8 dias.",
     ...overrides
   };
