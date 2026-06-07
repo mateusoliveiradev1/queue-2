@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import type pg from "pg";
 
 import {
@@ -8,6 +10,18 @@ import {
 } from "../src/testing/migrate-empty";
 
 const testDatabaseUrl = getTestDatabaseUrl();
+const catalogSeedMigration = readFileSync(
+  "src/migrations/0014_gamification_catalog_seeds.sql",
+  "utf8"
+);
+const expectedAchievementSeedSlugs = extractInsertSlugs(
+  catalogSeedMigration,
+  "app.gamification_achievement_catalog"
+);
+const expectedQuestSeedSlugs = extractInsertSlugs(
+  catalogSeedMigration,
+  "app.gamification_quest_templates"
+);
 
 if (!testDatabaseUrl) {
   console.warn(missingTestDatabaseMessage);
@@ -51,16 +65,26 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
     await applyFoundationMigration(pool);
 
     const result = await pool.query<{
-      achievement_count: number;
-      quest_count: number;
+      seeded_achievement_count: number;
+      seeded_quest_count: number;
       has_final_verdadeiro: boolean;
       has_controle_passado: boolean;
       has_monthly_quest: boolean;
       has_seasonal_quest: boolean;
+      missing_achievement_slugs: string[] | null;
+      missing_quest_slugs: string[] | null;
     }>(`
       SELECT
-        (SELECT count(*)::int FROM app.gamification_achievement_catalog WHERE active) AS achievement_count,
-        (SELECT count(*)::int FROM app.gamification_quest_templates WHERE active) AS quest_count,
+        (
+          SELECT count(*)::int
+          FROM app.gamification_achievement_catalog
+          WHERE active AND slug = ANY($1::text[])
+        ) AS seeded_achievement_count,
+        (
+          SELECT count(*)::int
+          FROM app.gamification_quest_templates
+          WHERE active AND slug = ANY($2::text[])
+        ) AS seeded_quest_count,
         EXISTS (
           SELECT 1 FROM app.gamification_achievement_catalog
           WHERE slug = 'final-verdadeiro'
@@ -76,17 +100,39 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
         EXISTS (
           SELECT 1 FROM app.gamification_quest_templates
           WHERE slug = 'spooky-coop' AND quest_type = 'seasonal' AND seasonal_key = 'spooky'
-        ) AS has_seasonal_quest
-    `);
+        ) AS has_seasonal_quest,
+        (
+          SELECT array_agg(expected.slug ORDER BY expected.slug)
+          FROM unnest($1::text[]) AS expected(slug)
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM app.gamification_achievement_catalog AS catalog
+            WHERE catalog.slug = expected.slug AND catalog.active
+          )
+        ) AS missing_achievement_slugs,
+        (
+          SELECT array_agg(expected.slug ORDER BY expected.slug)
+          FROM unnest($2::text[]) AS expected(slug)
+          WHERE NOT EXISTS (
+            SELECT 1
+            FROM app.gamification_quest_templates AS template
+            WHERE template.slug = expected.slug AND template.active
+          )
+        ) AS missing_quest_slugs
+    `, [expectedAchievementSeedSlugs, expectedQuestSeedSlugs]);
 
     expect(result.rows[0]).toEqual({
-      achievement_count: 50,
-      quest_count: 8,
+      seeded_achievement_count: 50,
+      seeded_quest_count: 8,
       has_final_verdadeiro: true,
       has_controle_passado: true,
       has_monthly_quest: true,
-      has_seasonal_quest: true
+      has_seasonal_quest: true,
+      missing_achievement_slugs: null,
+      missing_quest_slugs: null
     });
+    expect(expectedAchievementSeedSlugs).toHaveLength(50);
+    expect(expectedQuestSeedSlugs).toHaveLength(8);
   });
 
   test("forces RLS and keeps reviewed gamification indexes", async () => {
@@ -396,3 +442,16 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
     );
   });
 });
+
+function extractInsertSlugs(sql: string, tableName: string): string[] {
+  const insertStart = sql.indexOf(`INSERT INTO ${tableName}`);
+  const valuesStart = sql.indexOf("VALUES", insertStart);
+  const conflictStart = sql.indexOf("ON CONFLICT", valuesStart);
+
+  if (insertStart < 0 || valuesStart < 0 || conflictStart < 0) {
+    throw new Error(`Unable to parse seed insert for ${tableName}.`);
+  }
+
+  return [...sql.slice(valuesStart, conflictStart).matchAll(/^\s*\(\s*'([^']+)'/gm)]
+    .map((match) => match[1]!);
+}
