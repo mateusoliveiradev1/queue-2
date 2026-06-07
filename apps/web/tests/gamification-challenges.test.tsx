@@ -279,7 +279,7 @@ describe("Phase 05.5 challenge presentation", () => {
     expect(viewModelSource).toContain("protectionLabel");
     expect(appShellSource).toContain("/app/desafios");
     expect(appShellSource).toContain("Desafios");
-    expect(globalCssSource).toContain("grid-template-columns: repeat(8, minmax(72px, 1fr))");
+    expect(globalCssSource).toContain("grid-template-columns: repeat(4, minmax(0, 1fr))");
     expect(globalCssSource).toContain(".challenge-card:focus-visible");
     expect(globalCssSource).toContain("min-height: 44px");
     expect(globalCssSource).not.toMatch(/letter-spacing:\s*-/);

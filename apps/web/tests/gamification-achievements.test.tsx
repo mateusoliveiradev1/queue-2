@@ -212,7 +212,7 @@ describe("Phase 05.4 achievement presentation", () => {
     expect(pageSource).not.toMatch(/modules\/gamification\/(domain|application|infrastructure|presentation)/);
     expect(appShellSource).toContain("/app/conquistas");
     expect(appShellSource).toContain("Conquistas");
-    expect(globalCssSource).toContain("grid-template-columns: repeat(8, minmax(72px, 1fr))");
+    expect(globalCssSource).toContain("grid-template-columns: repeat(4, minmax(0, 1fr))");
   });
 });
 

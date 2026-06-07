@@ -1,4 +1,5 @@
 import type { GamePlayDetailRecord } from "../application/ports";
+import { TerminalRequestSubmit } from "./terminal-request-submit";
 
 type PlayJourneyAction = (formData: FormData) => void | Promise<void>;
 
@@ -92,9 +93,7 @@ function TerminalRequestButton({
       <input name="catalogGameId" type="hidden" value={catalogGameId} />
       <input name="targetStatus" type="hidden" value={targetStatus} />
       <input name="gameSlug" type="hidden" value={gameSlug} />
-      <button className="queue2-button" data-tone="quiet" type="submit">
-        {label}
-      </button>
+      <TerminalRequestSubmit label={label} targetStatus={targetStatus} />
     </form>
   );
 }
