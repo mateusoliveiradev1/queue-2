@@ -36,3 +36,27 @@ export function TerminalRequestSubmit({
     </>
   );
 }
+
+export function TerminalPendingActionSubmit({
+  label,
+  pendingLabel,
+  tone
+}: {
+  label: string;
+  pendingLabel: string;
+  tone: "primary" | "quiet";
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      aria-busy={pending}
+      className="queue2-button"
+      data-tone={tone}
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? pendingLabel : label}
+    </button>
+  );
+}

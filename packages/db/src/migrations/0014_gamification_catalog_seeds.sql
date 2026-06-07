@@ -1,0 +1,108 @@
+-- QUEUE/2 Phase 5 catalog seeds.
+-- Owner module: gamification. Static reviewed achievement and quest catalogs
+-- live in source for product rendering, and in Postgres for FK-backed reward
+-- writes, quest rotations and auditability.
+
+INSERT INTO app.gamification_achievement_catalog (
+  slug,
+  group_key,
+  rarity,
+  visibility,
+  title,
+  description,
+  icon_key,
+  predicate,
+  active
+)
+VALUES
+  ('primeiro-save', 'story', 'common', 'visible', 'Primeiro save', 'A primeira sessao confirmada entrou na historia da dupla.', 'badge-story-save', jsonb_build_object('key', 'confirmed-session-count:1'), true),
+  ('capitulo-na-conta', 'story', 'common', 'visible', 'Capitulo na conta', 'Um capitulo manual foi concluido sem pressa e sem solo.', 'badge-story-chapter', jsonb_build_object('key', 'completed-chapter-count:1'), true),
+  ('campanha-acordada', 'story', 'rare', 'visible', 'Campanha acordada', 'Tres sessoes confirmadas no mesmo jogo mantiveram a fila viva.', 'badge-story-campaign', jsonb_build_object('key', 'game-session-count:3'), true),
+  ('meio-caminho', 'story', 'rare', 'visible', 'Meio caminho', 'A dupla passou de metade do tempo estimado com fonte registrada.', 'badge-story-half', jsonb_build_object('key', 'estimated-time-ratio:0.5'), true),
+  ('final-verdadeiro', 'story', 'epic', 'visible', 'Final verdadeiro', 'Um Zerado confirmado pelos dois virou marco coletivo.', 'badge-story-clear', jsonb_build_object('key', 'terminal-zerado-count:1'), true),
+  ('trilogia-fechada', 'story', 'legendary', 'visible', 'Trilogia fechada', 'Tres jogos Zerados pela dupla no mesmo ciclo de parceria.', 'badge-story-trilogy', jsonb_build_object('key', 'terminal-zerado-count:3'), true),
+  ('sem-pular-cutscene', 'story', 'rare', 'hidden', 'Sem pular cutscene', 'A dupla ficou tempo suficiente para o jogo respirar.', 'badge-story-cutscene', jsonb_build_object('key', 'long-session-count:1'), true),
+  ('mapa-completo', 'story', 'epic', 'visible', 'Mapa completo', 'Capitulos, tempo e porcentagem caminharam juntos no mesmo jogo.', 'badge-story-map', jsonb_build_object('key', 'progress-layer-count:3'), true),
+  ('controle-passado', 'coop-sincronia', 'common', 'visible', 'Controle passado', 'Os dois confirmaram o mesmo efeito sem duplicar recompensa.', 'badge-sync-control', jsonb_build_object('key', 'double-confirmation-count:1'), true),
+  ('timing-de-revive', 'coop-sincronia', 'rare', 'visible', 'Timing de revive', 'A dupla voltou de uma sessao dificil e manteve o ritual.', 'badge-sync-revive', jsonb_build_object('key', 'comeback-session-count:1'), true),
+  ('call-sem-call', 'coop-sincronia', 'rare', 'visible', 'Call sem call', 'Acoes seguidas indicaram sintonia real, nao sorte.', 'badge-sync-call', jsonb_build_object('key', 'same-day-actions:4'), true),
+  ('dois-controles-um-plano', 'coop-sincronia', 'epic', 'visible', 'Dois controles, um plano', 'Principal, sessao e progresso ficaram alinhados no mesmo dia.', 'badge-sync-plan', jsonb_build_object('key', 'aligned-play-day:1'), true),
+  ('boss-dividido', 'coop-sincronia', 'rare', 'visible', 'Boss dividido', 'Um marco de boss ou capitulo foi vencido em cooperacao.', 'badge-sync-boss', jsonb_build_object('key', 'boss-marker-count:1'), true),
+  ('sem-fogo-amigo', 'coop-sincronia', 'common', 'hidden', 'Sem fogo amigo', 'A fila reconheceu uma sequencia limpa da dupla.', 'badge-sync-clean', jsonb_build_object('key', 'clean-streak:3'), true),
+  ('dupla-afinada', 'coop-sincronia', 'epic', 'visible', 'Dupla afinada', 'Sete dias de fatos confirmados provaram consistencia compartilhada.', 'badge-sync-tuned', jsonb_build_object('key', 'streak-days:7'), true),
+  ('pacto-da-fila', 'compromisso', 'common', 'visible', 'Pacto da fila', 'Uma sessao foi agendada com horario e timezone da dupla.', 'badge-commit-schedule', jsonb_build_object('key', 'scheduled-session-count:1'), true),
+  ('presenca-confirmada', 'compromisso', 'common', 'visible', 'Presenca confirmada', 'Os dois confirmaram presenca em uma sessao marcada.', 'badge-commit-attendance', jsonb_build_object('key', 'attendance-confirmation-count:1'), true),
+  ('sabado-reservado', 'compromisso', 'rare', 'visible', 'Sabado reservado', 'A dupla transformou plano em sessao real no fim de semana.', 'badge-commit-weekend', jsonb_build_object('key', 'weekend-session-count:1'), true),
+  ('sem-deixar-cair', 'compromisso', 'rare', 'visible', 'Sem deixar cair', 'Uma semana fechou com pelo menos tres fatos reais.', 'badge-commit-week', jsonb_build_object('key', 'weekly-confirmed-facts:3'), true),
+  ('mesmo-horario', 'compromisso', 'epic', 'hidden', 'Mesmo horario', 'A rotina encaixou sem virar obrigacao.', 'badge-commit-routine', jsonb_build_object('key', 'same-hour-sessions:3'), true),
+  ('fila-respeitada', 'compromisso', 'common', 'visible', 'Fila respeitada', 'Um jogo foi pausado ou retomado sem quebrar a organizacao.', 'badge-commit-queue', jsonb_build_object('key', 'library-maintenance-count:1'), true),
+  ('maratona-combinada', 'compromisso', 'epic', 'visible', 'Maratona combinada', 'Uma sessao longa aconteceu com confirmacao dos dois.', 'badge-commit-marathon', jsonb_build_object('key', 'marathon-session-count:1'), true),
+  ('radar-ligado', 'descoberta', 'common', 'visible', 'Radar ligado', 'O primeiro match da dupla saiu de uma decisao real.', 'badge-discovery-radar', jsonb_build_object('key', 'discovery-match-count:1'), true),
+  ('quero-jogar-tambem', 'descoberta', 'common', 'visible', 'Quero jogar tambem', 'Os dois quiseram o mesmo jogo sem empurrar escolha solo.', 'badge-discovery-want', jsonb_build_object('key', 'mutual-want-count:1'), true),
+  ('mood-certo', 'descoberta', 'rare', 'visible', 'Mood certo', 'Uma recomendacao por quiz virou match da dupla.', 'badge-discovery-mood', jsonb_build_object('key', 'quiz-match-count:1'), true),
+  ('surpresa-boa', 'descoberta', 'rare', 'visible', 'Surpresa boa', 'Um modo surpresa encontrou algo que os dois topariam.', 'badge-discovery-surprise', jsonb_build_object('key', 'surprise-match-count:1'), true),
+  ('nao-era-obvio', 'descoberta', 'epic', 'hidden', 'Nao era obvio', 'A dupla aprovou um jogo fora do padrao recente.', 'badge-discovery-unusual', jsonb_build_object('key', 'unexpected-match-count:1'), true),
+  ('biblioteca-crescendo', 'descoberta', 'common', 'visible', 'Biblioteca crescendo', 'Matches e wishlist alimentaram a fila real da dupla.', 'badge-discovery-library', jsonb_build_object('key', 'library-growth-count:5'), true),
+  ('curadoria-de-dois', 'descoberta', 'epic', 'visible', 'Curadoria de dois', 'Vinte decisoes criaram sinal coletivo confiavel.', 'badge-discovery-curation', jsonb_build_object('key', 'duo-decision-count:20'), true),
+  ('chama-inicial', 'streak', 'common', 'visible', 'Chama inicial', 'Dois duo-days seguidos tiveram fatos confirmados.', 'badge-streak-flame', jsonb_build_object('key', 'streak-days:2'), true),
+  ('ate-as-quatro', 'streak', 'rare', 'visible', 'Ate as 04:00', 'A dupla salvou um duo-day dentro do backup planejado.', 'badge-streak-cutoff', jsonb_build_object('key', 'duo-day-backup-count:1'), true),
+  ('freeze-na-manga', 'streak', 'rare', 'visible', 'Freeze na manga', 'Um Streak Freeze foi conquistado por nivel da dupla.', 'badge-streak-freeze-earned', jsonb_build_object('key', 'freeze-earned-count:1'), true),
+  ('gelo-sem-drama', 'streak', 'rare', 'visible', 'Gelo sem drama', 'Um freeze segurou a sequencia sem culpa e sem bronca.', 'badge-streak-freeze-used', jsonb_build_object('key', 'freeze-consumed-count:1'), true),
+  ('semana-acesa', 'streak', 'epic', 'visible', 'Semana acesa', 'Sete duo-days seguidos de atividade confirmada.', 'badge-streak-week', jsonb_build_object('key', 'streak-days:7'), true),
+  ('fogo-calmo', 'streak', 'epic', 'hidden', 'Fogo calmo', 'A sequencia ficou forte sem virar cobranca.', 'badge-streak-calm', jsonb_build_object('key', 'streak-without-pressure:1'), true),
+  ('longo-prazo', 'streak', 'legendary', 'visible', 'Longo prazo', 'Trinta duo-days de consistencia compartilhada.', 'badge-streak-long', jsonb_build_object('key', 'streak-days:30'), true),
+  ('primeiro-desafio', 'compromisso', 'common', 'visible', 'Primeiro desafio', 'Uma quest semanal foi concluida pela dupla.', 'badge-quest-first', jsonb_build_object('key', 'quest-complete-count:1'), true),
+  ('semana-fechada', 'compromisso', 'rare', 'visible', 'Semana fechada', 'As tres quests semanais foram resolvidas no mesmo ciclo.', 'badge-quest-week', jsonb_build_object('key', 'weekly-quest-complete-count:3'), true),
+  ('mes-da-dupla', 'compromisso', 'epic', 'visible', 'Mes da dupla', 'A quest mensal foi concluida sem pressa e com XP coletivo.', 'badge-quest-month', jsonb_build_object('key', 'monthly-quest-complete-count:1'), true),
+  ('selo-sazonal', 'compromisso', 'epic', 'visible', 'Selo sazonal', 'Um desafio sazonal deixou marca permanente.', 'badge-quest-season', jsonb_build_object('key', 'seasonal-quest-complete-count:1'), true),
+  ('spooky-coop', 'comedia', 'rare', 'visible', 'Spooky coop', 'A dupla encarou uma temporada assustadora sem virar solo.', 'badge-season-spooky', jsonb_build_object('key', 'seasonal-spooky-complete:1'), true),
+  ('awards-em-casa', 'comedia', 'rare', 'visible', 'Awards em casa', 'A temporada de premiacoes virou ritual da dupla.', 'badge-season-awards', jsonb_build_object('key', 'seasonal-awards-complete:1'), true),
+  ('aniversario-da-fila', 'comedia', 'epic', 'visible', 'Aniversario da fila', 'A parceria comemorou mais um ciclo de backlog vivo.', 'badge-season-anniversary', jsonb_build_object('key', 'seasonal-anniversary-complete:1'), true),
+  ('ponteiro-curioso', 'roleta', 'common', 'visible', 'Ponteiro curioso', 'Dez jogos deixaram a fila elegivel para uma futura rodada.', 'badge-roulette-pointer', jsonb_build_object('key', 'library-growth-count:10'), true),
+  ('quase-epico', 'roleta', 'rare', 'hidden', 'Quase epico', 'Vinte e cinco conquistas prepararam a proxima escolha da dupla.', 'badge-roulette-almost', jsonb_build_object('key', 'achievement-count:25'), true),
+  ('case-de-respeito', 'roleta', 'epic', 'visible', 'Case de respeito', 'No nivel 25, a fila ficou pronta para o sorteio.', 'badge-roulette-case', jsonb_build_object('key', 'level:25'), true),
+  ('sem-tilt', 'comedia', 'common', 'visible', 'Sem tilt', 'Um Dropado confirmado nao virou punicao nem vergonha.', 'badge-comedy-no-tilt', jsonb_build_object('key', 'terminal-dropado-count:1'), true),
+  ('mais-um-so', 'comedia', 'rare', 'hidden', 'Mais um so', 'A madrugada tentou virar campanha, e a dupla sobreviveu.', 'badge-comedy-one-more', jsonb_build_object('key', 'late-session-chain:1'), true),
+  ('chefao-do-sofa', 'comedia', 'epic', 'visible', 'Chefao do sofa', 'O sofa virou arena e a dupla segurou a onda.', 'badge-comedy-sofa-boss', jsonb_build_object('key', 'couch-boss-count:1'), true),
+  ('lendas-do-coop', 'story', 'legendary', 'visible', 'Lendas do Coop', 'A dupla chegou ao topo sem transformar parceria em disputa.', 'badge-story-legend', jsonb_build_object('key', 'level:50'), true)
+ON CONFLICT (slug) DO UPDATE
+SET group_key = excluded.group_key,
+    rarity = excluded.rarity,
+    visibility = excluded.visibility,
+    title = excluded.title,
+    description = excluded.description,
+    icon_key = excluded.icon_key,
+    predicate = excluded.predicate,
+    active = excluded.active;
+
+INSERT INTO app.gamification_quest_templates (
+  slug,
+  quest_type,
+  seasonal_key,
+  title,
+  description,
+  goal_value,
+  xp_reward,
+  eligibility,
+  schedule_metadata,
+  active
+)
+VALUES
+  ('sessao-confirmada', 'weekly', NULL, 'Sessao confirmada', 'Confirmem uma sessao coop real nesta semana.', 1, 80, jsonb_build_object('key', 'confirmed-session', 'completionAchievementSlugs', jsonb_build_array()), '{}'::jsonb, true),
+  ('capitulo-da-semana', 'weekly', NULL, 'Capitulo da semana', 'Concluam um capitulo manual sem transformar progresso em tarefa.', 1, 70, jsonb_build_object('key', 'completed-chapter', 'completionAchievementSlugs', jsonb_build_array()), '{}'::jsonb, true),
+  ('descoberta-em-dupla', 'weekly', NULL, 'Descoberta em dupla', 'Criem um match real ou levem um jogo novo para a fila.', 1, 60, jsonb_build_object('key', 'discovery-match', 'completionAchievementSlugs', jsonb_build_array()), '{}'::jsonb, true),
+  ('jogando-sem-pressa', 'weekly', NULL, 'Jogando sem pressa', 'Registrem duas acoes confirmadas em dias diferentes.', 2, 90, jsonb_build_object('key', 'two-duo-days', 'completionAchievementSlugs', jsonb_build_array()), '{}'::jsonb, true),
+  ('mes-da-fila', 'monthly', NULL, 'Mes da fila', 'Fechem quatro fatos reais da dupla durante o mes.', 4, 240, jsonb_build_object('key', 'monthly-confirmed-facts', 'completionAchievementSlugs', jsonb_build_array('mes-da-dupla')), '{}'::jsonb, true),
+  ('spooky-coop', 'seasonal', 'spooky', 'Spooky coop', 'No ciclo Spooky, joguem algo tenso ou avancem um jogo noturno.', 1, 180, jsonb_build_object('key', 'seasonal-spooky', 'completionAchievementSlugs', jsonb_build_array('selo-sazonal', 'spooky-coop')), jsonb_build_object('seasonalKey', 'spooky'), true),
+  ('awards-em-casa', 'seasonal', 'awards', 'Awards em casa', 'No ciclo Awards, avancem um destaque do backlog.', 1, 180, jsonb_build_object('key', 'seasonal-awards', 'completionAchievementSlugs', jsonb_build_array('selo-sazonal', 'awards-em-casa')), jsonb_build_object('seasonalKey', 'awards'), true),
+  ('aniversario-da-fila', 'seasonal', 'anniversary', 'Aniversario da fila', 'No aniversario, celebrem a parceria com um marco confirmado.', 1, 220, jsonb_build_object('key', 'seasonal-anniversary', 'completionAchievementSlugs', jsonb_build_array('selo-sazonal', 'aniversario-da-fila')), jsonb_build_object('seasonalKey', 'anniversary'), true)
+ON CONFLICT (slug) DO UPDATE
+SET quest_type = excluded.quest_type,
+    seasonal_key = excluded.seasonal_key,
+    title = excluded.title,
+    description = excluded.description,
+    goal_value = excluded.goal_value,
+    xp_reward = excluded.xp_reward,
+    eligibility = excluded.eligibility,
+    schedule_metadata = excluded.schedule_metadata,
+    active = excluded.active;

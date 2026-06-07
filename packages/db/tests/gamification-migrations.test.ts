@@ -47,6 +47,48 @@ describe.skipIf(!testDatabaseUrl)("gamification migration foundation", () => {
     expect(result.rows.every((row) => row.exists)).toBe(true);
   });
 
+  test("seeds reviewed gamification catalogs for FK-backed rewards and quest cycles", async () => {
+    await applyFoundationMigration(pool);
+
+    const result = await pool.query<{
+      achievement_count: number;
+      quest_count: number;
+      has_final_verdadeiro: boolean;
+      has_controle_passado: boolean;
+      has_monthly_quest: boolean;
+      has_seasonal_quest: boolean;
+    }>(`
+      SELECT
+        (SELECT count(*)::int FROM app.gamification_achievement_catalog WHERE active) AS achievement_count,
+        (SELECT count(*)::int FROM app.gamification_quest_templates WHERE active) AS quest_count,
+        EXISTS (
+          SELECT 1 FROM app.gamification_achievement_catalog
+          WHERE slug = 'final-verdadeiro'
+        ) AS has_final_verdadeiro,
+        EXISTS (
+          SELECT 1 FROM app.gamification_achievement_catalog
+          WHERE slug = 'controle-passado'
+        ) AS has_controle_passado,
+        EXISTS (
+          SELECT 1 FROM app.gamification_quest_templates
+          WHERE slug = 'mes-da-fila' AND quest_type = 'monthly'
+        ) AS has_monthly_quest,
+        EXISTS (
+          SELECT 1 FROM app.gamification_quest_templates
+          WHERE slug = 'spooky-coop' AND quest_type = 'seasonal' AND seasonal_key = 'spooky'
+        ) AS has_seasonal_quest
+    `);
+
+    expect(result.rows[0]).toEqual({
+      achievement_count: 50,
+      quest_count: 8,
+      has_final_verdadeiro: true,
+      has_controle_passado: true,
+      has_monthly_quest: true,
+      has_seasonal_quest: true
+    });
+  });
+
   test("forces RLS and keeps reviewed gamification indexes", async () => {
     await applyFoundationMigration(pool);
 

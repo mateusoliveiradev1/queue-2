@@ -49,8 +49,8 @@ export function isStreakEligibleFact(factType: string): factType is StreakFactTy
 export function evaluateStreakTransition(
   input: StreakTransitionInput
 ): StreakTransition {
-  const currentStreak = Math.max(0, input.currentStreak);
-  const availableFreezes = Math.max(0, input.availableFreezes);
+  const currentStreak = toNonNegativeInteger(input.currentStreak);
+  const availableFreezes = toNonNegativeInteger(input.availableFreezes);
 
   if (!input.lastActivityDuoDay) {
     return {
@@ -63,6 +63,16 @@ export function evaluateStreakTransition(
   }
 
   const gap = daysBetween(input.lastActivityDuoDay, input.currentDuoDay);
+
+  if (!Number.isFinite(gap)) {
+    return {
+      nextStreak: 1,
+      availableFreezes,
+      consumedFreeze: false,
+      consumedFreezes: 0,
+      reset: currentStreak > 0
+    };
+  }
 
   if (gap <= 0) {
     return {
@@ -107,7 +117,7 @@ export function evaluateStreakTransition(
 }
 
 export function getFreezeCountForLevel(level: number): number {
-  return Math.floor(Math.max(0, level) / FREEZE_LEVEL_INTERVAL);
+  return Math.floor(toNonNegativeInteger(level) / FREEZE_LEVEL_INTERVAL);
 }
 
 export function getFreezeEarnedForLevelChange(input: {
@@ -147,6 +157,14 @@ function getLocalDateTimeParts(date: Date, timezone: string): {
 
 function normalizeHour(hour: number): number {
   return hour === 24 ? 0 : hour;
+}
+
+function toNonNegativeInteger(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(value));
 }
 
 function daysBetween(startDay: string, endDay: string): number {

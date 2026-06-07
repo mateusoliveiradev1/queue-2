@@ -92,6 +92,13 @@
       "when": 1780723320000,
       "tag": "0013_gamification_job_enqueue",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1780819200000,
+      "tag": "0014_gamification_catalog_seeds",
+      "breakpoints": true
     }
   ]
 }

@@ -126,6 +126,11 @@ describe("gamification level curve", () => {
     expect(getLevelForXp(LEVEL_CURVE[9]!.xpRequired).name).toBe("Lv10 Pacto da Fila");
     expect(getLevelForXp(Number.MAX_SAFE_INTEGER).name).toBe("Lv50 Lendas do Coop");
   });
+
+  it("treats non-finite XP as zero instead of leaking NaN into projections", () => {
+    expect(getLevelForXp(Number.NaN).name).toBe("Lv1 Casuais");
+    expect(getLevelForXp(Number.POSITIVE_INFINITY).name).toBe("Lv1 Casuais");
+  });
 });
 
 describe("gamification achievement catalog", () => {
@@ -341,6 +346,23 @@ describe("gamification streak policy", () => {
       consumedFreeze: true,
       consumedFreezes: 1,
       reset: false
+    });
+  });
+
+  it("treats non-finite Streak counters as zero before calculating transitions", () => {
+    expect(
+      evaluateStreakTransition({
+        lastActivityDuoDay: "2026-06-01",
+        currentDuoDay: "2026-06-03",
+        currentStreak: Number.NaN,
+        availableFreezes: Number.NaN
+      })
+    ).toEqual({
+      nextStreak: 1,
+      availableFreezes: 0,
+      consumedFreeze: false,
+      consumedFreezes: 0,
+      reset: true
     });
   });
 });

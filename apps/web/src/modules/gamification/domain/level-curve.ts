@@ -92,7 +92,7 @@ export function getLevelThreshold(level: number): number {
 }
 
 export function getLevelForXp(totalXp: number): LevelDefinition {
-  const normalizedXp = Math.max(0, Math.floor(totalXp));
+  const normalizedXp = toNonNegativeInteger(totalXp);
   let current = LEVEL_CURVE[0]!;
 
   for (const level of LEVEL_CURVE) {
@@ -113,21 +113,22 @@ export function getNextLevelProgress(totalXp: number): {
   xpForNextLevel: number;
   progressRatio: number;
 } {
-  const currentLevel = getLevelForXp(totalXp);
+  const normalizedXp = toNonNegativeInteger(totalXp);
+  const currentLevel = getLevelForXp(normalizedXp);
   const nextLevel = LEVEL_CURVE[currentLevel.level] ?? null;
 
   if (!nextLevel) {
     return {
       currentLevel,
       nextLevel: null,
-      xpIntoLevel: Math.max(0, totalXp - currentLevel.xpRequired),
+      xpIntoLevel: Math.max(0, normalizedXp - currentLevel.xpRequired),
       xpForNextLevel: 0,
       progressRatio: 1
     };
   }
 
   const xpForNextLevel = nextLevel.xpRequired - currentLevel.xpRequired;
-  const xpIntoLevel = Math.max(0, totalXp - currentLevel.xpRequired);
+  const xpIntoLevel = Math.max(0, normalizedXp - currentLevel.xpRequired);
 
   return {
     currentLevel,
@@ -136,4 +137,12 @@ export function getNextLevelProgress(totalXp: number): {
     xpForNextLevel,
     progressRatio: Math.min(1, xpIntoLevel / xpForNextLevel)
   };
+}
+
+function toNonNegativeInteger(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.floor(value));
 }

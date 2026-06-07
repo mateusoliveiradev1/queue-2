@@ -729,6 +729,12 @@ async function insertXpLedgerAward(
   client: QueueDbClient,
   input: Parameters<GamificationRepositoryTransaction["insertXpLedgerAward"]>[0]
 ): Promise<GamificationXpLedgerRecord | null> {
+  const amount = toSqlInteger(input.amount, 0);
+
+  if (amount <= 0) {
+    return null;
+  }
+
   const result = await client.query<XpLedgerRow>(
     `
       INSERT INTO app.duo_xp_awards (
@@ -760,7 +766,7 @@ async function insertXpLedgerAward(
       input.awardKey,
       input.sourceType,
       input.sourceId,
-      input.amount,
+      amount,
       input.reasonCode,
       input.awardedByUserId,
       JSON.stringify(input.metadata ?? {})
@@ -775,6 +781,9 @@ async function updateProjection(
   client: QueueDbClient,
   input: Parameters<GamificationRepositoryTransaction["updateProjection"]>[0]
 ): Promise<GamificationProjectionRecord> {
+  const xpDelta = toSqlInteger(input.xpDelta, 0);
+  const streak = toNullableSqlInteger(input.streak);
+  const availableFreezes = toNullableSqlInteger(input.availableFreezes);
   const updateResult = await client.query<{ duo_id: string; xp: number; streak: number }>(
     `
       UPDATE app.duos
@@ -784,7 +793,7 @@ async function updateProjection(
       WHERE id = $1
       RETURNING id AS duo_id, xp, streak
     `,
-    [input.duoId, input.xpDelta, input.streak ?? null]
+    [input.duoId, xpDelta, streak]
   );
   const updatedDuo = updateResult.rows[0];
 
@@ -825,7 +834,7 @@ async function updateProjection(
             available_freezes = COALESCE($3::integer, app.gamification_streak_state.available_freezes),
             updated_at = now()
       `,
-      [input.duoId, input.streak ?? null, input.availableFreezes ?? null]
+      [input.duoId, streak, availableFreezes]
     );
   }
 
@@ -1045,6 +1054,9 @@ async function advanceQuestProgress(
   client: QueueDbClient,
   input: Parameters<GamificationRepositoryTransaction["advanceQuestProgress"]>[0]
 ): Promise<Awaited<ReturnType<GamificationRepositoryTransaction["advanceQuestProgress"]>>> {
+  const increment = toPositiveSqlInteger(input.increment, 1);
+  const goal = toPositiveSqlInteger(input.goal, increment);
+
   await client.query(
     `
       INSERT INTO app.gamification_quest_progress (
@@ -1132,8 +1144,8 @@ async function advanceQuestProgress(
       input.duoId,
       input.questCycleId,
       input.sourceKey,
-      input.increment,
-      input.goal,
+      increment,
+      goal,
       input.completedAt,
       input.lastSourceType,
       input.lastSourceId,
@@ -1242,8 +1254,8 @@ async function insertStreakEvent(
       input.sourceType ?? null,
       input.sourceId ?? null,
       input.actorUserId ?? null,
-      input.deltaDays ?? 0,
-      input.freezeDelta ?? 0,
+      toSqlInteger(input.deltaDays ?? 0, 0),
+      toSqlInteger(input.freezeDelta ?? 0, 0),
       JSON.stringify(input.metadata ?? {})
     ]
   );
@@ -1255,6 +1267,12 @@ async function upsertStreakState(
   client: QueueDbClient,
   input: GamificationStreakStateRecord
 ): Promise<GamificationStreakStateRecord> {
+  const currentStreak = toNonNegativeSqlInteger(input.currentStreak);
+  const longestStreak = Math.max(
+    currentStreak,
+    toNonNegativeSqlInteger(input.longestStreak)
+  );
+  const availableFreezes = toNonNegativeSqlInteger(input.availableFreezes);
   const result = await client.query<StreakStateRow>(
     `
       INSERT INTO app.gamification_streak_state (
@@ -1286,9 +1304,9 @@ async function upsertStreakState(
     `,
     [
       input.duoId,
-      input.currentStreak,
-      input.longestStreak,
-      input.availableFreezes,
+      currentStreak,
+      longestStreak,
+      availableFreezes,
       input.lastActivityDuoDay
     ]
   );
@@ -1722,12 +1740,14 @@ async function recordProjectionRebuild(
 }
 
 function mapProjection(row: ProjectionRow): GamificationProjectionRecord {
+  const xp = toNonNegativeSqlInteger(row.xp);
+
   return {
     duoId: row.duo_id,
-    xp: Number(row.xp),
-    level: getLevelForXp(Number(row.xp)),
-    streak: Number(row.streak),
-    availableFreezes: Number(row.available_freezes ?? 0),
+    xp,
+    level: getLevelForXp(xp),
+    streak: toNonNegativeSqlInteger(row.streak),
+    availableFreezes: toNonNegativeSqlInteger(row.available_freezes ?? 0),
     updatedAt: row.updated_at
   };
 }
@@ -1847,14 +1867,42 @@ function mapQuestProgress(row: QuestProgressRow): GamificationQuestProgressRecor
 }
 
 function mapStreakState(row: StreakStateRow): GamificationStreakStateRecord {
+  const currentStreak = toNonNegativeSqlInteger(row.current_streak);
+
   return {
     duoId: row.duo_id,
-    currentStreak: Number(row.current_streak),
-    longestStreak: Number(row.longest_streak),
-    availableFreezes: Number(row.available_freezes),
+    currentStreak,
+    longestStreak: Math.max(currentStreak, toNonNegativeSqlInteger(row.longest_streak)),
+    availableFreezes: toNonNegativeSqlInteger(row.available_freezes),
     lastActivityDuoDay: row.last_activity_duo_day,
     updatedAt: row.updated_at
   };
+}
+
+function toSqlInteger(value: number | null | undefined, fallback: number): number {
+  const numeric = Number(value);
+
+  if (!Number.isFinite(numeric)) {
+    return fallback;
+  }
+
+  return Math.trunc(numeric);
+}
+
+function toNullableSqlInteger(value: number | null | undefined): number | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+
+  return toSqlInteger(value, 0);
+}
+
+function toNonNegativeSqlInteger(value: number | null | undefined): number {
+  return Math.max(0, toSqlInteger(value, 0));
+}
+
+function toPositiveSqlInteger(value: number | null | undefined, fallback: number): number {
+  return Math.max(1, toSqlInteger(value, fallback));
 }
 
 function mapJob(row: JobRow): GamificationDueJobRecord {

@@ -1,5 +1,8 @@
 import type { GamePlayDetailRecord } from "../application/ports";
-import { TerminalRequestSubmit } from "./terminal-request-submit";
+import {
+  TerminalPendingActionSubmit,
+  TerminalRequestSubmit
+} from "./terminal-request-submit";
 
 type PlayJourneyAction = (formData: FormData) => void | Promise<void>;
 
@@ -40,16 +43,20 @@ export function TerminalStatusPanel({
             <form action={confirmAction}>
               <input name="requestId" type="hidden" value={request.id} />
               <input name="gameSlug" type="hidden" value={gameSlug} />
-              <button className="queue2-button" data-tone="primary" type="submit">
-                Confirmar com a dupla
-              </button>
+              <TerminalPendingActionSubmit
+                label="Confirmar com a dupla"
+                pendingLabel="Confirmando com a dupla"
+                tone="primary"
+              />
             </form>
             <form action={cancelAction}>
               <input name="requestId" type="hidden" value={request.id} />
               <input name="gameSlug" type="hidden" value={gameSlug} />
-              <button className="queue2-button" data-tone="quiet" type="submit">
-                Cancelar pedido
-              </button>
+              <TerminalPendingActionSubmit
+                label="Cancelar pedido"
+                pendingLabel="Cancelando pedido"
+                tone="quiet"
+              />
             </form>
           </div>
         </div>

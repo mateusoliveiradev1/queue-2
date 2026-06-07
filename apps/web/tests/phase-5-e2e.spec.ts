@@ -34,6 +34,8 @@ const hydrationErrorPatterns = [
 reportMissingEnv("Phase 5 gamification E2E", phase5MissingEnv);
 
 test.describe("Phase 5 gamificacao coletiva E2E", () => {
+  test.describe.configure({ timeout: 60_000 });
+
   test.skip(
     phase5MissingEnv.length > 0,
     `BLOCKED setup - missing Phase 5 fixtures: ${phase5MissingEnv.join(", ")}`
@@ -141,12 +143,14 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
     await login(page, partnerActor);
     await page.goto(`/app/jogo/${zeradoSlug}`);
     await expect(page.getByText(/pedido pendente:\s*zerado/i)).toBeVisible();
-    await page.getByRole("button", { name: /confirmar com a dupla/i }).click();
-    await page.waitForURL((url) =>
-      url.pathname === `/app/jogo/${zeradoSlug}`
-      && url.searchParams.get("estado") === "pedido-terminal-confirmado"
-      && url.searchParams.has("recompensa")
-    );
+    await Promise.all([
+      page.waitForURL((url) =>
+        url.pathname === `/app/jogo/${zeradoSlug}`
+        && url.searchParams.get("estado") === "pedido-terminal-confirmado"
+        && url.searchParams.has("recompensa")
+      ),
+      page.getByRole("button", { name: /confirmar com a dupla/i }).click()
+    ]);
     const rewardFeedback = page.locator(".reward-inline-state");
     await expect(rewardFeedback).toBeVisible();
     await expect(rewardFeedback).toContainText(/XP|conquista|desafio|level-up/i);
@@ -167,8 +171,10 @@ test.describe("Phase 5 gamificacao coletiva E2E", () => {
 
     await login(page, partnerActor);
     await page.goto(`/app/jogo/${dropadoSlug}`);
-    await page.getByRole("button", { name: /confirmar com a dupla/i }).click();
-    await page.waitForURL(/pedido-terminal-confirmado|\/app\/jogo\//);
+    await Promise.all([
+      page.waitForURL(/pedido-terminal-confirmado|\/app\/jogo\//),
+      page.getByRole("button", { name: /confirmar com a dupla/i }).click()
+    ]);
     await page.goto("/app");
 
     const body = page.locator("body");
