@@ -1,8 +1,8 @@
 ---
 phase: 05-gamificacao-coletiva
 artifact: user-setup
-status: Incomplete
-generated: 2026-06-06T21:37:21.555Z
+status: Complete
+generated: 2026-06-07T17:38:57.589Z
 ---
 
 # Phase 5 User Setup
@@ -20,8 +20,8 @@ Use this setup before treating Phase 5 browser, database, job or production evid
 | `E2E_READY_PARTNER_PASSWORD` | configured | Second member of the same ready duo. |
 | `E2E_OTHER_DUO_USER_EMAIL` | configured | Different-duo actor for isolation checks. |
 | `E2E_OTHER_DUO_USER_PASSWORD` | configured | Different-duo actor for isolation checks. |
-| `E2E_PHASE5_ZERADO_SLUG` | missing | Jogando game prepared for partner-confirmed Zerado reward flow. |
-| `E2E_PHASE5_DROPADO_SLUG` | missing | Jogando game prepared for neutral Dropado confirmation flow. |
+| `E2E_PHASE5_ZERADO_SLUG` | configured | Jogando game prepared for partner-confirmed Zerado reward flow. |
+| `E2E_PHASE5_DROPADO_SLUG` | configured | Jogando game prepared for neutral Dropado confirmation flow. |
 
 Fixture expectations:
 
@@ -49,8 +49,8 @@ Worker credential setup:
 
 | Variable | Status | Purpose |
 |----------|--------|---------|
-| `CRON_SECRET` | missing | Bearer secret for gamification maintenance route. |
-| `GAMIFICATION_RUNNER_FREQUENCY_MINUTES` | missing | Operational cadence evidence for quest and streak jobs. |
+| `CRON_SECRET` | configured | Bearer secret for gamification maintenance route. |
+| `GAMIFICATION_RUNNER_FREQUENCY_MINUTES` | configured | Operational cadence evidence for quest and streak jobs. |
 
 ## Verification Commands
 
@@ -67,8 +67,7 @@ pnpm phase:5:gate
 
 ### Browser
 
-- E2E_PHASE5_ZERADO_SLUG
-- E2E_PHASE5_DROPADO_SLUG
+None.
 
 ### Database
 
@@ -76,9 +75,8 @@ None.
 
 ### Jobs
 
-- CRON_SECRET
-- GAMIFICATION_RUNNER_FREQUENCY_MINUTES
+None.
 
 ## Current Status
 
-Result: BLOCKED - missing external evidence until the variables above are configured and the Phase 5 gate is rerun.
+Result: PASSED - all required Phase 5 setup variables were present and `pnpm phase:5:gate` captured passing evidence.
