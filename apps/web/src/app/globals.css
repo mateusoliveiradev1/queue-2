@@ -4653,7 +4653,7 @@ input {
 
   .app-main {
     gap: var(--space-5);
-    padding: var(--space-5) var(--space-4) calc(104px + env(safe-area-inset-bottom));
+    padding: var(--space-5) var(--space-4) calc(152px + env(safe-area-inset-bottom));
   }
 
   .app-bottom-nav {
@@ -4664,9 +4664,9 @@ input {
     bottom: 0;
     display: grid;
     gap: var(--space-1);
-    grid-template-columns: repeat(8, minmax(72px, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     left: 0;
-    overflow-x: auto;
+    overflow: hidden;
     padding: var(--space-2) var(--space-2);
     padding-bottom: env(safe-area-inset-bottom);
     padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
@@ -4688,7 +4688,7 @@ input {
     justify-items: center;
     line-height: 1.1;
     min-height: 52px;
-    min-width: 72px;
+    min-width: 0;
     overflow-wrap: normal;
     padding: var(--space-1);
     text-align: center;

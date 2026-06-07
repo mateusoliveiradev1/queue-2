@@ -150,16 +150,20 @@ export async function setPlayChapterCompletionAction(
 export async function requestTerminalStatusAction(
   formData: FormData
 ): Promise<void> {
-  await withServerTiming(terminalTimingContext, () =>
-    playJourneyActionTimed(formData, "request-terminal", terminalTimingContext)
+  await runPlayJourneyActionWithRedirect(
+    formData,
+    "request-terminal",
+    terminalTimingContext
   );
 }
 
 export async function cancelTerminalStatusAction(
   formData: FormData
 ): Promise<void> {
-  await withServerTiming(terminalTimingContext, () =>
-    playJourneyActionTimed(formData, "cancel-terminal", terminalTimingContext)
+  await runPlayJourneyActionWithRedirect(
+    formData,
+    "cancel-terminal",
+    terminalTimingContext
   );
 }
 
@@ -486,9 +490,11 @@ async function playJourneyActionTimed(
 async function runPlayJourneyActionWithRedirect(
   formData: FormData,
   action:
+    | "cancel-terminal"
     | "confirm-session"
     | "confirm-scheduled"
     | "confirm-terminal"
+    | "request-terminal"
     | "set-chapter",
   timingContext: ServerTimingContext
 ): Promise<never> {

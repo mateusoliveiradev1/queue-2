@@ -51,6 +51,10 @@ export function getPhase2StatusMessage(state: string | null): string | null {
       return "Pedido cancelado.";
     case "pedido-terminal-confirmado":
       return "Status final confirmado pela dupla.";
+    case "confirmacao-do-parceiro-obrigatoria":
+      return "O solicitante nao pode confirmar sozinho.";
+    case "pedido-terminal-nao-pendente":
+      return "Esse pedido terminal nao esta mais pendente.";
     case "sessao-agendada":
       return "Sessao agendada para a dupla.";
     case "sessao-agendada-cancelada":
