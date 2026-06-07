@@ -666,8 +666,11 @@ async function login(page: Page, actor: E2EActor): Promise<void> {
   await page.goto("/login");
   await page.getByLabel(/^email$/i).fill(actor.email);
   await page.getByLabel(/^senha$/i).fill(actor.password);
-  await page.getByRole("button", { name: /^entrar$/i }).click();
-  await page.waitForURL(/\/(?:parear|app)/);
+  await Promise.all([
+    page.waitForURL(/\/(?:parear|app)/),
+    page.getByRole("button", { name: /^entrar$/i }).click()
+  ]);
+  await page.waitForLoadState("load");
 }
 
 function actorFromEnv(prefix: string): E2EActor {
