@@ -102,7 +102,7 @@ type StreakStateRow = {
   current_streak: number;
   longest_streak: number;
   available_freezes: number;
-  last_activity_duo_day: string | null;
+  last_activity_duo_day: Date | string | null;
   updated_at: Date;
 };
 
@@ -1874,7 +1874,7 @@ function mapStreakState(row: StreakStateRow): GamificationStreakStateRecord {
     currentStreak,
     longestStreak: Math.max(currentStreak, toNonNegativeSqlInteger(row.longest_streak)),
     availableFreezes: toNonNegativeSqlInteger(row.available_freezes),
-    lastActivityDuoDay: row.last_activity_duo_day,
+    lastActivityDuoDay: toDuoDayKey(row.last_activity_duo_day),
     updatedAt: row.updated_at
   };
 }
@@ -1903,6 +1903,18 @@ function toNonNegativeSqlInteger(value: number | null | undefined): number {
 
 function toPositiveSqlInteger(value: number | null | undefined, fallback: number): number {
   return Math.max(1, toSqlInteger(value, fallback));
+}
+
+function toDuoDayKey(value: Date | string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const normalized = value instanceof Date
+    ? value.toISOString().slice(0, 10)
+    : value.slice(0, 10);
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(normalized) ? normalized : null;
 }
 
 function mapJob(row: JobRow): GamificationDueJobRecord {

@@ -751,8 +751,20 @@ function formatHour(hour: number): string {
   return `${String(hour).padStart(2, "0")}:00`;
 }
 
-function parseDuoDay(duoDay: string): Date {
-  return new Date(`${duoDay}T00:00:00.000Z`);
+function parseDuoDay(duoDay: Date | string): Date {
+  if (duoDay instanceof Date && !Number.isFinite(duoDay.getTime())) {
+    return new Date(0);
+  }
+
+  const normalized = duoDay instanceof Date
+    ? duoDay.toISOString().slice(0, 10)
+    : duoDay.slice(0, 10);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
+    return new Date(0);
+  }
+
+  return new Date(`${normalized}T12:00:00.000Z`);
 }
 
 function challengeSlotLabel(questType: QuestType, expectedSlots: number): string {

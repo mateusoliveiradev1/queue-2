@@ -266,6 +266,22 @@ describe("Phase 05.5 challenge presentation", () => {
     expect(container.textContent).toContain("desde 06/06/2026");
   });
 
+  it("renders streak dates when pg returns DATE columns as Date instances", async () => {
+    const { repository } = fakeGamificationRepository({
+      streakState: streakStateRecord({
+        currentStreak: 1,
+        longestStreak: 1,
+        lastActivityDuoDay: new Date("2026-06-07T03:00:00.000Z") as unknown as string
+      })
+    });
+    const record = await getChallenges({ userId: "member-1", now }, repository);
+    const view = toChallengeRouteView(record!);
+
+    render(<StreakPanel streak={view.streak} />);
+
+    expect(screen.getByText("Ultimo fato: 07/06/2026")).toBeInTheDocument();
+  });
+
   it("keeps /app/desafios authenticated, server-authoritative and responsive in source", () => {
     expect(pageSource).toContain("requireVerifiedSession");
     expect(pageSource).toContain("getDuoDashboard");
