@@ -23,6 +23,8 @@ const e2eFixtureVars = [
   "E2E_READY_PARTNER_PASSWORD",
   "E2E_OTHER_DUO_USER_EMAIL",
   "E2E_OTHER_DUO_USER_PASSWORD",
+  "E2E_PHASE4_PRINCIPAL_SLUG",
+  "E2E_PHASE4_SECONDARY_SLUG",
   "E2E_PHASE5_ZERADO_SLUG",
   "E2E_PHASE5_DROPADO_SLUG"
 ];
@@ -127,8 +129,8 @@ const commands = [
       "--filter",
       "@queue/web",
       "test:e2e",
-      "tests/phase-5-e2e.spec.ts",
-      "tests/accessibility.spec.ts"
+      "tests/accessibility.spec.ts",
+      "tests/phase-5-e2e.spec.ts"
     ],
     skipWhen: missingE2eFixtures.length > 0,
     skipReason: `missing E2E fixtures: ${missingE2eFixtures.join(", ")}`
@@ -137,11 +139,6 @@ const commands = [
 
 const commandResults = commands.map(runCommand);
 const economyAudit = writeEconomyAudit({
-  missingDbFixtures,
-  missingE2eFixtures,
-  missingJobEvidence
-});
-writeUserSetup({
   missingDbFixtures,
   missingE2eFixtures,
   missingJobEvidence
@@ -163,6 +160,12 @@ const result =
       ? "BLOCKED - missing external evidence"
       : "PASSED";
 
+writeUserSetup({
+  gateResult: result,
+  missingDbFixtures,
+  missingE2eFixtures,
+  missingJobEvidence
+});
 writePerformanceReview({
   blockers,
   commandResults,
@@ -279,7 +282,7 @@ function writePerformanceReview({
     "",
     "## Browser and Accessibility",
     "",
-    "- Command: `pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts`",
+    "- Command: `pnpm --filter @queue/web test:e2e -- tests/accessibility.spec.ts tests/phase-5-e2e.spec.ts`",
     "- Coverage defined for both duo members, partner-confirmed `Zerado`, neutral `Dropado`, other-duo isolation, dashboard/Conquistas/Desafios mobile overlap and reduced-motion reward/streak feedback.",
     "",
     "## Security and RLS",
@@ -435,16 +438,19 @@ function writeEconomyAudit({
 }
 
 function writeUserSetup({
+  gateResult,
   missingDbFixtures,
   missingE2eFixtures,
   missingJobEvidence
 }) {
   const generated = new Date().toISOString();
+  const setupComplete =
+    missingDbFixtures.length + missingE2eFixtures.length + missingJobEvidence.length === 0;
   const markdown = [
     "---",
     "phase: 05-gamificacao-coletiva",
     "artifact: user-setup",
-    "status: Incomplete",
+    `status: ${setupComplete ? "Complete" : "Incomplete"}`,
     `generated: ${generated}`,
     "---",
     "",
@@ -462,6 +468,8 @@ function writeUserSetup({
     "",
     "- `E2E_READY_USER_*` and `E2E_READY_PARTNER_*` must belong to exactly the same duo.",
     "- `E2E_OTHER_DUO_USER_*` must belong to a different duo and must not have access to the Phase 5 fixture games.",
+    "- `E2E_PHASE4_PRINCIPAL_SLUG` and `E2E_PHASE4_SECONDARY_SLUG` must be in `Jogando` before shared accessibility coverage runs.",
+    "- Browser coverage runs `tests/accessibility.spec.ts` before `tests/phase-5-e2e.spec.ts` because the Phase 5 terminal flow mutates `Jogando` games into `zerado` or `dropado`.",
     "- `E2E_PHASE5_ZERADO_SLUG` and `E2E_PHASE5_DROPADO_SLUG` must be in `Jogando` for the ready duo before the browser run.",
     "- The two game slugs should be separate records so the `Zerado` and `Dropado` tests do not fight over terminal state.",
     "",
@@ -487,7 +495,7 @@ function writeUserSetup({
     "## Verification Commands",
     "",
     "```bash",
-    "pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts",
+    "pnpm --filter @queue/web test:e2e -- tests/accessibility.spec.ts tests/phase-5-e2e.spec.ts",
     "pnpm --filter @queue/db test:integration -- gamification-migrations gamification-rls gamification-concurrency performance-hot-paths",
     "pnpm --filter @queue/db drizzle:migrate",
     "gsd-sdk query verify.schema-drift 05",
@@ -511,9 +519,11 @@ function writeUserSetup({
     "",
     "## Current Status",
     "",
-    missingDbFixtures.length + missingE2eFixtures.length + missingJobEvidence.length > 0
-      ? "Result: BLOCKED - missing external evidence until the variables above are configured and the Phase 5 gate is rerun."
-      : "Result: READY - all required Phase 5 setup variables are present; rerun the gate to capture passing evidence.",
+    setupComplete
+      ? gateResult === "PASSED"
+        ? "Result: PASSED - all required Phase 5 setup variables were present and `pnpm phase:5:gate` captured passing evidence."
+        : `Result: READY - all required Phase 5 setup variables are present, but the latest gate result was ${gateResult}.`
+      : "Result: BLOCKED - missing external evidence until the variables above are configured and the Phase 5 gate is rerun.",
     ""
   ].join("\n");
 
@@ -737,6 +747,10 @@ function fixturePurpose(name) {
     case "E2E_OTHER_DUO_USER_EMAIL":
     case "E2E_OTHER_DUO_USER_PASSWORD":
       return "Different-duo actor for isolation checks.";
+    case "E2E_PHASE4_PRINCIPAL_SLUG":
+      return "Jogando principal game used by shared accessibility coverage.";
+    case "E2E_PHASE4_SECONDARY_SLUG":
+      return "Jogando secondary game used by shared accessibility coverage.";
     case "E2E_PHASE5_ZERADO_SLUG":
       return "Jogando game prepared for partner-confirmed Zerado reward flow.";
     case "E2E_PHASE5_DROPADO_SLUG":

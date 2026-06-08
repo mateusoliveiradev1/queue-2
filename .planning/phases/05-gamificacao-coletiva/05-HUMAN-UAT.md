@@ -4,7 +4,7 @@ phase: 05-gamificacao-coletiva
 source:
   - 05-VERIFICATION.md
 started: 2026-06-06T21:40:41Z
-updated: 2026-06-07T17:39:00Z
+updated: 2026-06-08T10:20:12Z
 ---
 
 # Phase 5 Human UAT
@@ -31,7 +31,7 @@ Completed in the configured test environment against the deployed app.
 
 **Expected:** Dashboard, Conquistas and Desafios remain usable on desktop/mobile and under reduced motion, with correct contrast, focus, touch targets, rarity cues, flame/freezing motion and reward feedback layout.
 
-**Result:** PASS. The browser gate covered dashboard, Conquistas and Desafios on desktop/mobile with reduced motion and axe checks. Result: 30 passed, 1 Phase 4-only skip.
+**Result:** PASS. The browser gate covered dashboard, Conquistas, Desafios and the shared Phase 4 Jogando Agora accessibility fixture on desktop/mobile with reduced motion and axe checks. Result: 31 passed, 0 skipped.
 
 ## Summary
 

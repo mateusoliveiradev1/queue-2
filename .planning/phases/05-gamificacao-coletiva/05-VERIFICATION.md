@@ -1,6 +1,6 @@
 ---
 phase: 05-gamificacao-coletiva
-verified: 2026-06-07T17:39:00Z
+verified: 2026-06-08T10:20:12Z
 status: complete
 score: 13/13 must-haves verified
 re_verification: true
@@ -15,7 +15,7 @@ deferred:
 # Phase 5: Gamificacao Coletiva Verification Report
 
 **Phase Goal:** Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks.
-**Verified:** 2026-06-07T17:39:00Z
+**Verified:** 2026-06-08T10:20:12Z
 **Status:** complete
 **Re-verification:** Yes - all implementation gaps closed
 
@@ -53,14 +53,14 @@ deferred:
 | Gate | Result |
 |---|---|
 | `pnpm verify` | PASS: architecture, lint, typechecks, 371 web tests and 61 DB tests |
-| `pnpm phase:5:gate` | PASS: architecture, typechecks, 87 focused tests, 19 DB evidence tests, migrations, schema drift, performance/economy audits, browser E2E and accessibility |
+| `pnpm phase:5:gate` | PASS: architecture, typechecks, 87 focused tests, 19 DB evidence tests, migrations, schema drift, performance/economy audits, browser E2E and accessibility with 31 passed / 0 skipped |
 | Schema drift | PASS: `drift_detected: false` |
 | Achievement reachability | PASS: 50/50 seeds |
 | Job lifecycle | PASS: producer, claim, completion and recurring successor exercised against Postgres |
 | Reward feedback | PASS: signed authoritative view accepted; tampered/spoofed input rejected |
 | Concurrency | PASS: distinct concurrent XP facts cross level once; quest increments add once per source key |
 
-The root Phase 5 gate passed with the external test fixtures configured: `E2E_PHASE5_ZERADO_SLUG=core-keeper`, `E2E_PHASE5_DROPADO_SLUG=streets-of-rage-4`, `GAMIFICATION_RUNNER_FREQUENCY_MINUTES=1440`, and a configured production `CRON_SECRET` placeholder for the local gate.
+The root Phase 5 gate passed with the external test fixtures configured: `E2E_PHASE4_PRINCIPAL_SLUG=core-keeper`, `E2E_PHASE4_SECONDARY_SLUG=streets-of-rage-4`, `E2E_PHASE5_ZERADO_SLUG=core-keeper`, `E2E_PHASE5_DROPADO_SLUG=streets-of-rage-4`, `GAMIFICATION_RUNNER_FREQUENCY_MINUTES=1440`, and a configured production `CRON_SECRET` placeholder for the local gate. Browser E2E and accessibility reported 31 passed and 0 skipped.
 
 `05-VALIDATION.md` is not present, so no separate Nyquist validation claim is made.
 
@@ -88,7 +88,7 @@ The root Phase 5 gate passed with the external test fixtures configured: `E2E_PH
 
 3. **Visual, motion and accessibility review**
 
-   PASS. Browser accessibility covered authenticated app routes plus Phase 5 dashboard, achievements and challenges surfaces under reduced motion and mobile conditions.
+   PASS. Browser accessibility covered authenticated app routes, the shared Phase 4 Jogando Agora fixture, and Phase 5 dashboard, achievements and challenges surfaces under reduced motion and mobile conditions. The final browser run had 31 passed and 0 skipped.
 
 ## Deferred Items
 

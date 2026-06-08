@@ -2,7 +2,7 @@
 phase: 05-gamificacao-coletiva
 artifact: user-setup
 status: Complete
-generated: 2026-06-07T17:38:57.589Z
+generated: 2026-06-08T10:20:12.964Z
 ---
 
 # Phase 5 User Setup
@@ -20,6 +20,8 @@ Use this setup before treating Phase 5 browser, database, job or production evid
 | `E2E_READY_PARTNER_PASSWORD` | configured | Second member of the same ready duo. |
 | `E2E_OTHER_DUO_USER_EMAIL` | configured | Different-duo actor for isolation checks. |
 | `E2E_OTHER_DUO_USER_PASSWORD` | configured | Different-duo actor for isolation checks. |
+| `E2E_PHASE4_PRINCIPAL_SLUG` | configured | Jogando principal game used by shared accessibility coverage. |
+| `E2E_PHASE4_SECONDARY_SLUG` | configured | Jogando secondary game used by shared accessibility coverage. |
 | `E2E_PHASE5_ZERADO_SLUG` | configured | Jogando game prepared for partner-confirmed Zerado reward flow. |
 | `E2E_PHASE5_DROPADO_SLUG` | configured | Jogando game prepared for neutral Dropado confirmation flow. |
 
@@ -27,6 +29,8 @@ Fixture expectations:
 
 - `E2E_READY_USER_*` and `E2E_READY_PARTNER_*` must belong to exactly the same duo.
 - `E2E_OTHER_DUO_USER_*` must belong to a different duo and must not have access to the Phase 5 fixture games.
+- `E2E_PHASE4_PRINCIPAL_SLUG` and `E2E_PHASE4_SECONDARY_SLUG` must be in `Jogando` before shared accessibility coverage runs.
+- Browser coverage runs `tests/accessibility.spec.ts` before `tests/phase-5-e2e.spec.ts` because the Phase 5 terminal flow mutates `Jogando` games into `zerado` or `dropado`.
 - `E2E_PHASE5_ZERADO_SLUG` and `E2E_PHASE5_DROPADO_SLUG` must be in `Jogando` for the ready duo before the browser run.
 - The two game slugs should be separate records so the `Zerado` and `Dropado` tests do not fight over terminal state.
 
@@ -55,7 +59,7 @@ Worker credential setup:
 ## Verification Commands
 
 ```bash
-pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts
+pnpm --filter @queue/web test:e2e -- tests/accessibility.spec.ts tests/phase-5-e2e.spec.ts
 pnpm --filter @queue/db test:integration -- gamification-migrations gamification-rls gamification-concurrency performance-hot-paths
 pnpm --filter @queue/db drizzle:migrate
 gsd-sdk query verify.schema-drift 05

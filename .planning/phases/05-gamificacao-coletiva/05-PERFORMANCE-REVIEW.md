@@ -2,7 +2,7 @@
 phase: 05
 plan: 06
 artifact: performance-review
-generated: 2026-06-07T17:38:57.589Z
+generated: 2026-06-08T10:20:12.965Z
 result: PASSED
 ---
 
@@ -10,7 +10,7 @@ result: PASSED
 
 ## Environment
 
-- Generated: 2026-06-07T17:38:57.589Z
+- Generated: 2026-06-08T10:20:12.965Z
 - Evidence environment: root Phase 5 gate command
 - Credentials: process-only; no credential values written to this artifact
 - DB fixture status: configured
@@ -26,7 +26,7 @@ result: PASSED
 
 ## Browser and Accessibility
 
-- Command: `pnpm --filter @queue/web test:e2e -- tests/phase-5-e2e.spec.ts tests/accessibility.spec.ts`
+- Command: `pnpm --filter @queue/web test:e2e -- tests/accessibility.spec.ts tests/phase-5-e2e.spec.ts`
 - Coverage defined for both duo members, partner-confirmed `Zerado`, neutral `Dropado`, other-duo isolation, dashboard/Conquistas/Desafios mobile overlap and reduced-motion reward/streak feedback.
 
 ## Security and RLS
@@ -45,15 +45,15 @@ result: PASSED
 
 | Command | Status | Duration |
 |---------|--------|----------|
-| Architecture | passed | 963ms |
-| Web typecheck | passed | 1754ms |
-| DB typecheck | passed | 847ms |
-| Focused gamification tests | passed | 1938ms |
-| DB integration evidence | passed | 11138ms |
-| Apply Phase 5 migrations | passed | 739ms |
-| Phase 5 schema drift | passed | 189ms |
-| Phase 5 query and performance review | passed | 236ms |
-| Browser E2E and accessibility | passed | 209805ms |
+| Architecture | passed | 941ms |
+| Web typecheck | passed | 2077ms |
+| DB typecheck | passed | 767ms |
+| Focused gamification tests | passed | 2420ms |
+| DB integration evidence | passed | 11509ms |
+| Apply Phase 5 migrations | passed | 767ms |
+| Phase 5 schema drift | passed | 231ms |
+| Phase 5 query and performance review | passed | 258ms |
+| Browser E2E and accessibility | passed | 211092ms |
 
 ## Missing DB Fixtures
 
