@@ -69,7 +69,7 @@ test.describe("Phase 6 roulette browser flow", () => {
   });
 
   test("mobile full-bleed reel keeps fixed pointer and controls below with no tiny card", async ({ page }) => {
-    // D-23: full-bleed mobile reel, fixed pointer, controls below, no tiny card.
+    // D-23: full-bleed mobile reel, fixed pointer, visual center, controls below, no tiny card.
     await page.setViewportSize(mobileViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
@@ -80,6 +80,7 @@ test.describe("Phase 6 roulette browser flow", () => {
     await expect(reel).toBeVisible();
     await expect(pointer).toBeVisible();
     await expect(controls).toBeVisible();
+    await expectVisualCenter(pointer, reel, "fixed pointer visual center");
     await expectElementBefore(reel, controls, "controls below the full-bleed reel");
     await expectNoVisibleControlOverlap(page);
   });
@@ -302,4 +303,23 @@ async function expectElementBefore(
   );
 
   expect(result, message).toBe(true);
+}
+
+async function expectVisualCenter(
+  inner: Locator,
+  outer: Locator,
+  message: string
+): Promise<void> {
+  await expect(inner).toBeVisible();
+  await expect(outer).toBeVisible();
+  const innerBox = await inner.boundingBox();
+  const outerBox = await outer.boundingBox();
+
+  expect(innerBox, `${message}: inner boundingBox missing`).not.toBeNull();
+  expect(outerBox, `${message}: outer boundingBox missing`).not.toBeNull();
+
+  const innerCenter = innerBox!.x + innerBox!.width / 2;
+  const outerCenter = outerBox!.x + outerBox!.width / 2;
+
+  expect(Math.abs(innerCenter - outerCenter), message).toBeLessThanOrEqual(8);
 }

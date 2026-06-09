@@ -87,6 +87,12 @@ const phase5FullMissingEnv = missingEnv([
   "E2E_PHASE5_ZERADO_SLUG",
   "E2E_PHASE5_DROPADO_SLUG"
 ]);
+const phase6RouletteMissingEnv = missingEnv([
+  "E2E_BASE_URL",
+  "E2E_READY_USER_EMAIL",
+  "E2E_READY_USER_PASSWORD",
+  "E2E_PHASE6_ELIGIBLE_SLUGS"
+]);
 const pairingActor = actorFromEnv(pairingActorPrefix);
 const readyActor = actorFromEnv("E2E_READY_USER");
 
@@ -101,6 +107,7 @@ reportMissingEnv("Phase 5 gamification dashboard accessibility", phase5Dashboard
 reportMissingEnv("Phase 5 achievements accessibility", phase5AchievementsMissingEnv);
 reportMissingEnv("Phase 5 challenges accessibility", phase5ChallengesMissingEnv);
 reportMissingEnv("Phase 5 full gamification accessibility", phase5FullMissingEnv);
+reportMissingEnv("Phase 6 roulette accessibility", phase6RouletteMissingEnv);
 
 test.describe("Phase 1 public accessibility", () => {
   test.skip(
@@ -534,6 +541,70 @@ test.describe("Phase 5 full gamification accessibility", () => {
   });
 });
 
+test.describe("Phase 6 roulette accessibility", () => {
+  test.skip(
+    phase6RouletteMissingEnv.length > 0,
+    `BLOCKED setup - missing Phase 6 roulette accessibility fixtures: ${phase6RouletteMissingEnv.join(", ")}`
+  );
+
+  test("roulette route keeps mobile controls target-sized, centered and axe-clean", async ({ page }) => {
+    // Phase 6 requires no autoplay: Som da roleta is an explicit audio preference control.
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/roleta");
+
+    const route = page.locator(".roulette-route");
+    const reel = page.locator(".roulette-reel-band");
+    const pointer = page.locator(".roulette-pointer-anchor");
+    const controls = page.locator(".roulette-controls");
+    const audioPreference = page.getByRole("button", { name: /Som da roleta/i });
+
+    await expect(route).toBeVisible();
+    await expect(reel).toBeVisible();
+    await expect(pointer).toBeVisible();
+    await expect(controls).toBeVisible();
+    await expect(audioPreference).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
+      .toBe(true);
+
+    await expectVisualCenter(pointer, reel, "visual center pointer");
+    await expectElementBefore(reel, controls, "roulette-controls below roulette-reel-band");
+    await expectMinimumTarget(audioPreference, 44, 44, "44px audio preference target");
+    await expectMinimumTarget(
+      controls.getByRole("button").first(),
+      44,
+      44,
+      "44px roulette control target"
+    );
+
+    const mobileNav = page.getByRole("navigation", { name: /navegacao principal mobile/i });
+    await expect(mobileNav).toBeVisible();
+    for (const item of [
+      "Fila",
+      "Catalogo",
+      "Descobrir",
+      "Biblioteca",
+      "Roleta",
+      "Conquistas",
+      "Desafios",
+      "Dupla",
+      "Perfil"
+    ]) {
+      await expectMinimumTarget(
+        mobileNav.getByRole("link", { name: new RegExp(item, "i") }),
+        72,
+        52,
+        "72px by 52px mobile nav target"
+      );
+    }
+
+    await expectNoVisibleControlOverlap(page);
+    await expectNoAxeViolations(page);
+  });
+});
+
 test.describe("Phase 2 detail accessibility", () => {
   test.skip(
     phase2DetailMissingEnv.length > 0,
@@ -617,6 +688,61 @@ async function expectNoOverlap(
     firstBox!.y + firstBox!.height > secondBox!.y;
 
   expect(overlaps, message).toBe(false);
+}
+
+async function expectMinimumTarget(
+  locator: Locator,
+  minWidth: number,
+  minHeight: number,
+  message: string
+): Promise<void> {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+
+  expect(box, `${message}: boundingBox missing`).not.toBeNull();
+  expect(box!.width, `${message}: width`).toBeGreaterThanOrEqual(minWidth);
+  expect(box!.height, `${message}: height`).toBeGreaterThanOrEqual(minHeight);
+}
+
+async function expectVisualCenter(
+  inner: Locator,
+  outer: Locator,
+  message: string
+): Promise<void> {
+  await expect(inner).toBeVisible();
+  await expect(outer).toBeVisible();
+  const innerBox = await inner.boundingBox();
+  const outerBox = await outer.boundingBox();
+
+  expect(innerBox, `${message}: inner boundingBox missing`).not.toBeNull();
+  expect(outerBox, `${message}: outer boundingBox missing`).not.toBeNull();
+
+  const innerCenter = innerBox!.x + innerBox!.width / 2;
+  const outerCenter = outerBox!.x + outerBox!.width / 2;
+
+  expect(Math.abs(innerCenter - outerCenter), message).toBeLessThanOrEqual(8);
+}
+
+async function expectElementBefore(
+  first: Locator,
+  second: Locator,
+  message: string
+): Promise<void> {
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+  const secondHandle = await second.elementHandle();
+
+  if (!secondHandle) {
+    throw new Error("Expected second element handle.");
+  }
+
+  const result = await first.evaluate(
+    (firstElement, secondElement) =>
+      Boolean(firstElement.compareDocumentPosition(secondElement as Element) & Node.DOCUMENT_POSITION_FOLLOWING),
+    secondHandle
+  );
+
+  expect(result, message).toBe(true);
 }
 
 async function expectNoVisibleControlOverlap(page: Page): Promise<void> {

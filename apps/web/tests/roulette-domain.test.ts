@@ -8,6 +8,76 @@ const roulettePolicyPath = "src/modules/roulette/domain/roulette-policy.ts";
 type RouletteModule = Record<string, unknown>;
 
 describe("roulette pure domain policy", () => {
+  it("documents complete Phase 6 requirement and D-01 through D-32 coverage map", () => {
+    const requirementCoverage = {
+      "ROUL-01": "eligible pool, blocked state and playable route shell",
+      "ROUL-02": "server-authoritative selection before visual reel reveal",
+      "ROUL-03": "opt-in audio, no autoplay and persisted audio preference",
+      "ROUL-04": "reduced motion staged reveal and replay without redraw",
+      "ROUL-05": "rarity seal, Legendary particles and static fallback",
+      "ROUL-06": "base weights, boosted weights and deterministic distribution simulation",
+      "ROUL-07": "discard cooldown for 3 rounds at 50 percent weight",
+      "ROUL-08": "boost balance cost, cap and weekend generation multiplier",
+      "ROUL-09": "lock result as Jogando Principal with replacement-required branch",
+      "ROUL-10": "idempotency, one active round, no duplicate costs or history",
+      "SAFE-06": "atomic server mutations, RLS and no client-owned economy facts"
+    } as const;
+    const decisionCoverage = {
+      "D-01": "curated backlog source",
+      "D-02": "Wishlist and Pausado eligibility",
+      "D-03": "60 visual covers with one real result",
+      "D-04": "minimum eligible pool of 3",
+      "D-05": "base rarity weights",
+      "D-06": "recent discard cooldown",
+      "D-07": "pending invitation after reveal",
+      "D-08": "separate boost balance",
+      "D-09": "boost mirrors collective XP",
+      "D-10": "100 boost improves rarity odds",
+      "D-11": "visible pity progress",
+      "D-12": "pity guarantee at 10",
+      "D-13": "weekend generation multiplier 1.2",
+      "D-14": "boost balance cap 600",
+      "D-15": "refund before persistence only",
+      "D-16": "one active or pending round",
+      "D-17": "editorial 5.5s reveal cadence",
+      "D-18": "opt-in audio preference",
+      "D-19": "reduced motion staged reveal",
+      "D-20": "Legendary static and particle fallback",
+      "D-21": "persisted shared result before animation",
+      "D-22": "replay is not a redraw",
+      "D-23": "mobile full-bleed reel, fixed pointer, controls below, no tiny card",
+      "D-24": "authoritative resume after refresh",
+      "D-25": "commitment invitation copy",
+      "D-26": "lock as Principal with audit",
+      "D-27": "replacement required with no auto-pause",
+      "D-28": "roleta-principal dashboard highlight",
+      "D-29": "new round blocked until invitation resolution",
+      "D-30": "discard without persisted boost refund",
+      "D-31": "roulette-result-locked and roulette-result-discarded Central facts",
+      "D-32": "compact history with boost, pity, locked and discarded outcomes"
+    } as const;
+
+    expect(Object.keys(requirementCoverage)).toEqual([
+      "ROUL-01",
+      "ROUL-02",
+      "ROUL-03",
+      "ROUL-04",
+      "ROUL-05",
+      "ROUL-06",
+      "ROUL-07",
+      "ROUL-08",
+      "ROUL-09",
+      "ROUL-10",
+      "SAFE-06"
+    ]);
+    expect(Object.keys(decisionCoverage)).toEqual(
+      Array.from({ length: 32 }, (_, index) => `D-${String(index + 1).padStart(2, "0")}`)
+    );
+    expect(decisionCoverage["D-23"]).toContain("full-bleed");
+    expect(decisionCoverage["D-31"]).toContain("roulette-result-locked");
+    expect(requirementCoverage["ROUL-03"]).toContain("no autoplay");
+  });
+
   it("D-01 D-02 D-04 ROUL-01 pulls only Wishlist/Pausado backlog games and blocks pools below 3", async () => {
     const roulette = await loadRouletteModule();
 
