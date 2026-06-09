@@ -178,16 +178,16 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Roulette
 
-- [ ] **ROUL-01**: Duo can open a roulette with a horizontal reel of 60 game covers and a central pointer
-- [ ] **ROUL-02**: Roulette result is selected and persisted by the server before the reveal animation begins
-- [ ] **ROUL-03**: Roulette reveal uses an approximately 5.5 second `cubic-bezier(.15,.85,.25,1)` motion
-- [ ] **ROUL-04**: User can hear tick, drumroll and fanfare audio after an interaction and can mute it
-- [ ] **ROUL-05**: User sees rarity borders on roulette games and particles for a Legendary result
-- [ ] **ROUL-06**: Duo is guaranteed an Epic-or-higher result after ten roulette results without one
-- [ ] **ROUL-07**: Duo can spend 100 shared XP on a roulette boost
-- [ ] **ROUL-08**: Roulette applies a 20% weekend multiplier where the economy rules require it
-- [ ] **ROUL-09**: Duo can lock the roulette result as the Jogando Principal game
-- [ ] **ROUL-10**: Repeated or concurrent roulette requests cannot duplicate costs, pity progress or history
+- [x] **ROUL-01**: Duo can open a roulette with a horizontal reel of 60 game covers and a central pointer
+- [x] **ROUL-02**: Roulette result is selected and persisted by the server before the reveal animation begins
+- [x] **ROUL-03**: Roulette reveal uses an approximately 5.5 second `cubic-bezier(.15,.85,.25,1)` motion
+- [x] **ROUL-04**: User can hear tick, drumroll and fanfare audio after an interaction and can mute it
+- [x] **ROUL-05**: User sees rarity borders on roulette games and particles for a Legendary result
+- [x] **ROUL-06**: Duo is guaranteed an Epic-or-higher result after ten roulette results without one
+- [x] **ROUL-07**: Duo can spend 100 shared XP on a roulette boost
+- [x] **ROUL-08**: Roulette applies a 20% weekend multiplier where the economy rules require it
+- [x] **ROUL-09**: Duo can lock the roulette result as the Jogando Principal game
+- [x] **ROUL-10**: Repeated or concurrent roulette requests cannot duplicate costs, pity progress or history
 
 ### Reviews, Hall And Duo Stats
 
@@ -208,7 +208,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **SAFE-03**: Catalog synchronization, streak checks, quest rotation and reminders continue through scheduled server jobs
 - [x] **SAFE-04**: Failed scheduled work can be retried without duplicating user-visible effects
 - [x] **SAFE-05**: Secrets such as RAWG, email, auth and privileged database credentials never reach the browser
-- [ ] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
+- [x] **SAFE-06**: Critical status, XP, quest, achievement, session and roulette changes are applied atomically
 - [x] **SAFE-07**: Authentication attempts are protected by persistent rate limiting suitable for a serverless runtime
 - [x] **SAFE-08**: Authentication uses secure trusted origins, cookies and secrets in every deployed environment
 - [x] **SAFE-09**: Development, preview or test, and production data use separate Neon branches
@@ -386,16 +386,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 | GAME-15 | Phase 5 | Complete |
 | GAME-16 | Phase 5 | Complete |
 | GAME-17 | Phase 5 | Complete |
-| ROUL-01 | Phase 6 | Pending |
-| ROUL-02 | Phase 6 | Pending |
-| ROUL-03 | Phase 6 | Pending |
-| ROUL-04 | Phase 6 | Pending |
-| ROUL-05 | Phase 6 | Pending |
-| ROUL-06 | Phase 6 | Pending |
-| ROUL-07 | Phase 6 | Pending |
-| ROUL-08 | Phase 6 | Pending |
-| ROUL-09 | Phase 6 | Pending |
-| ROUL-10 | Phase 6 | Pending |
+| ROUL-01 | Phase 6 | Complete |
+| ROUL-02 | Phase 6 | Complete |
+| ROUL-03 | Phase 6 | Complete |
+| ROUL-04 | Phase 6 | Complete |
+| ROUL-05 | Phase 6 | Complete |
+| ROUL-06 | Phase 6 | Complete |
+| ROUL-07 | Phase 6 | Complete |
+| ROUL-08 | Phase 6 | Complete |
+| ROUL-09 | Phase 6 | Complete |
+| ROUL-10 | Phase 6 | Complete |
 | HALL-01 | Phase 7 | Pending |
 | HALL-02 | Phase 7 | Pending |
 | HALL-03 | Phase 7 | Pending |
@@ -410,7 +410,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-03 | Phase 5 | Complete |
 | SAFE-04 | Phase 4 | Complete |
 | SAFE-05 | Phase 1 | Complete |
-| SAFE-06 | Phase 6 | Pending |
+| SAFE-06 | Phase 6 | Complete |
 | SAFE-07 | Phase 1 | Complete |
 | SAFE-08 | Phase 1 | Complete |
 | SAFE-09 | Phase 1 | Complete |
