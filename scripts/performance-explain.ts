@@ -689,6 +689,194 @@ export const phase5ReviewQueries: ReviewQuery[] = [
   }
 ];
 
+export const phase6ReviewQueries: ReviewQuery[] = [
+  {
+    name: "Roulette state read",
+    surface: "/app/roleta",
+    mode: "read-analyze",
+    queryCount: 4,
+    expectedIndexes: [
+      "app_roulette_boost_balances_duo_uidx",
+      "app_roulette_pity_state_duo_uidx",
+      "app_roulette_rounds_active_duo_uidx",
+      "app_roulette_history_events_duo_created_idx"
+    ],
+    sql: `
+      SELECT
+        duo.id,
+        balance.balance,
+        pity.draws_since_epic_or_higher,
+        active_round.id AS active_round_id,
+        history.event_type AS latest_history_event
+      FROM app.duos AS duo
+      LEFT JOIN app.roulette_boost_balances AS balance
+        ON balance.duo_id = duo.id
+      LEFT JOIN app.roulette_pity_state AS pity
+        ON pity.duo_id = duo.id
+      LEFT JOIN LATERAL (
+        SELECT round_row.id
+        FROM app.roulette_rounds AS round_row
+        WHERE round_row.duo_id = duo.id
+          AND round_row.status IN ('active', 'revealing', 'pending_invitation')
+        ORDER BY round_row.updated_at DESC
+        LIMIT 1
+      ) AS active_round ON true
+      LEFT JOIN LATERAL (
+        SELECT event.event_type
+        FROM app.roulette_history_events AS event
+        WHERE event.duo_id = duo.id
+        ORDER BY event.created_at DESC
+        LIMIT 1
+      ) AS history ON true
+      WHERE duo.id = $1::uuid
+      LIMIT 1
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Roulette eligible pool with cooldown",
+    surface: "/app/roleta eligible pool",
+    mode: "read-analyze",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_duo_library_games_duo_status_idx",
+      "app_duo_library_games_duo_catalog_uidx",
+      "app_roulette_cooldowns_duo_game_uidx",
+      "app_roulette_cooldowns_duo_remaining_idx"
+    ],
+    sql: `
+      SELECT library_game.id, library_game.status, game.name, cooldown.weight_multiplier
+      FROM app.duo_library_games AS library_game
+      INNER JOIN catalog.games AS game
+        ON game.id = library_game.catalog_game_id
+      LEFT JOIN app.roulette_cooldowns AS cooldown
+        ON cooldown.duo_id = library_game.duo_id
+       AND cooldown.library_game_id = library_game.id
+       AND cooldown.remaining_rounds > 0
+      WHERE library_game.duo_id = $1::uuid
+        AND library_game.status = ANY($2::text[])
+      ORDER BY game.name ASC, library_game.updated_at DESC
+      LIMIT 60
+    `,
+    params: ["00000000-0000-0000-0000-000000000001", ["wishlist", "pausado"]]
+  },
+  {
+    name: "Roulette active round lookup",
+    surface: "startRouletteRound",
+    mode: "read-analyze",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_roulette_rounds_active_duo_uidx",
+      "app_roulette_rounds_duo_status_idx",
+      "app_roulette_rounds_idempotency_uidx"
+    ],
+    sql: `
+      SELECT id, status, result_library_game_id, boost_spent
+      FROM app.roulette_rounds
+      WHERE duo_id = $1::uuid
+        AND status IN ('active', 'revealing', 'pending_invitation')
+      ORDER BY updated_at DESC
+      LIMIT 1
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Roulette compact history",
+    surface: "CompactHistory",
+    mode: "read-analyze",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_roulette_history_events_duo_created_idx",
+      "app_roulette_history_events_round_idx"
+    ],
+    sql: `
+      SELECT event_type, round_id, metadata, created_at
+      FROM app.roulette_history_events
+      WHERE duo_id = $1::uuid
+      ORDER BY created_at DESC
+      LIMIT 12
+    `,
+    params: ["00000000-0000-0000-0000-000000000001"]
+  },
+  {
+    name: "Roulette lock discard invitation resolution",
+    surface: "lockRouletteResult / discardRouletteResult",
+    mode: "mutation-static",
+    queryCount: 2,
+    expectedIndexes: [
+      "app_roulette_rounds_active_duo_uidx",
+      "app_roulette_rounds_result_idx",
+      "app_roulette_history_events_key_uidx"
+    ],
+    sql: `
+      UPDATE app.roulette_rounds
+      SET status = 'locked',
+          resolved_by_user_id = 'query-review-user',
+          resolved_at = now(),
+          updated_at = now()
+      WHERE duo_id = gen_random_uuid()
+        AND id = gen_random_uuid()
+        AND status = 'pending_invitation'
+    `
+  },
+  {
+    name: "Roulette boost ledger spend or refund",
+    surface: "boost ledger",
+    mode: "mutation-static",
+    queryCount: 1,
+    expectedIndexes: [
+      "app_roulette_boost_ledger_key_uidx",
+      "app_roulette_boost_ledger_source_uidx",
+      "app_roulette_boost_ledger_duo_created_idx"
+    ],
+    sql: `
+      INSERT INTO app.roulette_boost_ledger (
+        duo_id,
+        ledger_key,
+        source_type,
+        source_id,
+        amount_delta,
+        reason_code,
+        actor_user_id
+      )
+      VALUES (
+        gen_random_uuid(),
+        'query-review-roulette-boost',
+        'roulette-round',
+        gen_random_uuid(),
+        -100,
+        'boost-spend',
+        'query-review-user'
+      )
+      ON CONFLICT DO NOTHING
+    `
+  },
+  {
+    name: "Roulette dashboard handoff",
+    surface: "/app roleta-principal dashboard",
+    mode: "read-analyze",
+    queryCount: 2,
+    expectedIndexes: [
+      "app_play_active_games_duo_order_idx",
+      "app_play_notifications_duo_state_idx",
+      "app_play_notifications_recipient_state_idx"
+    ],
+    sql: `
+      SELECT notification.id, notification.notification_type, notification.created_at
+      FROM app.play_notifications AS notification
+      WHERE notification.duo_id = $1::uuid
+        AND notification.notification_type = ANY($2::text[])
+        AND notification.state <> 'archived'
+      ORDER BY notification.created_at DESC
+      LIMIT 10
+    `,
+    params: [
+      "00000000-0000-0000-0000-000000000001",
+      ["roulette-result-locked", "roulette-result-discarded"]
+    ]
+  }
+];
+
 const queryReviewConfig = getQueryReviewConfig(requestedPhase);
 const queryReviewPath = queryReviewConfig.path;
 
@@ -985,6 +1173,22 @@ function getQueryReviewConfig(phase: string): QueryReviewConfig {
       plan: "06",
       queries: phase5ReviewQueries,
       title: "Phase 5 Performance Review"
+    };
+  }
+
+  if (phase === "6" || phase === "06") {
+    return {
+      artifact: "performance-review",
+      command: "node --experimental-strip-types scripts/performance-explain.ts --phase=6",
+      label: "Phase 6",
+      path: resolve(
+        workspaceRoot,
+        ".planning/phases/06-roleta-e-economia/06-PERFORMANCE-REVIEW.md"
+      ),
+      phase: "06",
+      plan: "10",
+      queries: phase6ReviewQueries,
+      title: "Phase 6 Performance Review"
     };
   }
 

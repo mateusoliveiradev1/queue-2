@@ -1,9 +1,9 @@
 ---
 phase: 06
 slug: roleta-e-economia
-status: planned
+status: executing
 nyquist_compliant: true
-wave_0_complete: planned
+wave_0_complete: executed
 wave_0_plan: 06-00-PLAN.md
 created: 2026-06-08
 revised: 2026-06-09
@@ -11,7 +11,7 @@ revised: 2026-06-09
 
 # Phase 06 - Validation Strategy
 
-Per-phase validation contract for feedback sampling during execution. Nyquist compliance is satisfied at planning time because every required test/gate scaffold is assigned to `06-00-PLAN.md`; Wave 0 is planned, not executed.
+Per-phase validation contract for feedback sampling during execution. Nyquist compliance is satisfied because every required test/gate scaffold was assigned to `06-00-PLAN.md` and later filled by the Phase 6 execution plans.
 
 ## Test Infrastructure
 
@@ -27,23 +27,23 @@ Per-phase validation contract for feedback sampling during execution. Nyquist co
 
 | Wave 0 Requirement | Planned In | Execution Status | Purpose |
 |---|---|---|---|
-| `apps/web/tests/roulette-domain.test.ts` | `06-00-PLAN.md` Task 1 | planned | Policy coverage for eligibility, weights, pity, boost, cooldown and 60-slot reel. |
-| `apps/web/tests/roulette-application.test.ts` | `06-00-PLAN.md` Task 1 | planned | Use case coverage for start/resume/lock/discard/refund. |
-| `packages/db/tests/roulette-migrations.test.ts` | `06-00-PLAN.md` Task 1 | planned | Schema, constraints and empty-db upgrade coverage. |
-| `packages/db/tests/roulette-rls.test.ts` | `06-00-PLAN.md` Task 1 | planned | Forced RLS and cross-duo denial coverage. |
-| `packages/db/tests/roulette-concurrency.test.ts` | `06-00-PLAN.md` Task 1 | planned | One active round and exactly-once boost/pity/history coverage. |
-| `apps/web/tests/roulette-ui.test.tsx` | `06-00-PLAN.md` Task 2 | planned | Route component, reduced-motion, audio and result UI coverage. |
-| `apps/web/tests/phase-6-e2e.spec.ts` | `06-00-PLAN.md` Task 2 | planned | Two-member browser flow and other-duo denial coverage. |
-| `scripts/roulette-economy-simulation.mjs` | `06-00-PLAN.md` Task 3 | planned | Deterministic base/boost/pity/cooldown/weekend simulation coverage. |
-| `scripts/phase-6-gate.mjs` | `06-00-PLAN.md` Task 3 | planned | Final phase gate command scaffold with explicit external blockers. |
+| `apps/web/tests/roulette-domain.test.ts` | `06-00-PLAN.md` Task 1 | executed | Policy coverage for eligibility, weights, pity, boost, cooldown and 60-slot reel. |
+| `apps/web/tests/roulette-application.test.ts` | `06-00-PLAN.md` Task 1 | executed | Use case coverage for start/resume/lock/discard/refund. |
+| `packages/db/tests/roulette-migrations.test.ts` | `06-00-PLAN.md` Task 1 | executed | Schema, constraints and empty-db upgrade coverage. |
+| `packages/db/tests/roulette-rls.test.ts` | `06-00-PLAN.md` Task 1 | executed | Forced RLS and cross-duo denial coverage. |
+| `packages/db/tests/roulette-concurrency.test.ts` | `06-00-PLAN.md` Task 1 | executed | One active round and exactly-once boost/pity/history coverage. |
+| `apps/web/tests/roulette-ui.test.tsx` | `06-00-PLAN.md` Task 2 | executed | Route component, reduced-motion, audio and result UI coverage. |
+| `apps/web/tests/phase-6-e2e.spec.ts` | `06-00-PLAN.md` Task 2 | executed | Two-member browser flow and other-duo denial coverage. |
+| `scripts/roulette-economy-simulation.mjs` | `06-00-PLAN.md` Task 3 | executed | Deterministic base/boost/pity/cooldown/weekend simulation coverage. |
+| `scripts/phase-6-gate.mjs` | `06-00-PLAN.md` Task 3 | executed | Final phase gate command with explicit external blockers and evidence artifacts. |
 
 ## Per-Task Verification Map
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | Wave 0 Status |
 |---|---|---:|---|---|---|---|---|---|
-| 06-00-01 | 00 | 0 | ROUL-02, ROUL-06, ROUL-07, ROUL-08, ROUL-10, SAFE-06 | T-06-00-01 | Domain, DB and concurrency tests exist before implementation. | unit + db | `pnpm --filter @queue/web test -- roulette-domain && pnpm --filter @queue/db test:integration -- roulette-migrations roulette-rls roulette-concurrency` | planned |
-| 06-00-02 | 00 | 0 | ROUL-01, ROUL-03, ROUL-04, ROUL-05, ROUL-09 | T-06-00-02 | UI and E2E tests exist before route/handoff implementation. | component + e2e | `pnpm --filter @queue/web test -- roulette-ui && pnpm --filter @queue/web test:e2e -- tests/phase-6-e2e.spec.ts` | planned |
-| 06-00-03 | 00 | 0 | ROUL-01..ROUL-10, SAFE-06 | T-06-00-03 | Gate and simulation scaffolds exist before closeout. | gate | `node scripts/roulette-economy-simulation.mjs && pnpm phase:6:gate` | planned |
+| 06-00-01 | 00 | 0 | ROUL-02, ROUL-06, ROUL-07, ROUL-08, ROUL-10, SAFE-06 | T-06-00-01 | Domain, DB and concurrency tests exist before implementation. | unit + db | `pnpm --filter @queue/web test -- roulette-domain && pnpm --filter @queue/db test:integration -- roulette-migrations roulette-rls roulette-concurrency` | executed |
+| 06-00-02 | 00 | 0 | ROUL-01, ROUL-03, ROUL-04, ROUL-05, ROUL-09 | T-06-00-02 | UI and E2E tests exist before route/handoff implementation. | component + e2e | `pnpm --filter @queue/web test -- roulette-ui && pnpm --filter @queue/web test:e2e -- tests/phase-6-e2e.spec.ts` | executed |
+| 06-00-03 | 00 | 0 | ROUL-01..ROUL-10, SAFE-06 | T-06-00-03 | Gate and simulation scaffolds exist before closeout. | gate | `node scripts/roulette-economy-simulation.mjs && pnpm phase:6:gate` | executed |
 | 06-01-01 | 01 | 1 | ROUL-02, ROUL-06, ROUL-07, ROUL-08, ROUL-10, SAFE-06 | T-06-01-01 | RLS and DB invariants protect result/economy facts. | db | `pnpm --filter @queue/db test:integration -- roulette-migrations roulette-rls roulette-concurrency` | depends on 06-00 |
 | 06-02-01 | 02 | 1 | ROUL-01, ROUL-02, ROUL-06, ROUL-07, ROUL-08, ROUL-10 | T-06-02-01 | Pure policies keep result/economy authority outside UI. | unit | `pnpm --filter @queue/web test -- roulette-domain` | depends on 06-00 |
 | 06-03-01 | 03 | 2 | ROUL-02, ROUL-06, ROUL-07, ROUL-08, ROUL-10, SAFE-06 | T-06-03-01 | Concurrent starts converge to one persisted round and one cost/history effect. | unit + db | `pnpm --filter @queue/web test -- roulette-application && pnpm --filter @queue/db test:integration -- roulette-concurrency` | depends on 06-00 |
@@ -71,6 +71,6 @@ Per-phase validation contract for feedback sampling during execution. Nyquist co
 - [x] Sampling continuity has no three consecutive tasks without automated verify.
 - [x] No watch-mode flags are specified.
 - [x] Research open questions have selected answers in `06-RESEARCH.md`.
-- [x] `nyquist_compliant: true` reflects planned Wave 0 coverage, not executed tests.
+- [x] `nyquist_compliant: true` reflects executed Wave 0 scaffolds and completed focused coverage.
 
-**Approval:** planned for execution; Wave 0 files will be created by `06-00-PLAN.md`.
+**Approval:** Wave 0 files were created by `06-00-PLAN.md`; Phase 6 gate evidence is generated by `06-10-PLAN.md`.
