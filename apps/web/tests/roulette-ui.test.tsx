@@ -158,7 +158,7 @@ describe("Phase 6 roulette route shell", () => {
     expect(reelSource).toContain("RoulettePointer");
     expect(reelSource).toContain("5500");
     expect(reelSource).toContain("cubic-bezier(.15,.85,.25,1)");
-    expect(reelSource).toContain("Array.from({ length: 60 })");
+    expect(reelSource).toContain("Array.from({ length: 60 }");
     expect(reelSource).toContain("aria-hidden");
     expect(reelSource).toContain("aria-live");
     expect(reelSource).toContain('role="region"');
