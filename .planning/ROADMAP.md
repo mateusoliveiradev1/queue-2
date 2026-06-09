@@ -212,7 +212,17 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Pity, boost de 100 XP e multiplicador de fim de semana afetam o resultado exatamente uma vez.
   4. O resultado e persistido antes da animacao, permanece consistente entre os dois membros e nao pode duplicar custos ou historico.
   5. A dupla pode travar o resultado como Jogando Principal.
-**Plans**: TBD
+**Plans**: 06-00, 06-01, 06-02, 06-03, 06-04, 06-05, 06-06, 06-07, 06-08, 06-09, 06-10, 06-11
+**Plan Waves**:
+  - **Wave 0:** `06-00` - Nyquist test, browser, DB, simulation and gate scaffolds.
+  - **Wave 1:** `06-01`, `06-02` - Database/RLS foundation and roulette module policies/contracts.
+  - **Wave 2:** `06-03` - Authoritative round creation, boost ledger materialization, pity, cooldown and state reads.
+  - **Wave 3:** `06-04`, `06-06` - `/app/roleta` route shell/actions and Play public replacement contract.
+  - **Wave 4:** `06-05`, `06-07` - Reveal UI/audio/reduced-motion/history and roulette lock/discard application behavior.
+  - **Wave 5:** `06-08` - Route/UI/dashboard/Central wiring for lock, discard and replacement flows.
+  - **Wave 6:** `06-09` - Focused tests, accessibility and deterministic economy simulation evidence.
+  - **Wave 7:** `06-10` - Root Phase 6 gate and evidence artifacts.
+  - **Wave 8:** `06-11` - Final gate execution and coverage closure.
 **UI hint**: yes
 
 ### Phase 7: Hall, Stats E Lancamento
@@ -257,5 +267,5 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 03.3. Performance de Producao e UX de Latencia | 4/4 | Complete | 2026-06-05 |
 | 4. Jogando Agora, Sessoes E Agendamento | 6/6 | Complete | 2026-06-05 |
 | 5. Gamificacao Coletiva | 11/11 | Human verification | - |
-| 6. Roleta E Economia | 0/TBD | Not started | - |
+| 6. Roleta E Economia | 0/12 | Planned | - |
 | 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |

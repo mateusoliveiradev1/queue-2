@@ -94,7 +94,7 @@ Suggested tables or equivalent shapes:
   - Partial unique index for one active/pending round per duo where status is `active`, `revealing` or `pending_invitation`.
   - Unique `(duo_id, idempotency_key)` to make repeated start requests converge.
 - `app.roulette_round_entries`
-  - Optional persisted 60-slot visual reel snapshot. If not persisted, store enough seed/snapshot metadata to reconstruct the same 60-slot list for both members and replay.
+  - Persisted 60-slot visual reel snapshot for every round. Rows preserve replay, audit and both-member resume even if reel-generation code changes.
 - `app.roulette_cooldowns`
   - `duo_id`, `library_game_id`, `round_id`, `remaining_rounds` or `cooldown_until_round`, updated after discarded non-locked results.
 - `app.roulette_history_events`
@@ -209,10 +209,9 @@ Phase 6 validation should combine fast deterministic unit tests with slower DB/b
 
 Wave 0 should create failing/stub tests before broad implementation when a plan introduces schema or cross-module contracts. No three consecutive tasks should lack an automated verification command. Missing DB/browser fixtures must create explicit BLOCKED output in the final gate.
 
-## Open Questions For Execution
+## Open Questions For Execution (RESOLVED)
 
-- Whether boost balance is materialized from XP facts at award time or rebuilt periodically from `duo_xp_awards`. The plan should prefer materialized ledger entries for explicit spend/refund audit, with rebuild checks.
-- Whether the 60-slot reel snapshot is persisted as rows or reconstructed from a stored deterministic seed. Persist rows are simpler for replay/audit; stored seed is smaller but must be deterministic across code changes.
-- Whether lock-as-Principal should call a new Play public contract directly or route through an enhanced Library coordinator. The chosen API must not deep-import Play internals.
-- Exact rarity weights, boost cap and cooldown duration need simulation before implementation, but must remain understandable in UI copy.
-
+- **RESOLVED - boost balance:** Use a materialized append-only boost ledger sourced from `app.duo_xp_awards`. Earn entries are derived from confirmed shared XP facts, spend/refund entries are explicit audit facts, and rebuild/audit checks compare ledger materialization against XP sources without reducing lifetime XP or level projections.
+- **RESOLVED - 60-slot reel snapshot:** Persist `app.roulette_round_entries` as the authoritative 60-slot snapshot for each round. The persisted rows support replay, audit and both-member resume even if reel-generation code changes after the round.
+- **RESOLVED - Play handoff:** Add a narrow Play public replacement contract only if the existing public API cannot atomically pause the selected current `Jogando` game and activate the incoming roulette result as Principal. Roulette must call Play through the public entrypoint and must not deep-import Play internals.
+- **RESOLVED - constants and simulation:** Lock constants to base weights `70/22/7/1`, boosted weights `55/28/14/3`, pity threshold `10`, boost cost `100`, boost cap `600`, cooldown `3` rounds at `50%` weight, and weekend boost-generation multiplier `1.2`. Deterministic simulation must validate these constants before the final gate passes.
