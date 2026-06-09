@@ -228,34 +228,27 @@ async function applyBoostedRoundEffects(
 
     await client.query(
       `
-        INSERT INTO app.roulette_boost_ledger (
-          duo_id,
-          ledger_key,
-          source_type,
-          source_id,
-          amount_delta,
-          reason_code,
-          actor_user_id
+        WITH inserted_ledger AS (
+          INSERT INTO app.roulette_boost_ledger (
+            duo_id,
+            ledger_key,
+            source_type,
+            source_id,
+            amount_delta,
+            reason_code,
+            actor_user_id
+          )
+          VALUES ($1, $2, 'roulette-round', $3, -100, 'boost-spend', $4)
+          ON CONFLICT (duo_id, ledger_key) DO NOTHING
+          RETURNING amount_delta
         )
-        VALUES ($1, $2, 'roulette-round', $3, -100, 'boost-spend', $4)
-        ON CONFLICT (duo_id, ledger_key) DO NOTHING
+        UPDATE app.roulette_boost_balances
+        SET balance = GREATEST(0, balance + inserted_ledger.amount_delta),
+            updated_at = now()
+        FROM inserted_ledger
+        WHERE duo_id = $1
       `,
       [duoId, `boost:${roundKey}`, roundId, userId]
-    );
-    await client.query(
-      `
-        UPDATE app.roulette_boost_balances
-        SET balance = GREATEST(0, balance - 100),
-            updated_at = now()
-        WHERE duo_id = $1
-          AND EXISTS (
-            SELECT 1
-            FROM app.roulette_boost_ledger
-            WHERE duo_id = $1
-              AND ledger_key = $2
-          )
-      `,
-      [duoId, `boost:${roundKey}`]
     );
     await client.query(
       `

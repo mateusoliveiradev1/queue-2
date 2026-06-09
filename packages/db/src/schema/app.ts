@@ -5,6 +5,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgSchema,
   smallint,
   text,
@@ -890,7 +891,7 @@ export const playNotifications = appSchema.table(
       .where(sql`${table.actionRefId} IS NOT NULL`),
     check(
       "app_play_notifications_type_chk",
-      sql`${table.notificationType} IN ('session-confirmation', 'scheduled-session', 'reminder-sent', 'live-session', 'terminal-request', 'push-failure', 'push-disabled')`
+      sql`${table.notificationType} IN ('session-confirmation', 'scheduled-session', 'reminder-sent', 'live-session', 'terminal-request', 'push-failure', 'push-disabled', 'roulette-result-locked', 'roulette-result-discarded')`
     ),
     check(
       "app_play_notifications_state_chk",
@@ -941,6 +942,273 @@ export const pushSubscriptions = appSchema.table(
         (${table.enabled} = true AND ${table.disabledAt} IS NULL)
         OR (${table.enabled} = false AND ${table.disabledAt} IS NOT NULL)
       `
+    )
+  ]
+);
+
+export const rouletteBoostBalances = appSchema.table(
+  "roulette_boost_balances",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    balance: integer("balance").notNull().default(0),
+    cap: integer("cap").notNull().default(600),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_boost_balances_duo_uidx").on(table.duoId),
+    check(
+      "app_roulette_boost_balances_amount_chk",
+      sql`${table.balance} >= 0 AND ${table.cap} = 600 AND ${table.balance} <= ${table.cap}`
+    )
+  ]
+);
+
+export const roulettePityState = appSchema.table(
+  "roulette_pity_state",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    drawsSinceEpicOrHigher: integer("draws_since_epic_or_higher").notNull().default(0),
+    lastEpicOrHigherAt: timestamp("last_epic_or_higher_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_pity_state_duo_uidx").on(table.duoId),
+    check(
+      "app_roulette_pity_state_non_negative_chk",
+      sql`${table.drawsSinceEpicOrHigher} >= 0`
+    )
+  ]
+);
+
+export const rouletteRounds = appSchema.table(
+  "roulette_rounds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    idempotencyKey: text("idempotency_key").notNull(),
+    status: varchar("status", { length: 24 }).notNull().default("active"),
+    resultLibraryGameId: uuid("result_library_game_id")
+      .notNull()
+      .references(() => duoLibraryGames.id, { onDelete: "restrict" }),
+    resultCatalogGameId: uuid("result_catalog_game_id").references(() => catalogGames.id, {
+      onDelete: "restrict"
+    }),
+    resultRarity: varchar("result_rarity", { length: 16 }).notNull(),
+    boostSpent: boolean("boost_spent").notNull().default(false),
+    boostLedgerId: uuid("boost_ledger_id"),
+    pityBefore: integer("pity_before").notNull().default(0),
+    pityAfter: integer("pity_after").notNull().default(0),
+    weekendMultiplierApplied: boolean("weekend_multiplier_applied").notNull().default(false),
+    selectedByUserId: text("selected_by_user_id")
+      .notNull()
+      .references(() => authUsers.id, { onDelete: "restrict" }),
+    resolvedByUserId: text("resolved_by_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    selectedAt: timestamp("selected_at", { withTimezone: true }).notNull().defaultNow(),
+    revealedAt: timestamp("revealed_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_rounds_active_duo_uidx")
+      .on(table.duoId)
+      .where(sql`${table.status} IN ('active', 'revealing', 'pending_invitation')`),
+    uniqueIndex("app_roulette_rounds_idempotency_uidx").on(
+      table.duoId,
+      table.idempotencyKey
+    ),
+    index("app_roulette_rounds_duo_status_idx").on(
+      table.duoId,
+      table.status,
+      table.updatedAt
+    ),
+    index("app_roulette_rounds_result_idx").on(table.duoId, table.resultLibraryGameId),
+    check(
+      "app_roulette_rounds_status_chk",
+      sql`${table.status} IN ('active', 'revealing', 'pending_invitation', 'locked', 'discarded', 'cancelled')`
+    ),
+    check(
+      "app_roulette_rounds_rarity_chk",
+      sql`${table.resultRarity} IN ('common', 'rare', 'epic', 'legendary')`
+    ),
+    check(
+      "app_roulette_rounds_pity_non_negative_chk",
+      sql`${table.pityBefore} >= 0 AND ${table.pityAfter} >= 0`
+    ),
+    check(
+      "app_roulette_rounds_resolution_shape_chk",
+      sql`
+        (${table.status} IN ('locked', 'discarded', 'cancelled') AND ${table.resolvedAt} IS NOT NULL)
+        OR (${table.status} IN ('active', 'revealing', 'pending_invitation'))
+      `
+    )
+  ]
+);
+
+export const rouletteRoundEntries = appSchema.table(
+  "roulette_round_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    roundId: uuid("round_id")
+      .notNull()
+      .references(() => rouletteRounds.id, { onDelete: "cascade" }),
+    slotIndex: smallint("slot_index").notNull(),
+    libraryGameId: uuid("library_game_id")
+      .notNull()
+      .references(() => duoLibraryGames.id, { onDelete: "restrict" }),
+    catalogGameId: uuid("catalog_game_id").references(() => catalogGames.id, {
+      onDelete: "restrict"
+    }),
+    rarity: varchar("rarity", { length: 16 }).notNull(),
+    titleSnapshot: varchar("title_snapshot", { length: 160 }).notNull(),
+    coverUrlSnapshot: text("cover_url_snapshot"),
+    selectedSlot: boolean("selected_slot").notNull().default(false),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_round_entries_slot_uidx").on(
+      table.duoId,
+      table.roundId,
+      table.slotIndex
+    ),
+    index("app_roulette_round_entries_round_idx").on(table.duoId, table.roundId),
+    check("app_roulette_round_entries_slot_chk", sql`${table.slotIndex} BETWEEN 1 AND 60`),
+    check(
+      "app_roulette_round_entries_rarity_chk",
+      sql`${table.rarity} IN ('common', 'rare', 'epic', 'legendary')`
+    ),
+    check(
+      "app_roulette_round_entries_title_chk",
+      sql`char_length(${table.titleSnapshot}) BETWEEN 1 AND 160`
+    )
+  ]
+);
+
+export const rouletteBoostLedger = appSchema.table(
+  "roulette_boost_ledger",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    ledgerKey: text("ledger_key").notNull(),
+    sourceType: varchar("source_type", { length: 40 }).notNull(),
+    sourceId: uuid("source_id").notNull(),
+    roundId: uuid("round_id").references(() => rouletteRounds.id, {
+      onDelete: "set null"
+    }),
+    amountDelta: integer("amount_delta").notNull(),
+    reasonCode: varchar("reason_code", { length: 80 }).notNull(),
+    actorUserId: text("actor_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_boost_ledger_key_uidx").on(table.duoId, table.ledgerKey),
+    uniqueIndex("app_roulette_boost_ledger_source_uidx").on(
+      table.duoId,
+      table.sourceType,
+      table.sourceId,
+      table.reasonCode
+    ),
+    index("app_roulette_boost_ledger_duo_created_idx").on(table.duoId, table.createdAt),
+    check("app_roulette_boost_ledger_delta_chk", sql`${table.amountDelta} <> 0`),
+    check(
+      "app_roulette_boost_ledger_source_type_chk",
+      sql`${table.sourceType} IN ('xp-award', 'roulette-round', 'roulette-refund', 'adjustment', 'rebuild')`
+    ),
+    check(
+      "app_roulette_boost_ledger_reason_chk",
+      sql`char_length(${table.reasonCode}) BETWEEN 1 AND 80`
+    )
+  ]
+);
+
+export const rouletteCooldowns = appSchema.table(
+  "roulette_cooldowns",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    libraryGameId: uuid("library_game_id")
+      .notNull()
+      .references(() => duoLibraryGames.id, { onDelete: "cascade" }),
+    roundId: uuid("round_id").references(() => rouletteRounds.id, {
+      onDelete: "set null"
+    }),
+    remainingRounds: integer("remaining_rounds").notNull().default(3),
+    weightMultiplier: numeric("weight_multiplier", {
+      precision: 4,
+      scale: 3
+    })
+      .notNull()
+      .default("0.500"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_cooldowns_duo_game_uidx").on(
+      table.duoId,
+      table.libraryGameId
+    ),
+    index("app_roulette_cooldowns_duo_remaining_idx").on(
+      table.duoId,
+      table.remainingRounds,
+      table.updatedAt
+    ),
+    check("app_roulette_cooldowns_remaining_chk", sql`${table.remainingRounds} >= 0`),
+    check(
+      "app_roulette_cooldowns_multiplier_chk",
+      sql`${table.weightMultiplier} > 0 AND ${table.weightMultiplier} <= 1`
+    )
+  ]
+);
+
+export const rouletteHistoryEvents = appSchema.table(
+  "roulette_history_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    duoId: uuid("duo_id")
+      .notNull()
+      .references(() => duos.id, { onDelete: "cascade" }),
+    roundId: uuid("round_id").references(() => rouletteRounds.id, {
+      onDelete: "set null"
+    }),
+    eventKey: text("event_key").notNull(),
+    eventType: varchar("event_type", { length: 32 }).notNull(),
+    actorUserId: text("actor_user_id").references(() => authUsers.id, {
+      onDelete: "set null"
+    }),
+    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow()
+  },
+  (table) => [
+    uniqueIndex("app_roulette_history_events_key_uidx").on(table.duoId, table.eventKey),
+    index("app_roulette_history_events_duo_created_idx").on(table.duoId, table.createdAt),
+    index("app_roulette_history_events_round_idx").on(table.duoId, table.roundId),
+    check(
+      "app_roulette_history_events_type_chk",
+      sql`${table.eventType} IN ('started', 'revealed', 'replayed', 'locked', 'discarded', 'boost-spent', 'boost-refunded', 'refunded')`
     )
   ]
 );
