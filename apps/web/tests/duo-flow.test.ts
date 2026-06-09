@@ -14,6 +14,7 @@ import type {
   PairingCodeRecord,
   PairingRateLimitResult
 } from "../src/modules/duo/application/ports";
+import { updateDuoAudioPreferenceUseCase } from "../src/modules/duo/application/update-duo-audio-preference";
 import { updateDuoSettingsUseCase } from "../src/modules/duo/application/update-duo-settings";
 
 const repositorySource = readFileSync(
@@ -182,6 +183,46 @@ describe("duo pairing flow", () => {
       )
     ).resolves.toEqual({ ok: true, state: "duo-updated" });
   });
+
+  it("persists the roulette audio preference through the current duo membership", async () => {
+    const repository = new FakeDuoRepository();
+    repository.contexts.set("user-1", pairedContext("duo-1", "user-1"));
+
+    await expect(
+      updateDuoAudioPreferenceUseCase(
+        {
+          audioEnabled: false,
+          userId: "user-1"
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: true, state: "audio-preference-updated" });
+
+    expect(repository.audioPreferenceUpdates).toEqual([
+      {
+        audioEnabled: false,
+        duoId: "duo-1",
+        userId: "user-1"
+      }
+    ]);
+    expect(repository.contexts.get("user-1")?.membership?.audioEnabled).toBe(false);
+  });
+
+  it("does not update audio preference for users without a paired duo", async () => {
+    const repository = new FakeDuoRepository();
+
+    await expect(
+      updateDuoAudioPreferenceUseCase(
+        {
+          audioEnabled: true,
+          userId: "solo-user"
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: false, state: "not-paired" });
+
+    expect(repository.audioPreferenceUpdates).toHaveLength(0);
+  });
 });
 
 describe("duo persistence contract", () => {
@@ -279,6 +320,11 @@ function pairedContext(duoId: string, userId: string): DuoUserContextRecord {
 class FakeDuoRepository implements DuoRepository {
   readonly contexts = new Map<string, DuoUserContextRecord>();
   readonly codes = new Map<string, PairingCodeRecord>();
+  readonly audioPreferenceUpdates: Array<{
+    audioEnabled: boolean;
+    duoId: string;
+    userId: string;
+  }> = [];
   claimOutcome: PairingClaimOutcome = { state: "inactive" };
   ensureProfileCalls = 0;
   revokeCalls = 0;
@@ -388,6 +434,22 @@ class FakeDuoRepository implements DuoRepository {
     context.membership.timezone = input.timezone;
     context.membership.notificationsEnabled = input.notificationsEnabled;
     context.membership.audioEnabled = input.audioEnabled;
+    return true;
+  }
+
+  async updateDuoAudioPreference(input: {
+    userId: string;
+    duoId: string;
+    audioEnabled: boolean;
+  }) {
+    const context = this.contexts.get(input.userId);
+
+    if (!context?.membership || context.membership.duoId !== input.duoId) {
+      return false;
+    }
+
+    context.membership.audioEnabled = input.audioEnabled;
+    this.audioPreferenceUpdates.push(input);
     return true;
   }
 

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 const rouletteUiFiles = [
   "src/app/app/roleta/page.tsx",
+  "src/app/app/roleta/actions.ts",
   "src/modules/roulette/presentation/view-models.ts",
   "src/components/app-shell.tsx",
   "src/app/globals.css"
@@ -92,6 +93,49 @@ describe("Phase 6 roulette route shell", () => {
     expect(cssSource).toContain("safe-area-inset-bottom");
     expect(cssSource).toContain("scroll-padding");
     expect(cssSource).toContain("scrollbar-width");
+  });
+
+  it("wires start, replay and audio preference actions through authoritative session checks", () => {
+    const actionSource = readRequiredSource("src/app/app/roleta/actions.ts");
+    const duoSource = [
+      readRequiredSource("src/modules/duo/application/update-duo-audio-preference.ts"),
+      readRequiredSource("src/modules/duo/index.ts"),
+      readRequiredSource("src/modules/duo/infrastructure/duo-repository.ts")
+    ].join("\n");
+
+    expect(actionSource).toContain('"use server"');
+    expect(actionSource).toContain("requireAuthoritativeVerifiedSession");
+    expect(actionSource).toContain("startRouletteRound");
+    expect(actionSource).toContain("replayRouletteRound");
+    expect(actionSource).toContain("updateDuoAudioPreference");
+    expect(actionSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(actionSource).toContain("idempotencyKey");
+    expect(actionSource).toContain("useBoost");
+    expect(actionSource).toContain("roundId");
+    expect(actionSource).toContain("audioEnabled");
+    expect(duoSource).toContain("updateDuoAudioPreference");
+    expect(duoSource).toContain("audio_enabled");
+  });
+
+  it("does not extract server-owned roulette, economy or duo facts from FormData", () => {
+    const actionSource = readRequiredSource("src/app/app/roleta/actions.ts");
+
+    for (const forbiddenField of [
+      "duoId",
+      "resultLibraryGameId",
+      "resultCatalogGameId",
+      "pity",
+      "boostBalance",
+      "resultRarity",
+      "weekend"
+    ]) {
+      expect(actionSource).not.toMatch(
+        new RegExp(`formData\\.get\\(\\s*["']${forbiddenField}["']`)
+      );
+      expect(actionSource).not.toMatch(
+        new RegExp(`getFormString\\(formData,\\s*["']${forbiddenField}["']`)
+      );
+    }
   });
 });
 
