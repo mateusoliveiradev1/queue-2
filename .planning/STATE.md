@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-roleta-e-economia-00-PLAN.md
-last_updated: "2026-06-09T11:06:14.565Z"
+stopped_at: Completed 06-roleta-e-economia-01-PLAN.md
+last_updated: "2026-06-09T11:32:34.186Z"
 last_activity: 2026-06-09
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 58
-  completed_plans: 47
-  percent: 81
+  completed_plans: 48
+  percent: 83
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 06 (roleta-e-economia) — EXECUTING
-Plan: 2 of 12
+Plan: 3 of 12
 Status: Ready to execute
 Last activity: 2026-06-09
 
-Progress: [████████░░] 81%
+Progress: [████████░░] 83%
 
 ## Performance Metrics
 
@@ -101,6 +101,7 @@ Progress: [████████░░] 81%
 | Phase 05 P09 | 15min | 3 tasks | 18 files |
 | Phase 05 P11 | 12min | 3 tasks | 12 files |
 | Phase 06-roleta-e-economia P00 | 15 min | 3 tasks | 10 files |
+| Phase 06-roleta-e-economia P01 | 20 min | 1 tasks | 6 files |
 
 ## Quick Tasks Completed
 
@@ -280,6 +281,10 @@ Recent decisions affecting current work:
 - [Phase 05]: Pre-Roulette achievements retain their visual group but use library growth, collective achievement count and level 25. — Makes the complete v1 catalog reachable without fabricating roulette results before Phase 6.
 - [Phase 06-roleta-e-economia]: Wave 0 tests intentionally fail RED on missing Phase 6 implementation or emit named setup blockers for missing external evidence. — This keeps Nyquist validation honest before schema, domain, UI and handoff implementation starts.
 - [Phase 06-roleta-e-economia]: Expose the Phase 6 gate as pnpm phase:6:gate. — Later plans and validation already reference this root executable target; the script records command status and external evidence blockers.
+- [Phase 06-roleta-e-economia]: Roulette outcome notifications extend the existing app.play_notifications type constraint instead of adding a parallel notification table. — Keeps operational notifications in Central da Dupla storage before server use cases emit lock/discard events.
+- [Phase 06-roleta-e-economia]: Security-definer roulette integrity triggers return early for non-members so RLS remains the first cross-duo rejection layer. — Avoids leaking internal validation errors before forced RLS denies unauthorized writes.
+- [Phase 06-roleta-e-economia]: Boost spend concurrency tests update balance only from the winning ledger insert, matching exactly-once transaction semantics. — Prevents duplicate shared XP subtraction during idempotent replay.
+- [Phase 06-roleta-e-economia]: The reviewed manual migration 0015_roulette_core is retained instead of a generated full-schema Drizzle baseline. — The repository lacks prior Drizzle snapshots, so generated output would replace intentional reviewed SQL.
 
 ### Pending Todos
 
@@ -318,6 +323,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-09T11:05:54.352Z
-Stopped at: Completed 06-roleta-e-economia-00-PLAN.md
+Last session: 2026-06-09T11:32:34.180Z
+Stopped at: Completed 06-roleta-e-economia-01-PLAN.md
 Resume file: None
