@@ -35,6 +35,7 @@ import {
   schedulePlaySessionUseCase
 } from "./application/schedule-play-session";
 import { confirmScheduledSessionUseCase } from "./application/confirm-scheduled-session";
+import { replacePlayingGameUseCase } from "./application/replace-playing-game";
 import { startLiveSessionUseCase } from "./application/start-live-session";
 import { updatePlayProgressUseCase } from "./application/update-play-progress";
 import { playRepository } from "./infrastructure/play-repository";
@@ -143,6 +144,7 @@ export type {
   PlayTimelineEvent,
   PlayTimelineMilestoneRecord,
   PromotePlayingGameResult,
+  ReplacePlayingGameResult,
   ReorderPlayingGamesResult,
   PlaySessionRecord,
   PlayTerminalRequestRecord,
@@ -232,6 +234,9 @@ export {
   reorderPlayingGamesUseCase
 } from "./application/reorder-playing-games";
 export {
+  replacePlayingGameUseCase
+} from "./application/replace-playing-game";
+export {
   cancelScheduledSessionUseCase,
   parseLocalDateTimeInZone,
   schedulePlaySessionUseCase,
@@ -292,6 +297,15 @@ export function promotePlayingGame(input: {
   libraryGameId: string;
 }) {
   return promotePlayingGameUseCase(input, playRepository);
+}
+
+export function replacePlayingGame(input: {
+  userId: string;
+  incomingLibraryGameId: string;
+  pausedLibraryGameId: string;
+  makePrincipal: true;
+}) {
+  return replacePlayingGameUseCase(input, playRepository);
 }
 
 export function startLiveSession(input: {

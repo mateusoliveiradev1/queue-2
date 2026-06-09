@@ -145,6 +145,21 @@ export type PromotePlayingGameResult =
         | "not-secondary-game";
     };
 
+export type ReplacePlayingGameResult =
+  | {
+      ok: true;
+      activeGames: ActivePlayGameRecord[];
+      currentPlay: CurrentPlayRecord;
+    }
+  | {
+      ok: false;
+      reason:
+        | "active-game-not-found"
+        | "invalid-active-layout"
+        | "library-game-not-found"
+        | "membership-required";
+    };
+
 export type PlaySessionRecord = {
   id: string;
   duoId: PlayDuoId;
@@ -394,6 +409,10 @@ export type PlayRepositoryTransaction = {
     duoId: PlayDuoId;
     catalogGameId: PlayCatalogGameId;
   }): Promise<PlayActivationLibraryGameRecord | null>;
+  readLibraryGameForReplacement(input: {
+    duoId: PlayDuoId;
+    libraryGameId: PlayLibraryGameId;
+  }): Promise<PlayActivationLibraryGameRecord | null>;
   activatePlayingLibraryGame(input: {
     duoId: PlayDuoId;
     actorUserId: PlayUserId;
@@ -419,6 +438,17 @@ export type PlayRepositoryTransaction = {
   replaceActiveRoleRows(input: {
     duoId: PlayDuoId;
     actorUserId: PlayUserId;
+    games: Array<{
+      libraryGameId: PlayLibraryGameId;
+      role: PlayGameRole;
+      position: number;
+    }>;
+  }): Promise<ActivePlayGameRecord[]>;
+  replacePlayingGameActiveSet(input: {
+    duoId: PlayDuoId;
+    actorUserId: PlayUserId;
+    incomingLibraryGameId: PlayLibraryGameId;
+    pausedLibraryGameId: PlayLibraryGameId;
     games: Array<{
       libraryGameId: PlayLibraryGameId;
       role: PlayGameRole;

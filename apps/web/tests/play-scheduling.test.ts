@@ -162,10 +162,12 @@ function makeRepository(input: {
     readActivePlayGames: vi.fn(async () => [activeRecord()]),
     readCurrentPlayGames: vi.fn(async () => []),
     readLibraryGameForActivation: vi.fn(async () => null),
+    readLibraryGameForReplacement: vi.fn(async () => null),
     activatePlayingLibraryGame: vi.fn(async () => []),
     deactivatePlayingLibraryGame: vi.fn(async () => []),
     upsertActiveRoleRows: vi.fn(async () => []),
     replaceActiveRoleRows: vi.fn(async () => []),
+    replacePlayingGameActiveSet: vi.fn(async () => []),
     createSession: vi.fn(async () => playSessionRecord()),
     confirmSession: vi.fn(),
     readGamePlayDetail: vi.fn(async () =>

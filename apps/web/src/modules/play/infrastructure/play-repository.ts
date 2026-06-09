@@ -383,12 +383,16 @@ function createTransaction(client: QueueDbClient): PlayRepositoryTransaction {
     readCurrentPlayGames: (input) => readCurrentPlayGames(client, input.duoId),
     readLibraryGameForActivation: (input) =>
       readLibraryGameForActivation(client, input),
+    readLibraryGameForReplacement: (input) =>
+      readLibraryGameForReplacement(client, input),
     activatePlayingLibraryGame: (input) =>
       activatePlayingLibraryGame(client, input),
     deactivatePlayingLibraryGame: (input) =>
       deactivatePlayingLibraryGame(client, input),
     upsertActiveRoleRows: (input) => upsertActiveRoleRows(client, input),
     replaceActiveRoleRows: (input) => replaceActiveRoleRows(client, input),
+    replacePlayingGameActiveSet: (input) =>
+      replacePlayingGameActiveSet(client, input),
     createSession: (input) => createSession(client, input),
     confirmSession: (input) =>
       createSessionConfirmation(client, {
@@ -1397,6 +1401,42 @@ async function readLibraryGameForActivation(
     : null;
 }
 
+async function readLibraryGameForReplacement(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    libraryGameId: string;
+  }
+): Promise<PlayActivationLibraryGameRecord | null> {
+  const result = await client.query<ActivationLibraryGameRow>(
+    `
+      SELECT
+        id,
+        duo_id,
+        catalog_game_id,
+        status,
+        updated_at
+      FROM app.duo_library_games
+      WHERE duo_id = $1
+        AND id = $2
+      LIMIT 1
+      FOR UPDATE
+    `,
+    [input.duoId, input.libraryGameId]
+  );
+  const row = result.rows[0];
+
+  return row
+    ? {
+        id: row.id,
+        duoId: row.duo_id,
+        catalogGameId: row.catalog_game_id,
+        status: row.status,
+        updatedAt: row.updated_at
+      }
+    : null;
+}
+
 async function activatePlayingLibraryGame(
   client: QueueDbClient,
   input: {
@@ -1545,6 +1585,50 @@ async function replaceActiveRoleRows(
   }
 
   return readActivePlayGames(client, input.duoId);
+}
+
+async function replacePlayingGameActiveSet(
+  client: QueueDbClient,
+  input: {
+    duoId: string;
+    actorUserId: string;
+    incomingLibraryGameId: string;
+    pausedLibraryGameId: string;
+    games: Array<{
+      libraryGameId: string;
+      role: PlayGameRole;
+      position: number;
+    }>;
+  }
+): Promise<ActivePlayGameRecord[]> {
+  await client.query(
+    `
+      UPDATE app.duo_library_games
+      SET status = 'pausado',
+          status_updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+    `,
+    [input.duoId, input.pausedLibraryGameId, input.actorUserId]
+  );
+  await client.query(
+    `
+      UPDATE app.duo_library_games
+      SET status = 'jogando',
+          status_updated_by_user_id = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+        AND id = $2
+    `,
+    [input.duoId, input.incomingLibraryGameId, input.actorUserId]
+  );
+
+  return replaceActiveRoleRows(client, {
+    duoId: input.duoId,
+    actorUserId: input.actorUserId,
+    games: input.games
+  });
 }
 
 async function compactActivePlayRows(
