@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   activatePlayingGameUseCase,
+  createOperationalPlayNotificationUseCase,
   getCurrentPlayUseCase,
   promotePlayingGameUseCase,
   replacePlayingGameUseCase,
@@ -18,6 +19,7 @@ import type {
   PlayChapterRecord,
   PlayMembershipContext,
   PlayNotificationCenterRecord,
+  PlayNotificationRecord,
   PlayProgressRecord,
   PlayPushSubscriptionRecord,
   PlayReminderJobRecord,
@@ -427,6 +429,104 @@ describe("play application contract", () => {
     });
     expect(replacePlayingGameActiveSet).not.toHaveBeenCalled();
   });
+
+  it("creates roulette operational Central notification facts and pushes only through enabled subscriptions", async () => {
+    const insertNotificationItem =
+      vi.fn<PlayRepositoryTransaction["insertNotificationItem"]>(async (input) =>
+        notificationRecord({
+          actionRefId: input.actionRefId ?? null,
+          actionRefType: input.actionRefType ?? null,
+          body: input.body ?? null,
+          duoId: input.duoId,
+          notificationType: input.notificationType,
+          recipientUserId: input.recipientUserId ?? null,
+          title: input.title
+        })
+      );
+    const readEnabledPushSubscriptions = vi.fn(async ({ userId }: { userId: string }) =>
+      userId === "member-2" ? [pushSubscriptionRecord({ userId: "member-2" })] : []
+    );
+    const sendProductPushNotification = vi.fn(async () => "sent" as const);
+    const repository = fakePlayRepository({
+      activeGames: [],
+      insertNotificationItem,
+      readEnabledPushSubscriptions
+    });
+
+    await expect(
+      createOperationalPlayNotificationUseCase(
+        {
+          actorUserId: "member-1",
+          notificationType: "roulette-result-locked",
+          resultLibraryGameId: "library-result",
+          roundId: "11111111-1111-4111-8111-111111111111"
+        },
+        repository,
+        { sendProductPushNotification }
+      )
+    ).resolves.toEqual({
+      ok: true,
+      notification: expect.objectContaining({
+        actionRefId: "11111111-1111-4111-8111-111111111111",
+        actionRefType: "roulette-round",
+        notificationType: "roulette-result-locked"
+      }),
+      pushAttempts: 1,
+      pushDelivered: 1
+    });
+    expect(insertNotificationItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionRefId: "11111111-1111-4111-8111-111111111111",
+        actionRefType: "roulette-round",
+        actorUserId: "member-1",
+        duoId: "duo-1",
+        notificationType: "roulette-result-locked"
+      })
+    );
+    expect(readEnabledPushSubscriptions).toHaveBeenCalledWith({
+      userId: "member-1"
+    });
+    expect(readEnabledPushSubscriptions).toHaveBeenCalledWith({
+      userId: "member-2"
+    });
+    expect(sendProductPushNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({
+          tag: "roulette-result-locked-11111111-1111-4111-8111-111111111111",
+          url: "/app/roleta"
+        }),
+        subscription: expect.objectContaining({
+          userId: "member-2"
+        })
+      })
+    );
+  });
+
+  it("rejects operational notifications outside the narrow roulette union before persistence or push", async () => {
+    const insertNotificationItem = vi.fn();
+    const sendProductPushNotification = vi.fn(async () => "sent" as const);
+    const repository = fakePlayRepository({
+      activeGames: [],
+      insertNotificationItem
+    });
+
+    await expect(
+      createOperationalPlayNotificationUseCase(
+        {
+          actorUserId: "member-1",
+          notificationType: "scheduled-session",
+          roundId: "11111111-1111-4111-8111-111111111111"
+        },
+        repository,
+        { sendProductPushNotification }
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "notification-out-of-scope"
+    });
+    expect(insertNotificationItem).not.toHaveBeenCalled();
+    expect(sendProductPushNotification).not.toHaveBeenCalled();
+  });
 });
 
 describe("play repository skeleton", () => {
@@ -485,6 +585,8 @@ function fakePlayRepository(input: {
   replacementLibraryGame?: PlayActivationLibraryGameRecord | null;
   activatePlayingLibraryGame?: PlayRepositoryTransaction["activatePlayingLibraryGame"];
   deactivatePlayingLibraryGame?: PlayRepositoryTransaction["deactivatePlayingLibraryGame"];
+  insertNotificationItem?: PlayRepositoryTransaction["insertNotificationItem"];
+  readEnabledPushSubscriptions?: PlayRepository["readEnabledPushSubscriptions"];
   upsertActiveRoleRows?: PlayRepositoryTransaction["upsertActiveRoleRows"];
   replaceActiveRoleRows?: PlayRepositoryTransaction["replaceActiveRoleRows"];
   replacePlayingGameActiveSet?: PlayRepositoryTransaction["replacePlayingGameActiveSet"];
@@ -697,7 +799,18 @@ function fakePlayRepository(input: {
       createdAt: new Date("2026-06-05T12:20:00.000Z"),
       updatedAt: new Date("2026-06-05T12:20:00.000Z")
     })),
-    insertNotificationItem: vi.fn(),
+    insertNotificationItem:
+      input.insertNotificationItem ?? vi.fn(async (notificationInput) =>
+        notificationRecord({
+          actionRefId: notificationInput.actionRefId ?? null,
+          actionRefType: notificationInput.actionRefType ?? null,
+          body: notificationInput.body ?? null,
+          duoId: notificationInput.duoId,
+          notificationType: notificationInput.notificationType,
+          recipientUserId: notificationInput.recipientUserId ?? null,
+          title: notificationInput.title
+        })
+      ),
     markNotificationsActioned: vi.fn(async () => 1),
     insertXpAward: vi.fn()
   };
@@ -737,7 +850,18 @@ function fakePlayRepository(input: {
     upsertActiveRoleRows: vi.fn(async () => input.activeGames),
     createSessionConfirmation: vi.fn(),
     cancelConfirmation: vi.fn(),
-    insertNotificationItem: vi.fn(),
+    insertNotificationItem:
+      input.insertNotificationItem ?? vi.fn(async (notificationInput) =>
+        notificationRecord({
+          actionRefId: notificationInput.actionRefId ?? null,
+          actionRefType: notificationInput.actionRefType ?? null,
+          body: notificationInput.body ?? null,
+          duoId: notificationInput.duoId,
+          notificationType: notificationInput.notificationType,
+          recipientUserId: notificationInput.recipientUserId ?? null,
+          title: notificationInput.title
+        })
+      ),
     insertXpAward: vi.fn(),
     readNotificationCenter: vi.fn(async () => notificationCenterRecord()),
     registerPushSubscription: vi.fn(async (pushInput) => pushSubscriptionRecord(pushInput)),
@@ -746,7 +870,8 @@ function fakePlayRepository(input: {
     completeReminderJob: vi.fn(),
     failReminderJob: vi.fn(),
     runAsUser: vi.fn(async (_userId, callback) => callback(transaction)),
-    readEnabledPushSubscriptions: vi.fn(async () => [])
+    readEnabledPushSubscriptions:
+      input.readEnabledPushSubscriptions ?? vi.fn(async () => [])
   };
 }
 
@@ -1003,6 +1128,24 @@ function notificationCenterRecord(
   return {
     unreadCount: 0,
     items: [],
+    ...overrides
+  };
+}
+
+function notificationRecord(
+  overrides: Partial<PlayNotificationRecord> = {}
+): PlayNotificationRecord {
+  return {
+    actionRefId: "11111111-1111-4111-8111-111111111111",
+    actionRefType: "roulette-round",
+    body: "A fila foi atualizada.",
+    createdAt: new Date("2026-06-05T12:00:00.000Z"),
+    duoId: "duo-1",
+    id: "notification-1",
+    notificationType: "roulette-result-locked" as PlayNotificationRecord["notificationType"],
+    recipientUserId: null,
+    state: "unread",
+    title: "Resultado da roleta",
     ...overrides
   };
 }

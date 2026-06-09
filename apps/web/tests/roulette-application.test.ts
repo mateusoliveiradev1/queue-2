@@ -13,10 +13,16 @@ import type {
 } from "../src/modules/roulette/application/ports";
 import type { RouletteVisualReelSlot } from "../src/modules/roulette/domain/roulette-policy";
 
+import { discardRouletteResultUseCase } from "../src/modules/roulette/application/discard-roulette-result";
 import { getRouletteHistoryUseCase } from "../src/modules/roulette/application/get-roulette-history";
 import { getRouletteStateUseCase } from "../src/modules/roulette/application/get-roulette-state";
+import { lockRouletteResultAsPrincipalUseCase } from "../src/modules/roulette/application/lock-roulette-result-as-principal";
 import { replayRouletteRoundUseCase } from "../src/modules/roulette/application/replay-roulette-round";
 import { startRouletteRoundUseCase } from "../src/modules/roulette/application/start-roulette-round";
+import {
+  ROULETTE_COOLDOWN_MULTIPLIER,
+  ROULETTE_COOLDOWN_ROUNDS
+} from "../src/modules/roulette/domain/roulette-policy";
 
 describe("roulette state, history and replay application use cases", () => {
   it("returns blocked-pool with semantic CTAs, boost, pity and D-18 audio preference when fewer than three games are eligible", async () => {
@@ -387,6 +393,285 @@ describe("roulette idempotent start application use case", () => {
   });
 });
 
+describe("roulette invitation resolution application use cases", () => {
+  it("D-26 locks a pending result as Principal with actor history and Central notification facts", async () => {
+    const repository = fakeRouletteRepository({
+      roundById: roundRecord({
+        resultCatalogGameId: "catalog-result",
+        resultLibraryGameId: "library-result",
+        status: "pending_invitation"
+      })
+    });
+    const play = fakeRoulettePlayCoordinator({
+      activatePlayingGame: vi.fn(async () => ({
+        ok: true as const,
+        outcome: "secondary-assigned" as const,
+        activeGame: { libraryGameId: "library-result", role: "secondary", position: 2 },
+        activeGames: [],
+        currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
+      })),
+      promotePlayingGame: vi.fn(async () => ({
+        ok: true as const,
+        currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
+      }))
+    });
+
+    await expect(
+      lockRouletteResultAsPrincipalUseCase(
+        {
+          roundId: "round-1",
+          userId: "member-2"
+        },
+        repository,
+        play
+      )
+    ).resolves.toEqual({
+      ok: true,
+      redirectTo: "/app?estado=roleta-principal",
+      round: expect.objectContaining({
+        resolvedByUserId: "member-2",
+        status: "locked"
+      })
+    });
+    expect(play.activatePlayingGame).toHaveBeenCalledWith({
+      catalogGameId: "catalog-result",
+      userId: "member-2"
+    });
+    expect(play.promotePlayingGame).toHaveBeenCalledWith({
+      libraryGameId: "library-result",
+      userId: "member-2"
+    });
+    expect(repository.transaction.lockRoundResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: "member-2",
+        duoId: "duo-1",
+        roundId: "round-1"
+      })
+    );
+    expect(repository.transaction.insertHistoryEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: "member-2",
+        eventKey: "history:round-1:locked",
+        eventType: "locked",
+        metadata: expect.objectContaining({
+          resultLibraryGameId: "library-result"
+        })
+      })
+    );
+    expect(play.createOperationalPlayNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: "member-2",
+        notificationType: "roulette-result-locked",
+        roundId: "round-1"
+      })
+    );
+  });
+
+  it("D-27 returns replacement-required with autoPause false and leaves state untouched before selection", async () => {
+    const repository = fakeRouletteRepository({
+      roundById: roundRecord({
+        resultCatalogGameId: "catalog-result",
+        status: "pending_invitation"
+      })
+    });
+    const currentGames = [
+      { libraryGameId: "library-1", name: "Principal", role: "principal", position: 1 },
+      { libraryGameId: "library-2", name: "Secundario A", role: "secondary", position: 2 },
+      { libraryGameId: "library-3", name: "Secundario B", role: "secondary", position: 3 }
+    ];
+    const play = fakeRoulettePlayCoordinator({
+      activatePlayingGame: vi.fn(async () => ({
+        ok: false as const,
+        reason: "replacement-required" as const,
+        replacement: {
+          availableActions: ["pause", "replace", "cancel"] as const,
+          autoPause: false as const,
+          currentGames
+        }
+      }))
+    });
+
+    await expect(
+      lockRouletteResultAsPrincipalUseCase(
+        {
+          roundId: "round-1",
+          userId: "member-1"
+        },
+        repository,
+        play
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "replacement-required",
+      currentGames,
+      autoPause: false
+    });
+    expect(repository.transaction.lockRoundResult).not.toHaveBeenCalled();
+    expect(repository.transaction.insertHistoryEvent).not.toHaveBeenCalledWith(
+      expect.objectContaining({ eventType: "locked" })
+    );
+    expect(play.createOperationalPlayNotification).not.toHaveBeenCalled();
+  });
+
+  it("D-27 locks after the selected replacement succeeds through the Play public contract", async () => {
+    const repository = fakeRouletteRepository({
+      roundById: roundRecord({
+        resultCatalogGameId: "catalog-result",
+        resultLibraryGameId: "library-result",
+        status: "pending_invitation"
+      })
+    });
+    const play = fakeRoulettePlayCoordinator({
+      activatePlayingGame: vi.fn(async () => ({
+        ok: false as const,
+        reason: "replacement-required" as const,
+        replacement: {
+          availableActions: ["pause", "replace", "cancel"] as const,
+          autoPause: false as const,
+          currentGames: [
+            { libraryGameId: "library-2", name: "Secundario", role: "secondary", position: 2 }
+          ]
+        }
+      })),
+      replacePlayingGame: vi.fn(async () => ({
+        ok: true as const,
+        activeGames: [],
+        currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
+      }))
+    });
+
+    await expect(
+      lockRouletteResultAsPrincipalUseCase(
+        {
+          replacement: {
+            action: "replace",
+            libraryGameId: "library-2"
+          },
+          roundId: "round-1",
+          userId: "member-1"
+        },
+        repository,
+        play
+      )
+    ).resolves.toEqual(expect.objectContaining({ ok: true }));
+    expect(play.replacePlayingGame).toHaveBeenCalledWith({
+      incomingLibraryGameId: "library-result",
+      makePrincipal: true,
+      pausedLibraryGameId: "library-2",
+      userId: "member-1"
+    });
+    expect(repository.transaction.lockRoundResult).toHaveBeenCalled();
+    expect(play.createOperationalPlayNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        notificationType: "roulette-result-locked"
+      })
+    );
+  });
+
+  it("D-30 discards without refunding boost and records cooldown, history and Central notification facts", async () => {
+    const repository = fakeRouletteRepository({
+      roundById: roundRecord({
+        boostSpent: true,
+        resultLibraryGameId: "library-result",
+        status: "pending_invitation"
+      })
+    });
+    const play = fakeRoulettePlayCoordinator();
+
+    await expect(
+      discardRouletteResultUseCase(
+        {
+          roundId: "round-1",
+          userId: "member-1"
+        },
+        repository,
+        play
+      )
+    ).resolves.toEqual({
+      ok: true,
+      cooldown: expect.objectContaining({
+        libraryGameId: "library-result",
+        remainingRounds: ROULETTE_COOLDOWN_ROUNDS,
+        weightMultiplier: ROULETTE_COOLDOWN_MULTIPLIER
+      }),
+      round: expect.objectContaining({
+        resolvedByUserId: "member-1",
+        status: "discarded"
+      })
+    });
+    expect(repository.transaction.discardRoundResult).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: "member-1",
+        duoId: "duo-1",
+        roundId: "round-1"
+      })
+    );
+    expect(repository.transaction.upsertCooldown).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      libraryGameId: "library-result",
+      remainingRounds: ROULETTE_COOLDOWN_ROUNDS,
+      roundId: "round-1",
+      weightMultiplier: ROULETTE_COOLDOWN_MULTIPLIER
+    });
+    expect(repository.transaction.insertHistoryEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventKey: "history:round-1:discarded",
+        eventType: "discarded",
+        metadata: expect.objectContaining({
+          boostRefunded: false
+        })
+      })
+    );
+    expect(repository.transaction.insertBoostLedgerEntry).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        reasonCode: expect.stringMatching(/refund/i)
+      })
+    );
+    expect(play.createOperationalPlayNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        notificationType: "roulette-result-discarded",
+        roundId: "round-1"
+      })
+    );
+  });
+
+  it("D-29 refuses lock and discard when the invitation is already resolved", async () => {
+    const repository = fakeRouletteRepository({
+      roundById: roundRecord({ status: "locked" })
+    });
+    const play = fakeRoulettePlayCoordinator();
+
+    await expect(
+      lockRouletteResultAsPrincipalUseCase(
+        {
+          roundId: "round-1",
+          userId: "member-1"
+        },
+        repository,
+        play
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "round-not-pending"
+    });
+    await expect(
+      discardRouletteResultUseCase(
+        {
+          roundId: "round-1",
+          userId: "member-1"
+        },
+        repository,
+        play
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "round-not-pending"
+    });
+    expect(play.activatePlayingGame).not.toHaveBeenCalled();
+    expect(play.createOperationalPlayNotification).not.toHaveBeenCalled();
+  });
+});
+
 type FakeRouletteRepository = {
   transaction: ReturnType<typeof fakeRouletteTransaction>;
 } & Pick<RouletteRepository, "withUserTransaction">;
@@ -472,6 +757,24 @@ function fakeRouletteTransaction(
 
       return [];
     }),
+    lockRoundResult: vi.fn(async (input) =>
+      roundRecord({
+        duoId: input.duoId,
+        id: input.roundId,
+        resolvedAt: input.resolvedAt,
+        resolvedByUserId: input.actorUserId,
+        status: "locked"
+      })
+    ),
+    discardRoundResult: vi.fn(async (input) =>
+      roundRecord({
+        duoId: input.duoId,
+        id: input.roundId,
+        resolvedAt: input.resolvedAt,
+        resolvedByUserId: input.actorUserId,
+        status: "discarded"
+      })
+    ),
     resolveMembership: vi.fn(async () =>
       overrides.membership === undefined
         ? {
@@ -529,7 +832,71 @@ function fakeRouletteTransaction(
       ),
     lockBoostBalance: vi.fn(async () => overrides.boostBalance ?? boostBalance()),
     materializeBoostFromXp: vi.fn(async () => overrides.boostBalance ?? boostBalance()),
-    lockPityState: vi.fn(async () => overrides.pity ?? pityState())
+    lockPityState: vi.fn(async () => overrides.pity ?? pityState()),
+    markRoundRevealed: vi.fn(),
+    recordReplay: vi.fn(),
+    upsertCooldown: vi.fn(async (input) =>
+      cooldownRecord({
+        duoId: input.duoId,
+        libraryGameId: input.libraryGameId,
+        remainingRounds: input.remainingRounds,
+        roundId: input.roundId,
+        weightMultiplier: input.weightMultiplier
+      })
+    )
+  };
+}
+
+function fakeRoulettePlayCoordinator(
+  overrides: Partial<{
+    activatePlayingGame: ReturnType<typeof vi.fn>;
+    createOperationalPlayNotification: ReturnType<typeof vi.fn>;
+    promotePlayingGame: ReturnType<typeof vi.fn>;
+    replacePlayingGame: ReturnType<typeof vi.fn>;
+  }> = {}
+) {
+  return {
+    activatePlayingGame:
+      overrides.activatePlayingGame ??
+      vi.fn(async () => ({
+        ok: true as const,
+        outcome: "principal-assigned" as const,
+        activeGame: { libraryGameId: "library-result", role: "principal", position: 1 },
+        activeGames: [],
+        currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
+      })),
+    createOperationalPlayNotification:
+      overrides.createOperationalPlayNotification ??
+      vi.fn(async () => ({
+        ok: true as const,
+        notification: {
+          actionRefId: "round-1",
+          actionRefType: "roulette-round",
+          body: "A fila foi atualizada.",
+          createdAt: new Date("2026-06-09T10:00:00.000Z"),
+          duoId: "duo-1",
+          id: "notification-1",
+          notificationType: "roulette-result-locked",
+          recipientUserId: null,
+          state: "unread",
+          title: "Resultado da roleta"
+        },
+        pushAttempts: 0,
+        pushDelivered: 0
+      })),
+    promotePlayingGame:
+      overrides.promotePlayingGame ??
+      vi.fn(async () => ({
+        ok: true as const,
+        currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
+      })),
+    replacePlayingGame:
+      overrides.replacePlayingGame ??
+      vi.fn(async () => ({
+        ok: true as const,
+        activeGames: [],
+        currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
+      }))
   };
 }
 
@@ -574,6 +941,20 @@ function pityState(
     duoId: "duo-1",
     lastEpicOrHigherAt: null,
     updatedAt: new Date("2026-06-09T10:00:00.000Z"),
+    ...overrides
+  };
+}
+
+function cooldownRecord(
+  overrides: Partial<RouletteCooldownRecord> = {}
+): RouletteCooldownRecord {
+  return {
+    duoId: "duo-1",
+    libraryGameId: "library-result",
+    remainingRounds: ROULETTE_COOLDOWN_ROUNDS,
+    roundId: "round-1",
+    updatedAt: new Date("2026-06-09T10:00:00.000Z"),
+    weightMultiplier: ROULETTE_COOLDOWN_MULTIPLIER,
     ...overrides
   };
 }
