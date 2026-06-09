@@ -20,7 +20,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 03.3: Performance de Producao e UX de Latencia (INSERTED)** - O app fica perceptivelmente rapido em producao antes de novas funcionalidades ampliarem o custo operacional. (completed 2026-06-05; production gate passed)
 - [x] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop. (completed 2026-06-05; external DB/browser/reminder readiness blockers recorded)
 - [x] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks. (completed 2026-06-07; `pnpm phase:5:gate` passed)
-- [ ] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel.
+- [x] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel. (completed 2026-06-09; gate BLOCKED only on `DATABASE_URL` and `E2E_PHASE6_ELIGIBLE_SLUGS`)
 - [ ] **Phase 7: Hall, Stats E Lancamento** - A dupla revisita sua historia e o produto recebe acabamento publico completo.
 
 ## Phase Details
@@ -212,7 +212,7 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   3. Pity, boost de 100 XP e multiplicador de fim de semana afetam o resultado exatamente uma vez.
   4. O resultado e persistido antes da animacao, permanece consistente entre os dois membros e nao pode duplicar custos ou historico.
   5. A dupla pode travar o resultado como Jogando Principal.
-**Plans**: 06-00, 06-01, 06-02, 06-03, 06-04, 06-05, 06-06, 06-07, 06-08, 06-09, 06-10, 06-11
+**Plans**: 06-00, 06-01, 06-02, 06-03, 06-04, 06-05, 06-06, 06-07, 06-08, 06-09, 06-10, 06-11 (12/12 complete; `pnpm phase:6:gate` local/DB checks passed and external blockers recorded)
 **Plan Waves**:
   - **Wave 0:** `06-00` - Nyquist test, browser, DB, simulation and gate scaffolds.
   - **Wave 1:** `06-01`, `06-02` - Database/RLS foundation and roulette module policies/contracts.
@@ -267,5 +267,5 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 03.3. Performance de Producao e UX de Latencia | 4/4 | Complete | 2026-06-05 |
 | 4. Jogando Agora, Sessoes E Agendamento | 6/6 | Complete | 2026-06-05 |
 | 5. Gamificacao Coletiva | 11/11 | Human verification | - |
-| 6. Roleta E Economia | 11/12 | In Progress | - |
+| 6. Roleta E Economia | 12/12 | Complete | 2026-06-09 |
 | 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |
