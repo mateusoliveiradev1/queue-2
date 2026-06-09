@@ -1,5 +1,7 @@
 import "server-only";
 
+import { rouletteRepository } from "./infrastructure/roulette-repository";
+
 export {
   ROULETTE_BASE_WEIGHTS,
   ROULETTE_BOOSTED_WEIGHTS,
@@ -33,3 +35,82 @@ export {
   type RouletteSelectionResult,
   type RouletteVisualReelSlot
 } from "./domain/roulette-policy";
+
+export type {
+  DiscardRouletteResult,
+  GetRouletteStateResult,
+  LockRouletteResultAsPrincipalInput,
+  LockRouletteResultAsPrincipalResult,
+  ReplayRouletteRoundResult,
+  RouletteBoostBalanceRecord,
+  RouletteBoostLedgerRecord,
+  RouletteCatalogGameId,
+  RouletteCooldownRecord,
+  RouletteDuoId,
+  RouletteEligibleGameRecord,
+  RouletteHistoryEventRecord,
+  RouletteLibraryGameId,
+  RouletteMembershipContext,
+  RoulettePersistedRoundStatus,
+  RoulettePityStateRecord,
+  RouletteRepository,
+  RouletteRepositoryTransaction,
+  RouletteRoundEntryRecord,
+  RouletteRoundId,
+  RouletteRoundRecord,
+  RouletteStateRecord,
+  RouletteUserId,
+  RouletteUuid,
+  StartRouletteRoundInput,
+  StartRouletteRoundResult
+} from "./application/ports";
+
+export function getRouletteState(input: {
+  userId: string;
+}) {
+  return rouletteRepository.getRouletteState(input);
+}
+
+export function startRouletteRound(input: {
+  userId: string;
+  idempotencyKey: string;
+  boostRequested: boolean;
+  roll?: number;
+  seed?: string;
+  now?: Date;
+}) {
+  return rouletteRepository.startRouletteRound(input);
+}
+
+export function replayRouletteRound(input: {
+  userId: string;
+  roundId: string;
+}) {
+  return rouletteRepository.replayRouletteRound(input);
+}
+
+export function lockRouletteResultAsPrincipal(input: {
+  userId: string;
+  roundId: string;
+  replacement?: {
+    action: "pause" | "replace" | "cancel";
+    libraryGameId?: string;
+    nextStatus?: "wishlist" | "pausado";
+  };
+}) {
+  return rouletteRepository.lockRouletteResultAsPrincipal(input);
+}
+
+export function discardRouletteResult(input: {
+  userId: string;
+  roundId: string;
+}) {
+  return rouletteRepository.discardRouletteResult(input);
+}
+
+export function getRouletteHistory(input: {
+  userId: string;
+  limit: number;
+}) {
+  return rouletteRepository.readRouletteHistory(input);
+}
