@@ -1,3 +1,6 @@
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
 import type pg from "pg";
 
 import {
@@ -9,10 +12,57 @@ import {
 const testDatabaseUrl = getTestDatabaseUrl();
 const missingRouletteDatabaseMessage =
   "BLOCKED setup - missing TEST_DATABASE_URL for Phase 6 roulette migration fixtures.";
+const rouletteTables = [
+  "roulette_boost_balances",
+  "roulette_boost_ledger",
+  "roulette_pity_state",
+  "roulette_rounds",
+  "roulette_round_entries",
+  "roulette_cooldowns",
+  "roulette_history_events"
+] as const;
+const migrationPath = fileURLToPath(new URL("../src/migrations/0015_roulette_core.sql", import.meta.url));
+const rlsPath = fileURLToPath(new URL("../src/rls/policies.sql", import.meta.url));
+const schemaPath = fileURLToPath(new URL("../src/schema/app.ts", import.meta.url));
 
 if (!testDatabaseUrl) {
   process.stderr.write(`${missingRouletteDatabaseMessage}\n`);
 }
+
+describe("roulette schema source contract", () => {
+  test("declares every roulette table in Drizzle and the Phase 6 migration", () => {
+    expect(existsSync(migrationPath)).toBe(true);
+
+    const migrationSource = existsSync(migrationPath) ? readFileSync(migrationPath, "utf8") : "";
+    const schemaSource = readFileSync(schemaPath, "utf8");
+
+    for (const tableName of rouletteTables) {
+      expect(schemaSource).toContain(`"${tableName}"`);
+      expect(migrationSource).toContain(`app.${tableName}`);
+    }
+  });
+
+  test("extends the existing Play notification type check for roulette outcomes", () => {
+    const migrationSource = existsSync(migrationPath) ? readFileSync(migrationPath, "utf8") : "";
+    const schemaSource = readFileSync(schemaPath, "utf8");
+
+    for (const source of [migrationSource, schemaSource]) {
+      expect(source).toContain("app_play_notifications_type_chk");
+      expect(source).toContain("roulette-result-locked");
+      expect(source).toContain("roulette-result-discarded");
+    }
+  });
+
+  test("keeps roulette tables under forced membership RLS in the shared policy file", () => {
+    const rlsSource = readFileSync(rlsPath, "utf8");
+
+    for (const tableName of rouletteTables) {
+      expect(rlsSource).toContain(`ALTER TABLE app.${tableName} ENABLE ROW LEVEL SECURITY`);
+      expect(rlsSource).toContain(`ALTER TABLE app.${tableName} FORCE ROW LEVEL SECURITY`);
+      expect(rlsSource).toContain(`app.has_duo_membership(app.current_user_id(), duo_id)`);
+    }
+  });
+});
 
 describe.skipIf(!testDatabaseUrl)("roulette migration foundation", () => {
   let pool: pg.Pool;
