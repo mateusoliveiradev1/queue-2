@@ -9,6 +9,9 @@ const rouletteUiFiles = [
   "src/components/app-shell.tsx",
   "src/app/globals.css"
 ];
+const rouletteReelSourcePath = "src/modules/roulette/presentation/roulette-reel.tsx";
+const rouletteAudioSourcePath =
+  "src/modules/roulette/presentation/roulette-audio-control.tsx";
 
 describe("Phase 6 roulette route shell", () => {
   it("composes the authenticated route from public server contracts only", () => {
@@ -143,6 +146,67 @@ describe("Phase 6 roulette route shell", () => {
         new RegExp(`getFormString\\(formData,\\s*["']${forbiddenField}["']`)
       );
     }
+  });
+
+  it("builds a 60-slot reel with fixed pointer, reduced-motion stages and rarity tokens", () => {
+    const reelSource = readRequiredSource(rouletteReelSourcePath);
+    const cssSource = readRequiredSource("src/app/globals.css");
+
+    expect(reelSource).toContain('"use client"');
+    expect(reelSource).toContain("motion/react");
+    expect(reelSource).toContain("useReducedMotion");
+    expect(reelSource).toContain("RoulettePointer");
+    expect(reelSource).toContain("5500");
+    expect(reelSource).toContain("cubic-bezier(.15,.85,.25,1)");
+    expect(reelSource).toContain("Array.from({ length: 60 })");
+    expect(reelSource).toContain("aria-hidden");
+    expect(reelSource).toContain("aria-live");
+    expect(reelSource).toContain('role="region"');
+    expect(reelSource).toContain("tabIndex");
+    expect(reelSource).toContain("A fila esta escolhendo");
+    expect(reelSource).toContain("Resultado guardado");
+    expect(reelSource).toContain("Revelado");
+    expect(`${reelSource}\n${cssSource}`).toContain("data-rarity");
+    expect(cssSource).toContain("--rarity-common");
+    expect(cssSource).toContain("--rarity-rare");
+    expect(cssSource).toContain("--rarity-epic");
+    expect(cssSource).toContain("--rarity-legendary");
+    expect(cssSource).toContain("roulette-legendary-particles");
+    expect(cssSource).toContain("static Legendary");
+    expect(cssSource).toContain("prefers-reduced-motion");
+  });
+
+  it("keeps the mobile reel full-bleed with centered pointer and controls below", () => {
+    const cssSource = readRequiredSource("src/app/globals.css");
+
+    expect(cssSource).toContain("roulette-reel-band");
+    expect(cssSource).toContain("width: 100vw");
+    expect(cssSource).toContain("margin-inline: calc(50% - 50vw)");
+    expect(cssSource).toContain("roulette-pointer-anchor");
+    expect(cssSource).toContain("left: 50%");
+    expect(cssSource).toContain("translateX(-50%)");
+    expect(cssSource).toContain("roulette-controls");
+    expect(cssSource).toContain("min-height: 44px");
+    expect(cssSource).not.toMatch(/\.roulette-[\s\S]{0,160}letter-spacing:\s*-/);
+  });
+
+  it("implements opt-in roulette audio with no autoplay and persisted default preference", () => {
+    const audioSource = readRequiredSource(rouletteAudioSourcePath);
+
+    expect(audioSource).toContain('"use client"');
+    expect(audioSource).toContain("defaultEnabled");
+    expect(audioSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(audioSource).toContain("AudioContext");
+    expect(audioSource).toContain("no autoplay");
+    expect(audioSource).toContain("audio preference");
+    expect(audioSource).toContain("Som da roleta ligado");
+    expect(audioSource).toContain("Som da roleta desligado");
+    expect(audioSource).toContain("dry tick");
+    expect(audioSource).toContain("heavier cadence");
+    expect(audioSource).toContain("near the pointer");
+    expect(audioSource).toContain("restrained");
+    expect(audioSource).toContain("non-casino");
+    expect(audioSource).toContain("fanfare");
   });
 });
 
