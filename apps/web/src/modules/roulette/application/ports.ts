@@ -1,6 +1,7 @@
 import type {
   RouletteEligibleStatus,
   RouletteGame,
+  RouletteLibraryStatus,
   RouletteRarity,
   RouletteRoundStatus,
   RouletteVisualReelSlot
@@ -27,7 +28,7 @@ export type RouletteMembershipContext = {
 export type RouletteEligibleGameRecord = RouletteGame & {
   id: RouletteLibraryGameId;
   catalogGameId: RouletteCatalogGameId;
-  status: RouletteEligibleStatus;
+  status: RouletteLibraryStatus | string;
   updatedAt: Date;
 };
 
@@ -141,10 +142,57 @@ export type RouletteStateRecord = {
   history: RouletteHistoryEventRecord[];
 };
 
+export type RouletteStateKind =
+  | "blocked-pool"
+  | "ready"
+  | Extract<RouletteRoundStatus, "active" | "revealing" | "pending_invitation">;
+
+export type RouletteBoostStateView = {
+  balance: number;
+  canUseBoost: boolean;
+  cap: number;
+};
+
+export type RoulettePityStateView = {
+  drawsSinceEpicOrHigher: number;
+  progressText: string;
+  threshold: number;
+};
+
+export type RouletteBlockedPoolView = {
+  ctas: ["biblioteca", "descobrir", "catalogo"];
+  eligibleCount: number;
+  reason: "minimum-eligible-pool";
+  requiredEligibleCount: number;
+};
+
+export type RouletteStateView = {
+  audioEnabled: boolean;
+  boost: RouletteBoostStateView;
+  cooldowns: RouletteCooldownRecord[];
+  duoId: RouletteDuoId;
+  eligibleGames: RouletteEligibleGameRecord[];
+  pity: RoulettePityStateView;
+  state: RouletteStateKind;
+  blockedPool?: RouletteBlockedPoolView;
+  entries?: RouletteRoundEntryRecord[];
+  round?: RouletteRoundRecord;
+};
+
 export type GetRouletteStateResult =
   | {
       ok: true;
-      state: RouletteStateRecord;
+      state: RouletteStateView;
+    }
+  | {
+      ok: false;
+      reason: "membership-required";
+    };
+
+export type GetRouletteHistoryResult =
+  | {
+      ok: true;
+      history: RouletteHistoryEventRecord[];
     }
   | {
       ok: false;
@@ -181,6 +229,7 @@ export type StartRouletteRoundResult =
 export type ReplayRouletteRoundResult =
   | {
       ok: true;
+      isReplay: true;
       round: RouletteRoundRecord;
       entries: RouletteRoundEntryRecord[];
     }
@@ -234,6 +283,9 @@ export type RouletteRepositoryTransaction = {
   readEligiblePool(input: {
     duoId: RouletteDuoId;
   }): Promise<RouletteEligibleGameRecord[]>;
+  readAudioPreference(input: {
+    duoId: RouletteDuoId;
+  }): Promise<boolean>;
   readActiveRound(input: {
     duoId: RouletteDuoId;
   }): Promise<RouletteRoundRecord | null>;

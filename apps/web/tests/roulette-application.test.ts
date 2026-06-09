@@ -29,23 +29,26 @@ describe("roulette state, history and replay application use cases", () => {
       getRouletteStateUseCase({ userId: "member-1" }, repository)
     ).resolves.toEqual(
       expect.objectContaining({
-        audioEnabled: false,
-        boost: {
-          balance: 80,
-          canUseBoost: false,
-          cap: 600
-        },
-        pity: expect.objectContaining({
-          drawsSinceEpicOrHigher: 4,
-          progressText: expect.stringMatching(/garantia/i)
-        }),
-        state: "blocked-pool",
-        blockedPool: {
-          ctas: ["biblioteca", "descobrir", "catalogo"],
-          eligibleCount: 2,
-          reason: "minimum-eligible-pool",
-          requiredEligibleCount: 3
-        }
+        ok: true,
+        state: expect.objectContaining({
+          audioEnabled: false,
+          boost: {
+            balance: 80,
+            canUseBoost: false,
+            cap: 600
+          },
+          pity: expect.objectContaining({
+            drawsSinceEpicOrHigher: 4,
+            progressText: expect.stringMatching(/garantia/i)
+          }),
+          state: "blocked-pool",
+          blockedPool: {
+            ctas: ["biblioteca", "descobrir", "catalogo"],
+            eligibleCount: 2,
+            reason: "minimum-eligible-pool",
+            requiredEligibleCount: 3
+          }
+        })
       })
     );
     expect(repository.transaction.readAudioPreference).toHaveBeenCalledWith({
@@ -70,13 +73,16 @@ describe("roulette state, history and replay application use cases", () => {
       getRouletteStateUseCase({ userId: "member-2" }, repository)
     ).resolves.toEqual(
       expect.objectContaining({
-        state: "pending_invitation",
-        round: expect.objectContaining({
-          id: "round-1",
-          resultLibraryGameId: "library-result",
-          status: "pending_invitation"
-        }),
-        entries
+        ok: true,
+        state: expect.objectContaining({
+          state: "pending_invitation",
+          round: expect.objectContaining({
+            id: "round-1",
+            resultLibraryGameId: "library-result",
+            status: "pending_invitation"
+          }),
+          entries
+        })
       })
     );
   });
@@ -95,13 +101,16 @@ describe("roulette state, history and replay application use cases", () => {
       getRouletteStateUseCase({ userId: "member-1" }, repository)
     ).resolves.toEqual(
       expect.objectContaining({
-        state: "ready",
-        eligibleGames: [
-          expect.objectContaining({ id: "library-a", status: "wishlist" }),
-          expect.objectContaining({ id: "library-b", status: "pausado" }),
-          expect.objectContaining({ id: "library-c", status: "wishlist" })
-        ],
-        audioEnabled: true
+        ok: true,
+        state: expect.objectContaining({
+          state: "ready",
+          eligibleGames: [
+            expect.objectContaining({ id: "library-a", status: "wishlist" }),
+            expect.objectContaining({ id: "library-b", status: "pausado" }),
+            expect.objectContaining({ id: "library-c", status: "wishlist" })
+          ],
+          audioEnabled: true
+        })
       })
     );
   });

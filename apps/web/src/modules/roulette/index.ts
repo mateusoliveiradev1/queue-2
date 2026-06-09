@@ -1,5 +1,8 @@
 import "server-only";
 
+import { getRouletteHistoryUseCase } from "./application/get-roulette-history";
+import { getRouletteStateUseCase } from "./application/get-roulette-state";
+import { replayRouletteRoundUseCase } from "./application/replay-roulette-round";
 import { rouletteRepository } from "./infrastructure/roulette-repository";
 
 export {
@@ -65,10 +68,16 @@ export type {
   StartRouletteRoundResult
 } from "./application/ports";
 
+export {
+  getRouletteHistoryUseCase,
+  getRouletteStateUseCase,
+  replayRouletteRoundUseCase
+};
+
 export function getRouletteState(input: {
   userId: string;
 }) {
-  return rouletteRepository.getRouletteState(input);
+  return getRouletteStateUseCase(input, rouletteRepository);
 }
 
 export function startRouletteRound(input: {
@@ -86,7 +95,7 @@ export function replayRouletteRound(input: {
   userId: string;
   roundId: string;
 }) {
-  return rouletteRepository.replayRouletteRound(input);
+  return replayRouletteRoundUseCase(input, rouletteRepository);
 }
 
 export function lockRouletteResultAsPrincipal(input: {
@@ -110,7 +119,7 @@ export function discardRouletteResult(input: {
 
 export function getRouletteHistory(input: {
   userId: string;
-  limit: number;
+  limit?: number;
 }) {
-  return rouletteRepository.readRouletteHistory(input);
+  return getRouletteHistoryUseCase(input, rouletteRepository);
 }
