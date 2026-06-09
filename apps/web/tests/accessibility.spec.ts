@@ -761,6 +761,10 @@ async function expectNoVisibleControlOverlap(page: Page): Promise<void> {
   }> = [];
 
   for (let index = 0; index < count; index += 1) {
+    if (await isDevelopmentOverlayControl(controls.nth(index))) {
+      continue;
+    }
+
     const box = await controls.nth(index).boundingBox();
 
     if (box) {
@@ -818,4 +822,12 @@ function reportMissingEnv(scope: string, names: string[]): void {
   if (names.length > 0) {
     console.warn(`${scope} skipped. Missing: ${names.join(", ")}.`);
   }
+}
+
+async function isDevelopmentOverlayControl(control: Locator): Promise<boolean> {
+  return control.evaluate((element) => {
+    const label = `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`;
+
+    return /Next\.js Dev Tools|issues overlay|Collapse issues badge|Open issues/i.test(label);
+  });
 }

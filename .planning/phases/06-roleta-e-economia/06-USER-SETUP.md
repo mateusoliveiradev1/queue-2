@@ -1,8 +1,8 @@
 ---
 phase: 06-roleta-e-economia
 artifact: user-setup
-generated: 2026-06-09T17:33:04.147Z
-result: BLOCKED - missing external evidence
+generated: 2026-06-09T22:04:04.412Z
+result: PASSED
 ---
 
 # Phase 6 User Setup
@@ -13,7 +13,7 @@ Use this setup before treating Phase 6 database, browser or migration evidence a
 
 | Variable | Status | Purpose |
 | --- | --- | --- |
-| `DATABASE_URL` | missing | Direct test/integration database connection for `drizzle:generate` and `drizzle:migrate`; the gate maps it to `DIRECT_DATABASE_URL` for Drizzle Kit. |
+| `DATABASE_URL` | configured | Direct test/integration database connection for `drizzle:generate` and `drizzle:migrate`; the gate maps it to `DIRECT_DATABASE_URL` for Drizzle Kit. |
 | `TEST_DATABASE_URL` | configured | Isolated Neon/Postgres branch for roulette migration, RLS, concurrency and performance-hot-path evidence. |
 
 ## Authenticated E2E Fixtures
@@ -27,7 +27,7 @@ Use this setup before treating Phase 6 database, browser or migration evidence a
 | `E2E_READY_PARTNER_PASSWORD` | configured | Ready duo member 2 credentials. |
 | `E2E_OTHER_DUO_USER_EMAIL` | configured | Different-duo actor for isolation checks. |
 | `E2E_OTHER_DUO_USER_PASSWORD` | configured | Different-duo actor for isolation checks. |
-| `E2E_PHASE6_ELIGIBLE_SLUGS` | missing | Comma-separated Wishlist/Pausado slugs eligible for the ready duo roulette. |
+| `E2E_PHASE6_ELIGIBLE_SLUGS` | configured | Comma-separated Wishlist/Pausado slugs eligible for the ready duo roulette. |
 
 Fixture expectations:
 
@@ -104,10 +104,10 @@ pnpm --filter @queue/web test:e2e -- tests/phase-6-e2e.spec.ts tests/accessibili
 
 ### Database
 
-- DATABASE_URL
+None.
 
 ### Browser
 
-- E2E_PHASE6_ELIGIBLE_SLUGS
+None.
 
-## Result: BLOCKED - missing external evidence
+## Result: PASSED

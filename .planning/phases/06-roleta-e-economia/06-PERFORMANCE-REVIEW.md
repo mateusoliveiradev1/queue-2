@@ -2,20 +2,20 @@
 phase: 06
 plan: 10
 artifact: performance-review
-generated: 2026-06-09T17:33:04.148Z
-result: BLOCKED - missing external evidence
+generated: 2026-06-09T22:04:04.413Z
+result: PASSED
 ---
 
 # Phase 6 Performance Review
 
 ## Environment
 
-- Generated: 2026-06-09T17:33:04.148Z
+- Generated: 2026-06-09T22:04:04.413Z
 - Evidence environment: root Phase 6 gate command.
 - Credentials: process-only; no credential values written to this artifact.
-- Migration database status: missing
+- Migration database status: configured
 - TEST_DATABASE_URL status: configured
-- E2E fixture status: missing
+- E2E fixture status: configured
 
 ## Query Review
 
@@ -90,25 +90,24 @@ result: BLOCKED - missing external evidence
 
 | Command | Status | Duration |
 | --- | --- | --- |
-| Architecture | passed | 932ms |
-| Web typecheck | passed | 1544ms |
-| DB typecheck | passed | 817ms |
-| Focused roulette tests | passed | 1620ms |
-| Drizzle generate | skipped | 0ms |
-| Drizzle migrate | skipped | 0ms |
-| DB integration evidence | passed | 5935ms |
-| Performance explain | passed | 241ms |
-| Roulette economy simulation | passed | 78ms |
-| Browser E2E and accessibility | skipped | 0ms |
-| Security checks | passed | 315ms |
+| Architecture | passed | 900ms |
+| Web typecheck | passed | 1692ms |
+| DB typecheck | passed | 776ms |
+| Focused roulette tests | passed | 1511ms |
+| Drizzle generate | passed | 564ms |
+| Drizzle migrate | passed | 727ms |
+| DB integration evidence | passed | 7196ms |
+| Performance explain | passed | 259ms |
+| Roulette economy simulation | passed | 80ms |
+| Browser E2E and accessibility | passed | 46364ms |
+| Security checks | passed | 296ms |
 
 ## Blockers
 
-- DATABASE_URL
-- E2E_PHASE6_ELIGIBLE_SLUGS
+None.
 
-## Result: BLOCKED - missing external evidence
+## Result: PASSED
 
 ## Next Actions
 
-- Provide missing external evidence, rerun `pnpm phase:6:gate`, and treat skipped DB/browser checks as blockers until they execute.
+- Keep this artifact updated if roulette query shapes, indexes or gate commands change.

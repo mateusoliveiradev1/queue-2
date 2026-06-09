@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { RoulettePointer } from "@queue/ui";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -36,7 +36,9 @@ export function RouletteReel({
   boosted = false,
   status = "ready"
 }: RouletteReelProps) {
-  const shouldReduceMotion = useReducedMotion();
+  const prefersReducedMotion = useReducedMotion();
+  const [hasMounted, setHasMounted] = useState(false);
+  const shouldReduceMotion = hasMounted && prefersReducedMotion;
   const visualSlots = useMemo(
     () => buildStableSlots(slots, result),
     [slots, result]
@@ -46,6 +48,10 @@ export function RouletteReel({
     ? `Resultado guardado: ${selectedResult.title}`
     : "A roleta esta pronta para a fila.";
   const pointerTone = boosted || selectedResult?.rarity === "legendary" ? "accent" : "primary";
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   return (
     <section

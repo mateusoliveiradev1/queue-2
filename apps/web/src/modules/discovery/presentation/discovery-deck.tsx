@@ -172,13 +172,13 @@ export function DiscoveryDeck({
           animate={
             shouldReduceMotion
               ? { opacity: 1 }
-              : { opacity: 1, rotate: reaction === "want" ? 3 : reaction === "not_now" ? -3 : 0, x: 0, y: 0 }
+              : { rotate: reaction === "want" ? 3 : reaction === "not_now" ? -3 : 0, x: 0, y: 0 }
           }
           className="discovery-card-motion"
           drag={shouldReduceMotion ? false : true}
           dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
           dragElastic={0.18}
-          initial={shouldReduceMotion ? { opacity: 0.92 } : { opacity: 0, y: 18 }}
+          initial={shouldReduceMotion ? { opacity: 1 } : { y: 18 }}
           key={activeCard.catalogGameId}
           onDragEnd={handleDragEnd}
           transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}

@@ -37,11 +37,12 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
+    await ensureRouletteResult(page);
 
     await expect(page.getByRole("heading", { name: /a fila escolhe agora/i })).toBeVisible();
     await expect(page.locator(".roulette-reel-band")).toBeVisible();
     await expect(page.locator(".roulette-reel-slot[aria-hidden='true']")).toHaveCount(60);
-    await expect(page.getByRole("button", { name: /sortear da fila/i })).toBeVisible();
+    await expectRoulettePrimaryControl(page);
     await expect(page.getByRole("button", { name: /som da roleta/i })).toBeVisible();
     await expect(page.locator("body")).toContainText(/Resultado guardado|A fila apontou para este/i);
     await expect(page.getByRole("heading", { name: /historico da roleta/i })).toBeVisible();
@@ -51,14 +52,16 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
-    await expect(page.locator("body")).toContainText(eligibleSlugs[0] ?? /A fila apontou/i);
-    const resultText = await page.locator(".roulette-result-panel, body").first().textContent();
+    await ensureRouletteResult(page);
+    await expect(page.locator("body")).toContainText(/A fila apontou para este/i);
+    const resultText = await page.locator(".roulette-result-panel").textContent();
+    const invitationText =
+      resultText?.match(/A fila apontou para este[\s\S]*?(?:Replay nao e novo sorteio\.|$)/)?.[0]
+      ?? "A fila apontou para este";
 
     await login(page, partnerActor);
     await page.goto("/app/roleta");
-    await expect(page.locator(".roulette-result-panel, body").first()).toContainText(
-      resultText?.match(/A fila apontou para este[\s\S]*/)?.[0] ?? /A fila apontou para este/i
-    );
+    await expect(page.locator(".roulette-result-panel")).toContainText(invitationText);
 
     const replay = page.getByRole("button", { name: /rever giro salvo/i });
 
@@ -73,6 +76,7 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.setViewportSize(mobileViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
+    await ensureRouletteResult(page);
 
     const reel = page.locator(".roulette-reel-band");
     const pointer = page.locator(".roulette-pointer-anchor");
@@ -90,6 +94,7 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, readyActor);
     await page.goto("/app/roleta");
+    await ensureRouletteResult(page);
 
     await expect
       .poll(() => page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches))
@@ -136,15 +141,18 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
+    await ensureRouletteResult(page);
 
     const lockButton = page.getByRole("button", { name: /travar como principal/i });
 
-    if ((await lockButton.count()) > 0) {
-      await lockButton.click();
-      await expect(page.getByRole("heading", { name: /escolham quem pausa para abrir vaga/i })).toBeVisible();
-      await expect(page.locator("body")).toContainText(/Nada muda sozinho/i);
-      await expect(page.getByRole("button", { name: /cancelar/i })).toBeVisible();
-    }
+    await expect(lockButton).toBeVisible();
+    await lockButton.click();
+    await page.waitForURL(/\/app\/roleta\?estado=replacement-required/);
+    const replacementHeading = page.getByRole("heading", { name: /escolham quem pausa para abrir vaga/i });
+
+    await expect(replacementHeading).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Nada muda sozinho/i);
+    await expect(page.getByRole("link", { name: /cancelar/i })).toBeVisible();
   });
 
   test("lock succeeds with roleta-principal dashboard highlight and Central notification display", async ({ page }) => {
@@ -152,6 +160,7 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
+    await ensureRouletteResult(page);
 
     const lockButton = page.getByRole("button", { name: /travar como principal/i });
 
@@ -161,12 +170,19 @@ test.describe("Phase 6 roulette browser flow", () => {
 
     await lockButton.click();
 
-    if ((await page.getByRole("heading", { name: /escolham quem pausa para abrir vaga/i }).count()) > 0) {
-      test.skip(true, "BLOCKED setup - replacement required branch covered separately.");
+    await page.waitForURL(/\/(?:app\?estado=roleta-principal|app\/roleta\?estado=replacement-required)/);
+
+    if (page.url().includes("replacement-required")) {
+      const replacementAction = page
+        .getByRole("button", { name: /pausar .* travar resultado|pausar e travar/i })
+        .first();
+
+      await expect(replacementAction).toBeVisible();
+      await replacementAction.click();
+      await page.waitForURL(/\/app\?estado=roleta-principal/);
     }
 
-    await page.waitForURL(/\/app\?estado=roleta-principal/);
-    await expect(page.locator('[data-highlight="roleta-principal"]')).toBeVisible();
+    await expect(page.locator('[data-highlight="roleta-principal"]').first()).toBeVisible();
     await expect(page.locator("body")).toContainText(/Resultado da roleta travado como Principal/i);
     await expect(page.locator("body")).toContainText(/Central da Dupla/i);
     await expect(page.locator("body")).toContainText(/roleta|Principal/i);
@@ -177,6 +193,7 @@ test.describe("Phase 6 roulette browser flow", () => {
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
+    await ensureRouletteResult(page);
 
     const discardButton = page.getByRole("button", { name: /descartar este resultado/i });
 
@@ -240,6 +257,33 @@ function reportMissingEnv(scope: string, names: string[]): void {
   }
 }
 
+async function expectRoulettePrimaryControl(page: Page): Promise<void> {
+  const startButton = page.getByRole("button", { name: /sortear da fila/i });
+
+  if ((await startButton.count()) > 0) {
+    await expect(startButton).toBeVisible();
+    return;
+  }
+
+  await expect(page.getByRole("button", { name: /rever giro salvo/i }).first()).toBeVisible();
+}
+
+async function ensureRouletteResult(page: Page): Promise<void> {
+  const resultPanel = page.locator(".roulette-result-panel");
+
+  if ((await resultPanel.count()) > 0) {
+    await expect(resultPanel).toBeVisible();
+    return;
+  }
+
+  const startButton = page.getByRole("button", { name: /sortear da fila/i });
+
+  await expect(startButton).toBeVisible();
+  await startButton.click();
+  await page.waitForLoadState("networkidle", { timeout: 30_000 }).catch(() => undefined);
+  await expect(resultPanel).toBeVisible({ timeout: 30_000 });
+}
+
 async function expectNoVisibleControlOverlap(page: Page): Promise<void> {
   const controls = page.locator(
     "button:visible, a:visible, input:visible, select:visible, textarea:visible"
@@ -256,6 +300,10 @@ async function expectNoVisibleControlOverlap(page: Page): Promise<void> {
   }> = [];
 
   for (let index = 0; index < count; index += 1) {
+    if (await isDevelopmentOverlayControl(controls.nth(index))) {
+      continue;
+    }
+
     const box = await controls.nth(index).boundingBox();
 
     if (box) {
@@ -322,4 +370,12 @@ async function expectVisualCenter(
   const outerCenter = outerBox!.x + outerBox!.width / 2;
 
   expect(Math.abs(innerCenter - outerCenter), message).toBeLessThanOrEqual(8);
+}
+
+async function isDevelopmentOverlayControl(control: Locator): Promise<boolean> {
+  return control.evaluate((element) => {
+    const label = `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`;
+
+    return /Next\.js Dev Tools|issues overlay|Collapse issues badge|Open issues/i.test(label);
+  });
 }

@@ -27,7 +27,10 @@ const e2eFixtureVars = [
 ];
 const migrationDatabaseVars = ["DATABASE_URL"];
 const dbFixtureVars = ["TEST_DATABASE_URL"];
-const effectiveMigrationDatabaseUrl = process.env.DATABASE_URL ?? process.env.DIRECT_DATABASE_URL;
+const effectiveMigrationDatabaseUrl = firstNonEmpty(
+  process.env.DATABASE_URL,
+  process.env.DIRECT_DATABASE_URL
+);
 const missingE2eFixtures = missingVars(e2eFixtureVars);
 const missingDbFixtures = missingVars(dbFixtureVars);
 const missingMigrationDatabase = effectiveMigrationDatabaseUrl ? [] : migrationDatabaseVars;
@@ -498,6 +501,10 @@ function buildCoverageSection() {
 
 function missingVars(names) {
   return names.filter((name) => !process.env[name]);
+}
+
+function firstNonEmpty(...values) {
+  return values.find((value) => typeof value === "string" && value.trim().length > 0);
 }
 
 function listOrNone(items) {
