@@ -43,6 +43,7 @@ describe("performance metric contract", () => {
 
   it("normalizes known route paths and unknown labels to safe keys", () => {
     expect(normalizeRouteKey("/app/catalogo?busca=private")).toBe("app.catalogo");
+    expect(normalizeRouteKey("/app/roleta?round=private")).toBe("app.roleta");
     expect(normalizeRouteKey("/app/jogo/it-takes-two?duo=private")).toBe("app.jogo");
     expect(normalizeRouteKey("/api/discovery/search?q=private")).toBe("api.discovery.search");
     expect(normalizeRouteKey("/app/perfil?email=dupla@example.com")).toBe("unknown");
@@ -156,6 +157,7 @@ describe("server timing helpers", () => {
     const gamePage = readFileSync("src/app/app/jogo/[slug]/page.tsx", "utf8");
     const libraryPage = readFileSync("src/app/app/biblioteca/page.tsx", "utf8");
     const discoveryPage = readFileSync("src/app/app/descobrir/page.tsx", "utf8");
+    const roulettePage = readFileSync("src/app/app/roleta/page.tsx", "utf8");
     const libraryActions = readFileSync("src/app/app/phase-2-actions.ts", "utf8");
     const playActions = readFileSync("src/app/app/phase-4-actions.ts", "utf8");
     const discoveryActions = readFileSync("src/app/app/descobrir/actions.ts", "utf8");
@@ -170,6 +172,7 @@ describe("server timing helpers", () => {
     expect(gamePage).toContain('measureStage("database"');
     expect(libraryPage).toContain('route: "app.biblioteca"');
     expect(discoveryPage).toContain('route: "app.descobrir"');
+    expect(roulettePage).toContain('route: "app.roleta"');
     expect(libraryActions).toContain('action: "catalog.wishlist.add"');
     expect(libraryActions).toContain('action: "library.status.move"');
     expect(playActions).toContain('action: "play.order.promote"');
@@ -200,7 +203,8 @@ describe("performance budgets", () => {
       "app.desafios",
       "app.descobrir",
       "app.home",
-      "app.jogo"
+      "app.jogo",
+      "app.roleta"
     ]);
   });
 

@@ -75,6 +75,13 @@ export {
   replayRouletteRoundUseCase,
   startRouletteRoundUseCase
 };
+export {
+  ROULETTE_ROUTE_COPY,
+  toRouletteRouteViewModel,
+  type RouletteFirstViewportState,
+  type RouletteHistoryItemViewModel,
+  type RouletteRouteViewModel
+} from "./presentation/view-models";
 
 export function getRouletteState(input: {
   userId: string;

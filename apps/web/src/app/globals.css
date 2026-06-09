@@ -735,6 +735,134 @@ input {
   display: none;
 }
 
+.roulette-route {
+  display: grid;
+  gap: 32px;
+}
+
+.roulette-hero {
+  border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 16%, transparent);
+  display: grid;
+  gap: 16px;
+  padding-bottom: 32px;
+}
+
+.roulette-first-viewport {
+  display: grid;
+  min-height: min(560px, calc(100svh - 220px));
+}
+
+.roulette-state-panel {
+  align-content: center;
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in oklch, var(--surface) 86%, black),
+      color-mix(in oklch, var(--bg) 88%, var(--primary) 6%)
+    );
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: 24px;
+  min-height: 320px;
+  padding: 32px;
+}
+
+.roulette-state-panel strong,
+.roulette-state-panel h2,
+.roulette-history h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.2;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.roulette-state-panel p,
+.roulette-state-panel small {
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.roulette-pill,
+.roulette-economy-grid span {
+  border: 1px solid color-mix(in oklch, var(--primary) 28%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.35;
+  min-height: 44px;
+  padding: 8px 16px;
+  text-transform: uppercase;
+}
+
+.roulette-actions {
+  align-items: stretch;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.roulette-actions .queue2-button,
+.roulette-state-panel > .queue2-button {
+  justify-content: center;
+  min-height: 44px;
+  width: fit-content;
+}
+
+.roulette-economy-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.roulette-history {
+  background: color-mix(in oklch, var(--surface) 82%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+}
+
+.roulette-history-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.roulette-history-list li {
+  align-items: center;
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 14%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 0.8fr);
+  min-height: 52px;
+  padding: 8px 16px;
+}
+
+.roulette-history-list span,
+.roulette-history-list time,
+.roulette-history-list small,
+.roulette-history-empty {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.35;
+  margin: 0;
+  text-transform: uppercase;
+}
+
 .app-main {
   display: grid;
   gap: var(--space-7);
@@ -4667,16 +4795,19 @@ input {
       var(--surface);
     border-top: 1px solid color-mix(in oklch, var(--primary) 26%, transparent);
     bottom: 0;
-    display: grid;
+    display: flex;
     gap: var(--space-1);
-    grid-template-columns: repeat(4, minmax(0, 1fr));
     left: 0;
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
     padding: var(--space-2) var(--space-2);
     padding-bottom: env(safe-area-inset-bottom);
     padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
     position: fixed;
     right: 0;
+    scroll-padding: var(--space-2);
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--primary) 56%, transparent) transparent;
     z-index: 40;
   }
 
@@ -4686,6 +4817,7 @@ input {
     border-radius: var(--radius-sharp);
     color: var(--ink-muted);
     display: grid;
+    flex: 0 0 72px;
     font-family: var(--font-mono);
     font-size: 12px;
     font-weight: 600;
@@ -4693,12 +4825,13 @@ input {
     justify-items: center;
     line-height: 1.1;
     min-height: 52px;
-    min-width: 0;
-    overflow-wrap: normal;
+    min-width: 72px;
+    overflow-wrap: anywhere;
     padding: var(--space-1);
     text-align: center;
     text-decoration: none;
     text-transform: uppercase;
+    white-space: normal;
   }
 
   .app-bottom-nav a[aria-current="page"] {
