@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-roleta-e-economia-03-PLAN.md
-last_updated: "2026-06-09T13:07:38.358Z"
+stopped_at: Completed 06-roleta-e-economia-04-PLAN.md
+last_updated: "2026-06-09T13:47:54.079Z"
 last_activity: 2026-06-09
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 58
-  completed_plans: 50
-  percent: 86
+  completed_plans: 51
+  percent: 88
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 06 (roleta-e-economia) — EXECUTING
-Plan: 5 of 12
+Plan: 6 of 12
 Status: Ready to execute
 Last activity: 2026-06-09
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 88%
 
 ## Performance Metrics
 
@@ -104,6 +104,7 @@ Progress: [█████████░] 86%
 | Phase 06-roleta-e-economia P01 | 20 min | 1 tasks | 6 files |
 | Phase 06-roleta-e-economia P02 | 11 min | 2 tasks | 5 files |
 | Phase 06-roleta-e-economia P03 | 29 min | 2 tasks | 8 files |
+| Phase 06-roleta-e-economia P04 | 26 min | 2 tasks | 17 files |
 
 ## Quick Tasks Completed
 
@@ -291,6 +292,9 @@ Recent decisions affecting current work:
 - [Phase 06-02]: Roulette public entrypoint exposes wrappers and types only while infrastructure stays private. — Preserves the modular architecture boundary for future route composition.
 - [Phase 06]: Roulette state/start authority stays server-side; result, duo, pity, balance, cooldown and history facts are derived in membership-scoped transactions.
 - [Phase 06]: Roulette boost is materialized from app.duo_xp_awards into append-only earn/spend/refund ledger keys without mutating app.duos XP or level.
+- [Phase 06-roleta-e-economia]: Roleta route forms pass only proposal fields while actions derive result, economy and duo facts server-side. — Keeps the playable route shell inside the SECURITY.md browser trust boundary.
+- [Phase 06-roleta-e-economia]: app.roleta is part of the performance route allowlist and budget contract. — Server timing labels for the new authenticated route remain static and validated.
+- [Phase 06-roleta-e-economia]: Duo audio preference updates use a narrow public Duo contract instead of full settings mutation. — The route can update only audio_enabled after membership resolution.
 
 ### Pending Todos
 
@@ -330,6 +334,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-09T13:06:44.890Z
-Stopped at: Completed 06-roleta-e-economia-03-PLAN.md
+Last session: 2026-06-09T13:46:07.647Z
+Stopped at: Completed 06-roleta-e-economia-04-PLAN.md
 Resume file: None
