@@ -27,6 +27,7 @@
     "phase:03.3:gate": "node scripts/phase-03-3-gate.mjs",
     "phase:4:gate": "node scripts/phase-4-gate.mjs",
     "phase:5:gate": "node scripts/phase-5-gate.mjs",
+    "phase:6:gate": "node scripts/phase-6-gate.mjs",
     "verify": "pnpm check:secrets && pnpm lint && node scripts/with-env-local.mjs turbo run check:architecture typecheck test test:integration"
   },
   "devDependencies": {
