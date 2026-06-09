@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-roleta-e-economia-05-PLAN.md
-last_updated: "2026-06-09T16:30:20.525Z"
+stopped_at: Completed 06-roleta-e-economia-07-PLAN.md
+last_updated: "2026-06-09T16:47:43.466Z"
 last_activity: 2026-06-09
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 58
-  completed_plans: 53
-  percent: 91
+  completed_plans: 54
+  percent: 93
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 06 (roleta-e-economia) — EXECUTING
-Plan: 8 of 12
+Plan: 9 of 12
 Status: Ready to execute
 Last activity: 2026-06-09
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 93%
 
 ## Performance Metrics
 
@@ -107,6 +107,7 @@ Progress: [█████████░] 91%
 | Phase 06-roleta-e-economia P04 | 26 min | 2 tasks | 17 files |
 | Phase 06-roleta-e-economia P06 | 10 min | 1 tasks | 9 files |
 | Phase 06-roleta-e-economia P05 | 20 min | 2 tasks | 10 files |
+| Phase 06-roleta-e-economia P07 | 18 min | 1 tasks | 9 files |
 
 ## Quick Tasks Completed
 
@@ -303,6 +304,9 @@ Recent decisions affecting current work:
 - [Phase 06-roleta-e-economia]: Roulette route composition now uses the public roulette module entrypoint for reel, audio, result and history UI. — Preserves the modular boundary while letting the authenticated route compose server view models with presentation components.
 - [Phase 06-roleta-e-economia]: Roulette audio is opt-in after a user gesture and production copy avoids casino, prize, store and ranking vocabulary. — The reveal should feel editorial and shared, not like gambling or an individual economy surface.
 - [Phase 06-roleta-e-economia]: Phase 6 browser E2E roulette checks remain fixture-guarded with explicit BLOCKED setup skips until ready duo accounts and eligible slugs are configured. — Authenticated duo-scoped browser evidence cannot be honestly claimed without product fixtures.
+- [Phase 06-roleta-e-economia]: Roulette lock uses Play public activation first and returns replacement-required with autoPause false before mutating roulette state when Jogando is full. — The duo must explicitly choose the replacement target; no automatic pause is introduced.
+- [Phase 06-roleta-e-economia]: Discarded roulette invitations create a 3-round cooldown at the existing 0.5 multiplier and preserve persisted boost spend. — Discard is non-punitive for the game but does not undo a completed authoritative economy spend.
+- [Phase 06-roleta-e-economia]: Roulette locked/discarded Central da Dupla notifications are validated by a local two-value Play application union while play-policy.ts remains unchanged. — The database constraint already allows the roulette notification facts, and this plan explicitly made Play policy read-only.
 
 ### Pending Todos
 
@@ -342,6 +346,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-09T16:30:20.518Z
-Stopped at: Completed 06-roleta-e-economia-05-PLAN.md
+Last session: 2026-06-09T16:47:43.459Z
+Stopped at: Completed 06-roleta-e-economia-07-PLAN.md
 Resume file: None
