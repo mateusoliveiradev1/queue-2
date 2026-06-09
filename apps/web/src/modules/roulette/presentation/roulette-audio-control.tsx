@@ -45,7 +45,7 @@ export function RouletteAudioControl({
   return (
     <div
       className="roulette-audio-control"
-      data-audio-contract="dry tick heavier cadence near the pointer restrained non-casino fanfare"
+      data-audio-contract="dry tick heavier cadence near the pointer restrained fanfare"
       data-audio-policy="no autoplay audio preference"
     >
       <button

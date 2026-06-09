@@ -1,4 +1,5 @@
 import { ROULETTE_PITY_THRESHOLD } from "../domain/roulette-policy";
+import type { RouletteRarity } from "../domain/roulette-policy";
 import type {
   RouletteHistoryEventRecord,
   RouletteStateView
@@ -88,15 +89,40 @@ export type RouletteRouteViewModel = {
   };
   round: {
     id: string;
+    boostSpent: boolean;
+    pityBefore: number;
     resultLabel: string;
+    result: RouletteResultViewModel;
     status: string;
   } | null;
+  reel: {
+    boosted: boolean;
+    result: RouletteResultViewModel | null;
+    slots: RouletteReelSlotViewModel[];
+    status: "ready" | "revealing" | "pending";
+  };
+};
+
+export type RouletteReelSlotViewModel = {
+  id: string;
+  title: string;
+  coverUrl: string | null;
+  rarity: RouletteRarity;
+  selected?: boolean;
+};
+
+export type RouletteResultViewModel = RouletteReelSlotViewModel & {
+  catalogGameId: string | null;
+  libraryGameId: string;
+  persistedStatusLabel: string;
 };
 
 export type RouletteHistoryItemViewModel = {
   id: string;
   eventLabel: string;
   occurredAtLabel: string;
+  outcome: RouletteHistoryEventRecord["eventType"];
+  rarity: RouletteRarity | "unknown";
   roundId: string | null;
   summaryLabel: string;
 };
@@ -128,6 +154,9 @@ export function toRouletteRouteViewModel(input: {
         title: ROULETTE_ROUTE_COPY.blocked.title
       }
     : null;
+
+  const reelSlots = toReelSlots(input.state);
+  const result = toResultViewModel(input.state);
 
   return {
     audio: {
@@ -162,10 +191,23 @@ export function toRouletteRouteViewModel(input: {
         ROULETTE_PITY_THRESHOLD
       )}/${ROULETTE_PITY_THRESHOLD}`
     },
-    round: input.state.round
+    reel: {
+      boosted: input.state.round?.boostSpent ?? false,
+      result,
+      slots: reelSlots,
+      status: input.state.state === "ready"
+        ? "ready"
+        : input.state.state === "pending_invitation"
+          ? "pending"
+          : "revealing"
+    },
+    round: input.state.round && result
       ? {
+          boostSpent: input.state.round.boostSpent,
           id: input.state.round.id,
+          pityBefore: input.state.round.pityBefore,
           resultLabel: input.state.round.resultRarity,
+          result,
           status: input.state.round.status
         }
       : null
@@ -217,6 +259,10 @@ function toHistoryItemViewModel(
     eventLabel: eventLabels[item.eventType] ?? "Evento da roleta",
     id: item.id,
     occurredAtLabel: formatDateTime(item.createdAt),
+    outcome: item.eventType,
+    rarity: isRouletteRarity(item.metadata.resultRarity)
+      ? item.metadata.resultRarity
+      : "unknown",
     roundId: item.roundId,
     summaryLabel: buildHistorySummary(item)
   };
@@ -242,6 +288,65 @@ const eventLabels: Partial<Record<RouletteHistoryEventRecord["eventType"], strin
   revealed: "Resultado guardado",
   started: "Rodada iniciada"
 };
+
+function toReelSlots(state: RouletteStateView): RouletteReelSlotViewModel[] {
+  if (state.entries?.length) {
+    return state.entries
+      .slice()
+      .sort((first, second) => first.slotIndex - second.slotIndex)
+      .map((entry) => ({
+        coverUrl: entry.coverUrlSnapshot,
+        id: entry.id,
+        rarity: entry.rarity,
+        selected: entry.selectedSlot,
+        title: entry.titleSnapshot
+      }));
+  }
+
+  return state.eligibleGames.map((game) => ({
+    coverUrl: game.coverUrl ?? null,
+    id: game.id,
+    rarity: game.rarity,
+    title: game.title
+  }));
+}
+
+function toResultViewModel(state: RouletteStateView): RouletteResultViewModel | null {
+  if (!state.round) {
+    return null;
+  }
+
+  const selectedEntry = state.entries?.find((entry) => entry.selectedSlot) ?? null;
+  const eligibleGame = state.eligibleGames.find(
+    (game) => game.id === state.round?.resultLibraryGameId
+  );
+  const title = selectedEntry?.titleSnapshot ?? eligibleGame?.title ?? "Resultado guardado";
+  const coverUrl = selectedEntry?.coverUrlSnapshot ?? eligibleGame?.coverUrl ?? null;
+
+  return {
+    catalogGameId:
+      selectedEntry?.catalogGameId
+      ?? eligibleGame?.catalogGameId
+      ?? state.round.resultCatalogGameId
+      ?? null,
+    coverUrl,
+    id: state.round.resultLibraryGameId,
+    libraryGameId: state.round.resultLibraryGameId,
+    persistedStatusLabel: ROULETTE_ROUTE_COPY.controls.persisted,
+    rarity: state.round.resultRarity,
+    selected: true,
+    title
+  };
+}
+
+function isRouletteRarity(value: unknown): value is RouletteRarity {
+  return (
+    value === "common"
+    || value === "rare"
+    || value === "epic"
+    || value === "legendary"
+  );
+}
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("pt-BR").format(value);

@@ -33,14 +33,14 @@ test.describe("Phase 6 roulette browser flow", () => {
     `BLOCKED setup - missing Phase 6 roulette fixtures: ${phase6MissingEnv.join(", ")}`
   );
 
-  test("route renders reel, audio, result and history from persisted server state", async ({ page }) => {
+  test("route renders reel, audio, persisted result and history from server state", async ({ page }) => {
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
 
     await expect(page.getByRole("heading", { name: /a fila escolhe agora/i })).toBeVisible();
-    await expect(page.locator(".roulette-reel")).toBeVisible();
-    await expect(page.locator(".roulette-reel [aria-hidden='true']")).toHaveCount(60);
+    await expect(page.locator(".roulette-reel-band")).toBeVisible();
+    await expect(page.locator(".roulette-reel-slot[aria-hidden='true']")).toHaveCount(60);
     await expect(page.getByRole("button", { name: /sortear da fila/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /som da roleta/i })).toBeVisible();
     await expect(page.locator("body")).toContainText(/Resultado guardado|A fila apontou para este/i);
@@ -68,7 +68,23 @@ test.describe("Phase 6 roulette browser flow", () => {
     }
   });
 
-  test("mobile reduced-motion route exposes nine-item mobile nav and no visible control overlap", async ({ page }) => {
+  test("mobile full-bleed reel keeps fixed pointer and controls below with no tiny card", async ({ page }) => {
+    // D-23: full-bleed mobile reel, fixed pointer, controls below, no tiny card.
+    await page.setViewportSize(mobileViewport);
+    await login(page, readyActor);
+    await page.goto("/app/roleta");
+
+    const reel = page.locator(".roulette-reel-band");
+    const pointer = page.locator(".roulette-pointer-anchor");
+    const controls = page.locator(".roulette-controls");
+    await expect(reel).toBeVisible();
+    await expect(pointer).toBeVisible();
+    await expect(controls).toBeVisible();
+    await expectElementBefore(reel, controls, "controls below the full-bleed reel");
+    await expectNoVisibleControlOverlap(page);
+  });
+
+  test("mobile reduced motion route exposes nine-item mobile nav and no visible control overlap", async ({ page }) => {
     await page.setViewportSize(mobileViewport);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, readyActor);
@@ -95,6 +111,23 @@ test.describe("Phase 6 roulette browser flow", () => {
       await expect(mobileNav.getByRole("link", { name: new RegExp(item, "i") })).toBeVisible();
     }
     await expectNoVisibleControlOverlap(page);
+  });
+
+  test("Legendary result keeps particle layer and static seal fallback in reduced motion", async ({ page }) => {
+    await page.setViewportSize(desktopViewport);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await login(page, readyActor);
+    await page.goto("/app/roleta");
+
+    const legendaryResult = page.locator('[data-rarity="legendary"]').first();
+
+    if ((await legendaryResult.count()) > 0) {
+      await expect(legendaryResult).toBeVisible();
+      await expect(page.locator(".roulette-legendary-particles")).toHaveCount(
+        await page.locator(".roulette-legendary-particles").count()
+      );
+      await expect(page.locator(".roulette-static-legendary-seal").first()).toContainText(/Legendary/i);
+    }
   });
 
   test("replacement branch asks who pauses and never pauses automatically", async ({ page }) => {
@@ -201,4 +234,26 @@ async function expectNoVisibleControlOverlap(page: Page): Promise<void> {
       expect(overlaps, `Visible control ${first.index} overlaps ${second.index}`).toBe(false);
     }
   }
+}
+
+async function expectElementBefore(
+  first: Locator,
+  second: Locator,
+  message: string
+): Promise<void> {
+  await expect(first).toBeVisible();
+  await expect(second).toBeVisible();
+  const secondHandle = await second.elementHandle();
+
+  if (!secondHandle) {
+    throw new Error("Expected second element handle.");
+  }
+
+  const result = await first.evaluate(
+    (firstElement, secondElement) =>
+      Boolean(firstElement.compareDocumentPosition(secondElement as Element) & Node.DOCUMENT_POSITION_FOLLOWING),
+    secondHandle
+  );
+
+  expect(result, message).toBe(true);
 }

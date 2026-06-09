@@ -80,8 +80,14 @@ export {
   toRouletteRouteViewModel,
   type RouletteFirstViewportState,
   type RouletteHistoryItemViewModel,
+  type RouletteReelSlotViewModel,
+  type RouletteResultViewModel,
   type RouletteRouteViewModel
 } from "./presentation/view-models";
+export { RouletteAudioControl } from "./presentation/roulette-audio-control";
+export { RouletteReel } from "./presentation/roulette-reel";
+export { ResultPanel } from "./presentation/result-panel";
+export { CompactHistory } from "./presentation/compact-history";
 
 export function getRouletteState(input: {
   userId: string;

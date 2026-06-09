@@ -5,8 +5,12 @@ import { redirect } from "next/navigation";
 
 import { AppShell } from "../../../components/app-shell";
 import {
+  CompactHistory,
   getRouletteHistory,
   getRouletteState,
+  ResultPanel,
+  RouletteAudioControl,
+  RouletteReel,
   toRouletteRouteViewModel,
   type RouletteRouteViewModel
 } from "../../../modules/roulette";
@@ -75,25 +79,11 @@ async function renderRoulettePage() {
           {renderFirstViewport(viewModel)}
         </section>
 
-        <section className="roulette-history" aria-labelledby="roulette-history-title">
-          <div className="section-heading">
-            <h2 id="roulette-history-title">{viewModel.history.heading}</h2>
-            <p className="support-copy">{viewModel.history.emptyLabel}</p>
-          </div>
-          {viewModel.history.items.length > 0 ? (
-            <ol className="roulette-history-list">
-              {viewModel.history.items.map((item) => (
-                <li key={item.id}>
-                  <span>{item.eventLabel}</span>
-                  <time>{item.occurredAtLabel}</time>
-                  <small>{item.summaryLabel}</small>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="roulette-history-empty">{viewModel.history.emptyLabel}</p>
-          )}
-        </section>
+        <CompactHistory
+          emptyLabel={viewModel.history.emptyLabel}
+          heading={viewModel.history.heading}
+          items={viewModel.history.items}
+        />
       </section>
     </AppShell>
   ));
@@ -141,75 +131,82 @@ function renderBlockedPool(viewModel: RouletteRouteViewModel) {
 
 function renderReadyRoulette(viewModel: RouletteRouteViewModel) {
   return (
-    <div className="roulette-state-panel roulette-ready-state">
-      <div>
-        <h2>{viewModel.copy.controls.start}</h2>
-        <p>{viewModel.copy.helper}</p>
-      </div>
-      <div className="roulette-economy-grid">
-        <span>{viewModel.boost.canUseBoost ? viewModel.boost.controlLabel : viewModel.boost.unavailableLabel}</span>
-        <span>{viewModel.pity.compactLabel}</span>
-        <span>{viewModel.pity.progressLabel}</span>
-        <span>{viewModel.audio.label}</span>
-      </div>
-      <div className="roulette-actions">
-        <form action={submitStartRouletteRoundForm}>
-          <input name="idempotencyKey" type="hidden" value={randomUUID()} />
-          <button className="queue2-button" data-tone="primary" type="submit">
-            {viewModel.copy.controls.start}
-          </button>
-        </form>
-        {viewModel.boost.canUseBoost ? (
-          <form action={submitStartRouletteRoundForm}>
-            <input name="idempotencyKey" type="hidden" value={randomUUID()} />
-            <input name="useBoost" type="hidden" value="true" />
-            <button className="queue2-button" data-tone="quiet" type="submit">
-              {viewModel.boost.controlLabel}
-            </button>
-          </form>
-        ) : null}
-        <form action={submitRouletteAudioPreferenceForm}>
-          <input
-            name="audioEnabled"
-            type="hidden"
-            value={viewModel.audio.audioEnabled ? "false" : "true"}
-          />
-          <button
-            aria-pressed={viewModel.audio.audioEnabled}
-            className="queue2-button"
-            data-tone="quiet"
-            type="submit"
-          >
-            {viewModel.audio.label}
-          </button>
-        </form>
-      </div>
-    </div>
+    <RouletteExperience viewModel={viewModel} />
   );
 }
 
 function renderResumableReveal(viewModel: RouletteRouteViewModel) {
   return (
-    <div className="roulette-state-panel roulette-resume-state" aria-live="polite">
-      <strong>{viewModel.copy.controls.persisted}</strong>
-      <p>{viewModel.copy.controls.replayDisclaimer}</p>
-      {renderReplayForm(viewModel, "primary")}
-    </div>
+    <RouletteExperience viewModel={viewModel} />
   );
 }
 
 function renderPendingInvitation(viewModel: RouletteRouteViewModel) {
   return (
-    <div className="roulette-state-panel roulette-invitation-state" aria-live="polite">
-      <strong>{viewModel.copy.result.invitation}</strong>
-      <p>{viewModel.copy.controls.persisted}</p>
-      <div className="roulette-actions">
-        <button className="queue2-button" data-tone="primary" type="button">
-          {viewModel.copy.result.lock}
-        </button>
-        {renderReplayForm(viewModel, "quiet")}
+    <RouletteExperience viewModel={viewModel} />
+  );
+}
+
+function RouletteExperience({ viewModel }: { viewModel: RouletteRouteViewModel }) {
+  return (
+    <div className="roulette-reveal-stack">
+      {/* roulette-reel-band: full-bleed reel with fixed pointer; controls below; no tiny card */}
+      <RouletteReel
+        boosted={viewModel.reel.boosted}
+        result={viewModel.reel.result}
+        slots={viewModel.reel.slots}
+        status={viewModel.reel.status}
+      />
+      <div className="roulette-controls" aria-label="Controles da roleta">
+        <div className="roulette-economy-grid">
+          <span>{viewModel.boost.canUseBoost ? viewModel.boost.controlLabel : viewModel.boost.unavailableLabel}</span>
+          <span>{viewModel.pity.compactLabel}</span>
+          <span>{viewModel.pity.progressLabel}</span>
+          <span>{viewModel.boost.balanceLabel}</span>
+        </div>
+        {viewModel.firstViewport.state === "ready" ? (
+          <>
+            <form action={submitStartRouletteRoundForm}>
+              <input name="idempotencyKey" type="hidden" value={randomUUID()} />
+              <button className="queue2-button" data-tone="primary" type="submit">
+                {viewModel.copy.controls.start}
+              </button>
+            </form>
+            {viewModel.boost.canUseBoost ? (
+              <form action={submitStartRouletteRoundForm}>
+                <input name="idempotencyKey" type="hidden" value={randomUUID()} />
+                <input name="useBoost" type="hidden" value="true" />
+                <button className="queue2-button" data-tone="quiet" type="submit">
+                  {viewModel.boost.controlLabel}
+                </button>
+              </form>
+            ) : null}
+          </>
+        ) : (
+          renderReplayForm(viewModel, "quiet")
+        )}
+        <RouletteAudioControl
+          defaultEnabled={viewModel.audio.defaultEnabledFromDuoPreference}
+          updateRouletteAudioPreferenceAction={updateRouletteAudioPreferenceAction}
+        />
+        <noscript>
+          <form action={submitRouletteAudioPreferenceForm}>
+            <input
+              name="audioEnabled"
+              type="hidden"
+              value={viewModel.audio.audioEnabled ? "false" : "true"}
+            />
+            <button className="queue2-button" data-tone="quiet" type="submit">
+              {viewModel.audio.label}
+            </button>
+          </form>
+        </noscript>
       </div>
-      <small>{viewModel.copy.controls.replayDisclaimer}</small>
+      <ResultPanel
+        replayAction={submitReplayRouletteRoundForm}
+        result={viewModel.round?.result ?? null}
+        roundId={viewModel.round?.id ?? null}
+      />
     </div>
   );
 }

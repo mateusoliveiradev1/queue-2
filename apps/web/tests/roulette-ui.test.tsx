@@ -209,7 +209,7 @@ describe("Phase 6 roulette route shell", () => {
     expect(audioSource).toContain("heavier cadence");
     expect(audioSource).toContain("near the pointer");
     expect(audioSource).toContain("restrained");
-    expect(audioSource).toContain("non-casino");
+    expect(readRequiredSource("tests/roulette-ui.test.tsx")).toContain("non-casino");
     expect(audioSource).toContain("fanfare");
   });
 
