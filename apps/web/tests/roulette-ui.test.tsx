@@ -16,6 +16,10 @@ const rouletteResultPanelSourcePath =
   "src/modules/roulette/presentation/result-panel.tsx";
 const rouletteCompactHistorySourcePath =
   "src/modules/roulette/presentation/compact-history.tsx";
+const rouletteReplacementRequiredSourcePath =
+  "src/modules/roulette/presentation/replacement-required.tsx";
+const dashboardPageSourcePath = "src/app/app/page.tsx";
+const phase6StatusSourcePath = "src/app/app/phase-6-status.ts";
 
 describe("Phase 6 roulette route shell", () => {
   it("composes the authenticated route from public server contracts only", () => {
@@ -29,10 +33,14 @@ describe("Phase 6 roulette route shell", () => {
     expect(pageSource).toContain("startRouletteRoundAction");
     expect(pageSource).toContain("replayRouletteRoundAction");
     expect(pageSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(pageSource).toContain("lockRouletteResultAction");
+    expect(pageSource).toContain("discardRouletteResultAction");
+    expect(pageSource).toContain("ReplacementRequired");
     expect(pageSource).toContain('name="idempotencyKey"');
     expect(pageSource).toContain('name="useBoost"');
     expect(pageSource).toContain('name="roundId"');
     expect(pageSource).toContain('name="audioEnabled"');
+    expect(pageSource).toContain('name="replacementLibraryGameId"');
     expect(pageSource).not.toContain("modules/roulette/application");
     expect(pageSource).not.toContain("modules/roulette/infrastructure");
   });
@@ -55,6 +63,9 @@ describe("Phase 6 roulette route shell", () => {
     expect(source).toContain("Resultado guardado. Revelando para a dupla.");
     expect(source).toContain("A fila apontou para este. Voces travam como Principal?");
     expect(source).toContain("Travar como Principal");
+    expect(source).toContain("Descartar este resultado");
+    expect(source).toContain("Escolham quem pausa para abrir vaga");
+    expect(source).toContain("Nada muda sozinho. Escolham um Jogando para pausar ou cancelem a trava.");
     expect(source).toContain("Rever giro salvo");
     expect(source).toContain("Replay nao e novo sorteio.");
     expect(source).toContain("Historico da roleta");
@@ -123,10 +134,15 @@ describe("Phase 6 roulette route shell", () => {
     expect(actionSource).toContain("replayRouletteRound");
     expect(actionSource).toContain("updateDuoAudioPreference");
     expect(actionSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(actionSource).toContain("lockRouletteResultAction");
+    expect(actionSource).toContain("discardRouletteResultAction");
+    expect(actionSource).toContain("lockRouletteResultAsPrincipal");
+    expect(actionSource).toContain("discardRouletteResult");
     expect(actionSource).toContain("idempotencyKey");
     expect(actionSource).toContain("useBoost");
     expect(actionSource).toContain("roundId");
     expect(actionSource).toContain("audioEnabled");
+    expect(actionSource).toContain("replacementLibraryGameId");
     expect(duoSource).toContain("updateDuoAudioPreference");
     expect(duoSource).toContain("audio_enabled");
   });
@@ -139,6 +155,7 @@ describe("Phase 6 roulette route shell", () => {
       "resultLibraryGameId",
       "resultCatalogGameId",
       "pity",
+      "boostSpent",
       "boostBalance",
       "resultRarity",
       "weekend"
@@ -150,6 +167,37 @@ describe("Phase 6 roulette route shell", () => {
         new RegExp(`getFormString\\(formData,\\s*["']${forbiddenField}["']`)
       );
     }
+  });
+
+  it("wires invitation resolution actions through server-owned contracts only", () => {
+    const actionSource = readRequiredSource("src/app/app/roleta/actions.ts");
+
+    expect(actionSource).toContain('"use server"');
+    expect(actionSource).toContain("lockRouletteResultAction");
+    expect(actionSource).toContain("discardRouletteResultAction");
+    expect(actionSource).toContain("lockRouletteResultAsPrincipal");
+    expect(actionSource).toContain("discardRouletteResult");
+    expect(actionSource).toContain("requireAuthoritativeVerifiedSession");
+    expect(actionSource).toContain('getFormString(formData, "roundId")');
+    expect(actionSource).toContain('getFormString(formData, "replacementLibraryGameId")');
+
+    for (const forbiddenField of [
+      "duoId",
+      "resultLibraryGameId",
+      "resultCatalogGameId",
+      "boostSpent",
+      "pity"
+    ]) {
+      expect(actionSource).not.toMatch(
+        new RegExp(`formData\\.get\\(\\s*["']${forbiddenField}["']`)
+      );
+      expect(actionSource).not.toMatch(
+        new RegExp(`getFormString\\(formData,\\s*["']${forbiddenField}["']`)
+      );
+    }
+
+    expect(actionSource).not.toContain("createOperationalPlayNotification");
+    expect(actionSource).not.toContain("insertNotificationItem");
   });
 
   it("builds a 60-slot reel with fixed pointer, reduced-motion stages and rarity tokens", () => {
@@ -216,14 +264,25 @@ describe("Phase 6 roulette route shell", () => {
   it("renders result invitation, rarity seal, replay disclaimer and compact trust history", () => {
     const resultPanelSource = readRequiredSource(rouletteResultPanelSourcePath);
     const compactHistorySource = readRequiredSource(rouletteCompactHistorySourcePath);
+    const replacementRequiredSource = readRequiredSource(rouletteReplacementRequiredSourcePath);
 
     expect(resultPanelSource).toContain("A fila apontou para este. Voces travam como Principal?");
     expect(resultPanelSource).toContain("Travar como Principal");
+    expect(resultPanelSource).toContain("Descartar este resultado");
+    expect(resultPanelSource).toContain("Descartar este resultado? O jogo continua na fila e o boost de uma rodada ja revelada nao volta.");
     expect(resultPanelSource).toContain("Replay nao e novo sorteio.");
+    expect(resultPanelSource).toContain("ActionFeedbackButton");
+    expect(resultPanelSource).toContain("lockAction");
+    expect(resultPanelSource).toContain("discardAction");
     expect(resultPanelSource).toContain("rarity seal");
     expect(resultPanelSource).toContain("data-rarity");
     expect(resultPanelSource).toContain("roulette-legendary-particles");
     expect(resultPanelSource).toContain("static seal");
+    expect(replacementRequiredSource).toContain("Escolham quem pausa para abrir vaga");
+    expect(replacementRequiredSource).toContain("Nada muda sozinho. Escolham um Jogando para pausar ou cancelem a trava.");
+    expect(replacementRequiredSource).toContain("ActionFeedbackButton");
+    expect(replacementRequiredSource).toContain('name="replacementLibraryGameId"');
+    expect(replacementRequiredSource).toContain('href="/app/roleta"');
     expect(compactHistorySource).toContain("Historico da roleta");
     expect(compactHistorySource).toContain("Os sorteios aparecem aqui depois da primeira rodada.");
     expect(compactHistorySource).toContain("boost");
@@ -239,15 +298,39 @@ describe("Phase 6 roulette route shell", () => {
     expect(pageSource).toContain("RouletteAudioControl");
     expect(pageSource).toContain("ResultPanel");
     expect(pageSource).toContain("CompactHistory");
+    expect(pageSource).toContain("ReplacementRequired");
     expect(pageSource).toContain("getRouletteState");
     expect(pageSource).toContain("getRouletteHistory");
     expect(pageSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(pageSource).toContain("lockRouletteResultAction");
+    expect(pageSource).toContain("discardRouletteResultAction");
     expect(pageSource).toContain("roulette-reel-band");
     expect(pageSource).toContain("roulette-controls");
     expect(pageSource).toContain("full-bleed");
     expect(pageSource).toContain("controls below");
     expect(pageSource).toContain("fixed pointer");
     expect(pageSource).toContain("no tiny card");
+  });
+
+  it("maps roleta-principal dashboard status and keeps notification facts display-only", () => {
+    const dashboardSource = readRequiredSource(dashboardPageSourcePath);
+    const statusSource = readRequiredSource(phase6StatusSourcePath);
+    const notificationCenterSource = readRequiredSource(
+      "src/modules/play/presentation/notification-center.tsx"
+    );
+
+    expect(statusSource).toContain("roleta-principal");
+    expect(statusSource).toContain("Resultado da roleta travado como Principal.");
+    expect(dashboardSource).toContain("getPhase6StatusMessage");
+    expect(dashboardSource).toContain("roulettePrincipalHighlight");
+    expect(dashboardSource).toContain('data-highlight="roleta-principal"');
+    expect(dashboardSource).toContain("getDuoNotifications");
+    expect(notificationCenterSource).toContain("Central da Dupla");
+    expect(notificationCenterSource).toContain("notificationType");
+    expect(`${dashboardSource}\n${notificationCenterSource}`).toContain("roulette-result-locked");
+    expect(`${dashboardSource}\n${notificationCenterSource}`).toContain("roulette-result-discarded");
+    expect(dashboardSource).not.toContain("createOperationalPlayNotification");
+    expect(dashboardSource).not.toContain("insertNotificationItem");
   });
 
   it("extends Phase 6 E2E scaffold with persisted reveal, mobile and rarity assertions", () => {
@@ -267,11 +350,22 @@ describe("Phase 6 roulette route shell", () => {
     expect(e2eSource).toContain("particle");
     expect(e2eSource).toContain("static seal");
     expect(e2eSource).toContain("reduced motion");
+    expect(e2eSource).toContain("lock succeeds");
+    expect(e2eSource).toContain("discard");
+    expect(e2eSource).toContain("replacement");
+    expect(e2eSource).toContain("required");
+    expect(e2eSource).toContain("other-duo");
+    expect(e2eSource).toContain("roleta-principal");
   });
 });
 
 function readRouletteUiSources(): string {
-  return rouletteUiFiles.map(readRequiredSource).join("\n/* roulette-ui-boundary */\n");
+  return [
+    ...rouletteUiFiles,
+    rouletteResultPanelSourcePath,
+    rouletteCompactHistorySourcePath,
+    rouletteReplacementRequiredSourcePath
+  ].map(readRequiredSource).join("\n/* roulette-ui-boundary */\n");
 }
 
 function readRequiredSource(path: string): string {

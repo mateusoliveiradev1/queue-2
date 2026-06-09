@@ -131,6 +131,7 @@ test.describe("Phase 6 roulette browser flow", () => {
   });
 
   test("replacement branch asks who pauses and never pauses automatically", async ({ page }) => {
+    // replacement required: the full queue must ask explicitly; nothing auto-pauses.
     await page.setViewportSize(desktopViewport);
     await login(page, readyActor);
     await page.goto("/app/roleta");
@@ -145,7 +146,52 @@ test.describe("Phase 6 roulette browser flow", () => {
     }
   });
 
+  test("lock succeeds with roleta-principal dashboard highlight and Central notification display", async ({ page }) => {
+    // lock succeeds: successful invitation resolution redirects to /app?estado=roleta-principal.
+    await page.setViewportSize(desktopViewport);
+    await login(page, readyActor);
+    await page.goto("/app/roleta");
+
+    const lockButton = page.getByRole("button", { name: /travar como principal/i });
+
+    if ((await lockButton.count()) === 0) {
+      test.skip(true, "BLOCKED setup - no pending roulette result to lock.");
+    }
+
+    await lockButton.click();
+
+    if ((await page.getByRole("heading", { name: /escolham quem pausa para abrir vaga/i }).count()) > 0) {
+      test.skip(true, "BLOCKED setup - replacement required branch covered separately.");
+    }
+
+    await page.waitForURL(/\/app\?estado=roleta-principal/);
+    await expect(page.locator('[data-highlight="roleta-principal"]')).toBeVisible();
+    await expect(page.locator("body")).toContainText(/Resultado da roleta travado como Principal/i);
+    await expect(page.locator("body")).toContainText(/Central da Dupla/i);
+    await expect(page.locator("body")).toContainText(/roleta|Principal/i);
+  });
+
+  test("discard updates history and unblocks a new roulette round", async ({ page }) => {
+    // discard: result goes to history and the route can offer a new round again.
+    await page.setViewportSize(desktopViewport);
+    await login(page, readyActor);
+    await page.goto("/app/roleta");
+
+    const discardButton = page.getByRole("button", { name: /descartar este resultado/i });
+
+    if ((await discardButton.count()) === 0) {
+      test.skip(true, "BLOCKED setup - no pending roulette result to discard.");
+    }
+
+    await discardButton.click();
+    await page.waitForURL(/\/app\/roleta/);
+    await expect(page.getByRole("heading", { name: /historico da roleta/i })).toBeVisible();
+    await expect(page.locator("body")).toContainText(/discarded|descart/i);
+    await expect(page.getByRole("button", { name: /sortear da fila/i })).toBeVisible();
+  });
+
   test("other-duo actor cannot inspect ready duo roulette state", async ({ page }) => {
+    // other-duo: isolation evidence must not reveal the ready duo result or history.
     await page.setViewportSize(desktopViewport);
     await login(page, otherDuoActor);
     await page.goto("/app/roleta");
