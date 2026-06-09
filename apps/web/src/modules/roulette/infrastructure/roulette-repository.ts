@@ -219,14 +219,14 @@ export function createRouletteTransaction(
     lockPityState: (input) => lockPityState(client, input.duoId),
     updatePityState: (input) => updatePityState(client, input),
     readCooldowns: (input) => readCooldowns(client, input.duoId),
-    upsertCooldown: () => pendingPlan0603("upsertCooldown"),
+    upsertCooldown: () => pendingFutureRoulettePlan("upsertCooldown"),
     decrementCooldowns: (input) => decrementCooldowns(client, input.duoId),
     persistRound: (input) => persistRound(client, input),
     persistRoundEntries: (input) => persistRoundEntries(client, input),
-    markRoundRevealed: () => pendingPlan0603("markRoundRevealed"),
-    recordReplay: () => pendingPlan0603("recordReplay"),
-    lockRoundResult: () => pendingPlan0603("lockRoundResult"),
-    discardRoundResult: () => pendingPlan0603("discardRoundResult"),
+    markRoundRevealed: () => pendingFutureRoulettePlan("markRoundRevealed"),
+    recordReplay: () => pendingFutureRoulettePlan("recordReplay"),
+    lockRoundResult: () => pendingFutureRoulettePlan("lockRoundResult"),
+    discardRoundResult: () => pendingFutureRoulettePlan("discardRoundResult"),
     insertHistoryEvent: (input) => insertHistoryEvent(client, input),
     readHistory: (input) => readHistory(client, input.duoId, input.limit)
   };
@@ -284,7 +284,7 @@ async function lockRouletteResultAsPrincipalShell(
     return { ok: false, reason: "membership-required" };
   }
 
-  return pendingPlan0603("lockRouletteResultAsPrincipal");
+  return pendingFutureRoulettePlan("lockRouletteResultAsPrincipal");
 }
 
 async function discardRouletteResultShell(
@@ -300,7 +300,7 @@ async function discardRouletteResultShell(
     return { ok: false, reason: "membership-required" };
   }
 
-  return pendingPlan0603("discardRouletteResult");
+  return pendingFutureRoulettePlan("discardRouletteResult");
 }
 
 async function resolveMembership(
@@ -1051,8 +1051,8 @@ function normalizeMetadata(value: unknown): Record<string, unknown> {
   return {};
 }
 
-function pendingPlan0603(methodName: string): Promise<never> {
-  throw new Error(`roulette_repository_${methodName}_pending_06_03`);
+function pendingFutureRoulettePlan(methodName: string): Promise<never> {
+  throw new Error(`roulette_repository_${methodName}_reserved_for_later_phase_6_plan`);
 }
 
 function getRuntimePool(): QueueDbPool {
