@@ -334,6 +334,57 @@ describe("Phase 6 roulette route shell", () => {
     expect(dashboardSource).not.toContain("insertNotificationItem");
   });
 
+  it("requires focused tests to enumerate every Phase 6 requirement and decision", () => {
+    const focusedSource = [
+      "tests/roulette-domain.test.ts",
+      "tests/roulette-application.test.ts",
+      "tests/phase-6-e2e.spec.ts",
+      "tests/accessibility.spec.ts",
+      "../../packages/db/tests/roulette-migrations.test.ts",
+      "../../packages/db/tests/roulette-rls.test.ts",
+      "../../packages/db/tests/roulette-concurrency.test.ts"
+    ].map(readRequiredSource).join("\n/* phase-6-focused-coverage */\n");
+
+    for (const requirementId of [
+      "ROUL-01",
+      "ROUL-02",
+      "ROUL-03",
+      "ROUL-04",
+      "ROUL-05",
+      "ROUL-06",
+      "ROUL-07",
+      "ROUL-08",
+      "ROUL-09",
+      "ROUL-10",
+      "SAFE-06"
+    ]) {
+      expect(focusedSource).toContain(requirementId);
+    }
+
+    for (const decisionId of Array.from({ length: 32 }, (_, index) =>
+      `D-${String(index + 1).padStart(2, "0")}`
+    )) {
+      expect(focusedSource).toContain(decisionId);
+    }
+  });
+
+  it("extends authenticated accessibility coverage to the roulette route", () => {
+    const accessibilitySource = readRequiredSource("tests/accessibility.spec.ts");
+
+    expect(accessibilitySource).toContain("Phase 6 roulette accessibility");
+    expect(accessibilitySource).toContain("/app/roleta");
+    expect(accessibilitySource).toContain("roulette-reel-band");
+    expect(accessibilitySource).toContain("roulette-controls");
+    expect(accessibilitySource).toContain("visual center");
+    expect(accessibilitySource).toContain("no autoplay");
+    expect(accessibilitySource).toContain("audio preference");
+    expect(accessibilitySource).toContain("Som da roleta");
+    expect(accessibilitySource).toContain("44px");
+    expect(accessibilitySource).toContain("72px");
+    expect(accessibilitySource).toContain("52px");
+    expect(accessibilitySource).toContain("axe");
+  });
+
   it("extends Phase 6 E2E scaffold with persisted reveal, mobile and rarity assertions", () => {
     const e2eSource = readRequiredSource("tests/phase-6-e2e.spec.ts");
 
