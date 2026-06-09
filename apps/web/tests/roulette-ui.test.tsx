@@ -19,6 +19,13 @@ describe("Phase 6 roulette route shell", () => {
     expect(pageSource).toContain("getRouletteHistory");
     expect(pageSource).toContain("currentPage=\"roleta\"");
     expect(pageSource).toContain("toRouletteRouteViewModel");
+    expect(pageSource).toContain("startRouletteRoundAction");
+    expect(pageSource).toContain("replayRouletteRoundAction");
+    expect(pageSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(pageSource).toContain('name="idempotencyKey"');
+    expect(pageSource).toContain('name="useBoost"');
+    expect(pageSource).toContain('name="roundId"');
+    expect(pageSource).toContain('name="audioEnabled"');
     expect(pageSource).not.toContain("modules/roulette/application");
     expect(pageSource).not.toContain("modules/roulette/infrastructure");
   });

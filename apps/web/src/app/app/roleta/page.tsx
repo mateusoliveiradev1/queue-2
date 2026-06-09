@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
@@ -13,6 +15,11 @@ import {
   measureStage,
   withServerTiming
 } from "../../../platform/performance/server-timing";
+import {
+  replayRouletteRoundAction,
+  startRouletteRoundAction,
+  updateRouletteAudioPreferenceAction
+} from "./actions";
 
 export const metadata: Metadata = {
   description:
@@ -145,9 +152,38 @@ function renderReadyRoulette(viewModel: RouletteRouteViewModel) {
         <span>{viewModel.pity.progressLabel}</span>
         <span>{viewModel.audio.label}</span>
       </div>
-      <button className="queue2-button" data-tone="primary" type="button">
-        {viewModel.copy.controls.start}
-      </button>
+      <div className="roulette-actions">
+        <form action={submitStartRouletteRoundForm}>
+          <input name="idempotencyKey" type="hidden" value={randomUUID()} />
+          <button className="queue2-button" data-tone="primary" type="submit">
+            {viewModel.copy.controls.start}
+          </button>
+        </form>
+        {viewModel.boost.canUseBoost ? (
+          <form action={submitStartRouletteRoundForm}>
+            <input name="idempotencyKey" type="hidden" value={randomUUID()} />
+            <input name="useBoost" type="hidden" value="true" />
+            <button className="queue2-button" data-tone="quiet" type="submit">
+              {viewModel.boost.controlLabel}
+            </button>
+          </form>
+        ) : null}
+        <form action={submitRouletteAudioPreferenceForm}>
+          <input
+            name="audioEnabled"
+            type="hidden"
+            value={viewModel.audio.audioEnabled ? "false" : "true"}
+          />
+          <button
+            aria-pressed={viewModel.audio.audioEnabled}
+            className="queue2-button"
+            data-tone="quiet"
+            type="submit"
+          >
+            {viewModel.audio.label}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
@@ -157,9 +193,7 @@ function renderResumableReveal(viewModel: RouletteRouteViewModel) {
     <div className="roulette-state-panel roulette-resume-state" aria-live="polite">
       <strong>{viewModel.copy.controls.persisted}</strong>
       <p>{viewModel.copy.controls.replayDisclaimer}</p>
-      <button className="queue2-button" data-tone="primary" type="button">
-        {viewModel.copy.controls.replay}
-      </button>
+      {renderReplayForm(viewModel, "primary")}
     </div>
   );
 }
@@ -173,13 +207,47 @@ function renderPendingInvitation(viewModel: RouletteRouteViewModel) {
         <button className="queue2-button" data-tone="primary" type="button">
           {viewModel.copy.result.lock}
         </button>
-        <button className="queue2-button" data-tone="quiet" type="button">
-          {viewModel.copy.controls.replay}
-        </button>
+        {renderReplayForm(viewModel, "quiet")}
       </div>
       <small>{viewModel.copy.controls.replayDisclaimer}</small>
     </div>
   );
+}
+
+function renderReplayForm(
+  viewModel: RouletteRouteViewModel,
+  tone: "primary" | "quiet"
+) {
+  if (!viewModel.round) {
+    return null;
+  }
+
+  return (
+    <form action={submitReplayRouletteRoundForm}>
+      <input name="roundId" type="hidden" value={viewModel.round.id} />
+      <button className="queue2-button" data-tone={tone} type="submit">
+        {viewModel.copy.controls.replay}
+      </button>
+    </form>
+  );
+}
+
+async function submitStartRouletteRoundForm(formData: FormData): Promise<void> {
+  "use server";
+
+  await startRouletteRoundAction(formData);
+}
+
+async function submitReplayRouletteRoundForm(formData: FormData): Promise<void> {
+  "use server";
+
+  await replayRouletteRoundAction(formData);
+}
+
+async function submitRouletteAudioPreferenceForm(formData: FormData): Promise<void> {
+  "use server";
+
+  await updateRouletteAudioPreferenceAction(formData);
 }
 
 function renderHistoryBackedEmpty(viewModel: RouletteRouteViewModel) {
@@ -193,4 +261,3 @@ function renderHistoryBackedEmpty(viewModel: RouletteRouteViewModel) {
     </div>
   );
 }
-
