@@ -7,6 +7,7 @@ import {
   activatePlayingGameUseCase,
   getCurrentPlayUseCase,
   promotePlayingGameUseCase,
+  replacePlayingGameUseCase,
   reorderPlayingGamesUseCase,
   type CurrentPlayGameRecord
 } from "../src/modules/play";
@@ -343,6 +344,89 @@ describe("play application contract", () => {
       ]
     });
   });
+
+  it("replaces only the selected active game and makes the incoming roulette result Principal", async () => {
+    const replacePlayingGameActiveSet =
+      vi.fn<PlayRepositoryTransaction["replacePlayingGameActiveSet"]>(async (input) =>
+        input.games.map((game, index) =>
+          activeRecord({
+            id: `active-${index + 1}`,
+            libraryGameId: game.libraryGameId,
+            role: game.role,
+            position: game.position
+          })
+        )
+      );
+    const repository = fakePlayRepository({
+      activeGames: [],
+      currentGames: [
+        currentPlayRecord({ libraryGameId: "library-1", role: "principal", position: 1 }),
+        currentPlayRecord({ id: "active-2", libraryGameId: "library-2", role: "secondary", position: 2 }),
+        currentPlayRecord({ id: "active-3", libraryGameId: "library-3", role: "secondary", position: 3 })
+      ],
+      replacementLibraryGame: activationLibraryGame({
+        id: "library-4",
+        catalogGameId: "game-4",
+        status: "wishlist"
+      }),
+      replacePlayingGameActiveSet
+    });
+
+    await expect(
+      replacePlayingGameUseCase(
+        {
+          userId: "member-1",
+          incomingLibraryGameId: "library-4",
+          pausedLibraryGameId: "library-2",
+          makePrincipal: true
+        },
+        repository
+      )
+    ).resolves.toEqual(expect.objectContaining({ ok: true }));
+    expect(replacePlayingGameActiveSet).toHaveBeenCalledWith({
+      duoId: "duo-1",
+      actorUserId: "member-1",
+      incomingLibraryGameId: "library-4",
+      pausedLibraryGameId: "library-2",
+      games: [
+        { libraryGameId: "library-4", role: "principal", position: 1 },
+        { libraryGameId: "library-1", role: "secondary", position: 2 },
+        { libraryGameId: "library-3", role: "secondary", position: 3 }
+      ]
+    });
+  });
+
+  it("refuses replacement when the selected paused game is not active", async () => {
+    const replacePlayingGameActiveSet = vi.fn();
+    const repository = fakePlayRepository({
+      activeGames: [],
+      currentGames: [
+        currentPlayRecord({ libraryGameId: "library-1", role: "principal", position: 1 })
+      ],
+      replacementLibraryGame: activationLibraryGame({
+        id: "library-4",
+        catalogGameId: "game-4",
+        status: "wishlist"
+      }),
+      replacePlayingGameActiveSet
+    });
+
+    await expect(
+      replacePlayingGameUseCase(
+        {
+          userId: "member-1",
+          incomingLibraryGameId: "library-4",
+          pausedLibraryGameId: "library-2",
+          makePrincipal: true
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "active-game-not-found"
+    });
+    expect(replacePlayingGameActiveSet).not.toHaveBeenCalled();
+  });
 });
 
 describe("play repository skeleton", () => {
@@ -389,6 +473,7 @@ describe("play repository skeleton", () => {
   it("does not expose infrastructure internals through the play public entrypoint", () => {
     expect(playPublicIndexSource).not.toContain("createPlayRepository");
     expect(playPublicIndexSource).not.toMatch(/export\s+\{\s*playRepository/);
+    expect(playPublicIndexSource).toContain("replacePlayingGame");
   });
 });
 
@@ -397,10 +482,12 @@ function fakePlayRepository(input: {
   activeGames: ActivePlayGameRecord[];
   currentGames?: CurrentPlayGameRecord[];
   libraryGame?: PlayActivationLibraryGameRecord | null;
+  replacementLibraryGame?: PlayActivationLibraryGameRecord | null;
   activatePlayingLibraryGame?: PlayRepositoryTransaction["activatePlayingLibraryGame"];
   deactivatePlayingLibraryGame?: PlayRepositoryTransaction["deactivatePlayingLibraryGame"];
   upsertActiveRoleRows?: PlayRepositoryTransaction["upsertActiveRoleRows"];
   replaceActiveRoleRows?: PlayRepositoryTransaction["replaceActiveRoleRows"];
+  replacePlayingGameActiveSet?: PlayRepositoryTransaction["replacePlayingGameActiveSet"];
 }): PlayRepository {
   const membership =
     input.membership === undefined
@@ -421,6 +508,11 @@ function fakePlayRepository(input: {
         ? activationLibraryGame()
         : input.libraryGame
     ),
+    readLibraryGameForReplacement: vi.fn(async () =>
+      input.replacementLibraryGame === undefined
+        ? activationLibraryGame({ id: "library-4", catalogGameId: "game-4" })
+        : input.replacementLibraryGame
+    ),
     activatePlayingLibraryGame:
       input.activatePlayingLibraryGame ?? vi.fn(async () => input.activeGames),
     deactivatePlayingLibraryGame:
@@ -429,6 +521,8 @@ function fakePlayRepository(input: {
       input.upsertActiveRoleRows ?? vi.fn(async () => input.activeGames),
     replaceActiveRoleRows:
       input.replaceActiveRoleRows ?? vi.fn(async () => input.activeGames),
+    replacePlayingGameActiveSet:
+      input.replacePlayingGameActiveSet ?? vi.fn(async () => input.activeGames),
     createSession: vi.fn(async (sessionInput) =>
       playSessionRecord({
         duoId: sessionInput.duoId,
