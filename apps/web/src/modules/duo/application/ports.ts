@@ -81,4 +81,9 @@ export interface DuoRepository {
     notificationsEnabled: boolean;
     audioEnabled: boolean;
   }): Promise<boolean>;
+  updateDuoAudioPreference(input: {
+    userId: string;
+    duoId: string;
+    audioEnabled: boolean;
+  }): Promise<boolean>;
 }

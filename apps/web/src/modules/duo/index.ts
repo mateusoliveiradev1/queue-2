@@ -13,6 +13,10 @@ import {
 } from "./application/get-duo-dashboard";
 import { joinDuoUseCase, type JoinDuoResult } from "./application/join-duo";
 import {
+  updateDuoAudioPreferenceUseCase,
+  type UpdateDuoAudioPreferenceResult
+} from "./application/update-duo-audio-preference";
+import {
   updateDuoSettingsUseCase,
   updateProfileDisplayNameUseCase,
   type UpdateDuoSettingsResult,
@@ -38,6 +42,7 @@ export type {
   CreatePairingCodeResult,
   DuoDashboardView,
   JoinDuoResult,
+  UpdateDuoAudioPreferenceResult,
   UpdateDuoSettingsResult,
   UpdateProfileResult
 };
@@ -89,6 +94,13 @@ export function updateDuoSettings(input: {
   audioEnabled: boolean;
 }): Promise<UpdateDuoSettingsResult> {
   return updateDuoSettingsUseCase(input, duoRepository);
+}
+
+export function updateDuoAudioPreference(input: {
+  userId: string;
+  audioEnabled: boolean;
+}): Promise<UpdateDuoAudioPreferenceResult> {
+  return updateDuoAudioPreferenceUseCase(input, duoRepository);
 }
 
 export function updateProfileDisplayName(input: {

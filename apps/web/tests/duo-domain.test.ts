@@ -176,6 +176,7 @@ function createRepository(context: DuoUserContextRecord): DuoRepository {
     revokePairingCode: async () => true,
     claimPairingCode: async () => ({ state: "claimed", duoId: code.duoId }),
     updateProfileDisplayName: async () => undefined,
-    updateDuoSettings: async () => true
+    updateDuoSettings: async () => true,
+    updateDuoAudioPreference: async () => true
   };
 }

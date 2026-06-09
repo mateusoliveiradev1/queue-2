@@ -58,7 +58,8 @@ export const duoRepository: DuoRepository = {
   revokePairingCode,
   claimPairingCode,
   updateProfileDisplayName,
-  updateDuoSettings
+  updateDuoSettings,
+  updateDuoAudioPreference
 };
 
 async function ensureProfile(userId: string, displayName: string): Promise<void> {
@@ -334,6 +335,32 @@ async function updateDuoSettings(input: {
     );
 
     return true;
+  });
+}
+
+async function updateDuoAudioPreference(input: {
+  userId: string;
+  duoId: string;
+  audioEnabled: boolean;
+}): Promise<boolean> {
+  return asUser(input.userId, async (client) => {
+    const result = await client.query<{ duo_id: string }>(
+      `
+        INSERT INTO app.duo_preferences (
+          duo_id,
+          audio_enabled,
+          updated_at
+        )
+        VALUES ($1, $2, now())
+        ON CONFLICT (duo_id) DO UPDATE
+        SET audio_enabled = excluded.audio_enabled,
+            updated_at = now()
+        RETURNING duo_id
+      `,
+      [input.duoId, input.audioEnabled]
+    );
+
+    return Boolean(result.rows[0]);
   });
 }
 

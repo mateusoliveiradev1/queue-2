@@ -124,6 +124,21 @@ class IsolatedRepository implements DuoRepository {
     this.duoNames.set(input.duoId, input.name);
     return true;
   }
+
+  async updateDuoAudioPreference(input: {
+    userId: string;
+    duoId: string;
+    audioEnabled: boolean;
+  }) {
+    const membership = this.contexts.get(input.userId)?.membership;
+
+    if (!membership || membership.duoId !== input.duoId) {
+      return false;
+    }
+
+    membership.audioEnabled = input.audioEnabled;
+    return true;
+  }
 }
 
 function pairedContext(
