@@ -12,6 +12,10 @@ const rouletteUiFiles = [
 const rouletteReelSourcePath = "src/modules/roulette/presentation/roulette-reel.tsx";
 const rouletteAudioSourcePath =
   "src/modules/roulette/presentation/roulette-audio-control.tsx";
+const rouletteResultPanelSourcePath =
+  "src/modules/roulette/presentation/result-panel.tsx";
+const rouletteCompactHistorySourcePath =
+  "src/modules/roulette/presentation/compact-history.tsx";
 
 describe("Phase 6 roulette route shell", () => {
   it("composes the authenticated route from public server contracts only", () => {
@@ -207,6 +211,62 @@ describe("Phase 6 roulette route shell", () => {
     expect(audioSource).toContain("restrained");
     expect(audioSource).toContain("non-casino");
     expect(audioSource).toContain("fanfare");
+  });
+
+  it("renders result invitation, rarity seal, replay disclaimer and compact trust history", () => {
+    const resultPanelSource = readRequiredSource(rouletteResultPanelSourcePath);
+    const compactHistorySource = readRequiredSource(rouletteCompactHistorySourcePath);
+
+    expect(resultPanelSource).toContain("A fila apontou para este. Voces travam como Principal?");
+    expect(resultPanelSource).toContain("Travar como Principal");
+    expect(resultPanelSource).toContain("Replay nao e novo sorteio.");
+    expect(resultPanelSource).toContain("rarity seal");
+    expect(resultPanelSource).toContain("data-rarity");
+    expect(resultPanelSource).toContain("roulette-legendary-particles");
+    expect(resultPanelSource).toContain("static seal");
+    expect(compactHistorySource).toContain("Historico da roleta");
+    expect(compactHistorySource).toContain("Os sorteios aparecem aqui depois da primeira rodada.");
+    expect(compactHistorySource).toContain("boost");
+    expect(compactHistorySource).toContain("pity");
+    expect(compactHistorySource).toContain("locked");
+    expect(compactHistorySource).toContain("discarded");
+  });
+
+  it("composes reel, audio, result panel and compact history on the route", () => {
+    const pageSource = readRequiredSource("src/app/app/roleta/page.tsx");
+
+    expect(pageSource).toContain("RouletteReel");
+    expect(pageSource).toContain("RouletteAudioControl");
+    expect(pageSource).toContain("ResultPanel");
+    expect(pageSource).toContain("CompactHistory");
+    expect(pageSource).toContain("getRouletteState");
+    expect(pageSource).toContain("getRouletteHistory");
+    expect(pageSource).toContain("updateRouletteAudioPreferenceAction");
+    expect(pageSource).toContain("roulette-reel-band");
+    expect(pageSource).toContain("roulette-controls");
+    expect(pageSource).toContain("full-bleed");
+    expect(pageSource).toContain("controls below");
+    expect(pageSource).toContain("fixed pointer");
+    expect(pageSource).toContain("no tiny card");
+  });
+
+  it("extends Phase 6 E2E scaffold with persisted reveal, mobile and rarity assertions", () => {
+    const e2eSource = readRequiredSource("tests/phase-6-e2e.spec.ts");
+
+    expect(e2eSource).toContain("E2E_READY_USER");
+    expect(e2eSource).toContain("E2E_READY_PARTNER");
+    expect(e2eSource).toContain("E2E_OTHER_DUO_USER");
+    expect(e2eSource).toContain("BLOCKED setup");
+    expect(e2eSource).toContain("persisted result");
+    expect(e2eSource).toContain("replay does not redraw");
+    expect(e2eSource).toContain("full-bleed");
+    expect(e2eSource).toContain("controls below");
+    expect(e2eSource).toContain("fixed pointer");
+    expect(e2eSource).toContain("no tiny card");
+    expect(e2eSource).toContain("Legendary");
+    expect(e2eSource).toContain("particle");
+    expect(e2eSource).toContain("static seal");
+    expect(e2eSource).toContain("reduced motion");
   });
 });
 
