@@ -583,118 +583,57 @@ ALTER TABLE app.roulette_boost_balances FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_boost_balances_select_members ON app.roulette_boost_balances;
 DROP POLICY IF EXISTS app_roulette_boost_balances_insert_members ON app.roulette_boost_balances;
 DROP POLICY IF EXISTS app_roulette_boost_balances_update_members ON app.roulette_boost_balances;
-CREATE POLICY app_roulette_boost_balances_select_members ON app.roulette_boost_balances
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_boost_balances_insert_members ON app.roulette_boost_balances
-  FOR INSERT TO PUBLIC
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_boost_balances_update_members ON app.roulette_boost_balances
-  FOR UPDATE TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id))
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_boost_balances_select_members ON app.roulette_boost_balances FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_boost_balances_insert_members ON app.roulette_boost_balances FOR INSERT TO PUBLIC WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_boost_balances_update_members ON app.roulette_boost_balances FOR UPDATE TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id)) WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
 
 ALTER TABLE app.roulette_pity_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.roulette_pity_state FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_pity_state_select_members ON app.roulette_pity_state;
 DROP POLICY IF EXISTS app_roulette_pity_state_insert_members ON app.roulette_pity_state;
 DROP POLICY IF EXISTS app_roulette_pity_state_update_members ON app.roulette_pity_state;
-CREATE POLICY app_roulette_pity_state_select_members ON app.roulette_pity_state
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_pity_state_insert_members ON app.roulette_pity_state
-  FOR INSERT TO PUBLIC
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_pity_state_update_members ON app.roulette_pity_state
-  FOR UPDATE TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id))
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_pity_state_select_members ON app.roulette_pity_state FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_pity_state_insert_members ON app.roulette_pity_state FOR INSERT TO PUBLIC WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_pity_state_update_members ON app.roulette_pity_state FOR UPDATE TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id)) WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
 
 ALTER TABLE app.roulette_rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.roulette_rounds FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_rounds_select_members ON app.roulette_rounds;
 DROP POLICY IF EXISTS app_roulette_rounds_insert_members ON app.roulette_rounds;
 DROP POLICY IF EXISTS app_roulette_rounds_update_members ON app.roulette_rounds;
-CREATE POLICY app_roulette_rounds_select_members ON app.roulette_rounds
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_rounds_insert_members ON app.roulette_rounds
-  FOR INSERT TO PUBLIC
-  WITH CHECK (
-    selected_by_user_id = app.current_user_id()
-    AND app.has_duo_membership(app.current_user_id(), duo_id)
-  );
-CREATE POLICY app_roulette_rounds_update_members ON app.roulette_rounds
-  FOR UPDATE TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id))
-  WITH CHECK (
-    app.has_duo_membership(app.current_user_id(), duo_id)
-    AND (
-      resolved_by_user_id IS NULL
-      OR resolved_by_user_id = app.current_user_id()
-    )
-  );
+CREATE POLICY app_roulette_rounds_select_members ON app.roulette_rounds FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_rounds_insert_members ON app.roulette_rounds FOR INSERT TO PUBLIC WITH CHECK (selected_by_user_id = app.current_user_id() AND app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_rounds_update_members ON app.roulette_rounds FOR UPDATE TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id)) WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id) AND (resolved_by_user_id IS NULL OR resolved_by_user_id = app.current_user_id()));
 
 ALTER TABLE app.roulette_round_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.roulette_round_entries FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_round_entries_select_members ON app.roulette_round_entries;
 DROP POLICY IF EXISTS app_roulette_round_entries_insert_members ON app.roulette_round_entries;
-CREATE POLICY app_roulette_round_entries_select_members ON app.roulette_round_entries
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_round_entries_insert_members ON app.roulette_round_entries
-  FOR INSERT TO PUBLIC
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_round_entries_select_members ON app.roulette_round_entries FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_round_entries_insert_members ON app.roulette_round_entries FOR INSERT TO PUBLIC WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
 
 ALTER TABLE app.roulette_boost_ledger ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.roulette_boost_ledger FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_boost_ledger_select_members ON app.roulette_boost_ledger;
 DROP POLICY IF EXISTS app_roulette_boost_ledger_insert_members ON app.roulette_boost_ledger;
-CREATE POLICY app_roulette_boost_ledger_select_members ON app.roulette_boost_ledger
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_boost_ledger_insert_members ON app.roulette_boost_ledger
-  FOR INSERT TO PUBLIC
-  WITH CHECK (
-    app.has_duo_membership(app.current_user_id(), duo_id)
-    AND (
-      actor_user_id IS NULL
-      OR actor_user_id = app.current_user_id()
-    )
-  );
+CREATE POLICY app_roulette_boost_ledger_select_members ON app.roulette_boost_ledger FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_boost_ledger_insert_members ON app.roulette_boost_ledger FOR INSERT TO PUBLIC WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id) AND (actor_user_id IS NULL OR actor_user_id = app.current_user_id()));
 
 ALTER TABLE app.roulette_cooldowns ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.roulette_cooldowns FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_cooldowns_select_members ON app.roulette_cooldowns;
 DROP POLICY IF EXISTS app_roulette_cooldowns_insert_members ON app.roulette_cooldowns;
 DROP POLICY IF EXISTS app_roulette_cooldowns_update_members ON app.roulette_cooldowns;
-CREATE POLICY app_roulette_cooldowns_select_members ON app.roulette_cooldowns
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_cooldowns_insert_members ON app.roulette_cooldowns
-  FOR INSERT TO PUBLIC
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_cooldowns_update_members ON app.roulette_cooldowns
-  FOR UPDATE TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id))
-  WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_cooldowns_select_members ON app.roulette_cooldowns FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_cooldowns_insert_members ON app.roulette_cooldowns FOR INSERT TO PUBLIC WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_cooldowns_update_members ON app.roulette_cooldowns FOR UPDATE TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id)) WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id));
 
 ALTER TABLE app.roulette_history_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.roulette_history_events FORCE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS app_roulette_history_events_select_members ON app.roulette_history_events;
 DROP POLICY IF EXISTS app_roulette_history_events_insert_members ON app.roulette_history_events;
-CREATE POLICY app_roulette_history_events_select_members ON app.roulette_history_events
-  FOR SELECT TO PUBLIC
-  USING (app.has_duo_membership(app.current_user_id(), duo_id));
-CREATE POLICY app_roulette_history_events_insert_members ON app.roulette_history_events
-  FOR INSERT TO PUBLIC
-  WITH CHECK (
-    app.has_duo_membership(app.current_user_id(), duo_id)
-    AND (
-      actor_user_id IS NULL
-      OR actor_user_id = app.current_user_id()
-    )
-  );
+CREATE POLICY app_roulette_history_events_select_members ON app.roulette_history_events FOR SELECT TO PUBLIC USING (app.has_duo_membership(app.current_user_id(), duo_id));
+CREATE POLICY app_roulette_history_events_insert_members ON app.roulette_history_events FOR INSERT TO PUBLIC WITH CHECK (app.has_duo_membership(app.current_user_id(), duo_id) AND (actor_user_id IS NULL OR actor_user_id = app.current_user_id()));
 
 ALTER TABLE app.push_subscriptions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app.push_subscriptions FORCE ROW LEVEL SECURITY;
