@@ -43,7 +43,7 @@ Declared values for new roulette UI (multiples of 4 only):
 | 2xl | 48px | Major vertical breaks between reel, result and history |
 | 3xl | 64px | Desktop first-fold breathing room around the reel stage |
 
-Exceptions: 44px minimum interactive target; 52px minimum mobile bottom-nav item; fixed cover slots may use 88px, 96px, 128px or 136px widths with `aspect-ratio: 3 / 4`. Existing shared classes may keep inherited `--space-2: 6px`, but new roulette layout spacing must not introduce additional non-multiple spacing values.
+Exceptions: 44px minimum interactive target; 52px minimum mobile bottom-nav item; fixed cover slots may use 88px, 96px, 128px or 136px widths with `aspect-ratio: 3 / 4`. All new reel, result, history, control and state spacing must use only `4px`, `8px`, `16px`, `24px`, `32px`, `48px` or `64px`; inherited shared spacing tokens that resolve outside this scale are not part of the new roulette UI contract.
 
 ---
 
@@ -120,6 +120,9 @@ Required phase copy:
 | Reduced-motion step 3 | `Revelado` |
 | Result invitation | `A fila apontou para este. Voces travam como Principal?` |
 | Lock CTA | `Travar como Principal` |
+| Blocked CTA - Biblioteca | `Abrir Biblioteca` |
+| Blocked CTA - Descobrir | `Descobrir jogos` |
+| Blocked CTA - Catalogo | `Buscar no Catalogo` |
 | Replacement branch heading | `Escolham quem pausa para abrir vaga` |
 | Replacement branch body | `Nada muda sozinho. Escolham um Jogando para pausar ou cancelem a trava.` |
 | Replay action | `Rever giro salvo` |
@@ -174,7 +177,7 @@ State machine:
 | State | Visual Contract | Interaction Contract |
 |-------|-----------------|----------------------|
 | Loading/resuming | `/2` loading mark or skeleton slots, no generic spinner | Rehydrate from server state; never show a new spin prompt if an active/pending round exists |
-| Blocked pool | Dashed `empty-state`, no fake reel | Show CTAs to `Biblioteca`, `Descobrir` and `Catalogo`; explain three-game minimum |
+| Blocked pool | Dashed `empty-state`, no fake reel | Show CTAs `Abrir Biblioteca`, `Descobrir jogos` and `Buscar no Catalogo`; explain three-game minimum |
 | Ready | Reel preview, balance, boost toggle, pity copy, audio control | `Sortear da fila` starts a server action; button shows `aria-busy` within 100ms |
 | Persisting | Controls disabled, action feedback visible | No result shown until server returns the persisted round |
 | Revealing | 5.5s horizontal reel motion with central pointer | Use `cubic-bezier(.15,.85,.25,1)`; expose polite live status |
