@@ -2,7 +2,7 @@
 
 ## Overview
 
-QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeiro formar uma identidade segura, depois criar a fila, descobrir jogos, jogar e registrar, ganhar progresso coletivo, sortear o proximo jogo e finalmente revisitar a historia em uma experiencia pronta para lancamento. Cada fase entrega uma capacidade completa e preserva a regra estrutural de exatamente dois jogadores.
+QUEUE/2 sera construido em oito fases que seguem o ritual real da dupla: primeiro formar uma identidade segura, depois criar a fila, descobrir jogos, jogar e registrar, ganhar progresso coletivo, sortear o proximo jogo, alinhar a experiencia visual ao prototipo e finalmente revisitar a historia em uma experiencia pronta para lancamento. Cada fase entrega uma capacidade completa e preserva a regra estrutural de exatamente dois jogadores.
 
 ## Phases
 
@@ -21,7 +21,8 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
 - [x] **Phase 4: Jogando Agora, Sessoes E Agendamento** - A dupla joga, registra progresso e coordena sessoes coop. (completed 2026-06-05; external DB/browser/reminder readiness blockers recorded)
 - [x] **Phase 5: Gamificacao Coletiva** - Acoes reais da dupla alimentam XP, niveis, conquistas, quests e streaks. (completed 2026-06-07; `pnpm phase:5:gate` passed)
 - [x] **Phase 6: Roleta E Economia** - A dupla escolhe o proximo jogo por uma roleta autoritativa e memoravel. (completed 2026-06-09; `pnpm phase:6:gate` PASSED with DB, migration, browser and accessibility evidence closed)
-- [ ] **Phase 7: Hall, Stats E Lancamento** - A dupla revisita sua historia e o produto recebe acabamento publico completo.
+- [ ] **Phase 7: Paridade Visual e UX com Prototipo** - A experiencia publica e autenticada adota a direcao visual do prototipo Lovable sem perder funcionalidades, acessibilidade ou contratos de seguranca.
+- [ ] **Phase 8: Hall, Stats E Lancamento** - A dupla revisita sua historia e o produto recebe acabamento publico completo.
 
 ## Phase Details
 
@@ -225,15 +226,29 @@ QUEUE/2 sera construido em sete fases que seguem o ritual real da dupla: primeir
   - **Wave 8:** `06-11` - Final gate execution and coverage closure.
 **UI hint**: yes
 
-### Phase 7: Hall, Stats E Lancamento
-**Goal**: A dupla pode celebrar sua historia em um produto publico, responsivo, acessivel e pronto para ser compartilhado.
+### Phase 7: Paridade Visual e UX com Prototipo
+**Goal**: O produto deixa de parecer dashboard SaaS e passa a seguir a direcao editorial/brutalist do prototipo Lovable nas rotas publicas e internas, preservando dados, regras, seguranca e acessibilidade.
 **Depends on**: Phase 6
-**Requirements**: HALL-01, HALL-02, HALL-03, HALL-04, HALL-05, HALL-06, HALL-07, HALL-08, HALL-09, BRND-07, BRND-08, BRND-09, BRND-10, BRND-12, SEC-09, SEC-10, SEC-11, META-01, META-03, META-04, META-05, META-06, META-07, META-08
+**Requirements**: BRND-02, BRND-04, BRND-05, BRND-06, BRND-07, BRND-08, BRND-09, BRND-10, BRND-11, BRND-12, BRND-13, META-01, META-02, SAFE-04, SAFE-05
+**Success Criteria** (what must be TRUE):
+  1. A landing publica usa um primeiro viewport no estilo do prototipo: navegacao minima, wordmark QUEUE/2 gigante, tagline direta, dois CTAs e "tres passos" logo abaixo, sem hero SaaS ou cards decorativos.
+  2. Login, cadastro, recuperacao, verificacao e pareamento viram fluxos compactos e centrados, com tabs quando aplicavel, menos verticalidade, labels/erros acessiveis e foco visivel.
+  3. O shell autenticado troca a composicao sidebar-first por navegacao superior responsiva inspirada no prototipo, com estado ativo claro e equivalente mobile sem esconder rotas essenciais.
+  4. As rotas `/app`, `/app/biblioteca`, `/app/descobrir`, `/app/roleta`, `/app/desafios`, `/app/dupla` e `/app/perfil` adotam layouts centrados, bordas finas, acento lime, tipografia uppercase/mono, empty states fortes e menos visual de card SaaS generico.
+  5. O escopo funcional permanece intacto: sem mudancas de schema, auth, autorizacao ou regras de dominio salvo necessidade real de acessibilidade/UX.
+  6. Evidencia browser cobre desktop, mobile, reduced motion e acessibilidade, provando ausencia de sobreposicao, contraste quebrado, texto estourado e touch targets pequenos.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 8: Hall, Stats E Lancamento
+**Goal**: A dupla pode celebrar sua historia em um produto publico, responsivo, acessivel e pronto para ser compartilhado.
+**Depends on**: Phase 7
+**Requirements**: HALL-01, HALL-02, HALL-03, HALL-04, HALL-05, HALL-06, HALL-07, HALL-08, HALL-09, SEC-09, SEC-10, SEC-11, META-03, META-04, META-05, META-06, META-07, META-08
 **Success Criteria** (what must be TRUE):
   1. Cada membro pode revisar um jogo concluido, ver as duas reviews lado a lado e consultar a media da dupla.
   2. A dupla pode revisitar jogos no Hall da Moral, usar uma alternativa plana acessivel e reproduzir sua historia por timeline.
   3. A dupla pode consultar horas coop, vibe match, jogo favorito e dias pareados sem qualquer ranking interno.
-  4. Visitantes entendem o ritual pela landing curta, e links compartilhados exibem titulos, descricao, metadata, JSON-LD e OG image corretos.
+  4. Visitantes entendem o ritual pela landing visualmente consolidada, e links compartilhados exibem titulos, descricao, metadata, JSON-LD e OG image corretos.
   5. O produto final e instalavel como PWA, preserva acessibilidade e disciplina visual, e so lanca depois de ASVS Level 2, incident response e testes adversariais registrados.
 **Plans**: TBD
 **UI hint**: yes
@@ -253,7 +268,7 @@ These gates apply to every phase and cannot be deferred as polish:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 4 -> 5 -> 6 -> 7
+Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 4 -> 5 -> 6 -> 7 -> 8
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -268,4 +283,5 @@ Phases execute in numeric order: 1 -> 2 -> 02.1 -> 3 -> 03.1 -> 03.2 -> 03.3 -> 
 | 4. Jogando Agora, Sessoes E Agendamento | 6/6 | Complete | 2026-06-05 |
 | 5. Gamificacao Coletiva | 11/11 | Human verification | - |
 | 6. Roleta E Economia | 12/12 | Complete | 2026-06-09 |
-| 7. Hall, Stats E Lancamento | 0/TBD | Not started | - |
+| 7. Paridade Visual e UX com Prototipo | 0/TBD | Not started | - |
+| 8. Hall, Stats E Lancamento | 0/TBD | Not started | - |

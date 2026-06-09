@@ -310,9 +310,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-06 | Phase 1 | Complete |
 | SEC-07 | Phase 1 | Complete |
 | SEC-08 | Phase 1 | Complete |
-| SEC-09 | Phase 7 | Pending |
-| SEC-10 | Phase 7 | Pending |
-| SEC-11 | Phase 7 | Pending |
+| SEC-09 | Phase 8 | Pending |
+| SEC-10 | Phase 8 | Pending |
+| SEC-11 | Phase 8 | Pending |
 | CAT-01 | Phase 2 | Complete |
 | CAT-02 | Phase 2 | Complete |
 | CAT-03 | Phase 2 | Complete |
@@ -396,15 +396,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ROUL-08 | Phase 6 | Complete |
 | ROUL-09 | Phase 6 | Complete |
 | ROUL-10 | Phase 6 | Complete |
-| HALL-01 | Phase 7 | Pending |
-| HALL-02 | Phase 7 | Pending |
-| HALL-03 | Phase 7 | Pending |
-| HALL-04 | Phase 7 | Pending |
-| HALL-05 | Phase 7 | Pending |
-| HALL-06 | Phase 7 | Pending |
-| HALL-07 | Phase 7 | Pending |
-| HALL-08 | Phase 7 | Pending |
-| HALL-09 | Phase 7 | Pending |
+| HALL-01 | Phase 8 | Pending |
+| HALL-02 | Phase 8 | Pending |
+| HALL-03 | Phase 8 | Pending |
+| HALL-04 | Phase 8 | Pending |
+| HALL-05 | Phase 8 | Pending |
+| HALL-06 | Phase 8 | Pending |
+| HALL-07 | Phase 8 | Pending |
+| HALL-08 | Phase 8 | Pending |
+| HALL-09 | Phase 8 | Pending |
 | SAFE-01 | Phase 4 | Complete |
 | SAFE-02 | Phase 4 | Complete |
 | SAFE-03 | Phase 5 | Complete |
@@ -416,12 +416,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-09 | Phase 1 | Complete |
 | META-01 | Phase 7 | Pending |
 | META-02 | Phase 1 | Complete |
-| META-03 | Phase 7 | Pending |
-| META-04 | Phase 7 | Pending |
-| META-05 | Phase 7 | Pending |
-| META-06 | Phase 7 | Pending |
-| META-07 | Phase 7 | Pending |
-| META-08 | Phase 7 | Pending |
+| META-03 | Phase 8 | Pending |
+| META-04 | Phase 8 | Pending |
+| META-05 | Phase 8 | Pending |
+| META-06 | Phase 8 | Pending |
+| META-07 | Phase 8 | Pending |
+| META-08 | Phase 8 | Pending |
 
 **Coverage:**
 - v1 requirements: 164 total
@@ -430,4 +430,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-06-03*
-*Last updated: 2026-06-05 after Phase 04-04 timeline/momentos completion*
+*Last updated: 2026-06-09 after Phase 07 visual parity insertion*

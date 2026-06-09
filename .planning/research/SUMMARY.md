@@ -105,11 +105,17 @@ O servidor e a unica autoridade para regras de dominio. Toda mutacao critica val
 **Addresses:** Ritual memoravel de escolha.
 **Avoids:** Resultado manipulavel ou divergente.
 
-### Phase 7: Hall, Stats, Reviews E Lancamento
-**Rationale:** A celebracao final depende do historico produzido por todas as fases anteriores.
-**Delivers:** Reviews lado a lado, Hall 3D com fallback, replay, stats, landing, SEO, OG, favicons, manifest e polish final.
-**Addresses:** Memoria compartilhada, descoberta publica e qualidade de produto.
-**Avoids:** Stats divergentes, Hall inacessivel e visual generico.
+### Phase 7: Paridade Visual e UX com Prototipo
+**Rationale:** Antes do lancamento, o produto precisa assumir a direcao visual mais forte do prototipo Lovable sem reabrir regras de dominio.
+**Delivers:** Landing publica, auth/cadastro, shell autenticado e rotas internas alinhadas ao estilo editorial/brutalist do prototipo.
+**Addresses:** Qualidade visual percebida, clareza de fluxo e consistencia de marca.
+**Avoids:** Dashboard SaaS generico, excesso de verticalidade no auth e redesign que quebre funcionalidades ja entregues.
+
+### Phase 8: Hall, Stats, Reviews E Lancamento
+**Rationale:** A celebracao final depende do historico produzido por todas as fases anteriores e da experiencia visual consolidada.
+**Delivers:** Reviews lado a lado, Hall 3D com fallback, replay, stats, SEO, OG, favicons, manifest e gates finais de lancamento.
+**Addresses:** Memoria compartilhada, descoberta publica e qualidade de produto lancavel.
+**Avoids:** Stats divergentes, Hall inacessivel e launch gates incompletos.
 
 ### Phase Ordering Rationale
 
@@ -117,6 +123,7 @@ O servidor e a unica autoridade para regras de dominio. Toda mutacao critica val
 - Catalogo e biblioteca precedem descoberta, roleta e sessoes.
 - Sessoes precedem gamificacao para que premios representem comportamento real.
 - Gamificacao precede roleta porque pity, boost e raridade fazem parte da economia.
+- Paridade visual precede o lancamento para que Hall, stats e metadata nascam sobre uma UI consolidada.
 - Hall e stats fecham o ciclo usando historico autoritativo ja existente.
 
 ### Research Flags
@@ -129,9 +136,10 @@ Phases likely needing deeper research during planning:
 - **Phase 4:** push web, jobs e regras de timezone.
 - **Phase 5:** balanceamento de XP, niveis, quests, streaks e raridades.
 - **Phase 6:** algoritmo de roleta preselecionada, audio e reduced motion.
+- **Phase 7:** paridade visual com o prototipo, responsividade de shell horizontal e acessibilidade em rotas autenticadas.
 
 Phases with standard patterns:
-- **Phase 7:** metadata Next.js, OG image, manifest e SEO possuem documentacao madura, embora o design exija auditoria.
+- **Phase 8:** metadata Next.js, OG image, manifest e SEO possuem documentacao madura, embora o design exija auditoria.
 
 ## Confidence Assessment
 

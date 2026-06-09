@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-roleta-e-economia-11-PLAN.md
-last_updated: "2026-06-09T17:36:45.313Z"
+stopped_at: Inserted Phase 07 visual parity before Hall/Stats launch
+last_updated: "2026-06-09T22:45:00.000Z"
 last_activity: 2026-06-09
 progress:
-  total_phases: 12
+  total_phases: 13
   completed_phases: 11
   total_plans: 58
   completed_plans: 58
-  percent: 100
+  percent: 85
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-06-03)
 
 **Core value:** A dupla vive um ritual completo e memoravel para descobrir, escolher, jogar e celebrar jogos coop junta.
-**Current focus:** Phase 06 — roleta-e-economia
+**Current focus:** Phase 07 - paridade-visual-e-ux-com-prototipo
 
 ## Current Position
 
-Phase: 06 (roleta-e-economia) — COMPLETE
-Plan: 12 of 12
-Status: Completed with external evidence blockers
+Phase: 07 (paridade-visual-e-ux-com-prototipo) - NOT STARTED
+Plan: 0 of TBD
+Status: Ready for planning after prototype visual review
 Last activity: 2026-06-09
 
-Progress: [██████████] 100%
+Progress: [########--] 85%
 
 ## Performance Metrics
 
@@ -144,6 +144,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 - Phase 03.1 inserted after Phase 3: Refinos Visuais e UX da Descoberta (URGENT)
 - Phase 03.2 inserted after Phase 3: Biblioteca Escalavel e Backlog Operacional (URGENT)
 - Phase 03.3 inserted after Phase 03.2: Performance de Producao e UX de Latencia (URGENT)
+- Phase 07 inserted before Hall/Stats/Lancamento: Paridade Visual e UX com Prototipo; former Phase 7 became Phase 8.
 
 ### Decisions
 
@@ -155,7 +156,7 @@ Recent decisions affecting current work:
 - `.planning/ARCHITECTURE.md` and `.planning/SECURITY.md` are binding quality gates for all phases.
 - OWASP ASVS 5.0 Level 2 is the launch baseline; absolute security is not treated as a credible promise.
 - Neon Postgres replaces Lovable Cloud, with Better Auth self-hosted and server-mediated domain access.
-- The complete Plano Final v7 is v1 scope and will be delivered across seven phases.
+- The complete Plano Final v7 is v1 scope and will be delivered across eight phases after inserting visual parity before launch.
 - External completion time is presented as sourced `tempo estimado`, not mandatory HLTB data.
 - [Phase 01]: Architecture checks run through the root pnpm script via Turborepo and the @queue/web package. — Keeps the plan-level gate graph-aware while executing one deterministic root checker.
 - [Phase 01]: The initial db package is explicitly server-only before any database schema is introduced. — Prevents future Client Components from normalizing database imports.
@@ -320,6 +321,7 @@ Recent decisions affecting current work:
 - [Phase 06-roleta-e-economia]: Discovery card entry motion no longer fades interactive text. — Entrance movement remains, while opacity stays stable so WCAG contrast does not fail during transient animation frames.
 - [Phase 06-roleta-e-economia]: Drizzle now has a no-op schema baseline snapshot after the reviewed SQL migrations. — `drizzle:generate` can prove no pending schema diff without replacing hand-authored RLS, policy and constraint migrations.
 - [Phase 06-roleta-e-economia]: Roulette application reads are sequential inside each `pg` transaction client. — This avoids the `client.query()` while already executing deprecation warning and keeps the code compatible with the upcoming `pg@9` behavior.
+- [Phase 07]: Prototype visual parity is now release-blocking before Hall/Stats/Lancamento. - The Lovable prototype screenshots define the target direction for landing, auth and authenticated routes while preserving Phase 1-6 behavior, security and accessibility gates.
 
 ### Pending Todos
 
