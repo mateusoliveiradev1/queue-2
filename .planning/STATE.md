@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-roleta-e-economia-06-PLAN.md
-last_updated: "2026-06-09T16:09:31.511Z"
+stopped_at: Completed 06-roleta-e-economia-05-PLAN.md
+last_updated: "2026-06-09T16:30:20.525Z"
 last_activity: 2026-06-09
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 58
-  completed_plans: 52
-  percent: 90
+  completed_plans: 53
+  percent: 91
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 06 (roleta-e-economia) — EXECUTING
-Plan: 7 of 12
+Plan: 8 of 12
 Status: Ready to execute
 Last activity: 2026-06-09
 
-Progress: [█████████░] 90%
+Progress: [█████████░] 91%
 
 ## Performance Metrics
 
@@ -106,6 +106,7 @@ Progress: [█████████░] 90%
 | Phase 06-roleta-e-economia P03 | 29 min | 2 tasks | 8 files |
 | Phase 06-roleta-e-economia P04 | 26 min | 2 tasks | 17 files |
 | Phase 06-roleta-e-economia P06 | 10 min | 1 tasks | 9 files |
+| Phase 06-roleta-e-economia P05 | 20 min | 2 tasks | 10 files |
 
 ## Quick Tasks Completed
 
@@ -299,6 +300,9 @@ Recent decisions affecting current work:
 - [Phase 06-roleta-e-economia]: Replacement uses library game id for exact selected queue item handoff. — Roulette must replace the selected active game, not infer a target from catalog facts.
 - [Phase 06-roleta-e-economia]: Roulette replacement writes the incoming game as Principal position 1 and compacts remaining active games as secondaries. — Play keeps exactly one Principal and at most two secondaries after the handoff.
 - [Phase 06-roleta-e-economia]: Play replacement is explicit and leaves the no-auto-pause policy unchanged. — The existing fourth-game decision still exposes pause, replace or cancel with autoPause false while the new contract performs only the selected replacement.
+- [Phase 06-roleta-e-economia]: Roulette route composition now uses the public roulette module entrypoint for reel, audio, result and history UI. — Preserves the modular boundary while letting the authenticated route compose server view models with presentation components.
+- [Phase 06-roleta-e-economia]: Roulette audio is opt-in after a user gesture and production copy avoids casino, prize, store and ranking vocabulary. — The reveal should feel editorial and shared, not like gambling or an individual economy surface.
+- [Phase 06-roleta-e-economia]: Phase 6 browser E2E roulette checks remain fixture-guarded with explicit BLOCKED setup skips until ready duo accounts and eligible slugs are configured. — Authenticated duo-scoped browser evidence cannot be honestly claimed without product fixtures.
 
 ### Pending Todos
 
@@ -338,6 +342,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-09T16:08:53.081Z
-Stopped at: Completed 06-roleta-e-economia-06-PLAN.md
+Last session: 2026-06-09T16:30:20.518Z
+Stopped at: Completed 06-roleta-e-economia-05-PLAN.md
 Resume file: None
