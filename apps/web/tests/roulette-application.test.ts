@@ -13,6 +13,7 @@ import type {
 import { getRouletteHistoryUseCase } from "../src/modules/roulette/application/get-roulette-history";
 import { getRouletteStateUseCase } from "../src/modules/roulette/application/get-roulette-state";
 import { replayRouletteRoundUseCase } from "../src/modules/roulette/application/replay-roulette-round";
+import { startRouletteRoundUseCase } from "../src/modules/roulette/application/start-roulette-round";
 
 describe("roulette state, history and replay application use cases", () => {
   it("returns blocked-pool with semantic CTAs, boost, pity and D-18 audio preference when fewer than three games are eligible", async () => {
@@ -180,6 +181,207 @@ describe("roulette state, history and replay application use cases", () => {
   });
 });
 
+describe("roulette idempotent start application use case", () => {
+  it("D-16 D-24 returns an existing active round before creating a draw or spending boost", async () => {
+    const activeRound = roundRecord({ status: "revealing" });
+    const activeEntries = [roundEntry({ roundId: activeRound.id, selectedSlot: true })];
+    const repository = fakeRouletteRepository({
+      activeRound,
+      activeRoundEntries: activeEntries
+    });
+
+    await expect(
+      startRouletteRoundUseCase(
+        {
+          idempotencyKey: "existing-active",
+          useBoost: true,
+          userId: "member-1"
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      entries: activeEntries,
+      ok: true,
+      resumedExistingRound: true,
+      round: expect.objectContaining({
+        id: "round-1",
+        status: "revealing"
+      })
+    });
+    expect(repository.transaction.insertBoostLedgerEntry).not.toHaveBeenCalled();
+    expect(repository.transaction.persistRound).not.toHaveBeenCalled();
+    expect(repository.transaction.persistRoundEntries).not.toHaveBeenCalled();
+  });
+
+  it("D-21 persists boost spend, pity transition, history and 60-slot snapshot before returning a new reveal", async () => {
+    const repository = fakeRouletteRepository({
+      eligibleGames: [
+        eligibleGame({ id: "library-a", rarity: "common", status: "wishlist" }),
+        eligibleGame({ id: "library-b", rarity: "rare", status: "pausado" }),
+        eligibleGame({ id: "library-c", rarity: "epic", status: "wishlist" })
+      ],
+      boostBalance: boostBalance({ balance: 200 }),
+      pity: pityState({ drawsSinceEpicOrHigher: 9 })
+    });
+
+    await expect(
+      startRouletteRoundUseCase(
+        {
+          idempotencyKey: "new-boosted-round",
+          roll: 0.99,
+          seed: "seeded",
+          useBoost: true,
+          userId: "member-1"
+        },
+        repository
+      )
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: true,
+        resumedExistingRound: false,
+        round: expect.objectContaining({
+          boostSpent: true,
+          idempotencyKey: "new-boosted-round",
+          pityBefore: 9
+        })
+      })
+    );
+    expect(repository.transaction.materializeBoostFromXp).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: "member-1",
+        duoId: "duo-1"
+      })
+    );
+    expect(repository.transaction.insertBoostLedgerEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountDelta: -100,
+        ledgerKey: "spend:new-boosted-round",
+        reasonCode: "boost-spend",
+        sourceType: "roulette-round"
+      })
+    );
+    expect(repository.transaction.persistRound).toHaveBeenCalledWith(
+      expect.objectContaining({
+        boostSpent: true,
+        duoId: "duo-1",
+        idempotencyKey: "new-boosted-round",
+        pityAfter: 0,
+        pityBefore: 9,
+        resultLibraryGameId: "library-c"
+      })
+    );
+    expect(repository.transaction.persistRoundEntries).toHaveBeenCalledWith(
+      expect.objectContaining({
+        entries: expect.arrayContaining([
+          expect.objectContaining({
+            authoritativeResult: true,
+            gameId: "library-c"
+          })
+        ])
+      })
+    );
+    const persistedEntries = repository.transaction.persistRoundEntries.mock.calls[0]?.[0]
+      ?.entries;
+    expect(persistedEntries).toHaveLength(60);
+    expect(repository.transaction.updatePityState).toHaveBeenCalledWith(
+      expect.objectContaining({
+        drawsSinceEpicOrHigher: 0,
+        duoId: "duo-1"
+      })
+    );
+    expect(repository.transaction.decrementCooldowns).toHaveBeenCalledWith({
+      duoId: "duo-1"
+    });
+    expect(repository.transaction.insertHistoryEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventKey: "history:new-boosted-round:revealed",
+        eventType: "revealed"
+      })
+    );
+  });
+
+  it("D-15 refunds boosted starts that fail before the round is persisted", async () => {
+    const repository = fakeRouletteRepository({
+      boostBalance: boostBalance({ balance: 200 }),
+      eligibleGames: [
+        eligibleGame({ id: "library-a", status: "wishlist" }),
+        eligibleGame({ id: "library-b", status: "pausado" }),
+        eligibleGame({ id: "library-c", status: "wishlist" })
+      ],
+      persistRound: vi.fn(async () => {
+        throw new Error("persist-failed-before-round");
+      })
+    });
+
+    await expect(
+      startRouletteRoundUseCase(
+        {
+          idempotencyKey: "fails-before-persist",
+          useBoost: true,
+          userId: "member-1"
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      ok: false,
+      reason: "round-persist-failed",
+      refundedBoost: true
+    });
+    expect(repository.transaction.insertBoostLedgerEntry).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amountDelta: 100,
+        ledgerKey: "refund:fails-before-persist",
+        reasonCode: "pre-persistence-failure",
+        sourceType: "roulette-refund"
+      })
+    );
+  });
+
+  it("D-15 resumes a persisted round after post-persistence failure without refunding boost", async () => {
+    const persistedRound = roundRecord({
+      boostSpent: true,
+      id: "persisted-round",
+      idempotencyKey: "fails-after-persist"
+    });
+    const repository = fakeRouletteRepository({
+      boostBalance: boostBalance({ balance: 200 }),
+      eligibleGames: [
+        eligibleGame({ id: "library-a", status: "wishlist" }),
+        eligibleGame({ id: "library-b", status: "pausado" }),
+        eligibleGame({ id: "library-c", status: "wishlist" })
+      ],
+      persistRound: vi.fn(async () => persistedRound),
+      persistRoundEntries: vi.fn(async () => {
+        throw new Error("entries-failed-after-round");
+      }),
+      roundByIdempotencyKey: persistedRound
+    });
+
+    await expect(
+      startRouletteRoundUseCase(
+        {
+          idempotencyKey: "fails-after-persist",
+          useBoost: true,
+          userId: "member-1"
+        },
+        repository
+      )
+    ).resolves.toEqual({
+      entries: [],
+      ok: true,
+      resumedExistingRound: true,
+      round: expect.objectContaining({
+        id: "persisted-round"
+      })
+    });
+    expect(repository.transaction.insertBoostLedgerEntry).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        ledgerKey: "refund:fails-after-persist"
+      })
+    );
+  });
+});
+
 type FakeRouletteRepository = {
   transaction: ReturnType<typeof fakeRouletteTransaction>;
   withUserTransaction: ReturnType<typeof vi.fn>;
@@ -190,10 +392,15 @@ function fakeRouletteRepository(
     activeRound: RouletteRoundRecord | null;
     activeRoundEntries: RouletteRoundEntryRecord[];
     audioEnabled: boolean;
+    boostBalance: RouletteBoostBalanceRecord;
     eligibleGames: Array<ReturnType<typeof eligibleGame>>;
     history: RouletteHistoryEventRecord[];
     membership: RouletteMembershipContext | null;
+    persistRound: ReturnType<typeof vi.fn>;
+    persistRoundEntries: ReturnType<typeof vi.fn>;
+    pity: RoulettePityStateRecord;
     roundById: RouletteRoundRecord | null;
+    roundByIdempotencyKey: RouletteRoundRecord | null;
     roundEntries: RouletteRoundEntryRecord[];
   }> = {}
 ): FakeRouletteRepository {
@@ -210,10 +417,15 @@ function fakeRouletteTransaction(
     activeRound: RouletteRoundRecord | null;
     activeRoundEntries: RouletteRoundEntryRecord[];
     audioEnabled: boolean;
+    boostBalance: RouletteBoostBalanceRecord;
     eligibleGames: Array<ReturnType<typeof eligibleGame>>;
     history: RouletteHistoryEventRecord[];
     membership: RouletteMembershipContext | null;
+    persistRound: ReturnType<typeof vi.fn>;
+    persistRoundEntries: ReturnType<typeof vi.fn>;
+    pity: RoulettePityStateRecord;
     roundById: RouletteRoundRecord | null;
+    roundByIdempotencyKey: RouletteRoundRecord | null;
     roundEntries: RouletteRoundEntryRecord[];
   }>
 ) {
@@ -227,6 +439,7 @@ function fakeRouletteTransaction(
     readEligiblePool: vi.fn(async () => overrides.eligibleGames ?? []),
     readHistory: vi.fn(async () => overrides.history ?? []),
     readRoundById: vi.fn(async () => overrides.roundById ?? null),
+    readRoundByIdempotencyKey: vi.fn(async () => overrides.roundByIdempotencyKey ?? null),
     readRoundEntries: vi.fn(async ({ roundId }: { roundId: string }) => {
       if (overrides.roundEntries) {
         return overrides.roundEntries;
@@ -251,8 +464,45 @@ function fakeRouletteTransaction(
     selectResult: vi.fn(),
     updateBoostBalance: vi.fn(),
     updatePityState: vi.fn(),
-    lockBoostBalance: vi.fn(async () => boostBalance()),
-    lockPityState: vi.fn(async () => pityState())
+    decrementCooldowns: vi.fn(),
+    persistRound:
+      overrides.persistRound ??
+      vi.fn(async (input) =>
+        roundRecord({
+          boostLedgerId: input.boostLedgerId,
+          boostSpent: input.boostSpent,
+          duoId: input.duoId,
+          idempotencyKey: input.idempotencyKey,
+          pityAfter: input.pityAfter,
+          pityBefore: input.pityBefore,
+          resultCatalogGameId: input.resultCatalogGameId,
+          resultLibraryGameId: input.resultLibraryGameId,
+          resultRarity: input.resultRarity,
+          selectedByUserId: input.selectedByUserId,
+          weekendMultiplierApplied: input.weekendMultiplierApplied
+        })
+      ),
+    persistRoundEntries:
+      overrides.persistRoundEntries ??
+      vi.fn(async ({ duoId, entries, roundId }) =>
+        entries.map((entry, index) =>
+          roundEntry({
+            catalogGameId: entry.catalogGameId ?? null,
+            coverUrlSnapshot: entry.coverUrl ?? null,
+            duoId,
+            id: `entry-${index + 1}`,
+            libraryGameId: entry.gameId,
+            rarity: entry.rarity,
+            roundId,
+            selectedSlot: entry.authoritativeResult,
+            slotIndex: entry.slotIndex,
+            titleSnapshot: entry.title
+          })
+        )
+      ),
+    lockBoostBalance: vi.fn(async () => overrides.boostBalance ?? boostBalance()),
+    materializeBoostFromXp: vi.fn(async () => overrides.boostBalance ?? boostBalance()),
+    lockPityState: vi.fn(async () => overrides.pity ?? pityState())
   };
 }
 
@@ -277,21 +527,27 @@ function eligibleGame(
   };
 }
 
-function boostBalance(): RouletteBoostBalanceRecord {
+function boostBalance(
+  overrides: Partial<RouletteBoostBalanceRecord> = {}
+): RouletteBoostBalanceRecord {
   return {
     balance: 80,
     cap: 600,
     duoId: "duo-1",
-    updatedAt: new Date("2026-06-09T10:00:00.000Z")
+    updatedAt: new Date("2026-06-09T10:00:00.000Z"),
+    ...overrides
   };
 }
 
-function pityState(): RoulettePityStateRecord {
+function pityState(
+  overrides: Partial<RoulettePityStateRecord> = {}
+): RoulettePityStateRecord {
   return {
     drawsSinceEpicOrHigher: 4,
     duoId: "duo-1",
     lastEpicOrHigherAt: null,
-    updatedAt: new Date("2026-06-09T10:00:00.000Z")
+    updatedAt: new Date("2026-06-09T10:00:00.000Z"),
+    ...overrides
   };
 }
 
