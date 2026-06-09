@@ -268,6 +268,7 @@ export type LockRouletteResultAsPrincipalResult =
         | "round-not-pending"
         | "replacement-required"
         | "play-handoff-failed";
+      autoPause?: false;
       currentGames?: unknown[];
     };
 

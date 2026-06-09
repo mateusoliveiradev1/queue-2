@@ -7,7 +7,15 @@ import {
   type QueueDbPool
 } from "@queue/db";
 
+import {
+  activatePlayingGame,
+  createOperationalPlayNotification,
+  promotePlayingGame,
+  replacePlayingGame
+} from "../../play";
+import { discardRouletteResultFromTransaction } from "../application/discard-roulette-result";
 import { getRouletteStateFromTransaction } from "../application/get-roulette-state";
+import { lockRouletteResultAsPrincipalFromTransaction } from "../application/lock-roulette-result-as-principal";
 import { replayRouletteRoundFromTransaction } from "../application/replay-roulette-round";
 import { startRouletteRoundFromTransaction } from "../application/start-roulette-round";
 import type { RouletteRarity } from "../domain/roulette-policy";
@@ -219,14 +227,14 @@ export function createRouletteTransaction(
     lockPityState: (input) => lockPityState(client, input.duoId),
     updatePityState: (input) => updatePityState(client, input),
     readCooldowns: (input) => readCooldowns(client, input.duoId),
-    upsertCooldown: () => pendingFutureRoulettePlan("upsertCooldown"),
+    upsertCooldown: (input) => upsertCooldown(client, input),
     decrementCooldowns: (input) => decrementCooldowns(client, input.duoId),
     persistRound: (input) => persistRound(client, input),
     persistRoundEntries: (input) => persistRoundEntries(client, input),
     markRoundRevealed: () => pendingFutureRoulettePlan("markRoundRevealed"),
     recordReplay: () => pendingFutureRoulettePlan("recordReplay"),
-    lockRoundResult: () => pendingFutureRoulettePlan("lockRoundResult"),
-    discardRoundResult: () => pendingFutureRoulettePlan("discardRoundResult"),
+    lockRoundResult: (input) => lockRoundResult(client, input),
+    discardRoundResult: (input) => discardRoundResult(client, input),
     insertHistoryEvent: (input) => insertHistoryEvent(client, input),
     readHistory: (input) => readHistory(client, input.duoId, input.limit)
   };
@@ -284,7 +292,12 @@ async function lockRouletteResultAsPrincipalShell(
     return { ok: false, reason: "membership-required" };
   }
 
-  return pendingFutureRoulettePlan("lockRouletteResultAsPrincipal");
+  return lockRouletteResultAsPrincipalFromTransaction(input, transaction, {
+    activatePlayingGame,
+    createOperationalPlayNotification,
+    promotePlayingGame,
+    replacePlayingGame
+  });
 }
 
 async function discardRouletteResultShell(
@@ -300,7 +313,9 @@ async function discardRouletteResultShell(
     return { ok: false, reason: "membership-required" };
   }
 
-  return pendingFutureRoulettePlan("discardRouletteResult");
+  return discardRouletteResultFromTransaction(input, transaction, {
+    createOperationalPlayNotification
+  });
 }
 
 async function resolveMembership(
@@ -420,6 +435,7 @@ async function readRoundById(
       WHERE duo_id = $1
         AND id = $2
       LIMIT 1
+      FOR UPDATE
     `,
     [duoId, roundId]
   );
@@ -776,6 +792,59 @@ async function readCooldowns(
   }));
 }
 
+async function upsertCooldown(
+  client: QueueDbClient,
+  input: Parameters<RouletteRepositoryTransaction["upsertCooldown"]>[0]
+): Promise<RouletteCooldownRecord> {
+  const result = await client.query<CooldownRow>(
+    `
+      INSERT INTO app.roulette_cooldowns (
+        duo_id,
+        library_game_id,
+        round_id,
+        remaining_rounds,
+        weight_multiplier,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, now())
+      ON CONFLICT (duo_id, library_game_id)
+      DO UPDATE SET
+        round_id = excluded.round_id,
+        remaining_rounds = excluded.remaining_rounds,
+        weight_multiplier = excluded.weight_multiplier,
+        updated_at = now()
+      RETURNING
+        duo_id,
+        library_game_id,
+        round_id,
+        remaining_rounds,
+        weight_multiplier,
+        updated_at
+    `,
+    [
+      input.duoId,
+      input.libraryGameId,
+      input.roundId,
+      input.remainingRounds,
+      input.weightMultiplier
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("roulette_cooldown_upsert_failed");
+  }
+
+  return {
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    remainingRounds: Number(row.remaining_rounds),
+    roundId: row.round_id,
+    updatedAt: row.updated_at,
+    weightMultiplier: Number(row.weight_multiplier)
+  };
+}
+
 async function decrementCooldowns(
   client: QueueDbClient,
   duoId: RouletteDuoId
@@ -806,6 +875,50 @@ async function decrementCooldowns(
     updatedAt: row.updated_at,
     weightMultiplier: Number(row.weight_multiplier)
   }));
+}
+
+async function lockRoundResult(
+  client: QueueDbClient,
+  input: Parameters<RouletteRepositoryTransaction["lockRoundResult"]>[0]
+): Promise<RouletteRoundRecord | null> {
+  const result = await client.query<RoundRow>(
+    `
+      UPDATE app.roulette_rounds
+      SET status = 'locked',
+          resolved_by_user_id = $3,
+          resolved_at = $4,
+          updated_at = $4
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'pending_invitation'
+      RETURNING *
+    `,
+    [input.duoId, input.roundId, input.actorUserId, input.resolvedAt]
+  );
+
+  return result.rows[0] ? mapRoundRow(result.rows[0]) : null;
+}
+
+async function discardRoundResult(
+  client: QueueDbClient,
+  input: Parameters<RouletteRepositoryTransaction["discardRoundResult"]>[0]
+): Promise<RouletteRoundRecord | null> {
+  const result = await client.query<RoundRow>(
+    `
+      UPDATE app.roulette_rounds
+      SET status = 'discarded',
+          resolved_by_user_id = $3,
+          resolved_at = $4,
+          updated_at = $4
+      WHERE duo_id = $1
+        AND id = $2
+        AND status = 'pending_invitation'
+      RETURNING *
+    `,
+    [input.duoId, input.roundId, input.actorUserId, input.resolvedAt]
+  );
+
+  return result.rows[0] ? mapRoundRow(result.rows[0]) : null;
 }
 
 async function persistRound(

@@ -847,6 +847,16 @@ function fakeRouletteTransaction(
   };
 }
 
+type FakeRoulettePlayCoordinator =
+  Parameters<typeof lockRouletteResultAsPrincipalUseCase>[2]
+  & Parameters<typeof discardRouletteResultUseCase>[2]
+  & {
+    activatePlayingGame: ReturnType<typeof vi.fn>;
+    createOperationalPlayNotification: ReturnType<typeof vi.fn>;
+    promotePlayingGame: ReturnType<typeof vi.fn>;
+    replacePlayingGame: ReturnType<typeof vi.fn>;
+  };
+
 function fakeRoulettePlayCoordinator(
   overrides: Partial<{
     activatePlayingGame: ReturnType<typeof vi.fn>;
@@ -854,8 +864,8 @@ function fakeRoulettePlayCoordinator(
     promotePlayingGame: ReturnType<typeof vi.fn>;
     replacePlayingGame: ReturnType<typeof vi.fn>;
   }> = {}
-) {
-  return {
+): FakeRoulettePlayCoordinator {
+  const coordinator = {
     activatePlayingGame:
       overrides.activatePlayingGame ??
       vi.fn(async () => ({
@@ -898,6 +908,8 @@ function fakeRoulettePlayCoordinator(
         currentPlay: { games: [], principal: null, secondaries: [], limit: 3 as const }
       }))
   };
+
+  return coordinator as unknown as FakeRoulettePlayCoordinator;
 }
 
 function eligibleGame(

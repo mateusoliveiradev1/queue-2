@@ -5,6 +5,7 @@ import {
   deactivatePlayingGameUseCase
 } from "./application/activate-playing-game";
 import { confirmPlaySessionUseCase } from "./application/confirm-play-session";
+import { createOperationalPlayNotificationUseCase } from "./application/create-operational-notification";
 import { endLiveSessionUseCase } from "./application/end-live-session";
 import { getCurrentPlayUseCase } from "./application/get-current-play";
 import { getGamePlayDetailUseCase } from "./application/get-game-play-detail";
@@ -39,6 +40,7 @@ import { replacePlayingGameUseCase } from "./application/replace-playing-game";
 import { startLiveSessionUseCase } from "./application/start-live-session";
 import { updatePlayProgressUseCase } from "./application/update-play-progress";
 import { playRepository } from "./infrastructure/play-repository";
+import { sendProductPushNotification } from "./infrastructure/push-service";
 
 export {
   CHAPTER_COMPLETION_XP,
@@ -157,6 +159,14 @@ export {
   activatePlayingGameUseCase,
   deactivatePlayingGameUseCase
 } from "./application/activate-playing-game";
+export {
+  createOperationalPlayNotificationUseCase,
+  isRouletteOperationalNotificationType,
+  ROULETTE_OPERATIONAL_NOTIFICATION_TYPES,
+  type OperationalPlayNotificationInput,
+  type OperationalPlayNotificationResult,
+  type RouletteOperationalNotificationType
+} from "./application/create-operational-notification";
 export {
   getCurrentPlayUseCase,
   type GetCurrentPlayResult
@@ -306,6 +316,17 @@ export function replacePlayingGame(input: {
   makePrincipal: true;
 }) {
   return replacePlayingGameUseCase(input, playRepository);
+}
+
+export function createOperationalPlayNotification(input: {
+  actorUserId: string;
+  notificationType: string;
+  resultLibraryGameId?: string | null;
+  roundId: string;
+}) {
+  return createOperationalPlayNotificationUseCase(input, playRepository, {
+    sendProductPushNotification
+  });
 }
 
 export function startLiveSession(input: {

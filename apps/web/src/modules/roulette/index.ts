@@ -1,7 +1,15 @@
 import "server-only";
 
+import {
+  activatePlayingGame,
+  createOperationalPlayNotification,
+  promotePlayingGame,
+  replacePlayingGame
+} from "../play";
+import { discardRouletteResultUseCase } from "./application/discard-roulette-result";
 import { getRouletteHistoryUseCase } from "./application/get-roulette-history";
 import { getRouletteStateUseCase } from "./application/get-roulette-state";
+import { lockRouletteResultAsPrincipalUseCase } from "./application/lock-roulette-result-as-principal";
 import { replayRouletteRoundUseCase } from "./application/replay-roulette-round";
 import { startRouletteRoundUseCase } from "./application/start-roulette-round";
 import { rouletteRepository } from "./infrastructure/roulette-repository";
@@ -70,7 +78,9 @@ export type {
 } from "./application/ports";
 
 export {
+  discardRouletteResultUseCase,
   getRouletteHistoryUseCase,
+  lockRouletteResultAsPrincipalUseCase,
   getRouletteStateUseCase,
   replayRouletteRoundUseCase,
   startRouletteRoundUseCase
@@ -122,14 +132,21 @@ export function lockRouletteResultAsPrincipal(input: {
     nextStatus?: "wishlist" | "pausado";
   };
 }) {
-  return rouletteRepository.lockRouletteResultAsPrincipal(input);
+  return lockRouletteResultAsPrincipalUseCase(input, rouletteRepository, {
+    activatePlayingGame,
+    createOperationalPlayNotification,
+    promotePlayingGame,
+    replacePlayingGame
+  });
 }
 
 export function discardRouletteResult(input: {
   userId: string;
   roundId: string;
 }) {
-  return rouletteRepository.discardRouletteResult(input);
+  return discardRouletteResultUseCase(input, rouletteRepository, {
+    createOperationalPlayNotification
+  });
 }
 
 export function getRouletteHistory(input: {
