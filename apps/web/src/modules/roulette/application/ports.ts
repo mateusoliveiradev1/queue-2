@@ -202,7 +202,8 @@ export type GetRouletteHistoryResult =
 export type StartRouletteRoundInput = {
   userId: RouletteUserId;
   idempotencyKey: string;
-  boostRequested: boolean;
+  useBoost?: boolean;
+  boostRequested?: boolean;
   roll?: number;
   seed?: string;
   now?: Date;
@@ -224,6 +225,11 @@ export type StartRouletteRoundResult =
         | "insufficient-boost-balance";
       eligibleCount?: number;
       requiredEligibleCount?: number;
+    }
+  | {
+      ok: false;
+      reason: "round-persist-failed";
+      refundedBoost: boolean;
     };
 
 export type ReplayRouletteRoundResult =
@@ -339,7 +345,7 @@ export type RouletteRepositoryTransaction = {
     duoId: RouletteDuoId;
     idempotencyKey: string;
     resultLibraryGameId: RouletteLibraryGameId;
-    resultCatalogGameId: RouletteCatalogGameId;
+    resultCatalogGameId: RouletteCatalogGameId | null | undefined;
     resultRarity: RouletteRarity;
     boostSpent: boolean;
     boostLedgerId: RouletteUuid | null;

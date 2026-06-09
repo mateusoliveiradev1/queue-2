@@ -9,6 +9,7 @@ import {
 
 import { getRouletteStateFromTransaction } from "../application/get-roulette-state";
 import { replayRouletteRoundFromTransaction } from "../application/replay-roulette-round";
+import { startRouletteRoundFromTransaction } from "../application/start-roulette-round";
 import type { RouletteRarity } from "../domain/roulette-policy";
 import type {
   DiscardRouletteResult,
@@ -110,6 +111,20 @@ type RoundEntryRow = {
   created_at: Date;
 };
 
+type BoostLedgerRow = {
+  id: string;
+  duo_id: string;
+  ledger_key: string;
+  source_type: RouletteBoostLedgerRecord["sourceType"];
+  source_id: string;
+  round_id: string | null;
+  amount_delta: number;
+  reason_code: string;
+  actor_user_id: string | null;
+  metadata: unknown;
+  created_at: Date;
+};
+
 type HistoryEventRow = {
   id: string;
   duo_id: string;
@@ -193,25 +208,26 @@ export function createRouletteTransaction(
     readAudioPreference: (input) => readAudioPreference(client, input.duoId),
     readActiveRound: (input) => readActiveRound(client, input.duoId),
     readRoundById: (input) => readRoundById(client, input.duoId, input.roundId),
-    readRoundByIdempotencyKey: () => pendingPlan0603("readRoundByIdempotencyKey"),
+    readRoundByIdempotencyKey: (input) =>
+      readRoundByIdempotencyKey(client, input.duoId, input.idempotencyKey),
     readRoundEntries: (input) =>
       readRoundEntries(client, input.duoId, input.roundId),
     lockBoostBalance: (input) => lockBoostBalance(client, input.duoId),
-    materializeBoostFromXp: () => pendingPlan0603("materializeBoostFromXp"),
-    insertBoostLedgerEntry: () => pendingPlan0603("insertBoostLedgerEntry"),
-    updateBoostBalance: () => pendingPlan0603("updateBoostBalance"),
+    materializeBoostFromXp: (input) => materializeBoostFromXp(client, input),
+    insertBoostLedgerEntry: (input) => insertBoostLedgerEntry(client, input),
+    updateBoostBalance: (input) => updateBoostBalance(client, input.duoId, input.balance),
     lockPityState: (input) => lockPityState(client, input.duoId),
-    updatePityState: () => pendingPlan0603("updatePityState"),
+    updatePityState: (input) => updatePityState(client, input),
     readCooldowns: (input) => readCooldowns(client, input.duoId),
     upsertCooldown: () => pendingPlan0603("upsertCooldown"),
-    decrementCooldowns: () => pendingPlan0603("decrementCooldowns"),
-    persistRound: () => pendingPlan0603("persistRound"),
-    persistRoundEntries: () => pendingPlan0603("persistRoundEntries"),
+    decrementCooldowns: (input) => decrementCooldowns(client, input.duoId),
+    persistRound: (input) => persistRound(client, input),
+    persistRoundEntries: (input) => persistRoundEntries(client, input),
     markRoundRevealed: () => pendingPlan0603("markRoundRevealed"),
     recordReplay: () => pendingPlan0603("recordReplay"),
     lockRoundResult: () => pendingPlan0603("lockRoundResult"),
     discardRoundResult: () => pendingPlan0603("discardRoundResult"),
-    insertHistoryEvent: () => pendingPlan0603("insertHistoryEvent"),
+    insertHistoryEvent: (input) => insertHistoryEvent(client, input),
     readHistory: (input) => readHistory(client, input.duoId, input.limit)
   };
 }
@@ -226,7 +242,7 @@ async function getRouletteStateShell(
     return { ok: false, reason: "membership-required" };
   }
 
-  return getRouletteStateFromTransaction(input, transaction);
+  return getRouletteStateFromTransaction({ userId }, transaction);
 }
 
 async function startRouletteRoundShell(
@@ -239,7 +255,7 @@ async function startRouletteRoundShell(
     return { ok: false, reason: "membership-required" };
   }
 
-  return pendingPlan0603("startRouletteRound");
+  return startRouletteRoundFromTransaction(input, transaction);
 }
 
 async function replayRouletteRoundShell(
@@ -411,6 +427,26 @@ async function readRoundById(
   return result.rows[0] ? mapRoundRow(result.rows[0]) : null;
 }
 
+async function readRoundByIdempotencyKey(
+  client: QueueDbClient,
+  duoId: RouletteDuoId,
+  idempotencyKey: string
+): Promise<RouletteRoundRecord | null> {
+  const result = await client.query<RoundRow>(
+    `
+      SELECT *
+      FROM app.roulette_rounds
+      WHERE duo_id = $1
+        AND idempotency_key = $2
+      LIMIT 1
+      FOR UPDATE
+    `,
+    [duoId, idempotencyKey]
+  );
+
+  return result.rows[0] ? mapRoundRow(result.rows[0]) : null;
+}
+
 async function readRoundEntries(
   client: QueueDbClient,
   duoId: RouletteDuoId,
@@ -466,6 +502,180 @@ async function lockBoostBalance(
   };
 }
 
+async function materializeBoostFromXp(
+  client: QueueDbClient,
+  input: {
+    duoId: RouletteDuoId;
+    actorUserId: RouletteUserId;
+    now: Date;
+  }
+): Promise<RouletteBoostBalanceRecord> {
+  await client.query(
+    `
+      INSERT INTO app.roulette_boost_balances (duo_id, balance, cap)
+      VALUES ($1, 0, 600)
+      ON CONFLICT (duo_id) DO NOTHING
+    `,
+    [input.duoId]
+  );
+
+  const result = await client.query<BoostBalanceRow>(
+    `
+      WITH duo_context AS (
+        SELECT id AS duo_id, timezone
+        FROM app.duos
+        WHERE id = $1
+        FOR UPDATE
+      ),
+      earn_candidates AS (
+        SELECT
+          award.id AS source_id,
+          'earn:' || award.award_key AS ledger_key,
+          floor(
+            award.amount
+            * 0.2
+            * CASE
+                WHEN extract(isodow FROM award.awarded_at AT TIME ZONE duo_context.timezone) IN (6, 7)
+                  THEN 1.2
+                ELSE 1
+              END
+          )::integer AS amount_delta,
+          jsonb_build_object(
+            'xpAwardKey', award.award_key,
+            'weekendFactor',
+              CASE
+                WHEN extract(isodow FROM award.awarded_at AT TIME ZONE duo_context.timezone) IN (6, 7)
+                  THEN 1.2
+                ELSE 1
+              END
+          ) AS metadata
+        FROM app.duo_xp_awards AS award
+        JOIN duo_context ON duo_context.duo_id = award.duo_id
+        WHERE award.duo_id = $1
+      ),
+      inserted AS (
+        INSERT INTO app.roulette_boost_ledger (
+          duo_id,
+          ledger_key,
+          source_type,
+          source_id,
+          round_id,
+          amount_delta,
+          reason_code,
+          actor_user_id,
+          metadata
+        )
+        SELECT
+          $1,
+          earn_candidates.ledger_key,
+          'xp-award',
+          earn_candidates.source_id,
+          NULL,
+          earn_candidates.amount_delta,
+          'xp-boost-earn',
+          $2,
+          earn_candidates.metadata
+        FROM earn_candidates
+        WHERE earn_candidates.amount_delta > 0
+        ON CONFLICT (duo_id, ledger_key) DO NOTHING
+        RETURNING amount_delta
+      ),
+      delta AS (
+        SELECT coalesce(sum(amount_delta), 0)::integer AS amount_delta
+        FROM inserted
+      )
+      UPDATE app.roulette_boost_balances AS balance
+      SET balance = LEAST(balance.cap, balance.balance + delta.amount_delta),
+          updated_at = CASE
+            WHEN delta.amount_delta <> 0 THEN $3
+            ELSE balance.updated_at
+          END
+      FROM delta
+      WHERE balance.duo_id = $1
+      RETURNING balance.duo_id, balance.balance, balance.cap, balance.updated_at
+    `,
+    [input.duoId, input.actorUserId, input.now]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("roulette_boost_materialization_failed");
+  }
+
+  return {
+    balance: Number(row.balance),
+    cap: Number(row.cap),
+    duoId: row.duo_id,
+    updatedAt: row.updated_at
+  };
+}
+
+async function insertBoostLedgerEntry(
+  client: QueueDbClient,
+  input: Omit<RouletteBoostLedgerRecord, "id" | "createdAt">
+): Promise<RouletteBoostLedgerRecord | null> {
+  const result = await client.query<BoostLedgerRow>(
+    `
+      INSERT INTO app.roulette_boost_ledger (
+        duo_id,
+        ledger_key,
+        source_type,
+        source_id,
+        round_id,
+        amount_delta,
+        reason_code,
+        actor_user_id,
+        metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+      ON CONFLICT (duo_id, ledger_key) DO NOTHING
+      RETURNING *
+    `,
+    [
+      input.duoId,
+      input.ledgerKey,
+      input.sourceType,
+      input.sourceId,
+      input.roundId,
+      input.amountDelta,
+      input.reasonCode,
+      input.actorUserId,
+      JSON.stringify(input.metadata ?? {})
+    ]
+  );
+
+  return result.rows[0] ? mapBoostLedgerRow(result.rows[0]) : null;
+}
+
+async function updateBoostBalance(
+  client: QueueDbClient,
+  duoId: RouletteDuoId,
+  balance: number
+): Promise<RouletteBoostBalanceRecord> {
+  const result = await client.query<BoostBalanceRow>(
+    `
+      UPDATE app.roulette_boost_balances
+      SET balance = LEAST(cap, GREATEST(0, $2::integer)),
+          updated_at = now()
+      WHERE duo_id = $1
+      RETURNING duo_id, balance, cap, updated_at
+    `,
+    [duoId, balance]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("roulette_boost_balance_update_failed");
+  }
+
+  return {
+    balance: Number(row.balance),
+    cap: Number(row.cap),
+    duoId: row.duo_id,
+    updatedAt: row.updated_at
+  };
+}
+
 async function lockPityState(
   client: QueueDbClient,
   duoId: RouletteDuoId
@@ -492,6 +702,39 @@ async function lockPityState(
 
   if (!row) {
     throw new Error("roulette_pity_state_missing_after_upsert");
+  }
+
+  return {
+    drawsSinceEpicOrHigher: Number(row.draws_since_epic_or_higher),
+    duoId: row.duo_id,
+    lastEpicOrHigherAt: row.last_epic_or_higher_at,
+    updatedAt: row.updated_at
+  };
+}
+
+async function updatePityState(
+  client: QueueDbClient,
+  input: {
+    duoId: RouletteDuoId;
+    drawsSinceEpicOrHigher: number;
+    lastEpicOrHigherAt: Date | null;
+  }
+): Promise<RoulettePityStateRecord> {
+  const result = await client.query<PityStateRow>(
+    `
+      UPDATE app.roulette_pity_state
+      SET draws_since_epic_or_higher = GREATEST(0, $2::integer),
+          last_epic_or_higher_at = $3,
+          updated_at = now()
+      WHERE duo_id = $1
+      RETURNING duo_id, draws_since_epic_or_higher, last_epic_or_higher_at, updated_at
+    `,
+    [input.duoId, input.drawsSinceEpicOrHigher, input.lastEpicOrHigherAt]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("roulette_pity_state_update_failed");
   }
 
   return {
@@ -531,6 +774,183 @@ async function readCooldowns(
     updatedAt: row.updated_at,
     weightMultiplier: Number(row.weight_multiplier)
   }));
+}
+
+async function decrementCooldowns(
+  client: QueueDbClient,
+  duoId: RouletteDuoId
+): Promise<RouletteCooldownRecord[]> {
+  const result = await client.query<CooldownRow>(
+    `
+      UPDATE app.roulette_cooldowns
+      SET remaining_rounds = GREATEST(0, remaining_rounds - 1),
+          updated_at = now()
+      WHERE duo_id = $1
+        AND remaining_rounds > 0
+      RETURNING
+        duo_id,
+        library_game_id,
+        round_id,
+        remaining_rounds,
+        weight_multiplier,
+        updated_at
+    `,
+    [duoId]
+  );
+
+  return result.rows.map((row) => ({
+    duoId: row.duo_id,
+    libraryGameId: row.library_game_id,
+    remainingRounds: Number(row.remaining_rounds),
+    roundId: row.round_id,
+    updatedAt: row.updated_at,
+    weightMultiplier: Number(row.weight_multiplier)
+  }));
+}
+
+async function persistRound(
+  client: QueueDbClient,
+  input: Parameters<RouletteRepositoryTransaction["persistRound"]>[0]
+): Promise<RouletteRoundRecord> {
+  const result = await client.query<RoundRow>(
+    `
+      INSERT INTO app.roulette_rounds (
+        duo_id,
+        idempotency_key,
+        status,
+        result_library_game_id,
+        result_catalog_game_id,
+        result_rarity,
+        boost_spent,
+        boost_ledger_id,
+        pity_before,
+        pity_after,
+        weekend_multiplier_applied,
+        selected_by_user_id,
+        metadata
+      )
+      VALUES (
+        $1,
+        $2,
+        'pending_invitation',
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12::jsonb
+      )
+      ON CONFLICT (duo_id, idempotency_key)
+      DO UPDATE SET updated_at = app.roulette_rounds.updated_at
+      RETURNING *
+    `,
+    [
+      input.duoId,
+      input.idempotencyKey,
+      input.resultLibraryGameId,
+      input.resultCatalogGameId ?? null,
+      input.resultRarity,
+      input.boostSpent,
+      input.boostLedgerId,
+      input.pityBefore,
+      input.pityAfter,
+      input.weekendMultiplierApplied,
+      input.selectedByUserId,
+      JSON.stringify(input.metadata ?? {})
+    ]
+  );
+  const row = result.rows[0];
+
+  if (!row) {
+    throw new Error("roulette_round_persist_failed");
+  }
+
+  return mapRoundRow(row);
+}
+
+async function persistRoundEntries(
+  client: QueueDbClient,
+  input: Parameters<RouletteRepositoryTransaction["persistRoundEntries"]>[0]
+): Promise<RouletteRoundEntryRecord[]> {
+  const persisted: RouletteRoundEntryRecord[] = [];
+
+  for (const entry of input.entries) {
+    const result = await client.query<RoundEntryRow>(
+      `
+        INSERT INTO app.roulette_round_entries (
+          duo_id,
+          round_id,
+          slot_index,
+          library_game_id,
+          catalog_game_id,
+          rarity,
+          title_snapshot,
+          cover_url_snapshot,
+          selected_slot,
+          metadata
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, '{}'::jsonb)
+        ON CONFLICT (duo_id, round_id, slot_index) DO NOTHING
+        RETURNING *
+      `,
+      [
+        input.duoId,
+        input.roundId,
+        entry.slotIndex,
+        entry.gameId,
+        entry.catalogGameId ?? null,
+        entry.rarity,
+        entry.title.slice(0, 160),
+        entry.coverUrl ?? null,
+        entry.authoritativeResult
+      ]
+    );
+
+    if (result.rows[0]) {
+      persisted.push(mapRoundEntryRow(result.rows[0]));
+    }
+  }
+
+  if (persisted.length === input.entries.length) {
+    return persisted;
+  }
+
+  return readRoundEntries(client, input.duoId, input.roundId);
+}
+
+async function insertHistoryEvent(
+  client: QueueDbClient,
+  input: Omit<RouletteHistoryEventRecord, "id" | "createdAt">
+): Promise<RouletteHistoryEventRecord | null> {
+  const result = await client.query<HistoryEventRow>(
+    `
+      INSERT INTO app.roulette_history_events (
+        duo_id,
+        round_id,
+        event_key,
+        event_type,
+        actor_user_id,
+        metadata
+      )
+      VALUES ($1, $2, $3, $4, $5, $6::jsonb)
+      ON CONFLICT (duo_id, event_key) DO NOTHING
+      RETURNING *
+    `,
+    [
+      input.duoId,
+      input.roundId,
+      input.eventKey,
+      input.eventType,
+      input.actorUserId,
+      JSON.stringify(input.metadata ?? {})
+    ]
+  );
+
+  return result.rows[0] ? mapHistoryEventRow(result.rows[0]) : null;
 }
 
 async function readHistory(
@@ -591,6 +1011,22 @@ function mapRoundEntryRow(row: RoundEntryRow): RouletteRoundEntryRecord {
     selectedSlot: row.selected_slot,
     slotIndex: Number(row.slot_index),
     titleSnapshot: row.title_snapshot
+  };
+}
+
+function mapBoostLedgerRow(row: BoostLedgerRow): RouletteBoostLedgerRecord {
+  return {
+    actorUserId: row.actor_user_id,
+    amountDelta: Number(row.amount_delta),
+    createdAt: row.created_at,
+    duoId: row.duo_id,
+    id: row.id,
+    ledgerKey: row.ledger_key,
+    metadata: normalizeMetadata(row.metadata),
+    reasonCode: row.reason_code,
+    roundId: row.round_id,
+    sourceId: row.source_id,
+    sourceType: row.source_type
   };
 }
 

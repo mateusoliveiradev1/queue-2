@@ -6,9 +6,12 @@ import type {
   RouletteHistoryEventRecord,
   RouletteMembershipContext,
   RoulettePityStateRecord,
+  RouletteRepository,
+  RouletteRepositoryTransaction,
   RouletteRoundEntryRecord,
   RouletteRoundRecord
 } from "../src/modules/roulette/application/ports";
+import type { RouletteVisualReelSlot } from "../src/modules/roulette/domain/roulette-policy";
 
 import { getRouletteHistoryUseCase } from "../src/modules/roulette/application/get-roulette-history";
 import { getRouletteStateUseCase } from "../src/modules/roulette/application/get-roulette-state";
@@ -200,6 +203,7 @@ describe("roulette idempotent start application use case", () => {
         repository
       )
     ).resolves.toEqual({
+      boostLedger: null,
       entries: activeEntries,
       ok: true,
       resumedExistingRound: true,
@@ -367,6 +371,7 @@ describe("roulette idempotent start application use case", () => {
         repository
       )
     ).resolves.toEqual({
+      boostLedger: null,
       entries: [],
       ok: true,
       resumedExistingRound: true,
@@ -384,8 +389,7 @@ describe("roulette idempotent start application use case", () => {
 
 type FakeRouletteRepository = {
   transaction: ReturnType<typeof fakeRouletteTransaction>;
-  withUserTransaction: ReturnType<typeof vi.fn>;
-};
+} & Pick<RouletteRepository, "withUserTransaction">;
 
 function fakeRouletteRepository(
   overrides: Partial<{
@@ -405,10 +409,16 @@ function fakeRouletteRepository(
   }> = {}
 ): FakeRouletteRepository {
   const transaction = fakeRouletteTransaction(overrides);
+  const withUserTransaction = vi.fn(
+    async <T,>(
+      _userId: string,
+      callback: (transaction: RouletteRepositoryTransaction) => Promise<T>
+    ) => callback(transaction as unknown as RouletteRepositoryTransaction)
+  ) as RouletteRepository["withUserTransaction"];
 
   return {
     transaction,
-    withUserTransaction: vi.fn(async (_userId, callback) => callback(transaction))
+    withUserTransaction
   };
 }
 
@@ -430,9 +440,20 @@ function fakeRouletteTransaction(
   }>
 ) {
   return {
-    insertBoostLedgerEntry: vi.fn(),
+    insertBoostLedgerEntry: vi.fn(async (input) =>
+      boostLedger({
+        actorUserId: input.actorUserId,
+        amountDelta: input.amountDelta,
+        duoId: input.duoId,
+        ledgerKey: input.ledgerKey,
+        metadata: input.metadata,
+        reasonCode: input.reasonCode,
+        roundId: input.roundId,
+        sourceId: input.sourceId,
+        sourceType: input.sourceType
+      })
+    ),
     insertHistoryEvent: vi.fn(),
-    materializeBoostFromXp: vi.fn(),
     readActiveRound: vi.fn(async () => overrides.activeRound ?? null),
     readAudioPreference: vi.fn(async () => overrides.audioEnabled ?? true),
     readCooldowns: vi.fn(async () => [] satisfies RouletteCooldownRecord[]),
@@ -462,7 +483,9 @@ function fakeRouletteTransaction(
         : overrides.membership
     ),
     selectResult: vi.fn(),
-    updateBoostBalance: vi.fn(),
+    updateBoostBalance: vi.fn(async ({ duoId, balance }) =>
+      boostBalance({ balance, duoId })
+    ),
     updatePityState: vi.fn(),
     decrementCooldowns: vi.fn(),
     persistRound:
@@ -484,8 +507,12 @@ function fakeRouletteTransaction(
       ),
     persistRoundEntries:
       overrides.persistRoundEntries ??
-      vi.fn(async ({ duoId, entries, roundId }) =>
-        entries.map((entry, index) =>
+      vi.fn(async ({ duoId, entries, roundId }: {
+        duoId: string;
+        entries: RouletteVisualReelSlot[];
+        roundId: string;
+      }) =>
+        entries.map((entry: RouletteVisualReelSlot, index: number) =>
           roundEntry({
             catalogGameId: entry.catalogGameId ?? null,
             coverUrlSnapshot: entry.coverUrl ?? null,
@@ -548,6 +575,39 @@ function pityState(
     lastEpicOrHigherAt: null,
     updatedAt: new Date("2026-06-09T10:00:00.000Z"),
     ...overrides
+  };
+}
+
+function boostLedger(
+  overrides: Partial<{
+    actorUserId: string | null;
+    amountDelta: number;
+    duoId: string;
+    ledgerKey: string;
+    metadata: Record<string, unknown>;
+    reasonCode: string;
+    roundId: string | null;
+    sourceId: string;
+    sourceType:
+      | "xp-award"
+      | "roulette-round"
+      | "roulette-refund"
+      | "adjustment"
+      | "rebuild";
+  }> = {}
+) {
+  return {
+    actorUserId: overrides.actorUserId ?? "member-1",
+    amountDelta: overrides.amountDelta ?? -100,
+    createdAt: new Date("2026-06-09T10:00:00.000Z"),
+    duoId: overrides.duoId ?? "duo-1",
+    id: `ledger-${overrides.ledgerKey ?? "spend"}`,
+    ledgerKey: overrides.ledgerKey ?? "spend:round-key",
+    metadata: overrides.metadata ?? {},
+    reasonCode: overrides.reasonCode ?? "boost-spend",
+    roundId: overrides.roundId ?? null,
+    sourceId: overrides.sourceId ?? "11111111-1111-4111-8111-111111111111",
+    sourceType: overrides.sourceType ?? "roulette-round"
   };
 }
 

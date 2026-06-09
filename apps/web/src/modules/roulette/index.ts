@@ -3,6 +3,7 @@ import "server-only";
 import { getRouletteHistoryUseCase } from "./application/get-roulette-history";
 import { getRouletteStateUseCase } from "./application/get-roulette-state";
 import { replayRouletteRoundUseCase } from "./application/replay-roulette-round";
+import { startRouletteRoundUseCase } from "./application/start-roulette-round";
 import { rouletteRepository } from "./infrastructure/roulette-repository";
 
 export {
@@ -71,7 +72,8 @@ export type {
 export {
   getRouletteHistoryUseCase,
   getRouletteStateUseCase,
-  replayRouletteRoundUseCase
+  replayRouletteRoundUseCase,
+  startRouletteRoundUseCase
 };
 
 export function getRouletteState(input: {
@@ -83,12 +85,12 @@ export function getRouletteState(input: {
 export function startRouletteRound(input: {
   userId: string;
   idempotencyKey: string;
-  boostRequested: boolean;
+  useBoost: boolean;
   roll?: number;
   seed?: string;
   now?: Date;
 }) {
-  return rouletteRepository.startRouletteRound(input);
+  return startRouletteRoundUseCase(input, rouletteRepository);
 }
 
 export function replayRouletteRound(input: {
