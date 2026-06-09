@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 06-roleta-e-economia-04-PLAN.md
-last_updated: "2026-06-09T13:47:54.079Z"
+stopped_at: Completed 06-roleta-e-economia-06-PLAN.md
+last_updated: "2026-06-09T16:09:31.511Z"
 last_activity: 2026-06-09
 progress:
   total_phases: 12
   completed_phases: 10
   total_plans: 58
-  completed_plans: 51
-  percent: 88
+  completed_plans: 52
+  percent: 90
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 06 (roleta-e-economia) — EXECUTING
-Plan: 6 of 12
+Plan: 7 of 12
 Status: Ready to execute
 Last activity: 2026-06-09
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 90%
 
 ## Performance Metrics
 
@@ -105,6 +105,7 @@ Progress: [█████████░] 88%
 | Phase 06-roleta-e-economia P02 | 11 min | 2 tasks | 5 files |
 | Phase 06-roleta-e-economia P03 | 29 min | 2 tasks | 8 files |
 | Phase 06-roleta-e-economia P04 | 26 min | 2 tasks | 17 files |
+| Phase 06-roleta-e-economia P06 | 10 min | 1 tasks | 9 files |
 
 ## Quick Tasks Completed
 
@@ -295,6 +296,9 @@ Recent decisions affecting current work:
 - [Phase 06-roleta-e-economia]: Roleta route forms pass only proposal fields while actions derive result, economy and duo facts server-side. — Keeps the playable route shell inside the SECURITY.md browser trust boundary.
 - [Phase 06-roleta-e-economia]: app.roleta is part of the performance route allowlist and budget contract. — Server timing labels for the new authenticated route remain static and validated.
 - [Phase 06-roleta-e-economia]: Duo audio preference updates use a narrow public Duo contract instead of full settings mutation. — The route can update only audio_enabled after membership resolution.
+- [Phase 06-roleta-e-economia]: Replacement uses library game id for exact selected queue item handoff. — Roulette must replace the selected active game, not infer a target from catalog facts.
+- [Phase 06-roleta-e-economia]: Roulette replacement writes the incoming game as Principal position 1 and compacts remaining active games as secondaries. — Play keeps exactly one Principal and at most two secondaries after the handoff.
+- [Phase 06-roleta-e-economia]: Play replacement is explicit and leaves the no-auto-pause policy unchanged. — The existing fourth-game decision still exposes pause, replace or cancel with autoPause false while the new contract performs only the selected replacement.
 
 ### Pending Todos
 
@@ -334,6 +338,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-09T13:46:07.647Z
-Stopped at: Completed 06-roleta-e-economia-04-PLAN.md
+Last session: 2026-06-09T16:08:53.081Z
+Stopped at: Completed 06-roleta-e-economia-06-PLAN.md
 Resume file: None
