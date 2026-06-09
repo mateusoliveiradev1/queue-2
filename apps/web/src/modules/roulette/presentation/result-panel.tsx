@@ -1,3 +1,4 @@
+import { ActionFeedbackButton } from "../../../components/action-feedback";
 import type { RouletteResultViewModel } from "./view-models";
 
 type ResultPanelAction = (formData: FormData) => Promise<void>;
@@ -57,9 +58,18 @@ export function ResultPanel({
         <small>Replay nao e novo sorteio.</small>
         <div className="roulette-result-actions">
           <ActionSlot action={lockAction} label="Travar como Principal" roundId={roundId} tone="primary" />
-          <ActionSlot action={discardAction} label="Descartar resultado" roundId={roundId} tone="quiet" />
+          <ActionSlot
+            action={discardAction}
+            describedBy="roulette-discard-confirmation"
+            label="Descartar este resultado"
+            roundId={roundId}
+            tone="quiet"
+          />
           <ActionSlot action={replayAction} label="Rever giro salvo" roundId={roundId} tone="quiet" />
         </div>
+        <small id="roulette-discard-confirmation">
+          Descartar este resultado? O jogo continua na fila e o boost de uma rodada ja revelada nao volta.
+        </small>
       </div>
     </section>
   );
@@ -67,22 +77,33 @@ export function ResultPanel({
 
 function ActionSlot({
   action,
+  describedBy,
   label,
   roundId,
   tone
 }: {
   action?: ResultPanelAction;
+  describedBy?: string;
   label: string;
   roundId: string;
   tone: "primary" | "quiet";
 }) {
   if (action) {
     return (
-      <form action={action}>
+      <form action={action} className="action-feedback-form">
         <input name="roundId" type="hidden" value={roundId} />
-        <button className="queue2-button" data-tone={tone} type="submit">
-          {label}
-        </button>
+        <ActionFeedbackButton
+          aria-describedby={describedBy}
+          labels={{
+            confirmed: "Confirmado",
+            failed: "Tentar de novo",
+            idle: label,
+            retrying: "Tentando de novo",
+            syncing: "Sincronizando"
+          }}
+          state="idle"
+          tone={tone}
+        />
       </form>
     );
   }

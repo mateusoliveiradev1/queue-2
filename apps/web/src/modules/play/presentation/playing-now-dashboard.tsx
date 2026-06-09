@@ -33,12 +33,14 @@ type PausedQueueGameView = {
 export function PlayingNowDashboard({
   moveLibraryAction,
   pausedGames = [],
+  principalHighlight = null,
   promoteAction,
   reorderAction,
   view
 }: {
   moveLibraryAction?: LibraryMoveAction;
   pausedGames?: PausedQueueGameView[];
+  principalHighlight?: "roleta-principal" | null;
   promoteAction: PlayOrderAction;
   reorderAction: PlayOrderAction;
   view: PlayingNowViewModel;
@@ -47,7 +49,11 @@ export function PlayingNowDashboard({
     const hasPausedGames = pausedGames.length > 0;
 
     return (
-      <section className="playing-now app-section" aria-labelledby="playing-now-title">
+      <section
+        className="playing-now app-section"
+        data-highlight={principalHighlight ?? undefined}
+        aria-labelledby="playing-now-title"
+      >
         <div className="section-heading">
           <p className="eyebrow">Jogando Agora</p>
           <h2 id="playing-now-title">
@@ -76,7 +82,11 @@ export function PlayingNowDashboard({
   }
 
   return (
-    <section className="playing-now app-section" aria-labelledby="playing-now-title">
+    <section
+      className="playing-now app-section"
+      data-highlight={principalHighlight ?? undefined}
+      aria-labelledby="playing-now-title"
+    >
       <div className="section-heading playing-now-heading">
         <div>
           <p className="eyebrow">Jogando Agora</p>

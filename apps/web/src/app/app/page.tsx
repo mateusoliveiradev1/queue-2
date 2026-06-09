@@ -34,6 +34,7 @@ import {
   reorderPlayingGamesAction
 } from "./phase-4-actions";
 import { getPhase5RewardStatus } from "./phase-5-status";
+import { getPhase6StatusMessage } from "./phase-6-status";
 
 export const metadata: Metadata = {
   description:
@@ -126,7 +127,10 @@ async function renderDashboardPage({
     ? library.counts.wishlist + library.counts.jogando + library.counts.pausado
     : 0;
   const state = getSearchParam(params?.estado);
-  const statusMessage = getPhase2StatusMessage(state);
+  const phase6StatusMessage = getPhase6StatusMessage(state);
+  const statusMessage = phase6StatusMessage ?? getPhase2StatusMessage(state);
+  const roulettePrincipalHighlight =
+    state === "roleta-principal" ? "roleta-principal" : null;
   const rewardState = getSearchParam(params?.recompensa);
   const rewardStatus = getPhase5RewardStatus(rewardState, {
     duoId: duo.id,
@@ -142,7 +146,11 @@ async function renderDashboardPage({
     >
       {statusMessage ? (
         <>
-          <StatusToast message={statusMessage} state={state} />
+          <StatusToast
+            message={statusMessage}
+            state={state}
+            variant={roulettePrincipalHighlight ? "special" : "calm"}
+          />
           <p className="status-banner" role="status">
             {statusMessage}
           </p>
@@ -161,13 +169,27 @@ async function renderDashboardPage({
         </div>
       </header>
 
-      <PlayingNowDashboard
-        moveLibraryAction={moveLibraryGameAction}
-        pausedGames={library?.groups?.pausado ?? []}
-        promoteAction={promotePlayingGameAction}
-        reorderAction={reorderPlayingGamesAction}
-        view={playingNow}
-      />
+      {roulettePrincipalHighlight ? (
+        <div data-highlight="roleta-principal">
+          <PlayingNowDashboard
+            moveLibraryAction={moveLibraryGameAction}
+            pausedGames={library?.groups?.pausado ?? []}
+            principalHighlight={roulettePrincipalHighlight}
+            promoteAction={promotePlayingGameAction}
+            reorderAction={reorderPlayingGamesAction}
+            view={playingNow}
+          />
+        </div>
+      ) : (
+        <PlayingNowDashboard
+          moveLibraryAction={moveLibraryGameAction}
+          pausedGames={library?.groups?.pausado ?? []}
+          principalHighlight={roulettePrincipalHighlight}
+          promoteAction={promotePlayingGameAction}
+          reorderAction={reorderPlayingGamesAction}
+          view={playingNow}
+        />
+      )}
 
       <GamificationDashboardBand view={gamification} />
 

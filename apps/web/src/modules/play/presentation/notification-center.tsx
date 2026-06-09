@@ -3,6 +3,11 @@ import type {
   PlayNotificationRecord
 } from "../application/ports";
 
+const rouletteNotificationTypes = [
+  "roulette-result-locked",
+  "roulette-result-discarded"
+] as const;
+
 export function NotificationCenter({
   center
 }: {
@@ -45,12 +50,21 @@ export function NotificationCenter({
 
 function NotificationItem({ item }: { item: PlayNotificationRecord }) {
   return (
-    <li className="notification-item" data-state={item.state} data-type={item.notificationType}>
+    <li
+      className="notification-item"
+      data-roulette-outcome={isRouletteNotificationType(item.notificationType) ? "true" : undefined}
+      data-state={item.state}
+      data-type={item.notificationType}
+    >
       <strong>{item.title}</strong>
       {item.body ? <span className="muted">{item.body}</span> : null}
       <small>{formatDateTime(item.createdAt)}</small>
     </li>
   );
+}
+
+function isRouletteNotificationType(notificationType: string): boolean {
+  return (rouletteNotificationTypes as readonly string[]).includes(notificationType);
 }
 
 function formatDateTime(date: Date): string {

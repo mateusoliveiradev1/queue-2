@@ -24,6 +24,7 @@ const phase6StatusSourcePath = "src/app/app/phase-6-status.ts";
 describe("Phase 6 roulette route shell", () => {
   it("composes the authenticated route from public server contracts only", () => {
     const pageSource = readRequiredSource("src/app/app/roleta/page.tsx");
+    const replacementRequiredSource = readRequiredSource(rouletteReplacementRequiredSourcePath);
 
     expect(pageSource).toContain("requireVerifiedSession");
     expect(pageSource).toContain("getRouletteState");
@@ -40,7 +41,7 @@ describe("Phase 6 roulette route shell", () => {
     expect(pageSource).toContain('name="useBoost"');
     expect(pageSource).toContain('name="roundId"');
     expect(pageSource).toContain('name="audioEnabled"');
-    expect(pageSource).toContain('name="replacementLibraryGameId"');
+    expect(`${pageSource}\n${replacementRequiredSource}`).toContain('name="replacementLibraryGameId"');
     expect(pageSource).not.toContain("modules/roulette/application");
     expect(pageSource).not.toContain("modules/roulette/infrastructure");
   });

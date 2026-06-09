@@ -4,14 +4,17 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "../../../components/app-shell";
+import { getCurrentPlay } from "../../../modules/play";
 import {
   CompactHistory,
+  ReplacementRequired,
   getRouletteHistory,
   getRouletteState,
   ResultPanel,
   RouletteAudioControl,
   RouletteReel,
   toRouletteRouteViewModel,
+  type ReplacementRequiredGameView,
   type RouletteRouteViewModel
 } from "../../../modules/roulette";
 import { requireVerifiedSession } from "../../../platform/auth/session";
@@ -20,6 +23,8 @@ import {
   withServerTiming
 } from "../../../platform/performance/server-timing";
 import {
+  discardRouletteResultAction,
+  lockRouletteResultAction,
   replayRouletteRoundAction,
   startRouletteRoundAction,
   updateRouletteAudioPreferenceAction
@@ -33,21 +38,33 @@ export const metadata: Metadata = {
 
 const rouletteTimingContext = { route: "app.roleta" } as const;
 
-export default async function RoulettePage() {
-  return withServerTiming(rouletteTimingContext, renderRoulettePage);
+type RoulettePageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+export default async function RoulettePage({
+  searchParams
+}: RoulettePageProps = {}) {
+  return withServerTiming(rouletteTimingContext, () =>
+    renderRoulettePage({ searchParams })
+  );
 }
 
-async function renderRoulettePage() {
+async function renderRoulettePage({
+  searchParams
+}: RoulettePageProps = {}) {
   const session = await measureStage("auth", rouletteTimingContext, () =>
     requireVerifiedSession()
   );
-  const [stateResult, historyResult] = await measureStage(
+  const [stateResult, historyResult, currentPlayResult, params] = await measureStage(
     "database",
     rouletteTimingContext,
     () =>
       Promise.all([
         getRouletteState({ userId: session.user.id }),
-        getRouletteHistory({ userId: session.user.id, limit: 8 })
+        getRouletteHistory({ userId: session.user.id, limit: 8 }),
+        getCurrentPlay(session.user.id),
+        searchParams
       ])
   );
 
@@ -59,6 +76,17 @@ async function renderRoulettePage() {
     history: historyResult.history,
     state: stateResult.state
   });
+  const routeState = getRouteSearchParam(params?.estado);
+  const replacementRoundId = getRouteSearchParam(params?.roundId);
+  const showReplacementRequired =
+    routeState === "replacement-required"
+    && Boolean(viewModel.round?.id && replacementRoundId === viewModel.round.id);
+  const replacementGames = currentPlayResult.ok
+    ? currentPlayResult.currentPlay.games
+        .slice()
+        .sort((first, second) => first.position - second.position)
+        .map(toReplacementRequiredGameView)
+    : [];
 
   return measureStage("render", rouletteTimingContext, async () => (
     <AppShell currentPage="roleta">
@@ -76,7 +104,10 @@ async function renderRoulettePage() {
           className="roulette-first-viewport"
           data-state={viewModel.firstViewport.state}
         >
-          {renderFirstViewport(viewModel)}
+          {renderFirstViewport(viewModel, {
+            replacementGames,
+            showReplacementRequired
+          })}
         </section>
 
         <CompactHistory
@@ -89,18 +120,26 @@ async function renderRoulettePage() {
   ));
 }
 
-function renderFirstViewport(viewModel: RouletteRouteViewModel) {
+type RouletteExperienceOptions = {
+  replacementGames: ReplacementRequiredGameView[];
+  showReplacementRequired: boolean;
+};
+
+function renderFirstViewport(
+  viewModel: RouletteRouteViewModel,
+  options: RouletteExperienceOptions
+) {
   switch (viewModel.firstViewport.state) {
     case "blocked-pool":
       return renderBlockedPool(viewModel);
     case "pending-invitation":
-      return renderPendingInvitation(viewModel);
+      return renderPendingInvitation(viewModel, options);
     case "resumable-reveal":
-      return renderResumableReveal(viewModel);
+      return renderResumableReveal(viewModel, options);
     case "history-backed-empty":
       return renderHistoryBackedEmpty(viewModel);
     case "ready":
-      return renderReadyRoulette(viewModel);
+      return renderReadyRoulette(viewModel, options);
   }
 }
 
@@ -129,25 +168,54 @@ function renderBlockedPool(viewModel: RouletteRouteViewModel) {
   );
 }
 
-function renderReadyRoulette(viewModel: RouletteRouteViewModel) {
+function renderReadyRoulette(
+  viewModel: RouletteRouteViewModel,
+  options: RouletteExperienceOptions
+) {
   return (
-    <RouletteExperience viewModel={viewModel} />
+    <RouletteExperience
+      replacementGames={options.replacementGames}
+      showReplacementRequired={options.showReplacementRequired}
+      viewModel={viewModel}
+    />
   );
 }
 
-function renderResumableReveal(viewModel: RouletteRouteViewModel) {
+function renderResumableReveal(
+  viewModel: RouletteRouteViewModel,
+  options: RouletteExperienceOptions
+) {
   return (
-    <RouletteExperience viewModel={viewModel} />
+    <RouletteExperience
+      replacementGames={options.replacementGames}
+      showReplacementRequired={options.showReplacementRequired}
+      viewModel={viewModel}
+    />
   );
 }
 
-function renderPendingInvitation(viewModel: RouletteRouteViewModel) {
+function renderPendingInvitation(
+  viewModel: RouletteRouteViewModel,
+  options: RouletteExperienceOptions
+) {
   return (
-    <RouletteExperience viewModel={viewModel} />
+    <RouletteExperience
+      replacementGames={options.replacementGames}
+      showReplacementRequired={options.showReplacementRequired}
+      viewModel={viewModel}
+    />
   );
 }
 
-function RouletteExperience({ viewModel }: { viewModel: RouletteRouteViewModel }) {
+function RouletteExperience({
+  replacementGames = [],
+  showReplacementRequired = false,
+  viewModel
+}: {
+  replacementGames?: ReplacementRequiredGameView[];
+  showReplacementRequired?: boolean;
+  viewModel: RouletteRouteViewModel;
+}) {
   return (
     <div className="roulette-reveal-stack">
       {/* roulette-reel-band: full-bleed reel with fixed pointer; controls below; no tiny card */}
@@ -203,10 +271,19 @@ function RouletteExperience({ viewModel }: { viewModel: RouletteRouteViewModel }
         </noscript>
       </div>
       <ResultPanel
+        discardAction={submitDiscardRouletteResultForm}
+        lockAction={submitLockRouletteResultForm}
         replayAction={submitReplayRouletteRoundForm}
         result={viewModel.round?.result ?? null}
         roundId={viewModel.round?.id ?? null}
       />
+      {showReplacementRequired && viewModel.round ? (
+        <ReplacementRequired
+          games={replacementGames}
+          lockAction={submitLockRouletteResultForm}
+          roundId={viewModel.round.id}
+        />
+      ) : null}
     </div>
   );
 }
@@ -247,6 +324,43 @@ async function submitRouletteAudioPreferenceForm(formData: FormData): Promise<vo
   await updateRouletteAudioPreferenceAction(formData);
 }
 
+async function submitLockRouletteResultForm(formData: FormData): Promise<void> {
+  "use server";
+
+  const result = await lockRouletteResultAction(formData);
+
+  if (result.ok) {
+    redirect(result.redirectTo ?? "/app");
+  }
+
+  if (result.state === "replacement-required") {
+    const roundId = getRouteFormString(formData, "roundId");
+    redirect(`/app/roleta?estado=replacement-required&roundId=${encodeURIComponent(roundId)}`);
+  }
+
+  if (result.redirectTo) {
+    redirect(result.redirectTo);
+  }
+
+  redirect("/app/roleta");
+}
+
+async function submitDiscardRouletteResultForm(formData: FormData): Promise<void> {
+  "use server";
+
+  const result = await discardRouletteResultAction(formData);
+
+  if (result.ok) {
+    redirect(result.redirectTo ?? "/app/roleta?estado=roleta-descartada");
+  }
+
+  if (result.redirectTo) {
+    redirect(result.redirectTo);
+  }
+
+  redirect("/app/roleta");
+}
+
 function renderHistoryBackedEmpty(viewModel: RouletteRouteViewModel) {
   return (
     <div className="roulette-state-panel roulette-history-backed-state">
@@ -257,4 +371,32 @@ function renderHistoryBackedEmpty(viewModel: RouletteRouteViewModel) {
       </a>
     </div>
   );
+}
+
+function toReplacementRequiredGameView(input: {
+  libraryGameId: string;
+  name?: string;
+  position: number;
+  role: "principal" | "secondary";
+  roleLabel?: string;
+  catalogGame?: {
+    name: string;
+  };
+}): ReplacementRequiredGameView {
+  return {
+    libraryGameId: input.libraryGameId,
+    name: input.catalogGame?.name ?? input.name ?? "Jogo em andamento",
+    roleLabel: input.roleLabel ?? (
+      input.role === "principal" ? "Principal" : `Secundario ${input.position - 1}`
+    )
+  };
+}
+
+function getRouteSearchParam(value: string | string[] | undefined): string | null {
+  return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function getRouteFormString(formData: FormData, key: "roundId"): string {
+  const value = formData.get(key);
+  return typeof value === "string" ? value.trim() : "";
 }
