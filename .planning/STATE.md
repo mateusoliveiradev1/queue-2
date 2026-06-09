@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: planning
-stopped_at: Phase 06 context gathered
-last_updated: "2026-06-08T16:14:56.665Z"
+stopped_at: Phase 06 UI-SPEC approved
+last_updated: "2026-06-09T00:08:48.490Z"
 last_activity: 2026-06-07
 progress:
   total_phases: 12
@@ -315,6 +315,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-08T16:14:56.658Z
-Stopped at: Phase 06 context gathered
-Resume file: .planning/phases/06-roleta-e-economia/06-CONTEXT.md
+Last session: 2026-06-09T00:08:48.475Z
+Stopped at: Phase 06 UI-SPEC approved
+Resume file: .planning/phases/06-roleta-e-economia/06-UI-SPEC.md
