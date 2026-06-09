@@ -319,6 +319,7 @@ Recent decisions affecting current work:
 - [Phase 06-roleta-e-economia]: Final coverage matrices tie every ROUL requirement and D-01 through D-32 decision to evidence artifacts. — Requirement, decision, setup, performance and security coverage stay searchable after closeout.
 - [Phase 06-roleta-e-economia]: Discovery card entry motion no longer fades interactive text. — Entrance movement remains, while opacity stays stable so WCAG contrast does not fail during transient animation frames.
 - [Phase 06-roleta-e-economia]: Drizzle now has a no-op schema baseline snapshot after the reviewed SQL migrations. — `drizzle:generate` can prove no pending schema diff without replacing hand-authored RLS, policy and constraint migrations.
+- [Phase 06-roleta-e-economia]: Roulette application reads are sequential inside each `pg` transaction client. — This avoids the `client.query()` while already executing deprecation warning and keeps the code compatible with the upcoming `pg@9` behavior.
 
 ### Pending Todos
 

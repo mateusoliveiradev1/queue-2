@@ -36,16 +36,13 @@ export async function getRouletteStateFromTransaction(
     return { ok: false, reason: "membership-required" };
   }
 
-  const [poolRecords, activeRound, boostBalance, pityState, cooldowns, audioEnabled] =
-    await Promise.all([
-      transaction.readEligiblePool({ duoId: membership.duoId }),
-      transaction.readActiveRound({ duoId: membership.duoId }),
-      transaction.lockBoostBalance({ duoId: membership.duoId }),
-      transaction.lockPityState({ duoId: membership.duoId }),
-      transaction.readCooldowns({ duoId: membership.duoId }),
-      // D-18: roulette state reads the duo audio preference from server storage.
-      transaction.readAudioPreference({ duoId: membership.duoId })
-    ]);
+  const poolRecords = await transaction.readEligiblePool({ duoId: membership.duoId });
+  const activeRound = await transaction.readActiveRound({ duoId: membership.duoId });
+  const boostBalance = await transaction.lockBoostBalance({ duoId: membership.duoId });
+  const pityState = await transaction.lockPityState({ duoId: membership.duoId });
+  const cooldowns = await transaction.readCooldowns({ duoId: membership.duoId });
+  // D-18: roulette state reads the duo audio preference from server storage.
+  const audioEnabled = await transaction.readAudioPreference({ duoId: membership.duoId });
 
   const eligibleGames = filterEligibleGames(poolRecords);
   const baseState = {

@@ -104,10 +104,8 @@ export async function startRouletteRoundFromTransaction(
     }
   }
 
-  const [pityState, cooldowns] = await Promise.all([
-    transaction.lockPityState({ duoId: membership.duoId }),
-    transaction.readCooldowns({ duoId: membership.duoId })
-  ]);
+  const pityState = await transaction.lockPityState({ duoId: membership.duoId });
+  const cooldowns = await transaction.readCooldowns({ duoId: membership.duoId });
   const selection = selectRouletteResult({
     boostRequested,
     eligibleGames,

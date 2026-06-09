@@ -125,6 +125,38 @@ describe("roulette state, history and replay application use cases", () => {
     );
   });
 
+  it("reads roulette state sequentially inside one transaction client", async () => {
+    const guard = createTransactionQueryGuard();
+    const transaction = {
+      resolveMembership: vi.fn(() => guard.run(membershipContext())),
+      readEligiblePool: vi.fn(() =>
+        guard.run([
+          eligibleGame({ id: "library-a", rarity: "common", status: "wishlist" }),
+          eligibleGame({ id: "library-b", rarity: "rare", status: "pausado" }),
+          eligibleGame({ id: "library-c", rarity: "epic", status: "wishlist" })
+        ])
+      ),
+      readActiveRound: vi.fn(() => guard.run(null)),
+      lockBoostBalance: vi.fn(() => guard.run(boostBalance())),
+      lockPityState: vi.fn(() => guard.run(pityState())),
+      readCooldowns: vi.fn(() => guard.run([] satisfies RouletteCooldownRecord[])),
+      readAudioPreference: vi.fn(() => guard.run(true))
+    } as unknown as RouletteRepositoryTransaction;
+
+    await expect(
+      getRouletteStateUseCase(
+        { userId: "member-1" },
+        fakeRepositoryWithTransaction(transaction)
+      )
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: true,
+        state: expect.objectContaining({ state: "ready" })
+      })
+    );
+    expect(guard.maxConcurrent).toBe(1);
+  });
+
   it("reads compact history for the caller duo with a bounded default limit", async () => {
     const repository = fakeRouletteRepository({
       history: [
@@ -191,6 +223,83 @@ describe("roulette state, history and replay application use cases", () => {
 });
 
 describe("roulette idempotent start application use case", () => {
+  it("starts a roulette round sequentially inside one transaction client", async () => {
+    const guard = createTransactionQueryGuard();
+    const transaction = {
+      resolveMembership: vi.fn(() => guard.run(membershipContext())),
+      readActiveRound: vi.fn(() => guard.run(null)),
+      readRoundByIdempotencyKey: vi.fn(() => guard.run(null)),
+      readEligiblePool: vi.fn(() =>
+        guard.run([
+          eligibleGame({ id: "library-a", rarity: "common", status: "wishlist" }),
+          eligibleGame({ id: "library-b", rarity: "rare", status: "pausado" }),
+          eligibleGame({ id: "library-c", rarity: "epic", status: "wishlist" })
+        ])
+      ),
+      materializeBoostFromXp: vi.fn(() => guard.run(boostBalance())),
+      lockPityState: vi.fn(() => guard.run(pityState())),
+      readCooldowns: vi.fn(() => guard.run([] satisfies RouletteCooldownRecord[])),
+      persistRound: vi.fn((input: Parameters<RouletteRepositoryTransaction["persistRound"]>[0]) =>
+        guard.run(
+          roundRecord({
+            boostLedgerId: input.boostLedgerId,
+            boostSpent: input.boostSpent,
+            duoId: input.duoId,
+            id: "round-sequential",
+            idempotencyKey: input.idempotencyKey,
+            pityAfter: input.pityAfter,
+            pityBefore: input.pityBefore,
+            resultCatalogGameId: input.resultCatalogGameId,
+            resultLibraryGameId: input.resultLibraryGameId,
+            resultRarity: input.resultRarity,
+            selectedByUserId: input.selectedByUserId,
+            weekendMultiplierApplied: input.weekendMultiplierApplied
+          })
+        )
+      ),
+      persistRoundEntries: vi.fn((
+        input: Parameters<RouletteRepositoryTransaction["persistRoundEntries"]>[0]
+      ) =>
+        guard.run(
+          input.entries.map((entry, index) =>
+            roundEntry({
+              duoId: input.duoId,
+              id: `entry-sequential-${index + 1}`,
+              libraryGameId: entry.gameId,
+              rarity: entry.rarity,
+              roundId: input.roundId,
+              selectedSlot: entry.authoritativeResult,
+              slotIndex: entry.slotIndex,
+              titleSnapshot: entry.title
+            })
+          )
+        )
+      ),
+      updatePityState: vi.fn(() => guard.run(undefined)),
+      decrementCooldowns: vi.fn(() => guard.run(undefined)),
+      insertHistoryEvent: vi.fn(() => guard.run(undefined))
+    } as unknown as RouletteRepositoryTransaction;
+
+    await expect(
+      startRouletteRoundUseCase(
+        {
+          idempotencyKey: "sequential-start",
+          roll: 0.4,
+          seed: "sequential-start",
+          userId: "member-1"
+        },
+        fakeRepositoryWithTransaction(transaction)
+      )
+    ).resolves.toEqual(
+      expect.objectContaining({
+        ok: true,
+        resumedExistingRound: false,
+        round: expect.objectContaining({ id: "round-sequential" })
+      })
+    );
+    expect(guard.maxConcurrent).toBe(1);
+  });
+
   it("D-16 D-24 returns an existing active round before creating a draw or spending boost", async () => {
     const activeRound = roundRecord({ status: "revealing" });
     const activeEntries = [roundEntry({ roundId: activeRound.id, selectedSlot: true })];
@@ -675,6 +784,55 @@ describe("roulette invitation resolution application use cases", () => {
 type FakeRouletteRepository = {
   transaction: ReturnType<typeof fakeRouletteTransaction>;
 } & Pick<RouletteRepository, "withUserTransaction">;
+
+function fakeRepositoryWithTransaction(
+  transaction: RouletteRepositoryTransaction
+): Pick<RouletteRepository, "withUserTransaction"> {
+  return {
+    withUserTransaction: vi.fn(
+      async <T,>(
+        _userId: string,
+        callback: (transaction: RouletteRepositoryTransaction) => Promise<T>
+      ) => callback(transaction)
+    ) as RouletteRepository["withUserTransaction"]
+  };
+}
+
+function createTransactionQueryGuard() {
+  let active = 0;
+  let maxConcurrent = 0;
+
+  return {
+    get maxConcurrent() {
+      return maxConcurrent;
+    },
+    async run<T>(value: T): Promise<T> {
+      active += 1;
+      maxConcurrent = Math.max(maxConcurrent, active);
+
+      if (active > 1) {
+        active -= 1;
+        throw new Error("concurrent_transaction_query");
+      }
+
+      try {
+        await Promise.resolve();
+        return value;
+      } finally {
+        active -= 1;
+      }
+    }
+  };
+}
+
+function membershipContext(): RouletteMembershipContext {
+  return {
+    duoId: "duo-1",
+    memberUserIds: ["member-1", "member-2"],
+    partnerUserId: "member-2",
+    userId: "member-1"
+  };
+}
 
 function fakeRouletteRepository(
   overrides: Partial<{
