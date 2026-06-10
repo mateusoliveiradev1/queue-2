@@ -5,6 +5,7 @@
   --ink: oklch(0.96 0.015 95);
   --ink-muted: oklch(0.72 0.02 95);
   --primary: oklch(0.86 0.22 128);
+  --lime: var(--primary);
   --primary-ink: oklch(0.16 0.025 285);
   --accent: oklch(0.62 0.27 305);
   --danger: oklch(0.68 0.22 25);

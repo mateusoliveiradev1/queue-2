@@ -653,86 +653,171 @@ input {
   list-style: none;
 }
 
+.queue2-shell,
 .app-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100svh;
 }
 
-.app-sidebar {
-  align-content: space-between;
-  background: color-mix(in oklch, var(--surface) 82%, black);
-  border-right: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
-  display: grid;
-  gap: var(--space-7);
-  min-height: 100svh;
-  padding: var(--space-6);
+.app-topbar {
+  background: color-mix(in oklch, var(--bg) 88%, black);
+  border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   position: sticky;
   top: 0;
+  z-index: 42;
 }
 
-.app-nav {
-  display: grid;
-  gap: var(--space-2);
-  margin-top: var(--space-7);
-}
-
-.app-nav a {
+.app-topbar-inner {
   align-items: center;
+  display: grid;
+  gap: var(--space-5);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 82px;
+  padding: var(--space-4) clamp(16px, 4vw, 40px);
+}
+
+.app-shell-brand {
+  align-items: center;
+  color: inherit;
+  display: inline-flex;
+  min-height: 44px;
+  text-decoration: none;
+}
+
+.app-route-rail {
+  align-items: stretch;
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: var(--space-1) 0;
+  scroll-padding: var(--space-3);
+  scrollbar-color: color-mix(in oklch, var(--primary) 56%, transparent) transparent;
+  scrollbar-width: thin;
+}
+
+.app-route-link,
+.app-context-links a,
+.app-profile-link,
+.app-logout-button {
+  align-items: center;
+  background: transparent;
   border: 1px solid transparent;
   border-radius: var(--radius-sharp);
   color: var(--ink-muted);
-  display: flex;
-  gap: var(--space-3);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  gap: var(--space-2);
+  letter-spacing: 0;
   min-height: 44px;
-  padding: 0 var(--space-4);
   text-decoration: none;
-  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  text-transform: uppercase;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+  white-space: nowrap;
 }
 
-.app-nav-pointer,
-.app-nav-spacer {
-  flex: 0 0 24px;
+.app-route-link {
+  flex: 0 0 auto;
+  min-width: 104px;
+  padding: 0 var(--space-4);
+  position: relative;
 }
 
-.app-nav-spacer {
-  display: block;
-  height: 24px;
-  width: 24px;
-}
-
-.app-nav a:hover {
-  background: color-mix(in oklch, var(--primary) 7%, transparent);
-  border-color: color-mix(in oklch, var(--primary) 24%, transparent);
-  color: var(--ink);
-}
-
-.app-nav a[aria-current="page"] {
-  background: color-mix(in oklch, var(--primary) 12%, var(--surface));
-  border-color: color-mix(in oklch, var(--primary) 42%, transparent);
-  box-shadow: inset 3px 0 0 var(--primary);
-  color: var(--ink);
-}
-
-.app-sidebar .neutral-state {
-  align-items: center;
+.app-route-link::after {
   background: transparent;
-  border-color: color-mix(in oklch, var(--primary) 20%, transparent);
-  border-left: 0;
-  border-right: 0;
-  border-bottom: 0;
-  border-radius: 0;
-  font-size: 14px;
-  line-height: 1.35;
-  padding: var(--space-4) 0 0;
+  bottom: 3px;
+  content: "";
+  height: 1px;
+  left: var(--space-4);
+  position: absolute;
+  right: var(--space-4);
 }
 
-.app-sidebar .neutral-state .queue2-mark {
+.app-route-link__slash {
+  color: color-mix(in oklch, var(--ink-muted) 58%, transparent);
+}
+
+.app-route-link:hover,
+.app-context-links a:hover,
+.app-profile-link:hover,
+.app-logout-button:hover {
+  border-color: color-mix(in oklch, var(--primary) 26%, transparent);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
+.app-route-link[aria-current="page"] {
+  color: var(--ink);
+}
+
+.app-route-link[aria-current="page"]::after {
+  background: var(--primary);
+}
+
+.app-route-link[aria-current="page"] .app-route-link__slash {
+  color: var(--primary);
+}
+
+.app-shell-actions,
+.app-context-links {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.app-context-links {
+  border-right: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  padding-right: var(--space-3);
+}
+
+.app-context-links a,
+.app-profile-link,
+.app-logout-button {
+  padding: 0 var(--space-3);
+}
+
+.app-profile-link[aria-current="page"],
+.app-context-links a[aria-current="page"] {
+  border-color: color-mix(in oklch, var(--primary) 36%, transparent);
+  color: var(--ink);
+}
+
+.app-profile-link .queue2-mark {
   flex: 0 0 auto;
 }
 
-.app-bottom-nav {
-  display: none;
+.app-logout-button {
+  cursor: pointer;
+}
+
+.app-topbar-status {
+  align-items: center;
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 12%, transparent);
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: var(--space-2) clamp(16px, 4vw, 40px);
+}
+
+.app-topbar-status p {
+  align-items: center;
+  color: var(--ink-muted);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 900;
+  gap: var(--space-2);
+  letter-spacing: 0;
+  margin: 0;
+  text-transform: uppercase;
 }
 
 .roulette-route {
@@ -832,6 +917,21 @@ input {
   min-height: 248px;
   overflow: hidden;
   position: relative;
+}
+
+.roulette-route .roulette-reel-viewport::after {
+  --roulette-scanline-color: color-mix(in oklch, var(--lime) 12%, transparent);
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0 9px,
+    var(--roulette-scanline-color) 9px 10px
+  );
+  content: "";
+  inset: 0;
+  opacity: 0.42;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
 }
 
 .roulette-pointer-anchor {
@@ -1358,11 +1458,17 @@ input {
   margin-bottom: 0;
 }
 
-.surface-band {
+.surface-band,
+.dry-panel {
   background: color-mix(in oklch, var(--surface) 82%, black);
   border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
   border-radius: var(--radius-sharp);
   padding: clamp(20px, 4vw, 32px);
+}
+
+.dry-panel {
+  box-shadow: inset 0 1px 0 color-mix(in oklch, var(--ink) 6%, transparent);
+  position: relative;
 }
 
 .metric-grid,
@@ -1495,6 +1601,10 @@ input {
   color: var(--ink);
   font-family: var(--font-mono);
   text-transform: uppercase;
+}
+
+.empty-state.dry-panel {
+  border-style: dashed;
 }
 
 .playing-now {
@@ -5266,83 +5376,49 @@ input {
     grid-template-columns: 1fr;
   }
 
-  .app-sidebar {
-    align-items: center;
-    border-bottom: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
-    border-right: 0;
-    display: flex;
-    justify-content: space-between;
+  .app-topbar-inner {
+    align-items: stretch;
+    gap: var(--space-3);
+    grid-template-columns: 1fr;
     min-height: auto;
-    padding: var(--space-4) var(--space-5);
-    position: static;
+    padding: var(--space-3) var(--space-4);
   }
 
-  .app-sidebar .app-nav,
-  .app-sidebar .neutral-state {
-    display: none;
+  .app-shell-brand {
+    justify-self: start;
+  }
+
+  .app-route-rail {
+    margin-inline: calc(-1 * var(--space-4));
+    padding-inline: var(--space-4);
+  }
+
+  .app-route-link {
+    min-height: 52px;
+    min-width: 72px;
+    padding: 0 var(--space-3);
+  }
+
+  .app-shell-actions {
+    align-items: stretch;
+    justify-content: space-between;
+    overflow-x: auto;
+    padding-bottom: var(--space-1);
+  }
+
+  .app-context-links {
+    border-right: 0;
+    padding-right: 0;
+  }
+
+  .app-topbar-status {
+    grid-template-columns: 1fr;
+    padding: var(--space-2) var(--space-4);
   }
 
   .app-main {
     gap: var(--space-5);
-    padding: var(--space-5) var(--space-4) calc(152px + env(safe-area-inset-bottom));
-  }
-
-  .app-bottom-nav {
-    background:
-      linear-gradient(180deg, color-mix(in oklch, var(--surface) 90%, transparent), color-mix(in oklch, var(--bg) 96%, black)),
-      var(--surface);
-    border-top: 1px solid color-mix(in oklch, var(--primary) 26%, transparent);
-    bottom: 0;
-    display: flex;
-    gap: var(--space-1);
-    left: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: var(--space-2) var(--space-2);
-    padding-bottom: env(safe-area-inset-bottom);
-    padding-bottom: calc(var(--space-2) + env(safe-area-inset-bottom));
-    position: fixed;
-    right: 0;
-    scroll-padding: var(--space-2);
-    scrollbar-width: thin;
-    scrollbar-color: color-mix(in oklch, var(--primary) 56%, transparent) transparent;
-    z-index: 40;
-  }
-
-  .app-bottom-nav a {
-    align-items: center;
-    border: 1px solid transparent;
-    border-radius: var(--radius-sharp);
-    color: var(--ink-muted);
-    display: grid;
-    flex: 0 0 72px;
-    font-family: var(--font-mono);
-    font-size: 12px;
-    font-weight: 600;
-    gap: var(--space-1);
-    justify-items: center;
-    line-height: 1.1;
-    min-height: 52px;
-    min-width: 72px;
-    overflow-wrap: anywhere;
-    padding: var(--space-1);
-    text-align: center;
-    text-decoration: none;
-    text-transform: uppercase;
-    white-space: normal;
-  }
-
-  .app-bottom-nav a[aria-current="page"] {
-    background: color-mix(in oklch, var(--primary) 12%, transparent);
-    border-color: color-mix(in oklch, var(--primary) 48%, transparent);
-    color: var(--ink);
-  }
-
-  .app-bottom-nav-dot {
-    background: color-mix(in oklch, var(--ink-muted) 48%, transparent);
-    display: block;
-    height: 4px;
-    width: 18px;
+    padding: var(--space-5) var(--space-4) calc(32px + env(safe-area-inset-bottom));
   }
 
   .discovery-stage {
@@ -5385,7 +5461,7 @@ input {
     max-height: min(42svh, 360px);
   }
 
-  .app-nav,
+  .app-route-rail,
   .metric-grid,
   .ritual-grid,
   .settings-grid,
