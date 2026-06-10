@@ -87,28 +87,31 @@ describe("Phase 6 roulette route shell", () => {
     expect(source).toContain("defaultEnabledFromDuoPreference");
   });
 
-  it("exposes Roleta in authenticated navigation between Biblioteca and Conquistas", () => {
+  it("exposes Roleta in the seven-route authenticated top navigation and keeps Catalogo/Conquistas contextual", () => {
     const appShellSource = readRequiredSource("src/components/app-shell.tsx");
 
     expect(appShellSource).toContain('| "roleta"');
+    expect(appShellSource).toContain('| "hall"');
     expect(appShellSource).toContain('href: "/app/roleta"');
-    expect(appShellSource).toMatch(/Fila[\s\S]*Catalogo[\s\S]*Descobrir[\s\S]*Biblioteca[\s\S]*Roleta[\s\S]*Conquistas[\s\S]*Desafios[\s\S]*Dupla[\s\S]*Perfil/);
+    expect(appShellSource).toMatch(/Home[\s\S]*Biblioteca[\s\S]*Descobrir[\s\S]*Roleta[\s\S]*Desafios[\s\S]*Hall[\s\S]*Dupla/);
+    expect(appShellSource).toContain("Perfil");
+    expect(appShellSource).toContain("Sair");
+    expect(appShellSource).toContain("Catalogo");
+    expect(appShellSource).toContain("Conquistas");
   });
 
-  it("keeps nine mobile nav labels readable with stable scrollable targets", () => {
+  it("keeps the mobile route rail readable with stable scrollable targets", () => {
     const appShellSource = readRequiredSource("src/components/app-shell.tsx");
     const cssSource = readRequiredSource("src/app/globals.css");
 
     for (const label of [
-      "Fila",
-      "Catalogo",
-      "Descobrir",
+      "Home",
       "Biblioteca",
+      "Descobrir",
       "Roleta",
-      "Conquistas",
       "Desafios",
-      "Dupla",
-      "Perfil"
+      "Hall",
+      "Dupla"
     ]) {
       expect(appShellSource).toContain(`label: "${label}"`);
     }
@@ -116,7 +119,6 @@ describe("Phase 6 roulette route shell", () => {
     expect(cssSource).toContain("overflow-x: auto");
     expect(cssSource).toContain("min-width: 72px");
     expect(cssSource).toContain("min-height: 52px");
-    expect(cssSource).toContain("safe-area-inset-bottom");
     expect(cssSource).toContain("scroll-padding");
     expect(cssSource).toContain("scrollbar-width");
   });
@@ -241,6 +243,18 @@ describe("Phase 6 roulette route shell", () => {
     expect(cssSource).toContain("roulette-controls");
     expect(cssSource).toContain("min-height: 44px");
     expect(cssSource).not.toMatch(/\.roulette-[\s\S]{0,160}letter-spacing:\s*-/);
+  });
+
+  it("keeps scanline treatment scoped to roulette selectors only", () => {
+    const cssSource = readRequiredSource("src/app/globals.css");
+    const scanlineRules = cssRules(cssSource).filter((rule) => /scanline/i.test(rule));
+
+    expect(scanlineRules.length).toBeGreaterThan(0);
+    for (const rule of scanlineRules) {
+      const selector = rule.slice(0, rule.indexOf("{"));
+
+      expect(selector).toMatch(/roulette/i);
+    }
   });
 
   it("implements opt-in roulette audio with no autoplay and persisted default preference", () => {
@@ -426,4 +440,8 @@ function readRequiredSource(path: string): string {
   }
 
   return readFileSync(path, "utf8");
+}
+
+function cssRules(source: string): string[] {
+  return source.match(/[^{}]+{[^{}]*}/g) ?? [];
 }

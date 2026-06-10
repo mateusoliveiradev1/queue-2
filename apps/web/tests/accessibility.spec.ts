@@ -183,13 +183,13 @@ test.describe("Authenticated accessibility", () => {
 
   for (const route of [
     "/app",
-    "/app/perfil",
-    "/app/dupla",
-    "/app/catalogo",
-    "/app/descobrir",
     "/app/biblioteca",
-    "/app/conquistas",
-    "/app/desafios"
+    "/app/descobrir",
+    "/app/roleta",
+    "/app/desafios",
+    "/app/hall",
+    "/app/dupla",
+    "/app/perfil"
   ]) {
     test(`${route} has no WCAG A/AA axe violations`, async ({ page }) => {
       await login(page, readyActor);
@@ -582,15 +582,13 @@ test.describe("Phase 6 roulette accessibility", () => {
     const mobileNav = page.getByRole("navigation", { name: /navegacao principal mobile/i });
     await expect(mobileNav).toBeVisible();
     for (const item of [
-      "Fila",
-      "Catalogo",
-      "Descobrir",
+      "Home",
       "Biblioteca",
+      "Descobrir",
       "Roleta",
-      "Conquistas",
       "Desafios",
-      "Dupla",
-      "Perfil"
+      "Hall",
+      "Dupla"
     ]) {
       await expectMinimumTarget(
         mobileNav.getByRole("link", { name: new RegExp(item, "i") }),

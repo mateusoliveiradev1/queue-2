@@ -388,7 +388,7 @@ describe("Phase 3 Discovery route shell", () => {
       screen.getByRole("navigation", { name: /area autenticada queue dois/i })
     );
     const mobileNav = within(
-      screen.getByRole("navigation", { name: /navegacao principal mobile/i })
+      screen.getByRole("navigation", { name: /navegacao principal mobile|area autenticada queue dois/i })
     );
     expect(desktopNav.getByRole("link", { name: /descobrir/i })).toHaveAttribute(
       "aria-current",
@@ -673,9 +673,9 @@ describe("Phase 3 Discovery route shell", () => {
     expect(globalCssSource).toContain(".discovery-stage");
     expect(globalCssSource).toContain(".discovery-card-stage");
     expect(globalCssSource).toContain(".discovery-orbit-controls");
-    expect(globalCssSource).toContain(".app-sidebar .neutral-state");
-    expect(globalCssSource).toContain("border-bottom: 0");
-    expect(globalCssSource).toContain(".app-bottom-nav");
+    expect(globalCssSource).toContain(".app-topbar");
+    expect(globalCssSource).toContain(".app-route-rail");
+    expect(globalCssSource).toContain("border-bottom: 1px solid");
     expect(globalCssSource).not.toMatch(
       /\.discovery-mode-actions\s*{[\s\S]*?grid-template-columns:\s*repeat\(4/
     );

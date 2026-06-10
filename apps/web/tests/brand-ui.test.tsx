@@ -216,6 +216,7 @@ import { PairingAutoRefresh } from "../src/components/pairing-auto-refresh";
 import { StatusToast } from "../src/components/status-toast";
 
 const iconSource = readFileSync("src/app/icon.svg", "utf8");
+const queueLoadingSource = readFileSync("../../packages/ui/src/brand/loading.tsx", "utf8");
 
 afterEach(() => {
   cleanup();
@@ -260,22 +261,31 @@ beforeEach(() => {
 });
 
 describe("public QUEUE/2 route surfaces", () => {
-  it("renders the interim home with brand, product promise and entry actions", async () => {
+  it("renders the Phase 7 landing with monumental brand, official tagline and direct ritual actions", async () => {
     render(await HomePage());
 
     expect(authSessionMock.redirectAuthenticatedUserToApp).toHaveBeenCalledOnce();
     expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
-    expect(screen.getByText(/backlog compartilhado/i)).toBeInTheDocument();
+    expect(screen.getByText(/a fila e nossa/i)).toBeInTheDocument();
+    expect(screen.getByText(/descubram, sorteiem e zerem coops juntos/i)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /^entrar$/i })).toHaveAttribute("href", "/login");
     expect(screen.getByRole("link", { name: /criar conta/i })).toHaveAttribute("href", "/cadastro");
     expect(screen.getByRole("link", { name: /parear agora/i })).toHaveAttribute("href", "/parear");
-    expect(screen.getByText(/fila com dono/i)).toBeInTheDocument();
+    expect(screen.getByText(/descobrir/i)).toBeInTheDocument();
+    expect(screen.getByText(/sortear/i)).toBeInTheDocument();
+    expect(screen.getByText(/zerar/i)).toBeInTheDocument();
   });
 
   it("renders login with accessible email and password fields", async () => {
     render(await LoginPage());
 
     expect(screen.getByRole("heading", { name: /voltar para a fila/i })).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: /entrar/i }).some((link) => link.getAttribute("href") === "/login")
+    ).toBe(true);
+    expect(
+      screen.getAllByRole("link", { name: /criar conta/i }).some((link) => link.getAttribute("href") === "/cadastro")
+    ).toBe(true);
     expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^senha$/i)).toBeInTheDocument();
   });
@@ -307,6 +317,8 @@ describe("public QUEUE/2 route surfaces", () => {
     render(<Loading />);
 
     expect(screen.getByRole("status", { name: /carregando a fila/i })).toBeInTheDocument();
+    expect(queueLoadingSource).toContain("QueueLoading");
+    expect(queueLoadingSource).toContain("prefers-reduced-motion");
     expect(existsSync("src/app/app/descobrir/loading.tsx")).toBe(false);
     expect(iconSource).toContain("<svg");
     expect(iconSource).toContain("#c9f72b");
@@ -397,7 +409,7 @@ describe("public QUEUE/2 route surfaces", () => {
 });
 
 describe("authenticated Phase 1 surfaces", () => {
-  it("renders the Phase 2 dashboard with catalog and library entry points", async () => {
+  it("renders the Phase 7 authenticated top navigation and contextual catalog/conquistas entry points", async () => {
     duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     render(await DashboardPage());
     const navigation = within(
@@ -405,11 +417,13 @@ describe("authenticated Phase 1 surfaces", () => {
     );
 
     expect(screen.getByRole("heading", { name: /jogando agora/i })).toBeInTheDocument();
-    expect(navigation.getByRole("link", { name: /catalogo/i })).toHaveAttribute("href", "/app/catalogo");
+    for (const item of ["Home", "Biblioteca", "Descobrir", "Roleta", "Desafios", "Hall", "Dupla"]) {
+      expect(navigation.getByRole("link", { name: new RegExp(item, "i") })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("link", { name: /perfil/i })).toHaveAttribute("href", "/app/perfil");
     expect(navigation.getByRole("link", { name: /biblioteca/i })).toHaveAttribute("href", "/app/biblioteca");
-    expect(screen.getByText("descobrir")).toBeInTheDocument();
-    expect(screen.getByText("decidir")).toBeInTheDocument();
-    expect(screen.getByText("zerar")).toBeInTheDocument();
+    expect(screen.getAllByText(/Catalogo/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/Conquistas/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /nenhum principal definido/i })).toBeInTheDocument();
   });
 
