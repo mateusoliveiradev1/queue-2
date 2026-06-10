@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-04-PLAN.md
-last_updated: "2026-06-10T04:06:12.722Z"
+stopped_at: Completed 07-05-PLAN.md
+last_updated: "2026-06-10T04:16:16.434Z"
 last_activity: 2026-06-10
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 66
-  completed_plans: 63
-  percent: 95
+  completed_plans: 64
+  percent: 97
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 07 (paridade-visual-e-ux-com-prototipo) — EXECUTING
-Plan: 6 of 8
+Plan: 7 of 8
 Status: Ready to execute
 Last activity: 2026-06-10
 
-Progress: [██████████] 95%
+Progress: [██████████] 97%
 
 ## Performance Metrics
 
@@ -117,6 +117,7 @@ Progress: [██████████] 95%
 | Phase 07 P02 | 15 min | 3 tasks | 19 files |
 | Phase 07 P03 | 8 min | 3 tasks | 7 files |
 | Phase 07 P04 | 10 min | 2 tasks | 6 files |
+| Phase 07 P05 | 8 min | 3 tasks | 4 files |
 
 ## Quick Tasks Completed
 
@@ -336,6 +337,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Biblioteca moves the existing filter bar near the top after a ritual hero. — The route gets Phase 7 first-fold rhythm while preserving search, tabs, filters and mutations.
 - [Phase 07]: Zerado appears only as a Biblioteca status marker during visual parity. — No terminal archive action or Phase 4/8 behavior was added by this visual plan.
 - [Phase 07]: Descobrir decision actions keep the same decision values while changing visual order. — Pular, Agora nao and Quero jogar are presentation order only; server-mediated decision authority remains unchanged.
+- [Phase 07]: [Phase 07-05]: Roleta keeps a route-owned boost/pity status strip instead of changing roulette view-model or server contracts. — The strip composes existing server-derived facts and keeps Phase 6 authority, economy, lock/discard and replacement behavior untouched.
+- [Phase 07]: [Phase 07-05]: Phase 6 mobile roulette E2E now follows the Phase 7 seven-route primary rail. — The selector change prevents old shell assumptions from failing while keeping persisted result, partner replay, lock, discard, replacement, reduced-motion and other-duo isolation assertions intact.
 
 ### Pending Todos
 
@@ -374,6 +377,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-10T04:06:01.770Z
-Stopped at: Completed 07-04-PLAN.md
+Last session: 2026-06-10T04:15:30.741Z
+Stopped at: Completed 07-05-PLAN.md
 Resume file: None
