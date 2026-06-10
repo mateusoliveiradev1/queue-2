@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-05-PLAN.md
-last_updated: "2026-06-10T04:16:16.434Z"
+stopped_at: Completed 07-06-PLAN.md
+last_updated: "2026-06-10T04:26:49.202Z"
 last_activity: 2026-06-10
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 66
-  completed_plans: 64
-  percent: 97
+  completed_plans: 65
+  percent: 98
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 07 (paridade-visual-e-ux-com-prototipo) — EXECUTING
-Plan: 7 of 8
+Plan: 8 of 8
 Status: Ready to execute
 Last activity: 2026-06-10
 
-Progress: [██████████] 97%
+Progress: [██████████] 98%
 
 ## Performance Metrics
 
@@ -118,6 +118,7 @@ Progress: [██████████] 97%
 | Phase 07 P03 | 8 min | 3 tasks | 7 files |
 | Phase 07 P04 | 10 min | 2 tasks | 6 files |
 | Phase 07 P05 | 8 min | 3 tasks | 4 files |
+| Phase 07 P06 | 10 min | 3 tasks | 7 files |
 
 ## Quick Tasks Completed
 
@@ -339,6 +340,8 @@ Recent decisions affecting current work:
 - [Phase 07]: Descobrir decision actions keep the same decision values while changing visual order. — Pular, Agora nao and Quero jogar are presentation order only; server-mediated decision authority remains unchanged.
 - [Phase 07]: [Phase 07-05]: Roleta keeps a route-owned boost/pity status strip instead of changing roulette view-model or server contracts. — The strip composes existing server-derived facts and keeps Phase 6 authority, economy, lock/discard and replacement behavior untouched.
 - [Phase 07]: [Phase 07-05]: Phase 6 mobile roulette E2E now follows the Phase 7 seven-route primary rail. — The selector change prevents old shell assumptions from failing while keeping persisted result, partner replay, lock, discard, replacement, reduced-motion and other-duo isolation assertions intact.
+- [Phase 07]: 07-06 keeps the ready Dupla route honest by showing the closed /2 contract instead of a fake duo code. — Pairing code creation and copy remain in /parear, where an active invitation can actually exist.
+- [Phase 07]: Utility routes now share utility-hero and utility-stat-strip for Phase 7 authenticated surfaces. — Desafios, Dupla and Perfil get consistent hierarchy while preserving route-specific server behavior.
 
 ### Pending Todos
 
@@ -377,6 +380,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-10T04:15:30.741Z
-Stopped at: Completed 07-05-PLAN.md
+Last session: 2026-06-10T04:26:49.196Z
+Stopped at: Completed 07-06-PLAN.md
 Resume file: None
