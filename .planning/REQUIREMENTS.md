@@ -215,7 +215,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Landing, Metadata And PWA
 
-- [ ] **META-01**: Visitor sees a short scrollytelling landing with monumental `/2` hero, mini-roulette, three-step ritual, dashboard preview, Hall teaser and CTA
+- [x] **META-01**: Visitor sees a short scrollytelling landing with monumental `/2` hero, mini-roulette, three-step ritual, dashboard preview, Hall teaser and CTA
 - [x] **META-02**: Visitor can reach custom QUEUE/2 login, signup and pairing pages
 - [ ] **META-03**: Public pages use the default description `A fila e nossa. Descubram, sorteiem e zerem coops juntos.`
 - [ ] **META-04**: Page titles follow the `[Page] - QUEUE/2` pattern
@@ -414,7 +414,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SAFE-07 | Phase 1 | Complete |
 | SAFE-08 | Phase 1 | Complete |
 | SAFE-09 | Phase 1 | Complete |
-| META-01 | Phase 7 | Pending |
+| META-01 | Phase 7 | Complete |
 | META-02 | Phase 1 | Complete |
 | META-03 | Phase 8 | Pending |
 | META-04 | Phase 8 | Pending |
