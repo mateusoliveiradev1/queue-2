@@ -25,8 +25,7 @@ const publicRoutes: RouteTarget[] = [
   { name: "public-auth-login", path: "/login" },
   { name: "public-auth-cadastro", path: "/cadastro" },
   { name: "public-auth-recuperar-senha", path: "/recuperar-senha" },
-  { name: "public-auth-verificar-email", path: "/verificar-email" },
-  { name: "public-auth-parear", path: "/parear" }
+  { name: "public-auth-verificar-email", path: "/verificar-email" }
 ];
 
 const authenticatedRoutes: RouteTarget[] = [
@@ -94,12 +93,20 @@ test.describe("Phase 7 public visual scaffold", () => {
   test("public auth tabs keep Entrar, Criar conta and Parear reachable in the compact public auth system", async ({
     page
   }) => {
-    for (const route of ["/login", "/cadastro", "/parear"]) {
+    for (const route of ["/login", "/cadastro"]) {
       await page.goto(route);
       await expect(page.getByRole("link", { name: /entrar/i }).first()).toBeVisible();
       await expect(page.getByRole("link", { name: /criar conta/i }).first()).toBeVisible();
       await expect(page.locator("body")).toContainText(/parear|codigo|dupla/i);
     }
+  });
+
+  test("pairing route keeps unauthenticated users on the login flow", async ({ page }) => {
+    await page.goto("/parear");
+
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.getByRole("link", { name: /entrar/i }).first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/codigo|dupla/i);
   });
 });
 
