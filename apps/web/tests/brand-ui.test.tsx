@@ -209,6 +209,7 @@ import RecoverPasswordPage from "../src/app/(public)/recuperar-senha/page";
 import VerifyEmailPage from "../src/app/(public)/verificar-email/page";
 import DashboardPage from "../src/app/app/page";
 import DuoPage from "../src/app/app/dupla/page";
+import HallPage from "../src/app/app/hall/page";
 import ProfilePage from "../src/app/app/perfil/page";
 import HomePage from "../src/app/page";
 import Loading from "../src/app/loading";
@@ -448,6 +449,17 @@ describe("authenticated Phase 1 surfaces", () => {
     expect(screen.getAllByText(/fuso da dupla/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /preferencias da dupla/i })).toBeInTheDocument();
     expectEveryVisibleFormControlHasName(container);
+  });
+
+  it("renders the prepared Hall route as an empty shared shelf", async () => {
+    duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
+    render(await HallPage());
+
+    expect(screen.getByRole("heading", { name: /hall da moral/i })).toBeInTheDocument();
+    expect(screen.getByText(/por enquanto/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /estante vazia/i })).toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: /navegacao principal/i })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /hall/i })).toHaveAttribute("aria-current", "page");
   });
 });
 
