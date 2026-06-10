@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-02-PLAN.md
-last_updated: "2026-06-10T03:49:52.310Z"
+stopped_at: Completed 07-03-PLAN.md
+last_updated: "2026-06-10T03:59:06.897Z"
 last_activity: 2026-06-10
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 66
-  completed_plans: 61
-  percent: 92
+  completed_plans: 62
+  percent: 94
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 07 (paridade-visual-e-ux-com-prototipo) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 Status: Ready to execute
 Last activity: 2026-06-10
 
-Progress: [█████████░] 92%
+Progress: [█████████░] 94%
 
 ## Performance Metrics
 
@@ -115,6 +115,7 @@ Progress: [█████████░] 92%
 | Phase 07 P00 | 13 min | 3 tasks | 27 files |
 | Phase 07 P01 | 22 min | 3 tasks | 7 files |
 | Phase 07 P02 | 15 min | 3 tasks | 19 files |
+| Phase 07 P03 | 8 min | 3 tasks | 7 files |
 
 ## Quick Tasks Completed
 
@@ -328,6 +329,9 @@ Recent decisions affecting current work:
 - [Phase 07]: Public landing is product-first: QUEUE/2, A fila e nossa., short lede and two direct CTAs. — Keeps the first impression aligned with Phase 7 prototype direction instead of a generic SaaS feature tour.
 - [Phase 07]: /parear keeps the verified-session guard; anonymous visual tests assert redirect to /login. — Avoids weakening auth or capturing Next redirect metadata as if it were the protected pairing UI.
 - [Phase 07]: /login and /cadastro remain separate routes but share visual auth tabs. — Preserves existing route and auth behavior while making cross-navigation obvious in the compact public auth system.
+- [Phase 07]: Catalogo and Conquistas are repeated as low Home tiles, not promoted into primary nav. — Delivered capabilities stay discoverable without expanding the seven-route primary rail.
+- [Phase 07]: Home keeps Jogando Agora as the route H1 while the large anchor reflects current or empty queue state. — Preserves route continuity and existing tests while making the first fold reflect server-derived play facts.
+- [Phase 07]: Hall remains a prepared empty shelf only. — No Phase 8 review, replay, timeline, schema or data-backed Hall behavior was introduced during visual parity.
 
 ### Pending Todos
 
@@ -366,6 +370,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-10T03:49:11.804Z
-Stopped at: Completed 07-02-PLAN.md
+Last session: 2026-06-10T03:58:55.368Z
+Stopped at: Completed 07-03-PLAN.md
 Resume file: None
