@@ -301,7 +301,7 @@ describe("public QUEUE/2 route surfaces", () => {
 
     const homeLinks = screen.getAllByRole("link", { name: /ir para a home queue dois/i });
 
-    expect(homeLinks.length).toBeGreaterThanOrEqual(2);
+    expect(homeLinks.length).toBeGreaterThanOrEqual(1);
     for (const link of homeLinks) {
       expect(link).toHaveAttribute("href", "/");
     }

@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import { RouletteDivider } from "@queue/ui";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
-import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
@@ -24,77 +22,72 @@ export default async function LoginPage({ searchParams }: LoginPageProps = {}) {
   const statusMessage = getAuthStatusMessage("login", state);
 
   return (
-    <main className="public-shell">
-      <section className="public-grid" aria-labelledby="login-title">
-        <div className="public-intro queue2-grain">
-          <PublicBrandLink variant="stacked" />
-          <div>
-            <p className="eyebrow">Acesso da dupla</p>
-            <h1 className="page-title" id="login-title">
-              Voltar para a fila
-            </h1>
-            <p className="lede">
-              Entre para continuar a dupla que voce ja formou. Wishlist, Jogando
-              e Pausado ficam do lado dos dois, sem placar solo.
-            </p>
-          </div>
-          <PublicRitualStrip steps={["entrar", "parear", "jogar"]} />
-          <RouletteDivider />
+    <main className="public-shell public-shell--compact">
+      <form
+        action={loginAction}
+        aria-describedby="login-copy"
+        aria-labelledby="login-title"
+        className="auth-panel public-auth-card"
+      >
+        <PublicBrandLink display="mark" />
+        <nav className="auth-tabs" aria-label="Acesso publico">
+          <a aria-current="page" className="queue2-focusable" href="/login">
+            Entrar
+          </a>
+          <a className="queue2-focusable" href="/cadastro">
+            Criar conta
+          </a>
+        </nav>
+        <StatusToast message={statusMessage} state={state} />
+        <div className="auth-panel-header" id="login-copy">
+          <p className="eyebrow">Acesso da dupla</p>
+          <h1 className="page-title" id="login-title">
+            Voltar para a fila
+          </h1>
+          <p>Use o email verificado que abriu seu lado da fila.</p>
         </div>
-
-        <form action={loginAction} className="auth-panel" aria-describedby="login-copy">
-          <PublicBrandLink display="mark" />
-          <StatusToast message={statusMessage} state={state} />
-          <div className="auth-panel-header" id="login-copy">
-            <h2>Entrar</h2>
-            <p>Use o email verificado que abriu seu lado da fila.</p>
-          </div>
-          {statusMessage ? (
-            <p className="neutral-state" role="status">
-              {statusMessage}
-            </p>
-          ) : null}
-          <div className="form-stack">
-            <div className="field">
-              <label htmlFor="login-email">Email</label>
-              <input
-                autoComplete="email"
-                className="queue2-input"
-                id="login-email"
-                name="email"
-                required
-                type="email"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="login-password">Senha</label>
-              <input
-                autoComplete="current-password"
-                className="queue2-input"
-                id="login-password"
-                name="password"
-                required
-                type="password"
-              />
-            </div>
-          </div>
-          <div className="form-actions">
-            <PendingSubmitButton label="Entrar" pendingLabel="Entrando..." />
-            <a className="text-link queue2-focusable" href="/recuperar-senha">
-              Esqueci minha senha
-            </a>
-            <a className="text-link queue2-focusable" href="/verificar-email">
-              Reenviar verificacao
-            </a>
-          </div>
-          <p className="support-copy">
-            Ainda nao tem conta?{" "}
-            <a className="text-link queue2-focusable" href="/cadastro">
-              Criar conta
-            </a>
+        {statusMessage ? (
+          <p className="neutral-state" role="status">
+            {statusMessage}
           </p>
-        </form>
-      </section>
+        ) : null}
+        <div className="form-stack">
+          <div className="field">
+            <label htmlFor="login-email">Email</label>
+            <input
+              autoComplete="email"
+              className="queue2-input"
+              id="login-email"
+              name="email"
+              required
+              type="email"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="login-password">Senha</label>
+            <input
+              autoComplete="current-password"
+              className="queue2-input"
+              id="login-password"
+              name="password"
+              required
+              type="password"
+            />
+          </div>
+        </div>
+        <div className="form-actions">
+          <PendingSubmitButton label="Entrar" pendingLabel="Entrando..." />
+          <a className="text-link queue2-focusable" href="/recuperar-senha">
+            Esqueci minha senha
+          </a>
+          <a className="text-link queue2-focusable" href="/verificar-email">
+            Reenviar verificacao
+          </a>
+        </div>
+        <p className="support-copy">
+          Depois de entrar, pareie a dupla por codigo para fechar o 2/2.
+        </p>
+      </form>
     </main>
   );
 }

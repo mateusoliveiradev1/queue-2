@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
-import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { SignupFields } from "../../../components/signup-fields";
 import { StatusToast } from "../../../components/status-toast";
@@ -24,44 +23,45 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
   const statusMessage = getAuthStatusMessage("signup", state);
 
   return (
-    <main className="public-shell">
-      <section className="public-grid" aria-labelledby="signup-title">
-        <div className="public-intro queue2-grain">
-          <PublicBrandLink />
-          <div>
-            <p className="eyebrow">Comece pelo seu lado</p>
-            <h1 className="page-title" id="signup-title">
-              Abrir seu lado da fila
-            </h1>
-            <p className="lede">
-              A conta identifica voce. A fila so nasce quando a outra pessoa
-              entra pelo convite e fecha o 2/2.
-            </p>
-          </div>
-          <PublicRitualStrip steps={["conta", "email", "dupla"]} />
+    <main className="public-shell public-shell--compact">
+      <form
+        action={signupAction}
+        aria-labelledby="signup-title"
+        className="auth-panel public-auth-card"
+      >
+        <PublicBrandLink display="mark" />
+        <nav className="auth-tabs" aria-label="Acesso publico">
+          <a className="queue2-focusable" href="/login">
+            Entrar
+          </a>
+          <a aria-current="page" className="queue2-focusable" href="/cadastro">
+            Criar conta
+          </a>
+        </nav>
+        <StatusToast message={statusMessage} state={state} />
+        <div className="auth-panel-header">
+          <p className="eyebrow">Comece pelo seu lado</p>
+          <h1 className="page-title" id="signup-title">
+            Abrir seu lado da fila
+          </h1>
+          <p>Use um email real. A verificacao protege o convite da dupla.</p>
         </div>
-
-        <form action={signupAction} className="auth-panel">
-          <PublicBrandLink display="mark" />
-          <StatusToast message={statusMessage} state={state} />
-          <div className="auth-panel-header">
-            <h2>Cadastro</h2>
-            <p>Use um email real. A verificacao protege o convite da dupla.</p>
-          </div>
-          {statusMessage ? (
-            <p className="neutral-state" role="status">
-              {statusMessage}
-            </p>
-          ) : null}
-          <SignupFields />
-          <div className="form-actions">
-            <PendingSubmitButton label="Criar conta" pendingLabel="Criando..." />
-            <a className="text-link queue2-focusable" href="/login">
-              Ja tenho conta
-            </a>
-          </div>
-        </form>
-      </section>
+        {statusMessage ? (
+          <p className="neutral-state" role="status">
+            {statusMessage}
+          </p>
+        ) : null}
+        <SignupFields />
+        <div className="form-actions">
+          <PendingSubmitButton label="Criar conta" pendingLabel="Criando..." />
+          <a className="text-link queue2-focusable" href="/login">
+            Ja tenho conta
+          </a>
+        </div>
+        <p className="support-copy">
+          A fila so nasce quando a outra pessoa entra pelo codigo e fecha o 2/2.
+        </p>
+      </form>
     </main>
   );
 }
