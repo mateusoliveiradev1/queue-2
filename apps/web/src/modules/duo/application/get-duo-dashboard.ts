@@ -1,7 +1,8 @@
 import {
   classifyDuoRouteState,
   classifyMembershipState,
-  type DuoRouteState
+  type DuoRouteState,
+  type ProfileSocialLinks
 } from "../domain/duo-policy";
 import type {
   DuoMemberRecord,
@@ -12,6 +13,8 @@ import type {
 export type DuoDashboardView = {
   routeState: DuoRouteState;
   profileDisplayName: string;
+  profileBio: string | null;
+  profileSocialLinks: ProfileSocialLinks;
   duo: null | {
     id: string;
     name: string | null;
@@ -44,6 +47,8 @@ export async function getDuoDashboardUseCase(
   return {
     routeState,
     profileDisplayName: context.profileDisplayName,
+    profileBio: context.profileBio,
+    profileSocialLinks: context.profileSocialLinks,
     duo: context.membership
       ? {
           id: context.membership.duoId,

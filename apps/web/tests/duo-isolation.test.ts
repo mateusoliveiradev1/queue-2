@@ -80,7 +80,14 @@ class IsolatedRepository implements DuoRepository {
   }
 
   async getUserContext(userId: string) {
-    return this.contexts.get(userId) ?? { profileDisplayName: "", membership: null };
+    return (
+      this.contexts.get(userId) ?? {
+        profileDisplayName: "",
+        profileBio: null,
+        profileSocialLinks: {},
+        membership: null
+      }
+    );
   }
 
   async getActivePairingCode(): Promise<PairingCodeRecord | null> {
@@ -103,10 +110,17 @@ class IsolatedRepository implements DuoRepository {
     return { state: "inactive" } as const;
   }
 
-  async updateProfileDisplayName(_input: {
+  async updateProfile(_input: {
     userId: string;
     displayName: string;
     avatarUrl: string | null;
+    bio: string | null;
+    socialLinks: {
+      steam?: string;
+      discord?: string;
+      twitch?: string;
+      youtube?: string;
+    };
   }) {
     return undefined;
   }
@@ -152,6 +166,8 @@ function pairedContext(
 ): DuoUserContextRecord {
   return {
     profileDisplayName: userId,
+    profileBio: null,
+    profileSocialLinks: {},
     membership: {
       duoId,
       memberSlot: 1,
@@ -165,12 +181,18 @@ function pairedContext(
         {
           userId,
           displayName: userId,
+          avatarUrl: null,
+          bio: null,
+          socialLinks: {},
           memberSlot: 1,
           joinedAt: new Date("2026-06-03T11:00:00.000Z")
         },
         {
           userId: `${userId}-partner`,
           displayName: `${userId}-partner`,
+          avatarUrl: null,
+          bio: null,
+          socialLinks: {},
           memberSlot: 2,
           joinedAt: new Date("2026-06-03T12:00:00.000Z")
         }

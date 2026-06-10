@@ -18,7 +18,7 @@ const authSessionMock = vi.hoisted(() => {
       email: "jogador@example.com",
       emailVerified: true,
       name: "Jogador da fila",
-      image: null,
+      image: "https://cdn.example.com/jogador.png",
       createdAt: new Date("2026-06-03T09:00:00.000Z"),
       updatedAt: new Date("2026-06-03T09:00:00.000Z")
     }
@@ -45,12 +45,21 @@ const duoModuleMock = vi.hoisted(() => {
   const memberOne = {
     userId: "user-1",
     displayName: "Jogador da fila",
+    avatarUrl: "https://cdn.example.com/jogador.png",
+    bio: "Coop aos domingos",
+    socialLinks: {
+      steam: "https://steamcommunity.com/id/queue2",
+      discord: "@queue2"
+    },
     memberSlot: 1 as const,
     joinedAt: new Date("2026-06-03T09:00:00.000Z")
   };
   const memberTwo = {
     userId: "user-2",
     displayName: "Parceiro da fila",
+    avatarUrl: null,
+    bio: null,
+    socialLinks: {},
     memberSlot: 2 as const,
     joinedAt: new Date("2026-06-03T10:00:00.000Z")
   };
@@ -68,12 +77,22 @@ const duoModuleMock = vi.hoisted(() => {
     noDuo: {
       routeState: "pairing" as const,
       profileDisplayName: "Jogador da fila",
+      profileBio: "Coop aos domingos",
+      profileSocialLinks: {
+        steam: "https://steamcommunity.com/id/queue2",
+        discord: "@queue2"
+      },
       duo: null,
       activePairingCode: null
     },
     awaiting: {
       routeState: "pairing" as const,
       profileDisplayName: "Jogador da fila",
+      profileBio: "Coop aos domingos",
+      profileSocialLinks: {
+        steam: "https://steamcommunity.com/id/queue2",
+        discord: "@queue2"
+      },
       duo: {
         ...duo,
         name: null,
@@ -92,6 +111,11 @@ const duoModuleMock = vi.hoisted(() => {
     ready: {
       routeState: "ready" as const,
       profileDisplayName: "Jogador da fila",
+      profileBio: "Coop aos domingos",
+      profileSocialLinks: {
+        steam: "https://steamcommunity.com/id/queue2",
+        discord: "@queue2"
+      },
       duo,
       activePairingCode: null
     },
@@ -141,7 +165,7 @@ vi.mock("../src/modules/duo", async (importOriginal) => {
     joinDuo: vi.fn(async () => ({ ok: true, state: "paired", duoId: "duo-1" })),
     revokePairingCode: vi.fn(async () => ({ ok: true, state: "code-revoked" })),
     updateDuoSettings: vi.fn(async () => ({ ok: true, state: "duo-updated" })),
-    updateProfileDisplayName: vi.fn(async () => ({
+    updateProfile: vi.fn(async () => ({
       ok: true,
       state: "profile-updated"
     }))
@@ -443,9 +467,16 @@ describe("authenticated Phase 1 surfaces", () => {
 
     expect(screen.getAllByText(/nome visivel|nome de exibicao/i).length).toBeGreaterThan(0);
     expect(screen.getByLabelText(/url do avatar/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/bio curta/i)).toHaveValue("Coop aos domingos");
+    expect(screen.getByLabelText(/steam/i)).toHaveValue("https://steamcommunity.com/id/queue2");
+    expect(screen.getByLabelText(/discord/i)).toHaveValue("@queue2");
     expect(screen.getByRole("button", { name: /salvar perfil/i })).toBeInTheDocument();
     expect(screen.getByText(/aparece como/i)).toBeInTheDocument();
     expect(screen.getAllByText(/avatar/i).length).toBeGreaterThan(0);
+    expect(container.querySelector(".profile-avatar-preview img")).toHaveAttribute(
+      "src",
+      "https://cdn.example.com/jogador.png"
+    );
     expect(screen.getByRole("heading", { name: /acessos ativos/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /encerrar sessao/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^sair$/i })).toBeInTheDocument();
@@ -461,6 +492,16 @@ describe("authenticated Phase 1 surfaces", () => {
     expect(screen.getByRole("heading", { name: /desde quando/i })).toBeInTheDocument();
     expect(screen.getAllByText(/fuso da dupla/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /preferencias da dupla/i })).toBeInTheDocument();
+    expect(screen.getByText(/coop aos domingos/i)).toBeInTheDocument();
+    expect(screen.getByText(/@queue2/i)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /steam/i })).toHaveAttribute(
+      "href",
+      "https://steamcommunity.com/id/queue2"
+    );
+    expect(container.querySelector(".duo-avatar img")).toHaveAttribute(
+      "src",
+      "https://cdn.example.com/jogador.png"
+    );
     expectEveryVisibleFormControlHasName(container);
   });
 

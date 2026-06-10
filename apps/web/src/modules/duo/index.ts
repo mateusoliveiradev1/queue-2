@@ -18,7 +18,7 @@ import {
 } from "./application/update-duo-audio-preference";
 import {
   updateDuoSettingsUseCase,
-  updateProfileDisplayNameUseCase,
+  updateProfileUseCase,
   type UpdateDuoSettingsResult,
   type UpdateProfileResult
 } from "./application/update-duo-settings";
@@ -103,10 +103,17 @@ export function updateDuoAudioPreference(input: {
   return updateDuoAudioPreferenceUseCase(input, duoRepository);
 }
 
-export function updateProfileDisplayName(input: {
+export function updateProfile(input: {
   userId: string;
   displayName: string;
   avatarUrl?: string;
+  bio?: string;
+  socialLinks?: {
+    steam?: string;
+    discord?: string;
+    twitch?: string;
+    youtube?: string;
+  };
 }): Promise<UpdateProfileResult> {
-  return updateProfileDisplayNameUseCase(input, duoRepository);
+  return updateProfileUseCase(input, duoRepository);
 }

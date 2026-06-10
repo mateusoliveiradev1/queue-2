@@ -190,13 +190,26 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
           {duo.members.map((member) => (
             <article className="duo-member-card" key={member.userId}>
               <span className="duo-avatar" aria-hidden="true">
-                {getMemberInitials(member.displayName)}
+                {normalizeMemberAvatarUrl(member.avatarUrl) ? (
+                  <img
+                    alt=""
+                    decoding="async"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    src={normalizeMemberAvatarUrl(member.avatarUrl) ?? undefined}
+                  />
+                ) : (
+                  getMemberInitials(member.displayName)
+                )}
               </span>
               <div>
                 <span className="muted">Jogador {member.memberSlot}</span>
                 <strong>{member.displayName}</strong>
               </div>
-              <span className="muted">Membro fixo da fila compartilhada.</span>
+              <p className="muted duo-member-bio">
+                {member.bio ?? "Membro fixo da fila compartilhada."}
+              </p>
+              <ProfileSocialLinks links={member.socialLinks} />
             </article>
           ))}
         </div>
@@ -256,4 +269,62 @@ function getMemberInitials(displayName: string): string {
     .join("");
 
   return initials || "/2";
+}
+
+function normalizeMemberAvatarUrl(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function ProfileSocialLinks({
+  links
+}: {
+  links: {
+    steam?: string;
+    discord?: string;
+    twitch?: string;
+    youtube?: string;
+  };
+}) {
+  const entries = [
+    { key: "steam", label: "Steam", href: links.steam },
+    { key: "discord", label: "Discord", text: links.discord },
+    { key: "twitch", label: "Twitch", href: links.twitch },
+    { key: "youtube", label: "YouTube", href: links.youtube }
+  ].filter((entry) => entry.href || entry.text);
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul className="profile-social-list" aria-label="Redes do membro">
+      {entries.map((entry) => (
+        <li key={entry.key}>
+          {entry.href ? (
+            <a
+              className="text-link"
+              href={entry.href}
+              rel="noreferrer"
+              target="_blank"
+            >
+              {entry.label}
+            </a>
+          ) : (
+            <span>
+              {entry.label}: {entry.text}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
 }

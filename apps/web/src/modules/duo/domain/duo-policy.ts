@@ -2,10 +2,15 @@ export const DISPLAY_NAME_MAX_LENGTH = 40;
 export const DUO_NAME_MAX_LENGTH = 48;
 export const DEFAULT_DUO_TIMEZONE = "America/Sao_Paulo";
 export const PROFILE_AVATAR_URL_MAX_LENGTH = 500;
+export const PROFILE_BIO_MAX_LENGTH = 180;
+export const PROFILE_SOCIAL_HANDLE_MAX_LENGTH = 40;
+export const PROFILE_SOCIAL_URL_MAX_LENGTH = 500;
 
 export type DuoMembershipState = "none" | "awaiting-partner" | "paired";
 export type DuoRouteState = "pairing" | "naming" | "ready";
 export type PlainTextField = "display-name" | "duo-name";
+export type ProfileSocialLinkKey = "steam" | "discord" | "twitch" | "youtube";
+export type ProfileSocialLinks = Partial<Record<ProfileSocialLinkKey, string>>;
 
 export type PlainTextValidation =
   | { ok: true; value: string }
@@ -15,7 +20,17 @@ export type ProfileAvatarUrlValidation =
   | { ok: true; value: string | null }
   | { ok: false; reason: "too-long" | "invalid" | "unsafe-protocol" };
 
+export type ProfileBioValidation =
+  | { ok: true; value: string | null }
+  | { ok: false; reason: "too-long" | "formatted" };
+
+export type ProfileSocialLinksValidation =
+  | { ok: true; value: ProfileSocialLinks }
+  | { ok: false; reason: "too-long" | "invalid" | "unsafe-protocol" };
+
 const FORMATTING_MARKER_PATTERN = /[<>`*_~]|(?:^|\s)#{1,6}\s/;
+const SOCIAL_HANDLE_PATTERN = /^[A-Za-z0-9._#@-]{2,40}$/;
+const URL_SOCIAL_KEYS = ["steam", "twitch", "youtube"] as const;
 
 export function classifyMembershipState(input: {
   memberCount: number;
@@ -83,13 +98,74 @@ export function validatePlainText(
 }
 
 export function validateProfileAvatarUrl(value: string): ProfileAvatarUrlValidation {
+  return validateHttpsUrl(value, PROFILE_AVATAR_URL_MAX_LENGTH);
+}
+
+export function validateProfileBio(value: string): ProfileBioValidation {
   const normalized = value.trim();
 
   if (!normalized) {
     return { ok: true, value: null };
   }
 
-  if (normalized.length > PROFILE_AVATAR_URL_MAX_LENGTH) {
+  const compacted = normalized.replace(/\s+/g, " ");
+
+  if (compacted.length > PROFILE_BIO_MAX_LENGTH) {
+    return { ok: false, reason: "too-long" };
+  }
+
+  if (FORMATTING_MARKER_PATTERN.test(compacted)) {
+    return { ok: false, reason: "formatted" };
+  }
+
+  return { ok: true, value: compacted };
+}
+
+export function validateProfileSocialLinks(
+  input: ProfileSocialLinks
+): ProfileSocialLinksValidation {
+  const normalized: ProfileSocialLinks = {};
+
+  for (const key of URL_SOCIAL_KEYS) {
+    const result = validateHttpsUrl(input[key] ?? "", PROFILE_SOCIAL_URL_MAX_LENGTH);
+
+    if (!result.ok) {
+      return result;
+    }
+
+    if (result.value) {
+      normalized[key] = result.value;
+    }
+  }
+
+  const discord = (input.discord ?? "").trim();
+
+  if (discord) {
+    if (discord.length > PROFILE_SOCIAL_HANDLE_MAX_LENGTH) {
+      return { ok: false, reason: "too-long" };
+    }
+
+    if (!SOCIAL_HANDLE_PATTERN.test(discord)) {
+      return { ok: false, reason: "invalid" };
+    }
+
+    normalized.discord = discord;
+  }
+
+  return { ok: true, value: normalized };
+}
+
+function validateHttpsUrl(
+  value: string,
+  maxLength: number
+): ProfileAvatarUrlValidation {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return { ok: true, value: null };
+  }
+
+  if (normalized.length > maxLength) {
     return { ok: false, reason: "too-long" };
   }
 

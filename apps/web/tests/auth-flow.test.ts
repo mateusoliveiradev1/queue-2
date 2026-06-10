@@ -344,10 +344,14 @@ describe("auth pages wired to flow states", () => {
     expect(profilePageSource).toContain("profile-avatar-url-safe");
     expect(profilePageSource).toContain("profile-avatar-preview");
     expect(profilePageSource).toContain("avatarUrl");
+    expect(profilePageSource).toContain("profile-bio");
+    expect(profilePageSource).toContain("profile-social-fieldset");
+    expect(profilePageSource).toContain("socialLinks");
     expect(profilePageSource).toContain("Salvar perfil");
     expect(profilePageSource).toContain("Sair da conta");
     expect(profilePageSource).toContain("logoutCurrentSessionAction");
     expect(globalCssSource).toContain(".profile-avatar-preview");
+    expect(globalCssSource).toContain(".profile-social-grid");
     expect(globalCssSource).toContain(".profile-avatar-url-safe .queue2-input");
     expect(globalCssSource).toContain("overflow-wrap: anywhere");
   });

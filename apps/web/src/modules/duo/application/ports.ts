@@ -1,6 +1,11 @@
+import type { ProfileSocialLinks } from "../domain/duo-policy";
+
 export type DuoMemberRecord = {
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  socialLinks: ProfileSocialLinks;
   memberSlot: 1 | 2;
   joinedAt: Date;
 };
@@ -28,6 +33,8 @@ export type DuoMembershipRecord = {
 
 export type DuoUserContextRecord = {
   profileDisplayName: string;
+  profileBio: string | null;
+  profileSocialLinks: ProfileSocialLinks;
   membership: DuoMembershipRecord | null;
 };
 
@@ -69,10 +76,12 @@ export interface DuoRepository {
     userId: string;
     code: string;
   }): Promise<PairingClaimOutcome>;
-  updateProfileDisplayName(input: {
+  updateProfile(input: {
     userId: string;
     displayName: string;
     avatarUrl: string | null;
+    bio: string | null;
+    socialLinks: ProfileSocialLinks;
   }): Promise<void>;
   updateDuoSettings(input: {
     userId: string;

@@ -1,8 +1,11 @@
 import {
   isValidTimezone,
+  validateProfileBio,
   validateProfileAvatarUrl,
+  validateProfileSocialLinks,
   validatePlainText
 } from "../domain/duo-policy";
+import type { ProfileSocialLinks } from "../domain/duo-policy";
 import type { DuoRepository } from "./ports";
 
 export type UpdateDuoSettingsResult =
@@ -11,7 +14,14 @@ export type UpdateDuoSettingsResult =
 
 export type UpdateProfileResult =
   | { ok: true; state: "profile-updated" }
-  | { ok: false; state: "invalid-display-name" | "invalid-avatar-url" };
+  | {
+      ok: false;
+      state:
+        | "invalid-display-name"
+        | "invalid-avatar-url"
+        | "invalid-bio"
+        | "invalid-social-links";
+    };
 
 export async function updateDuoSettingsUseCase(
   input: {
@@ -53,8 +63,14 @@ export async function updateDuoSettingsUseCase(
     : { ok: false, state: "not-paired" };
 }
 
-export async function updateProfileDisplayNameUseCase(
-  input: { userId: string; displayName: string; avatarUrl?: string },
+export async function updateProfileUseCase(
+  input: {
+    userId: string;
+    displayName: string;
+    avatarUrl?: string;
+    bio?: string;
+    socialLinks?: ProfileSocialLinks;
+  },
   repository: DuoRepository
 ): Promise<UpdateProfileResult> {
   const displayName = validatePlainText(input.displayName, "display-name");
@@ -69,10 +85,24 @@ export async function updateProfileDisplayNameUseCase(
     return { ok: false, state: "invalid-avatar-url" };
   }
 
-  await repository.updateProfileDisplayName({
+  const bio = validateProfileBio(input.bio ?? "");
+
+  if (!bio.ok) {
+    return { ok: false, state: "invalid-bio" };
+  }
+
+  const socialLinks = validateProfileSocialLinks(input.socialLinks ?? {});
+
+  if (!socialLinks.ok) {
+    return { ok: false, state: "invalid-social-links" };
+  }
+
+  await repository.updateProfile({
     userId: input.userId,
     displayName: displayName.value,
-    avatarUrl: avatarUrl.value
+    avatarUrl: avatarUrl.value,
+    bio: bio.value,
+    socialLinks: socialLinks.value
   });
 
   return { ok: true, state: "profile-updated" };

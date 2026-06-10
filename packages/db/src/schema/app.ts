@@ -28,10 +28,19 @@ export const profiles = appSchema.table(
       .primaryKey()
       .references(() => authUsers.id, { onDelete: "cascade" }),
     displayName: varchar("display_name", { length: 40 }).notNull(),
+    bio: varchar("bio", { length: 180 }),
+    socialLinks: jsonb("social_links").notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
   },
-  (table) => [check("app_profiles_display_name_length_chk", sql`char_length(${table.displayName}) between 1 and 40`)]
+  (table) => [
+    check("app_profiles_display_name_length_chk", sql`char_length(${table.displayName}) between 1 and 40`),
+    check("app_profiles_bio_length_chk", sql`${table.bio} is null or char_length(${table.bio}) <= 180`),
+    check(
+      "app_profiles_social_links_shape_chk",
+      sql`jsonb_typeof(${table.socialLinks}) = 'object' and octet_length(${table.socialLinks}::text) <= 1200`
+    )
+  ]
 );
 
 export const duos = appSchema.table(

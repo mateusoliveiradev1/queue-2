@@ -17,7 +17,7 @@ import type {
 import { updateDuoAudioPreferenceUseCase } from "../src/modules/duo/application/update-duo-audio-preference";
 import {
   updateDuoSettingsUseCase,
-  updateProfileDisplayNameUseCase
+  updateProfileUseCase
 } from "../src/modules/duo/application/update-duo-settings";
 
 const repositorySource = readFileSync(
@@ -191,44 +191,81 @@ describe("duo pairing flow", () => {
     const repository = new FakeDuoRepository();
 
     await expect(
-      updateProfileDisplayNameUseCase(
+      updateProfileUseCase(
         {
           userId: "user-1",
           displayName: "<strong>Jogador</strong>",
-          avatarUrl: "https://cdn.example.com/avatar.png"
+          avatarUrl: "https://cdn.example.com/avatar.png",
+          bio: "Coop aos domingos",
+          socialLinks: { steam: "https://steamcommunity.com/id/queue2" }
         },
         repository
       )
     ).resolves.toEqual({ ok: false, state: "invalid-display-name" });
 
     await expect(
-      updateProfileDisplayNameUseCase(
+      updateProfileUseCase(
         {
           userId: "user-1",
           displayName: "Jogador da fila",
-          avatarUrl: "http://cdn.example.com/avatar.png"
+          avatarUrl: "http://cdn.example.com/avatar.png",
+          bio: "Coop aos domingos",
+          socialLinks: {}
         },
         repository
       )
     ).resolves.toEqual({ ok: false, state: "invalid-avatar-url" });
 
     await expect(
-      updateProfileDisplayNameUseCase(
+      updateProfileUseCase(
+        {
+          userId: "user-1",
+          displayName: "Jogador da fila",
+          avatarUrl: "",
+          bio: "<script>bio</script>",
+          socialLinks: {}
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: false, state: "invalid-bio" });
+
+    await expect(
+      updateProfileUseCase(
+        {
+          userId: "user-1",
+          displayName: "Jogador da fila",
+          avatarUrl: "",
+          bio: "Coop aos domingos",
+          socialLinks: { steam: "http://steamcommunity.com/id/queue2" }
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: false, state: "invalid-social-links" });
+
+    await expect(
+      updateProfileUseCase(
         {
           userId: "user-1",
           displayName: "  Jogador da fila  ",
-          avatarUrl: " https://cdn.example.com/avatar.png "
+          avatarUrl: " https://cdn.example.com/avatar.png ",
+          bio: "  Coop aos domingos  ",
+          socialLinks: {
+            steam: " https://steamcommunity.com/id/queue2 ",
+            discord: "@queue2"
+          }
         },
         repository
       )
     ).resolves.toEqual({ ok: true, state: "profile-updated" });
 
     await expect(
-      updateProfileDisplayNameUseCase(
+      updateProfileUseCase(
         {
           userId: "user-1",
           displayName: "Jogador da fila",
-          avatarUrl: ""
+          avatarUrl: "",
+          bio: "",
+          socialLinks: {}
         },
         repository
       )
@@ -237,12 +274,19 @@ describe("duo pairing flow", () => {
     expect(repository.profileUpdates).toEqual([
       {
         avatarUrl: "https://cdn.example.com/avatar.png",
+        bio: "Coop aos domingos",
         displayName: "Jogador da fila",
+        socialLinks: {
+          steam: "https://steamcommunity.com/id/queue2",
+          discord: "@queue2"
+        },
         userId: "user-1"
       },
       {
         avatarUrl: null,
+        bio: null,
         displayName: "Jogador da fila",
+        socialLinks: {},
         userId: "user-1"
       }
     ]);
@@ -298,6 +342,7 @@ describe("duo persistence contract", () => {
     expect(repositorySource).not.toContain("queue2_migrator");
     expect(repositorySource).not.toContain("BYPASSRLS");
     expect(repositorySource).toContain("image = $3");
+    expect(repositorySource).toContain("social_links = excluded.social_links");
   });
 
   it("stores pairing limits in the database rather than process memory", () => {
@@ -365,6 +410,8 @@ function createLimiter(
 function pairedContext(duoId: string, userId: string): DuoUserContextRecord {
   return {
     profileDisplayName: "Jogador",
+    profileBio: null,
+    profileSocialLinks: {},
     membership: {
       duoId,
       memberSlot: 1,
@@ -378,12 +425,18 @@ function pairedContext(duoId: string, userId: string): DuoUserContextRecord {
         {
           userId,
           displayName: "Jogador 1",
+          avatarUrl: null,
+          bio: null,
+          socialLinks: {},
           memberSlot: 1,
           joinedAt: new Date("2026-06-03T11:00:00.000Z")
         },
         {
           userId: `${userId}-partner`,
           displayName: "Jogador 2",
+          avatarUrl: null,
+          bio: null,
+          socialLinks: {},
           memberSlot: 2,
           joinedAt: new Date("2026-06-03T12:00:00.000Z")
         }
@@ -402,7 +455,14 @@ class FakeDuoRepository implements DuoRepository {
   }> = [];
   readonly profileUpdates: Array<{
     avatarUrl: string | null;
+    bio: string | null;
     displayName: string;
+    socialLinks: {
+      steam?: string;
+      discord?: string;
+      twitch?: string;
+      youtube?: string;
+    };
     userId: string;
   }> = [];
   claimOutcome: PairingClaimOutcome = { state: "inactive" };
@@ -413,12 +473,24 @@ class FakeDuoRepository implements DuoRepository {
     this.ensureProfileCalls += 1;
 
     if (!this.contexts.has(userId)) {
-      this.contexts.set(userId, { profileDisplayName: displayName, membership: null });
+      this.contexts.set(userId, {
+        profileDisplayName: displayName,
+        profileBio: null,
+        profileSocialLinks: {},
+        membership: null
+      });
     }
   }
 
   async getUserContext(userId: string) {
-    return this.contexts.get(userId) ?? { profileDisplayName: "", membership: null };
+    return (
+      this.contexts.get(userId) ?? {
+        profileDisplayName: "",
+        profileBio: null,
+        profileSocialLinks: {},
+        membership: null
+      }
+    );
   }
 
   async getActivePairingCode(userId: string) {
@@ -443,6 +515,8 @@ class FakeDuoRepository implements DuoRepository {
     const code = this.makeCode("duo-new", input.code, input.expiresAt);
     this.contexts.set(input.userId, {
       profileDisplayName: input.userId,
+      profileBio: null,
+      profileSocialLinks: {},
       membership: {
         duoId: code.duoId,
         memberSlot: 1,
@@ -456,6 +530,9 @@ class FakeDuoRepository implements DuoRepository {
           {
             userId: input.userId,
             displayName: input.userId,
+            avatarUrl: null,
+            bio: null,
+            socialLinks: {},
             memberSlot: 1,
             joinedAt: new Date("2026-06-03T12:00:00.000Z")
           }
@@ -492,10 +569,17 @@ class FakeDuoRepository implements DuoRepository {
     return this.claimOutcome;
   }
 
-  async updateProfileDisplayName(input: {
+  async updateProfile(input: {
     userId: string;
     displayName: string;
     avatarUrl: string | null;
+    bio: string | null;
+    socialLinks: {
+      steam?: string;
+      discord?: string;
+      twitch?: string;
+      youtube?: string;
+    };
   }) {
     this.profileUpdates.push(input);
 
@@ -503,9 +587,13 @@ class FakeDuoRepository implements DuoRepository {
 
     if (context) {
       context.profileDisplayName = input.displayName;
+      context.profileBio = input.bio;
+      context.profileSocialLinks = input.socialLinks;
     } else {
       this.contexts.set(input.userId, {
         profileDisplayName: input.displayName,
+        profileBio: input.bio,
+        profileSocialLinks: input.socialLinks,
         membership: null
       });
     }

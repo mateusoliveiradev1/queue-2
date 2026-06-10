@@ -8,7 +8,7 @@ import {
   getDuoDashboard,
   getDuoStatusMessage,
   profileUpdateResultToStatus,
-  updateProfileDisplayName
+  updateProfile
 } from "../../../modules/duo";
 import {
   getVerifiedProfileAuthContext,
@@ -52,6 +52,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
     dashboard.profileDisplayName || currentSession.user.name || "Jogador da fila";
   const profileImageUrl = normalizeProfileImageUrl(currentSession.user.image);
   const profileInitials = getProfileInitials(profileDisplayName);
+  const socialLinks = dashboard.profileSocialLinks;
 
   return (
     <AppShell currentPage="perfil">
@@ -100,6 +101,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
             <small>avatar</small>
             <strong>{profileImageUrl ? "salvo" : "iniciais"}</strong>
           </span>
+          <span>
+            <small>redes</small>
+            <strong>{countSocialLinks(socialLinks)}</strong>
+          </span>
         </div>
       </header>
 
@@ -125,7 +130,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
           </p>
         </div>
         <form
-          action={updateProfileDisplayNameAction}
+          action={updateProfileAction}
           className="form-stack profile-form profile-avatar-url-safe"
         >
           <div className="field">
@@ -154,13 +159,80 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
               type="url"
             />
           </div>
+          <div className="field">
+            <label htmlFor="profile-bio">Bio curta</label>
+            <textarea
+              className="queue2-input"
+              defaultValue={dashboard.profileBio ?? ""}
+              id="profile-bio"
+              maxLength={180}
+              name="bio"
+              rows={3}
+            />
+          </div>
+          <fieldset className="profile-social-fieldset">
+            <legend>Redes sociais</legend>
+            <div className="profile-social-grid">
+              <div className="field">
+                <label htmlFor="profile-steam">Steam</label>
+                <input
+                  className="queue2-input"
+                  defaultValue={socialLinks.steam ?? ""}
+                  id="profile-steam"
+                  inputMode="url"
+                  maxLength={500}
+                  name="steam"
+                  placeholder="https://steamcommunity.com/id/seu-perfil"
+                  type="url"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="profile-discord">Discord</label>
+                <input
+                  className="queue2-input"
+                  defaultValue={socialLinks.discord ?? ""}
+                  id="profile-discord"
+                  maxLength={40}
+                  name="discord"
+                  placeholder="@usuario"
+                  type="text"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="profile-twitch">Twitch</label>
+                <input
+                  className="queue2-input"
+                  defaultValue={socialLinks.twitch ?? ""}
+                  id="profile-twitch"
+                  inputMode="url"
+                  maxLength={500}
+                  name="twitch"
+                  placeholder="https://twitch.tv/seu-canal"
+                  type="url"
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="profile-youtube">YouTube</label>
+                <input
+                  className="queue2-input"
+                  defaultValue={socialLinks.youtube ?? ""}
+                  id="profile-youtube"
+                  inputMode="url"
+                  maxLength={500}
+                  name="youtube"
+                  placeholder="https://youtube.com/@seu-canal"
+                  type="url"
+                />
+              </div>
+            </div>
+          </fieldset>
           <div className="profile-form-guidance">
             <p className="support-copy">
               Nome em texto simples, ate 40 caracteres. Avatar vazio volta para
               iniciais.
             </p>
             <p className="support-copy">
-              Por seguranca, a imagem precisa usar https.
+              Imagens e links precisam usar https. Discord aceita identificador curto.
             </p>
           </div>
           <div className="form-actions">
@@ -240,14 +312,21 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
   );
 }
 
-async function updateProfileDisplayNameAction(formData: FormData) {
+async function updateProfileAction(formData: FormData) {
   "use server";
 
   const { currentSession } = await getVerifiedProfileAuthContext();
-  const result = await updateProfileDisplayName({
+  const result = await updateProfile({
     userId: currentSession.user.id,
     displayName: getFormString(formData, "displayName"),
-    avatarUrl: getFormString(formData, "avatarUrl")
+    avatarUrl: getFormString(formData, "avatarUrl"),
+    bio: getFormString(formData, "bio"),
+    socialLinks: {
+      steam: getFormString(formData, "steam"),
+      discord: getFormString(formData, "discord"),
+      twitch: getFormString(formData, "twitch"),
+      youtube: getFormString(formData, "youtube")
+    }
   });
 
   redirect(
@@ -288,6 +367,15 @@ function getProfileInitials(displayName: string): string {
     .join("");
 
   return initials || "Q2";
+}
+
+function countSocialLinks(value: {
+  steam?: string;
+  discord?: string;
+  twitch?: string;
+  youtube?: string;
+}): string {
+  return String(Object.values(value).filter(Boolean).length);
 }
 
 function formatSessionDate(value: Date): string {

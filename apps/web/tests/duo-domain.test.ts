@@ -13,6 +13,8 @@ import {
   classifyMembershipState,
   isValidTimezone,
   validateProfileAvatarUrl,
+  validateProfileBio,
+  validateProfileSocialLinks,
   validatePlainText
 } from "../src/modules/duo/domain/duo-policy";
 import {
@@ -133,12 +135,48 @@ describe("duo policy", () => {
       reason: "invalid"
     });
   });
+
+  it("validates short profile bio and social links", () => {
+    expect(validateProfileBio("  Coop aos domingos  ")).toEqual({
+      ok: true,
+      value: "Coop aos domingos"
+    });
+    expect(validateProfileBio("**sem markdown**")).toEqual({
+      ok: false,
+      reason: "formatted"
+    });
+    expect(
+      validateProfileSocialLinks({
+        steam: " https://steamcommunity.com/id/queue2 ",
+        discord: "@queue2",
+        twitch: "https://twitch.tv/queue2",
+        youtube: ""
+      })
+    ).toEqual({
+      ok: true,
+      value: {
+        steam: "https://steamcommunity.com/id/queue2",
+        discord: "@queue2",
+        twitch: "https://twitch.tv/queue2"
+      }
+    });
+    expect(validateProfileSocialLinks({ steam: "http://steamcommunity.com/id/queue2" })).toEqual({
+      ok: false,
+      reason: "unsafe-protocol"
+    });
+    expect(validateProfileSocialLinks({ discord: "nome com espaco" })).toEqual({
+      ok: false,
+      reason: "invalid"
+    });
+  });
 });
 
 describe("create pairing code use case", () => {
   it("rejects a user whose duo is already formed", async () => {
     const repository = createRepository({
       profileDisplayName: "Jogador",
+      profileBio: null,
+      profileSocialLinks: {},
       membership: {
         duoId: "duo-1",
         memberSlot: 1,
@@ -152,12 +190,18 @@ describe("create pairing code use case", () => {
           {
             userId: "user-1",
             displayName: "Jogador 1",
+            avatarUrl: null,
+            bio: null,
+            socialLinks: {},
             memberSlot: 1,
             joinedAt: new Date("2026-06-03T11:00:00.000Z")
           },
           {
             userId: "user-2",
             displayName: "Jogador 2",
+            avatarUrl: null,
+            bio: null,
+            socialLinks: {},
             memberSlot: 2,
             joinedAt: new Date("2026-06-03T12:00:00.000Z")
           }
@@ -196,7 +240,7 @@ function createRepository(context: DuoUserContextRecord): DuoRepository {
     createPairingCodeForExistingDuo: async () => code,
     revokePairingCode: async () => true,
     claimPairingCode: async () => ({ state: "claimed", duoId: code.duoId }),
-    updateProfileDisplayName: async (_input) => undefined,
+    updateProfile: async () => undefined,
     updateDuoSettings: async () => true,
     updateDuoAudioPreference: async () => true
   };

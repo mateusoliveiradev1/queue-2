@@ -17,6 +17,8 @@ export type DuoStatusState =
   | "perfil-atualizado"
   | "nome-invalido"
   | "avatar-invalido"
+  | "bio-invalida"
+  | "redes-invalidas"
   | "timezone-invalido";
 
 const statusMessages: Record<DuoStatusState, string> = {
@@ -32,6 +34,8 @@ const statusMessages: Record<DuoStatusState, string> = {
   "perfil-atualizado": "Perfil atualizado.",
   "nome-invalido": "Use um nome curto em texto simples, sem HTML ou formatacao.",
   "avatar-invalido": "Use uma URL de imagem https valida ou deixe o campo vazio.",
+  "bio-invalida": "Use uma bio curta em texto simples.",
+  "redes-invalidas": "Revise as redes: links precisam usar https e Discord deve ser um identificador curto.",
   "timezone-invalido": "Confirme um fuso valido para a dupla."
 };
 
@@ -93,7 +97,16 @@ export function profileUpdateResultToStatus(
     return "perfil-atualizado";
   }
 
-  return result.state === "invalid-avatar-url" ? "avatar-invalido" : "nome-invalido";
+  switch (result.state) {
+    case "invalid-avatar-url":
+      return "avatar-invalido";
+    case "invalid-bio":
+      return "bio-invalida";
+    case "invalid-social-links":
+      return "redes-invalidas";
+    case "invalid-display-name":
+      return "nome-invalido";
+  }
 }
 
 export function buildDuoPath(

@@ -15,9 +15,12 @@ import type {
   PairingClaimOutcome,
   PairingCodeRecord
 } from "../application/ports";
+import type { ProfileSocialLinks, ProfileSocialLinkKey } from "../domain/duo-policy";
 
 type ProfileRow = {
   display_name: string;
+  bio: string | null;
+  social_links: unknown;
 };
 
 type MembershipRow = {
@@ -34,6 +37,9 @@ type MembershipRow = {
 type MemberRow = {
   user_id: string;
   display_name: string;
+  avatar_url: string | null;
+  bio: string | null;
+  social_links: unknown;
   member_slot: 1 | 2;
   joined_at: Date;
 };
@@ -57,7 +63,7 @@ export const duoRepository: DuoRepository = {
   createPairingCodeForExistingDuo,
   revokePairingCode,
   claimPairingCode,
-  updateProfileDisplayName,
+  updateProfile,
   updateDuoSettings,
   updateDuoAudioPreference
 };
@@ -79,7 +85,10 @@ async function getUserContext(userId: string): Promise<DuoUserContextRecord> {
   return asUser(userId, async (client) => {
     const profileResult = await client.query<ProfileRow>(
       `
-        SELECT coalesce(profile.display_name, account.name) AS display_name
+        SELECT
+          coalesce(profile.display_name, account.name) AS display_name,
+          profile.bio,
+          coalesce(profile.social_links, '{}'::jsonb) AS social_links
         FROM auth."user" AS account
         LEFT JOIN app.profiles AS profile ON profile.user_id = account.id
         WHERE account.id = $1
@@ -110,6 +119,8 @@ async function getUserContext(userId: string): Promise<DuoUserContextRecord> {
 
     return {
       profileDisplayName: profileResult.rows[0]?.display_name ?? "",
+      profileBio: profileResult.rows[0]?.bio ?? null,
+      profileSocialLinks: mapSocialLinks(profileResult.rows[0]?.social_links),
       membership: membership
         ? await mapMembership(client, membership)
         : null
@@ -252,21 +263,30 @@ async function claimPairingCode(input: {
   }
 }
 
-async function updateProfileDisplayName(input: {
+async function updateProfile(input: {
   userId: string;
   displayName: string;
   avatarUrl: string | null;
+  bio: string | null;
+  socialLinks: ProfileSocialLinks;
 }): Promise<void> {
   await asUser(input.userId, async (client) => {
     await client.query(
       `
-        INSERT INTO app.profiles (user_id, display_name, updated_at)
-        VALUES ($1, $2, now())
+        INSERT INTO app.profiles (user_id, display_name, bio, social_links, updated_at)
+        VALUES ($1, $2, $3, $4::jsonb, now())
         ON CONFLICT (user_id) DO UPDATE
         SET display_name = excluded.display_name,
+            bio = excluded.bio,
+            social_links = excluded.social_links,
             updated_at = now()
       `,
-      [input.userId, input.displayName]
+      [
+        input.userId,
+        input.displayName,
+        input.bio,
+        JSON.stringify(input.socialLinks)
+      ]
     );
     await client.query(
       `
@@ -375,6 +395,9 @@ async function mapMembership(
       SELECT
         member.user_id,
         coalesce(profile.display_name, account.name) AS display_name,
+        account.image AS avatar_url,
+        profile.bio,
+        coalesce(profile.social_links, '{}'::jsonb) AS social_links,
         member.member_slot,
         member.joined_at
       FROM app.duo_members AS member
@@ -436,9 +459,27 @@ function mapMember(row: MemberRow): DuoMemberRecord {
   return {
     userId: row.user_id,
     displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    bio: row.bio,
+    socialLinks: mapSocialLinks(row.social_links),
     memberSlot: row.member_slot,
     joinedAt: row.joined_at
   };
+}
+
+function mapSocialLinks(value: unknown): ProfileSocialLinks {
+  const allowedKeys: ProfileSocialLinkKey[] = ["steam", "discord", "twitch", "youtube"];
+
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.fromEntries(
+    allowedKeys
+      .map((key) => [key, (value as Record<string, unknown>)[key]] as const)
+      .filter((entry): entry is readonly [ProfileSocialLinkKey, string] => typeof entry[1] === "string" && entry[1].trim().length > 0)
+      .map(([key, link]) => [key, link])
+  ) as ProfileSocialLinks;
 }
 
 function asUser<T>(
