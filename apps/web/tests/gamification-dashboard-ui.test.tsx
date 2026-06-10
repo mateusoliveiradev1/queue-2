@@ -116,6 +116,7 @@ const phase2ActionMock = vi.hoisted(() => ({
 }));
 
 vi.mock("../src/platform/auth/session", () => ({
+  logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
 }));
 

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { RoulettePointer } from "@queue/ui";
 
 import { AppShell } from "../../components/app-shell";
 import { StatusToast } from "../../components/status-toast";
@@ -41,21 +40,6 @@ export const metadata: Metadata = {
     "Painel da fila coop da dupla: jogos no backlog, plataformas comuns e proximos passos.",
   title: "Fila da dupla"
 };
-
-const ritual = [
-  {
-    word: "descobrir",
-    text: "Trazer jogos que os dois realmente topariam jogar."
-  },
-  {
-    word: "decidir",
-    text: "Comparar vontade, tempo e plataforma antes de comecar."
-  },
-  {
-    word: "zerar",
-    text: "Registrar a jornada da dupla ate a conclusao."
-  }
-] as const;
 
 const dashboardTimingContext = { route: "app.home" } as const;
 
@@ -158,15 +142,61 @@ async function renderDashboardPage({
       ) : null}
       <RewardToast reward={rewardStatus} />
 
-      <header className="app-header">
-        <div>
-          <p className="eyebrow">Dupla formada</p>
-          <h1 className="page-title">Jogando Agora</h1>
-          <p className="lede">
-            A dupla escolhe um Principal, mantem ate dois secundarios e organiza
-            a ordem sem perder o combinado.
-          </p>
+      <header className="home-anchor" aria-labelledby="home-anchor-title">
+        <div className="home-anchor-status" aria-label="Estado de progresso da dupla">
+          <span>
+            LV <strong>{gamification.levelLabel}</strong>
+          </span>
+          <span>
+            XP <strong>{gamification.xpLabel}</strong>
+          </span>
+          <span>
+            STREAK <strong>{gamification.streak.valueLabel}</strong>
+          </span>
         </div>
+        <div className="home-anchor-grid">
+          <div className="home-anchor-copy">
+            <p className="eyebrow">Dupla formada</p>
+            <h1 className="page-title" id="home-anchor-title">
+              Jogando Agora
+            </h1>
+            <p className="lede">
+              A dupla escolhe um Principal, mantem ate dois secundarios e organiza
+              a ordem sem perder o combinado.
+            </p>
+          </div>
+          <div className="home-anchor-current" data-empty={playingNow.empty ? "true" : "false"}>
+            <p className="eyebrow">
+              {playingNow.principal ? "Principal da dupla" : "NADA NA FILA"}
+            </p>
+            <h2>
+              {playingNow.principal ? (
+                playingNow.principal.name
+              ) : (
+                <>
+                  NADA NA FILA
+                  <span>AINDA</span>
+                </>
+              )}
+            </h2>
+            <p>
+              {playingNow.principal
+                ? `${playingNow.principal.progress.coopTimeLabel}. ${playingNow.activeCountLabel}.`
+                : "Escolham ate tres jogos em Jogando; o primeiro vira Principal automaticamente."}
+            </p>
+          </div>
+        </div>
+        <nav className="home-anchor-actions" aria-label="Acoes principais da fila">
+          <a className="queue2-button" data-tone="primary" href="/app/descobrir">
+            Descobrir
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="/app/roleta">
+            Roleta
+          </a>
+          <a className="queue2-button" data-tone="quiet" href="/app/biblioteca">
+            Biblioteca
+          </a>
+        </nav>
       </header>
 
       {roulettePrincipalHighlight ? (
@@ -232,21 +262,24 @@ async function renderDashboardPage({
         </div>
       </section>
 
-      <section className="surface-band app-section" aria-labelledby="ritual-title">
+      <section className="home-route-strip app-section" aria-labelledby="home-routes-title">
         <div className="section-heading">
-          <h2 className="eyebrow" id="ritual-title">
-            Ritual da dupla
+          <h2 className="eyebrow" id="home-routes-title">
+            Acessos da fila
           </h2>
-          <p className="support-copy">A promessa que a fila vai carregar.</p>
+          <p className="support-copy">Baixo na tela, mas sempre alcancavel.</p>
         </div>
-        <div className="ritual-grid">
-          {ritual.map((step) => (
-            <article className="ritual-step" key={step.word}>
-              <RoulettePointer aria-hidden="true" label="" />
-              <strong>{step.word}</strong>
-              <span className="muted">{step.text}</span>
-            </article>
-          ))}
+        <div className="home-route-grid">
+          <a className="home-route-tile queue2-focusable" href="/app/catalogo">
+            <span>Catalogo</span>
+            <strong>Base de jogos</strong>
+            <small>Buscar fontes, frescor e disponibilidade.</small>
+          </a>
+          <a className="home-route-tile queue2-focusable" href="/app/conquistas">
+            <span>Conquistas</span>
+            <strong>Selos da dupla</strong>
+            <small>Ver memoria aberta sem placar solo.</small>
+          </a>
         </div>
       </section>
     </AppShell>

@@ -100,6 +100,7 @@ const navigationMock = vi.hoisted(() => ({
 }));
 
 vi.mock("../src/platform/auth/session", () => ({
+  logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
 }));
 
@@ -231,9 +232,13 @@ describe("Phase 04.2 Jogando Agora dashboard", () => {
     const metricGrid = container.querySelector(".metric-grid");
 
     expect(screen.getByRole("heading", { name: /jogando agora/i, level: 1 })).toBeInTheDocument();
+    expect(screen.getAllByText(/^LV/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^XP/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^STREAK/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /roleta/i }).some((link) => link.getAttribute("href") === "/app/roleta")).toBe(true);
     expect(screen.getByRole("heading", { name: /a fila e nossa/i })).toBeInTheDocument();
     expect(screen.getAllByText("3/3 em Jogando").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByRole("heading", { name: /it takes two/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: /it takes two/i }).length).toBeGreaterThan(0);
     expect(screen.getByRole("link", { name: /abrir jornada/i })).toHaveAttribute(
       "href",
       "/app/jogo/it-takes-two"

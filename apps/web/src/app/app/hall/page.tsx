@@ -37,25 +37,25 @@ export default async function HallPage() {
         <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
       }
     >
-      <header className="app-header">
+      <header className="app-header hall-prepared-header">
         <div>
           <p className="eyebrow">Hall</p>
-          <h1 className="page-title">Hall da Moral</h1>
+          <h1 className="page-title">ESTANTE VAZIA</h1>
           <p className="lede">
-            A estante da dupla vai morar aqui quando as primeiras zeradas
-            forem registradas juntas.
+            POR ENQUANTO, a dupla ainda nao registrou uma zerada confirmada.
           </p>
         </div>
       </header>
 
-      <section className="empty-state dry-panel app-section" aria-labelledby="hall-empty-title">
+      <section className="hall-empty-panel empty-state dry-panel app-section" aria-labelledby="hall-empty-title">
         <div className="section-heading">
           <p className="eyebrow">POR ENQUANTO</p>
           <h2 id="hall-empty-title">ESTANTE VAZIA</h2>
         </div>
         <p>
           Nada para exibir ainda. Continuem escolhendo, jogando e confirmando
-          as conquistas da fila compartilhada.
+          as zeradas da fila compartilhada; a estante entra quando houver
+          memoria real para guardar.
         </p>
       </section>
     </AppShell>

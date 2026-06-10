@@ -157,7 +157,27 @@ test.describe("Phase 7 authenticated shell visual scaffold", () => {
     }
     await expect(page.getByRole("link", { name: /perfil/i }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: /sair/i }).or(page.getByRole("link", { name: /sair/i })).first()).toBeVisible();
+    await expect(page.locator("body")).toContainText(/LV|XP|STREAK/i);
+    for (const item of ["Descobrir", "Roleta", "Biblioteca"]) {
+      await expect(page.getByRole("link", { name: new RegExp(item, "i") }).first()).toBeVisible();
+    }
     await expect(page.locator("body")).toContainText(/Catalogo|Conquistas/i);
+  });
+
+  test("/app home exposes Phase 7 anchor, CTAs and contextual Catalogo/Conquistas links", async ({
+    page
+  }) => {
+    await page.setViewportSize(desktopViewport);
+    await page.goto("/app");
+
+    await expect(page.locator("body")).toContainText(/LV|XP|STREAK/i);
+    await expect(page.getByRole("heading", { name: /jogando agora/i })).toBeVisible();
+    for (const item of ["Descobrir", "Roleta", "Biblioteca"]) {
+      await expect(page.getByRole("link", { name: new RegExp(item, "i") }).first()).toBeVisible();
+    }
+    for (const item of ["Catalogo", "Conquistas"]) {
+      await expect(page.getByRole("link", { name: new RegExp(item, "i") }).first()).toBeVisible();
+    }
   });
 
   test("mobile authenticated shell keeps the same primary routes in a horizontal rail", async ({

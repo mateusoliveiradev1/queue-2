@@ -423,13 +423,17 @@ describe("authenticated Phase 1 surfaces", () => {
     );
 
     expect(screen.getByRole("heading", { name: /jogando agora/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/^LV/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^XP/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/^STREAK/i).length).toBeGreaterThan(0);
     for (const item of ["Home", "Biblioteca", "Descobrir", "Roleta", "Desafios", "Hall", "Dupla"]) {
       expect(navigation.getByRole("link", { name: new RegExp(item, "i") })).toBeInTheDocument();
     }
     expect(screen.getByRole("link", { name: /perfil/i })).toHaveAttribute("href", "/app/perfil");
     expect(navigation.getByRole("link", { name: /biblioteca/i })).toHaveAttribute("href", "/app/biblioteca");
-    expect(screen.getAllByText(/Catalogo/i).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Conquistas/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("link", { name: /Catalogo/i }).some((link) => link.getAttribute("href") === "/app/catalogo")).toBe(true);
+    expect(screen.getAllByRole("link", { name: /Conquistas/i }).some((link) => link.getAttribute("href") === "/app/conquistas")).toBe(true);
+    expect(screen.getAllByText(/nada na fila/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /nenhum principal definido/i })).toBeInTheDocument();
   });
 
@@ -460,9 +464,8 @@ describe("authenticated Phase 1 surfaces", () => {
     duoModuleMock.getDuoDashboard.mockResolvedValueOnce(duoModuleMock.ready);
     render(await HallPage());
 
-    expect(screen.getByRole("heading", { name: /hall da moral/i })).toBeInTheDocument();
-    expect(screen.getByText(/por enquanto/i)).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: /estante vazia/i })).toBeInTheDocument();
+    expect(screen.getAllByRole("heading", { name: /estante vazia/i }).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/por enquanto/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("navigation", { name: /navegacao principal/i })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /hall/i })).toHaveAttribute("aria-current", "page");
   });
