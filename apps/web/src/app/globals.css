@@ -881,7 +881,7 @@ input {
 
 .roulette-route {
   display: grid;
-  gap: 32px;
+  gap: 36px;
 }
 
 .roulette-hero {
@@ -889,6 +889,59 @@ input {
   display: grid;
   gap: 16px;
   padding-bottom: 32px;
+}
+
+.roulette-ritual-hero {
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--primary) 10%, transparent), transparent 42%),
+    color-mix(in oklch, var(--surface) 84%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: 28px;
+  padding: clamp(24px, 40px, 48px);
+}
+
+.roulette-ritual-copy {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 880px;
+}
+
+.roulette-status-strip {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.roulette-status-strip span {
+  align-content: center;
+  background: color-mix(in oklch, var(--bg) 28%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: 4px;
+  min-height: 64px;
+  padding: var(--space-3) var(--space-4);
+}
+
+.roulette-status-strip small,
+.roulette-status-strip strong {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.roulette-status-strip small {
+  color: var(--primary);
+}
+
+.roulette-status-strip strong {
+  color: var(--ink);
+  overflow-wrap: anywhere;
 }
 
 .roulette-first-viewport {
@@ -910,6 +963,39 @@ input {
   gap: 24px;
   min-height: 320px;
   padding: 32px;
+}
+
+.roulette-empty-panel {
+  gap: 28px;
+  justify-items: start;
+}
+
+.roulette-empty-copy {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 980px;
+}
+
+.roulette-empty-copy h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 5.5rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.84;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.roulette-empty-copy h2 span {
+  color: var(--primary);
+}
+
+.roulette-empty-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 .roulette-state-panel strong,
@@ -1128,9 +1214,15 @@ input {
 }
 
 .roulette-reveal-stack {
+  background:
+    linear-gradient(180deg, color-mix(in oklch, var(--primary) 8%, transparent), transparent 34%),
+    color-mix(in oklch, var(--surface) 82%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
   display: grid;
   gap: 24px;
   min-width: 0;
+  padding: 24px;
 }
 
 .roulette-controls,
@@ -1139,6 +1231,7 @@ input {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
+  justify-content: center;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
@@ -1179,17 +1272,41 @@ input {
     padding-bottom: calc(160px + env(safe-area-inset-bottom));
   }
 
+  .roulette-ritual-hero {
+    gap: 20px;
+    padding: 24px;
+  }
+
   .roulette-hero {
     gap: 12px;
     padding-bottom: 20px;
+  }
+
+  .roulette-status-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .roulette-first-viewport {
     min-height: auto;
   }
 
+  .roulette-state-panel {
+    padding: 24px;
+  }
+
+  .roulette-empty-copy h2 {
+    font-size: 3.25rem;
+  }
+
+  .roulette-empty-metrics {
+    align-items: stretch;
+    display: grid;
+    width: 100%;
+  }
+
   .roulette-reveal-stack {
     gap: 16px;
+    padding: 16px;
   }
 
   .roulette-reel-band {
@@ -1251,6 +1368,7 @@ input {
   .roulette-result-actions .queue2-button,
   .roulette-audio-control,
   .roulette-audio-toggle {
+    white-space: normal;
     width: 100%;
   }
 }

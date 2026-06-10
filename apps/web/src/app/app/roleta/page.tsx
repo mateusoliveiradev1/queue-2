@@ -91,12 +91,37 @@ async function renderRoulettePage({
   return measureStage("render", rouletteTimingContext, async () => (
     <AppShell currentPage="roleta">
       <section className="roulette-route" aria-labelledby="roulette-route-title">
-        <header className="roulette-hero">
-          <p className="eyebrow">{viewModel.copy.eyebrow}</p>
-          <h1 className="page-title" id="roulette-route-title">
-            {viewModel.copy.title}
-          </h1>
-          <p className="lede">{viewModel.copy.helper}</p>
+        <header className="roulette-ritual-hero">
+          <div className="roulette-ritual-copy">
+            <p className="eyebrow">{viewModel.copy.eyebrow}</p>
+            <h1 className="page-title" id="roulette-route-title">
+              {viewModel.copy.title}
+            </h1>
+            <p className="lede">{viewModel.copy.helper}</p>
+          </div>
+          <div
+            aria-label="Estado de boost, pity e historico da roleta"
+            className="roulette-status-strip"
+          >
+            <span>
+              <small>boost</small>
+              <strong>{viewModel.boost.balanceLabel}</strong>
+            </span>
+            <span>
+              <small>uso</small>
+              <strong>
+                {viewModel.boost.canUseBoost ? "pronto" : "saldo baixo"}
+              </strong>
+            </span>
+            <span>
+              <small>pity</small>
+              <strong>{viewModel.pity.progressLabel}</strong>
+            </span>
+            <span>
+              <small>estado</small>
+              <strong>{getRitualStateLabel(viewModel.firstViewport.state)}</strong>
+            </span>
+          </div>
         </header>
 
         <section
@@ -151,18 +176,31 @@ function renderBlockedPool(viewModel: RouletteRouteViewModel) {
   }
 
   return (
-    <div className="roulette-state-panel roulette-blocked-state">
-      <strong>{blockedPool.title}</strong>
-      <p>{blockedPool.body}</p>
-      <span className="roulette-pill">
-        {blockedPool.eligibleCount}/{blockedPool.requiredEligibleCount} jogos prontos
-      </span>
+    <div className="roulette-state-panel roulette-empty-panel roulette-blocked-state">
+      <div className="roulette-empty-copy">
+        <p className="eyebrow">{blockedPool.title}</p>
+        <h2 aria-label="BACKLOG VAZIO /">
+          BACKLOG VAZIO <span aria-hidden="true">/</span>
+        </h2>
+        <p>{blockedPool.body}</p>
+      </div>
+      <div className="roulette-empty-metrics">
+        <span className="roulette-pill">
+          {blockedPool.eligibleCount}/{blockedPool.requiredEligibleCount} jogos prontos
+        </span>
+        <span className="roulette-pill">Wishlist + Pausado</span>
+      </div>
       <div className="roulette-actions">
-        {blockedPool.ctas.map((cta) => (
-          <a className="queue2-button" data-tone="quiet" href={cta.href} key={cta.href}>
-            {cta.label}
-          </a>
-        ))}
+        <a className="queue2-button" data-tone="primary" href="/app/descobrir">
+          Ir descobrir
+        </a>
+        {blockedPool.ctas
+          .filter((cta) => cta.href !== "/app/descobrir")
+          .map((cta) => (
+            <a className="queue2-button" data-tone="quiet" href={cta.href} key={cta.href}>
+              {cta.label}
+            </a>
+          ))}
       </div>
     </div>
   );
@@ -363,14 +401,39 @@ async function submitDiscardRouletteResultForm(formData: FormData): Promise<void
 
 function renderHistoryBackedEmpty(viewModel: RouletteRouteViewModel) {
   return (
-    <div className="roulette-state-panel roulette-history-backed-state">
-      <strong>{viewModel.firstViewport.statusLabel}</strong>
+    <div className="roulette-state-panel roulette-empty-panel roulette-history-backed-state">
+      <div className="roulette-empty-copy">
+        <p className="eyebrow">{viewModel.firstViewport.statusLabel}</p>
+        <h2 aria-label="BACKLOG VAZIO /">
+          BACKLOG VAZIO <span aria-hidden="true">/</span>
+        </h2>
+      </div>
       <p>{viewModel.copy.helper}</p>
-      <a className="queue2-button" data-tone="primary" href="/app/biblioteca">
-        {viewModel.copy.blocked.ctas.biblioteca}
-      </a>
+      <div className="roulette-actions">
+        <a className="queue2-button" data-tone="primary" href="/app/descobrir">
+          Ir descobrir
+        </a>
+        <a className="queue2-button" data-tone="quiet" href="/app/biblioteca">
+          {viewModel.copy.blocked.ctas.biblioteca}
+        </a>
+      </div>
     </div>
   );
+}
+
+function getRitualStateLabel(state: RouletteRouteViewModel["firstViewport"]["state"]): string {
+  switch (state) {
+    case "blocked-pool":
+      return "backlog abaixo de 3";
+    case "history-backed-empty":
+      return "sem rodada ativa";
+    case "pending-invitation":
+      return "convite pendente";
+    case "ready":
+      return "pronta";
+    case "resumable-reveal":
+      return "resultado salvo";
+  }
 }
 
 function toReplacementRequiredGameView(input: {

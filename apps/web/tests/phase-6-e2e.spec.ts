@@ -89,7 +89,7 @@ test.describe("Phase 6 roulette browser flow", () => {
     await expectNoVisibleControlOverlap(page);
   });
 
-  test("mobile reduced motion route exposes nine-item mobile nav and no visible control overlap", async ({ page }) => {
+  test("mobile reduced motion route exposes seven primary routes and no visible control overlap", async ({ page }) => {
     await page.setViewportSize(mobileViewport);
     await page.emulateMedia({ reducedMotion: "reduce" });
     await login(page, readyActor);
@@ -101,18 +101,18 @@ test.describe("Phase 6 roulette browser flow", () => {
       .toBe(true);
     await expect(page.getByText(/A fila esta escolhendo|Resultado guardado|Revelado/i).first()).toBeVisible();
 
-    const mobileNav = page.getByRole("navigation", { name: /navegacao principal mobile/i });
+    const mobileNav = page.getByRole("navigation", {
+      name: /navegacao principal mobile|navegacao principal da area autenticada queue dois/i
+    }).first();
     await expect(mobileNav).toBeVisible();
     for (const item of [
-      "Fila",
-      "Catalogo",
-      "Descobrir",
+      "Home",
       "Biblioteca",
+      "Descobrir",
       "Roleta",
-      "Conquistas",
       "Desafios",
-      "Dupla",
-      "Perfil"
+      "Hall",
+      "Dupla"
     ]) {
       await expect(mobileNav.getByRole("link", { name: new RegExp(item, "i") })).toBeVisible();
     }

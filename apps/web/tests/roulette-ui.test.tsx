@@ -52,6 +52,10 @@ describe("Phase 6 roulette route shell", () => {
     expect(source).toContain("Roleta da dupla");
     expect(source).toContain("A fila escolhe agora");
     expect(source).toContain("A roleta usa Wishlist e Pausado. O resultado e guardado antes da revelacao.");
+    expect(source).toContain("roulette-ritual-hero");
+    expect(source).toContain("roulette-status-strip");
+    expect(source).toContain("BACKLOG VAZIO /");
+    expect(source).toContain("Ir descobrir");
     expect(source).toContain("A roleta precisa de tres jogos");
     expect(source).toContain("Coloquem pelo menos tres jogos em Wishlist ou Pausado. Depois a fila escolhe com peso real, nao com surpresa vazia.");
     expect(source).toContain("Abrir Biblioteca");
@@ -314,6 +318,9 @@ describe("Phase 6 roulette route shell", () => {
     expect(pageSource).toContain("ResultPanel");
     expect(pageSource).toContain("CompactHistory");
     expect(pageSource).toContain("ReplacementRequired");
+    expect(pageSource).toContain("roulette-empty-panel");
+    expect(pageSource).toContain("BACKLOG VAZIO");
+    expect(pageSource).toContain("Ir descobrir");
     expect(pageSource).toContain("getRouletteState");
     expect(pageSource).toContain("getRouletteHistory");
     expect(pageSource).toContain("updateRouletteAudioPreferenceAction");
