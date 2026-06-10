@@ -34,6 +34,8 @@ import {
 } from "../src/platform/auth/password-breach";
 
 const serverActionsSource = readFileSync("src/platform/auth/server-actions.ts", "utf8");
+const profilePageSource = readFileSync("src/app/app/perfil/page.tsx", "utf8");
+const globalCssSource = readFileSync("src/app/globals.css", "utf8");
 
 afterEach(() => {
   cleanup();
@@ -335,5 +337,15 @@ describe("auth pages wired to flow states", () => {
     expect(screen.getByLabelText(/nova senha/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /alterar senha/i })).toBeInTheDocument();
     expect(screen.queryByLabelText(/email da conta/i)).not.toBeInTheDocument();
+  });
+
+  it("keeps the authenticated profile route compact and overflow-safe", () => {
+    expect(profilePageSource).toContain("profile-form");
+    expect(profilePageSource).toContain("profile-avatar-url-safe");
+    expect(profilePageSource).toContain("Salvar nome");
+    expect(profilePageSource).toContain("Sair da conta");
+    expect(profilePageSource).toContain("logoutCurrentSessionAction");
+    expect(globalCssSource).toContain(".profile-avatar-url-safe .queue2-input");
+    expect(globalCssSource).toContain("overflow-wrap: anywhere");
   });
 });

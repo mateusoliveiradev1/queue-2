@@ -97,7 +97,7 @@ async function renderChallengesPage({
         <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
       }
     >
-      <header className="app-header challenges-header">
+      <header className="utility-hero challenges-header">
         <div>
           <p className="eyebrow">Desafios</p>
           <h1 className="page-title" id="challenges-route-title">
@@ -108,7 +108,21 @@ async function renderChallengesPage({
             com progresso confirmado no servidor.
           </p>
         </div>
-        <div className="achievements-header-actions">
+        <div className="utility-stat-strip" aria-label="Resumo dos desafios da dupla">
+          <span>
+            <small>streak</small>
+            <strong>{view.streak.valueLabel}</strong>
+          </span>
+          <span>
+            <small>freeze</small>
+            <strong>{view.streak.freezeLabel}</strong>
+          </span>
+          <span>
+            <small>ciclos</small>
+            <strong>{view.sections.length}</strong>
+          </span>
+        </div>
+        <div className="utility-hero-actions">
           <a className="queue2-button" data-tone="quiet" href="/app">
             Voltar para a fila
           </a>

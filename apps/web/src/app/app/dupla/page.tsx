@@ -46,6 +46,10 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
 
   const duo = dashboard.duo;
   const statusMessage = getDuoStatusMessage(getSearchParam(params?.estado));
+  const pairedAtLabel = duo.pairedAt
+    ? formatPairingDate(duo.pairedAt, duo.timezone)
+    : "Aguardando a segunda pessoa entrar pelo codigo.";
+  const enabledPreferenceCount = [duo.notificationsEnabled, duo.audioEnabled].filter(Boolean).length;
 
   return (
     <AppShell
@@ -54,7 +58,7 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
         <NotificationCenter center={notificationsResult.ok ? notificationsResult.center : null} />
       }
     >
-      <header className="app-header">
+      <header className="utility-hero duo-hero">
         <div>
           <p className="eyebrow">Contrato /2</p>
           <h1 className="page-title">{duo.name ?? "A fila e nossa"}</h1>
@@ -62,6 +66,25 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
             Nome, fuso e preferencias pertencem aos dois. A dupla nao tem dono
             unico.
           </p>
+        </div>
+        <div className="duo-contract-card" aria-label="Contrato da dupla">
+          <span>contrato /2</span>
+          <strong>{duo.members.length}/2</strong>
+          <small>Dupla fechada. Convites e codigos ficam no pareamento.</small>
+        </div>
+        <div className="utility-stat-strip duo-stats" aria-label="Stats coletivos da dupla">
+          <span>
+            <small>membros</small>
+            <strong>{duo.members.length}/2</strong>
+          </span>
+          <span>
+            <small>fuso</small>
+            <strong>{duo.timezone}</strong>
+          </span>
+          <span>
+            <small>preferencias</small>
+            <strong>{enabledPreferenceCount}/2</strong>
+          </span>
         </div>
       </header>
 
@@ -78,7 +101,7 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
         </>
       ) : null}
 
-      <form action={updateDuoSettingsAction} className="surface-band app-section">
+      <form action={updateDuoSettingsAction} className="surface-band app-section duo-settings-form">
         <section aria-labelledby="duo-name-section" className="form-stack">
           <div className="section-heading">
             <h2 className="eyebrow" id="duo-name-section">
@@ -156,20 +179,25 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
         </div>
       </form>
 
-      <section className="surface-band app-section" aria-labelledby="members-section">
+      <section className="surface-band app-section duo-members-panel" aria-labelledby="members-section">
         <div className="section-heading">
           <h2 className="eyebrow" id="members-section">
             Membros fixos
           </h2>
           <p className="support-copy">/2 significa que a fila fecha aqui.</p>
         </div>
-        <div className="settings-grid">
+        <div className="duo-member-grid">
           {duo.members.map((member) => (
-            <div className="metric" key={member.userId}>
-              <span className="muted">Jogador {member.memberSlot}</span>
-              <strong>{member.displayName}</strong>
+            <article className="duo-member-card" key={member.userId}>
+              <span className="duo-avatar" aria-hidden="true">
+                {getMemberInitials(member.displayName)}
+              </span>
+              <div>
+                <span className="muted">Jogador {member.memberSlot}</span>
+                <strong>{member.displayName}</strong>
+              </div>
               <span className="muted">Membro fixo da fila compartilhada.</span>
-            </div>
+            </article>
           ))}
         </div>
       </section>
@@ -181,11 +209,7 @@ export default async function DuoPage({ searchParams }: DuoPageProps = {}) {
           </h2>
           <p className="support-copy">O marco inicial da fila compartilhada.</p>
         </div>
-        <p className="lede">
-          {duo.pairedAt
-            ? formatPairingDate(duo.pairedAt, duo.timezone)
-            : "Aguardando a segunda pessoa entrar pelo codigo."}
-        </p>
+        <p className="lede">{pairedAtLabel}</p>
       </section>
     </AppShell>
   );
@@ -221,4 +245,15 @@ function getFormString(formData: FormData, key: string): string {
 
 function getSearchParam(value: string | string[] | undefined): string | null {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function getMemberInitials(displayName: string): string {
+  const initials = displayName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
+
+  return initials || "/2";
 }

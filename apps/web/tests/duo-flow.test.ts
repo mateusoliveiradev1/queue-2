@@ -273,6 +273,16 @@ describe("duo route-state wiring", () => {
     expect(duoPageSource).not.toContain("PushManager");
     expect(duoPageSource).toContain("A permissao de push so aparece");
   });
+
+  it("keeps the Dupla utility surface focused on the /2 contract and collective stats", () => {
+    expect(pairingPageSource).toContain("CopyPairingCode");
+    expect(duoPageSource).toContain("duo-contract-card");
+    expect(duoPageSource).toContain("Contrato da dupla");
+    expect(duoPageSource).toContain("duo.members.length}/2");
+    expect(duoPageSource).toContain("duo-avatar");
+    expect(duoPageSource).toContain("duo-stats");
+    expect(duoPageSource).not.toMatch(/vs|ranking|maior que|melhor jogador/i);
+  });
 });
 
 function createLimiter(

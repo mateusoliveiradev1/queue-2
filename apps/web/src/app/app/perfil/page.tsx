@@ -51,7 +51,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
 
   return (
     <AppShell currentPage="perfil">
-      <header className="app-header">
+      <header className="utility-hero profile-hero">
         <div>
           <p className="eyebrow">Perfil individual</p>
           <h1 className="page-title">Seu lugar na dupla</h1>
@@ -59,6 +59,16 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
             Ajuste como voce aparece para a outra pessoa e revise os acessos da
             conta. O progresso continua sendo dos dois.
           </p>
+        </div>
+        <div className="utility-stat-strip" aria-label="Resumo da conta">
+          <span>
+            <small>sessoes</small>
+            <strong>{activeSessions.length}</strong>
+          </span>
+          <span>
+            <small>atual</small>
+            <strong>ativo</strong>
+          </span>
         </div>
       </header>
 
@@ -71,14 +81,20 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
         </>
       ) : null}
 
-      <section className="surface-band app-section" aria-labelledby="display-name-section">
+      <section
+        className="surface-band app-section profile-form-panel"
+        aria-labelledby="display-name-section"
+      >
         <div className="section-heading">
           <h2 className="eyebrow" id="display-name-section">
             Nome visivel
           </h2>
           <p className="support-copy">O nome que aparece para sua dupla.</p>
         </div>
-        <form action={updateProfileDisplayNameAction} className="form-stack">
+        <form
+          action={updateProfileDisplayNameAction}
+          className="form-stack profile-form profile-avatar-url-safe"
+        >
           <div className="field">
             <label htmlFor="profile-display-name">Nome de exibicao</label>
             <input
@@ -102,7 +118,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
         </form>
       </section>
 
-      <section className="surface-band app-section" aria-labelledby="sessions-section">
+      <section
+        className="surface-band app-section profile-session-panel"
+        aria-labelledby="sessions-section"
+      >
         <div className="section-heading">
           <h2 className="eyebrow" id="sessions-section">
             Acessos ativos
@@ -145,7 +164,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
         </ul>
       </section>
 
-      <section className="surface-band app-section" aria-labelledby="logout-section">
+      <section
+        className="surface-band app-section profile-logout-panel"
+        aria-labelledby="logout-section"
+      >
         <div className="section-heading">
           <h2 className="eyebrow" id="logout-section">
             Sair
