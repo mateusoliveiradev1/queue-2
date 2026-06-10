@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-stopped_at: Completed 07-01-PLAN.md
-last_updated: "2026-06-10T03:34:03.483Z"
+stopped_at: Completed 07-02-PLAN.md
+last_updated: "2026-06-10T03:49:52.310Z"
 last_activity: 2026-06-10
 progress:
   total_phases: 13
   completed_phases: 11
   total_plans: 66
-  completed_plans: 60
-  percent: 91
+  completed_plans: 61
+  percent: 92
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-06-03)
 ## Current Position
 
 Phase: 07 (paridade-visual-e-ux-com-prototipo) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-06-10
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 92%
 
 ## Performance Metrics
 
@@ -114,6 +114,7 @@ Progress: [█████████░] 91%
 | Phase 06-roleta-e-economia P11 | 16 min | 2 tasks | 5 files |
 | Phase 07 P00 | 13 min | 3 tasks | 27 files |
 | Phase 07 P01 | 22 min | 3 tasks | 7 files |
+| Phase 07 P02 | 15 min | 3 tasks | 19 files |
 
 ## Quick Tasks Completed
 
@@ -324,6 +325,9 @@ Recent decisions affecting current work:
 - [Phase 06-roleta-e-economia]: Drizzle now has a no-op schema baseline snapshot after the reviewed SQL migrations. — `drizzle:generate` can prove no pending schema diff without replacing hand-authored RLS, policy and constraint migrations.
 - [Phase 06-roleta-e-economia]: Roulette application reads are sequential inside each `pg` transaction client. — This avoids the `client.query()` while already executing deprecation warning and keeps the code compatible with the upcoming `pg@9` behavior.
 - [Phase 07]: Prototype visual parity is now release-blocking before Hall/Stats/Lancamento. - The Lovable prototype screenshots define the target direction for landing, auth and authenticated routes while preserving Phase 1-6 behavior, security and accessibility gates.
+- [Phase 07]: Public landing is product-first: QUEUE/2, A fila e nossa., short lede and two direct CTAs. — Keeps the first impression aligned with Phase 7 prototype direction instead of a generic SaaS feature tour.
+- [Phase 07]: /parear keeps the verified-session guard; anonymous visual tests assert redirect to /login. — Avoids weakening auth or capturing Next redirect metadata as if it were the protected pairing UI.
+- [Phase 07]: /login and /cadastro remain separate routes but share visual auth tabs. — Preserves existing route and auth behavior while making cross-navigation obvious in the compact public auth system.
 
 ### Pending Todos
 
@@ -362,6 +366,6 @@ Items acknowledged and carried forward from initial scoping:
 
 ## Session Continuity
 
-Last session: 2026-06-10T03:34:03.476Z
-Stopped at: Completed 07-01-PLAN.md
+Last session: 2026-06-10T03:49:11.804Z
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
