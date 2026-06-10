@@ -48,6 +48,10 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
       ? "Sessao revogada quando ainda estava ativa."
       : getDuoStatusMessage(state);
   const currentSessionId = currentSession.session.id;
+  const profileDisplayName =
+    dashboard.profileDisplayName || currentSession.user.name || "Jogador da fila";
+  const profileImageUrl = normalizeProfileImageUrl(currentSession.user.image);
+  const profileInitials = getProfileInitials(profileDisplayName);
 
   return (
     <AppShell currentPage="perfil">
@@ -60,14 +64,41 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
             conta. O progresso continua sendo dos dois.
           </p>
         </div>
-        <div className="utility-stat-strip" aria-label="Resumo da conta">
+        <div className="profile-identity-card" aria-label="Identidade do perfil">
+          <span className="profile-avatar-preview" aria-hidden="true">
+            {profileImageUrl ? (
+              <img
+                alt=""
+                decoding="async"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+                src={profileImageUrl}
+              />
+            ) : (
+              profileInitials
+            )}
+          </span>
           <span>
-            <small>sessoes</small>
+            <small>aparece como</small>
+            <strong>{profileDisplayName}</strong>
+          </span>
+          <span>
+            <small>email</small>
+            <strong>{currentSession.user.email}</strong>
+          </span>
+        </div>
+        <div className="utility-stat-strip profile-stat-strip" aria-label="Resumo da conta">
+          <span>
+            <small>sessoes ativas</small>
             <strong>{activeSessions.length}</strong>
           </span>
           <span>
-            <small>atual</small>
-            <strong>ativo</strong>
+            <small>sessao atual</small>
+            <strong>ativa</strong>
+          </span>
+          <span>
+            <small>avatar</small>
+            <strong>{profileImageUrl ? "salvo" : "iniciais"}</strong>
           </span>
         </div>
       </header>
@@ -83,13 +114,15 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
 
       <section
         className="surface-band app-section profile-form-panel"
-        aria-labelledby="display-name-section"
+        aria-labelledby="profile-identity-section"
       >
         <div className="section-heading">
-          <h2 className="eyebrow" id="display-name-section">
-            Nome visivel
+          <h2 className="eyebrow" id="profile-identity-section">
+            Identidade visivel
           </h2>
-          <p className="support-copy">O nome que aparece para sua dupla.</p>
+          <p className="support-copy">
+            O que a outra pessoa ve quando combina jogos, sessoes e conquistas.
+          </p>
         </div>
         <form
           action={updateProfileDisplayNameAction}
@@ -99,7 +132,7 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
             <label htmlFor="profile-display-name">Nome de exibicao</label>
             <input
               className="queue2-input"
-              defaultValue={dashboard.profileDisplayName || currentSession.user.name}
+              defaultValue={profileDisplayName}
               id="profile-display-name"
               maxLength={40}
               name="displayName"
@@ -107,12 +140,32 @@ export default async function ProfilePage({ searchParams }: ProfilePageProps = {
               type="text"
             />
           </div>
-          <p className="support-copy">
-            Use texto simples e curto. A fila nao precisa de apelido gigante.
-          </p>
+          <div className="field">
+            <label htmlFor="profile-avatar-url">URL do avatar</label>
+            <input
+              className="queue2-input"
+              defaultValue={currentSession.user.image ?? ""}
+              id="profile-avatar-url"
+              inputMode="url"
+              maxLength={500}
+              name="avatarUrl"
+              pattern="https://.*"
+              placeholder="https://exemplo.com/avatar.png"
+              type="url"
+            />
+          </div>
+          <div className="profile-form-guidance">
+            <p className="support-copy">
+              Nome em texto simples, ate 40 caracteres. Avatar vazio volta para
+              iniciais.
+            </p>
+            <p className="support-copy">
+              Por seguranca, a imagem precisa usar https.
+            </p>
+          </div>
           <div className="form-actions">
             <button className="queue2-button" data-tone="primary" type="submit">
-              Salvar nome
+              Salvar perfil
             </button>
           </div>
         </form>
@@ -193,7 +246,8 @@ async function updateProfileDisplayNameAction(formData: FormData) {
   const { currentSession } = await getVerifiedProfileAuthContext();
   const result = await updateProfileDisplayName({
     userId: currentSession.user.id,
-    displayName: getFormString(formData, "displayName")
+    displayName: getFormString(formData, "displayName"),
+    avatarUrl: getFormString(formData, "avatarUrl")
   });
 
   redirect(
@@ -210,6 +264,30 @@ function getFormString(formData: FormData, key: string): string {
 
 function getSearchParam(value: string | string[] | undefined): string | null {
   return Array.isArray(value) ? value[0] ?? null : value ?? null;
+}
+
+function normalizeProfileImageUrl(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:" ? parsed.href : null;
+  } catch {
+    return null;
+  }
+}
+
+function getProfileInitials(displayName: string): string {
+  const initials = displayName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return initials || "Q2";
 }
 
 function formatSessionDate(value: Date): string {

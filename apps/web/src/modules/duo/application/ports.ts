@@ -72,6 +72,7 @@ export interface DuoRepository {
   updateProfileDisplayName(input: {
     userId: string;
     displayName: string;
+    avatarUrl: string | null;
   }): Promise<void>;
   updateDuoSettings(input: {
     userId: string;

@@ -2041,6 +2041,71 @@ input {
   max-width: 760px;
 }
 
+.profile-identity-card {
+  align-items: center;
+  border-top: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 84px repeat(2, minmax(0, 1fr));
+  padding-top: var(--space-5);
+}
+
+.profile-identity-card span:not(.profile-avatar-preview) {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-identity-card small,
+.profile-identity-card strong {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
+.profile-identity-card small {
+  color: var(--primary);
+}
+
+.profile-identity-card strong {
+  color: var(--ink);
+}
+
+.profile-avatar-preview {
+  align-items: center;
+  aspect-ratio: 1;
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--primary) 24%, transparent), transparent),
+    color-mix(in oklch, var(--bg) 34%, transparent);
+  border: 1px solid color-mix(in oklch, var(--primary) 48%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--primary);
+  display: inline-flex;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 900;
+  justify-content: center;
+  line-height: 0.95;
+  overflow: hidden;
+  text-transform: uppercase;
+  width: 84px;
+}
+
+.profile-avatar-preview img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.profile-stat-strip {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .profile-form,
 .profile-session-panel,
 .profile-logout-panel {
@@ -2050,6 +2115,17 @@ input {
 .profile-avatar-url-safe .queue2-input {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.profile-form-guidance {
+  border-left: 3px solid color-mix(in oklch, var(--primary) 58%, transparent);
+  display: grid;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
+}
+
+.profile-form-guidance .support-copy {
+  margin: 0;
 }
 
 .profile-session-panel .session-list li {
@@ -6169,6 +6245,15 @@ input {
     padding: var(--space-5);
   }
 
+  .profile-identity-card,
+  .profile-stat-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-identity-card {
+    align-items: start;
+  }
+
   .duo-contract-card {
     max-width: none;
   }
@@ -6350,6 +6435,11 @@ input {
 
   .duo-avatar {
     width: 56px;
+  }
+
+  .profile-avatar-preview {
+    font-size: 1.55rem;
+    width: 64px;
   }
 
   .hall-empty-panel h2 {

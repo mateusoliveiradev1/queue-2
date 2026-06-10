@@ -1,5 +1,6 @@
 import {
   isValidTimezone,
+  validateProfileAvatarUrl,
   validatePlainText
 } from "../domain/duo-policy";
 import type { DuoRepository } from "./ports";
@@ -10,7 +11,7 @@ export type UpdateDuoSettingsResult =
 
 export type UpdateProfileResult =
   | { ok: true; state: "profile-updated" }
-  | { ok: false; state: "invalid-display-name" };
+  | { ok: false; state: "invalid-display-name" | "invalid-avatar-url" };
 
 export async function updateDuoSettingsUseCase(
   input: {
@@ -53,7 +54,7 @@ export async function updateDuoSettingsUseCase(
 }
 
 export async function updateProfileDisplayNameUseCase(
-  input: { userId: string; displayName: string },
+  input: { userId: string; displayName: string; avatarUrl?: string },
   repository: DuoRepository
 ): Promise<UpdateProfileResult> {
   const displayName = validatePlainText(input.displayName, "display-name");
@@ -62,9 +63,16 @@ export async function updateProfileDisplayNameUseCase(
     return { ok: false, state: "invalid-display-name" };
   }
 
+  const avatarUrl = validateProfileAvatarUrl(input.avatarUrl ?? "");
+
+  if (!avatarUrl.ok) {
+    return { ok: false, state: "invalid-avatar-url" };
+  }
+
   await repository.updateProfileDisplayName({
     userId: input.userId,
-    displayName: displayName.value
+    displayName: displayName.value,
+    avatarUrl: avatarUrl.value
   });
 
   return { ok: true, state: "profile-updated" };

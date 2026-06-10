@@ -1,6 +1,7 @@
 export const DISPLAY_NAME_MAX_LENGTH = 40;
 export const DUO_NAME_MAX_LENGTH = 48;
 export const DEFAULT_DUO_TIMEZONE = "America/Sao_Paulo";
+export const PROFILE_AVATAR_URL_MAX_LENGTH = 500;
 
 export type DuoMembershipState = "none" | "awaiting-partner" | "paired";
 export type DuoRouteState = "pairing" | "naming" | "ready";
@@ -9,6 +10,10 @@ export type PlainTextField = "display-name" | "duo-name";
 export type PlainTextValidation =
   | { ok: true; value: string }
   | { ok: false; reason: "empty" | "too-long" | "formatted" };
+
+export type ProfileAvatarUrlValidation =
+  | { ok: true; value: string | null }
+  | { ok: false; reason: "too-long" | "invalid" | "unsafe-protocol" };
 
 const FORMATTING_MARKER_PATTERN = /[<>`*_~]|(?:^|\s)#{1,6}\s/;
 
@@ -75,6 +80,36 @@ export function validatePlainText(
   }
 
   return { ok: true, value: normalized };
+}
+
+export function validateProfileAvatarUrl(value: string): ProfileAvatarUrlValidation {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    return { ok: true, value: null };
+  }
+
+  if (normalized.length > PROFILE_AVATAR_URL_MAX_LENGTH) {
+    return { ok: false, reason: "too-long" };
+  }
+
+  let parsed: URL;
+
+  try {
+    parsed = new URL(normalized);
+  } catch {
+    return { ok: false, reason: "invalid" };
+  }
+
+  if (parsed.protocol !== "https:") {
+    return { ok: false, reason: "unsafe-protocol" };
+  }
+
+  if (!parsed.hostname || parsed.username || parsed.password) {
+    return { ok: false, reason: "invalid" };
+  }
+
+  return { ok: true, value: parsed.href };
 }
 
 export function isValidTimezone(value: string): boolean {

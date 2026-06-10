@@ -12,6 +12,7 @@ import {
   classifyDuoRouteState,
   classifyMembershipState,
   isValidTimezone,
+  validateProfileAvatarUrl,
   validatePlainText
 } from "../src/modules/duo/domain/duo-policy";
 import {
@@ -112,6 +113,26 @@ describe("duo policy", () => {
     expect(isValidTimezone("America/Sao_Paulo")).toBe(true);
     expect(isValidTimezone("Timezone inventado")).toBe(false);
   });
+
+  it("accepts empty or https avatar URLs and rejects unsafe profile images", () => {
+    expect(validateProfileAvatarUrl("")).toEqual({ ok: true, value: null });
+    expect(validateProfileAvatarUrl(" https://cdn.example.com/avatar.png ")).toEqual({
+      ok: true,
+      value: "https://cdn.example.com/avatar.png"
+    });
+    expect(validateProfileAvatarUrl("http://cdn.example.com/avatar.png")).toEqual({
+      ok: false,
+      reason: "unsafe-protocol"
+    });
+    expect(validateProfileAvatarUrl("javascript:alert(1)")).toEqual({
+      ok: false,
+      reason: "unsafe-protocol"
+    });
+    expect(validateProfileAvatarUrl("not a url")).toEqual({
+      ok: false,
+      reason: "invalid"
+    });
+  });
 });
 
 describe("create pairing code use case", () => {
@@ -175,7 +196,7 @@ function createRepository(context: DuoUserContextRecord): DuoRepository {
     createPairingCodeForExistingDuo: async () => code,
     revokePairingCode: async () => true,
     claimPairingCode: async () => ({ state: "claimed", duoId: code.duoId }),
-    updateProfileDisplayName: async () => undefined,
+    updateProfileDisplayName: async (_input) => undefined,
     updateDuoSettings: async () => true,
     updateDuoAudioPreference: async () => true
   };

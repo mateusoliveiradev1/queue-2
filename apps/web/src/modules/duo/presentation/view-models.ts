@@ -16,6 +16,7 @@ export type DuoStatusState =
   | "dupla-atualizada"
   | "perfil-atualizado"
   | "nome-invalido"
+  | "avatar-invalido"
   | "timezone-invalido";
 
 const statusMessages: Record<DuoStatusState, string> = {
@@ -28,8 +29,9 @@ const statusMessages: Record<DuoStatusState, string> = {
   "dupla-recem-formada": "Essa dupla acabou de ser formada. Peca um novo codigo.",
   "ja-pareado": "Voce ja esta em uma dupla. No QUEUE/2, a fila pertence a dois jogadores fixos.",
   "dupla-atualizada": "Identidade e preferencias da dupla atualizadas.",
-  "perfil-atualizado": "Nome de exibicao atualizado.",
+  "perfil-atualizado": "Perfil atualizado.",
   "nome-invalido": "Use um nome curto em texto simples, sem HTML ou formatacao.",
+  "avatar-invalido": "Use uma URL de imagem https valida ou deixe o campo vazio.",
   "timezone-invalido": "Confirme um fuso valido para a dupla."
 };
 
@@ -87,7 +89,11 @@ export function duoUpdateResultToStatus(
 export function profileUpdateResultToStatus(
   result: UpdateProfileResult
 ): DuoStatusState {
-  return result.ok ? "perfil-atualizado" : "nome-invalido";
+  if (result.ok) {
+    return "perfil-atualizado";
+  }
+
+  return result.state === "invalid-avatar-url" ? "avatar-invalido" : "nome-invalido";
 }
 
 export function buildDuoPath(

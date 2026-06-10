@@ -106,6 +106,7 @@ export function updateDuoAudioPreference(input: {
 export function updateProfileDisplayName(input: {
   userId: string;
   displayName: string;
+  avatarUrl?: string;
 }): Promise<UpdateProfileResult> {
   return updateProfileDisplayNameUseCase(input, duoRepository);
 }

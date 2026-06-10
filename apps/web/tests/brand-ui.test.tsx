@@ -442,6 +442,10 @@ describe("authenticated Phase 1 surfaces", () => {
     const { container } = render(await ProfilePage());
 
     expect(screen.getAllByText(/nome visivel|nome de exibicao/i).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText(/url do avatar/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /salvar perfil/i })).toBeInTheDocument();
+    expect(screen.getByText(/aparece como/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/avatar/i).length).toBeGreaterThan(0);
     expect(screen.getByRole("heading", { name: /acessos ativos/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /encerrar sessao/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /^sair$/i })).toBeInTheDocument();

@@ -15,7 +15,10 @@ import type {
   PairingRateLimitResult
 } from "../src/modules/duo/application/ports";
 import { updateDuoAudioPreferenceUseCase } from "../src/modules/duo/application/update-duo-audio-preference";
-import { updateDuoSettingsUseCase } from "../src/modules/duo/application/update-duo-settings";
+import {
+  updateDuoSettingsUseCase,
+  updateProfileDisplayNameUseCase
+} from "../src/modules/duo/application/update-duo-settings";
 
 const repositorySource = readFileSync(
   "src/modules/duo/infrastructure/duo-repository.ts",
@@ -184,6 +187,67 @@ describe("duo pairing flow", () => {
     ).resolves.toEqual({ ok: true, state: "duo-updated" });
   });
 
+  it("validates and persists profile display name with optional avatar URL", async () => {
+    const repository = new FakeDuoRepository();
+
+    await expect(
+      updateProfileDisplayNameUseCase(
+        {
+          userId: "user-1",
+          displayName: "<strong>Jogador</strong>",
+          avatarUrl: "https://cdn.example.com/avatar.png"
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: false, state: "invalid-display-name" });
+
+    await expect(
+      updateProfileDisplayNameUseCase(
+        {
+          userId: "user-1",
+          displayName: "Jogador da fila",
+          avatarUrl: "http://cdn.example.com/avatar.png"
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: false, state: "invalid-avatar-url" });
+
+    await expect(
+      updateProfileDisplayNameUseCase(
+        {
+          userId: "user-1",
+          displayName: "  Jogador da fila  ",
+          avatarUrl: " https://cdn.example.com/avatar.png "
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: true, state: "profile-updated" });
+
+    await expect(
+      updateProfileDisplayNameUseCase(
+        {
+          userId: "user-1",
+          displayName: "Jogador da fila",
+          avatarUrl: ""
+        },
+        repository
+      )
+    ).resolves.toEqual({ ok: true, state: "profile-updated" });
+
+    expect(repository.profileUpdates).toEqual([
+      {
+        avatarUrl: "https://cdn.example.com/avatar.png",
+        displayName: "Jogador da fila",
+        userId: "user-1"
+      },
+      {
+        avatarUrl: null,
+        displayName: "Jogador da fila",
+        userId: "user-1"
+      }
+    ]);
+  });
+
   it("persists the roulette audio preference through the current duo membership", async () => {
     const repository = new FakeDuoRepository();
     repository.contexts.set("user-1", pairedContext("duo-1", "user-1"));
@@ -233,6 +297,7 @@ describe("duo persistence contract", () => {
     expect(repositorySource).not.toContain("DIRECT_DATABASE_URL");
     expect(repositorySource).not.toContain("queue2_migrator");
     expect(repositorySource).not.toContain("BYPASSRLS");
+    expect(repositorySource).toContain("image = $3");
   });
 
   it("stores pairing limits in the database rather than process memory", () => {
@@ -335,6 +400,11 @@ class FakeDuoRepository implements DuoRepository {
     duoId: string;
     userId: string;
   }> = [];
+  readonly profileUpdates: Array<{
+    avatarUrl: string | null;
+    displayName: string;
+    userId: string;
+  }> = [];
   claimOutcome: PairingClaimOutcome = { state: "inactive" };
   ensureProfileCalls = 0;
   revokeCalls = 0;
@@ -422,7 +492,24 @@ class FakeDuoRepository implements DuoRepository {
     return this.claimOutcome;
   }
 
-  async updateProfileDisplayName() {
+  async updateProfileDisplayName(input: {
+    userId: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }) {
+    this.profileUpdates.push(input);
+
+    const context = this.contexts.get(input.userId);
+
+    if (context) {
+      context.profileDisplayName = input.displayName;
+    } else {
+      this.contexts.set(input.userId, {
+        profileDisplayName: input.displayName,
+        membership: null
+      });
+    }
+
     return undefined;
   }
 

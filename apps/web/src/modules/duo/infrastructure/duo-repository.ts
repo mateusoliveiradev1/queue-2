@@ -255,6 +255,7 @@ async function claimPairingCode(input: {
 async function updateProfileDisplayName(input: {
   userId: string;
   displayName: string;
+  avatarUrl: string | null;
 }): Promise<void> {
   await asUser(input.userId, async (client) => {
     await client.query(
@@ -271,10 +272,11 @@ async function updateProfileDisplayName(input: {
       `
         UPDATE auth."user"
         SET name = $2,
+            image = $3,
             updated_at = now()
         WHERE id = $1
       `,
-      [input.userId, input.displayName]
+      [input.userId, input.displayName, input.avatarUrl]
     );
   });
 }

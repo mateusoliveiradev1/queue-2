@@ -103,7 +103,11 @@ class IsolatedRepository implements DuoRepository {
     return { state: "inactive" } as const;
   }
 
-  async updateProfileDisplayName() {
+  async updateProfileDisplayName(_input: {
+    userId: string;
+    displayName: string;
+    avatarUrl: string | null;
+  }) {
     return undefined;
   }
 

@@ -342,9 +342,12 @@ describe("auth pages wired to flow states", () => {
   it("keeps the authenticated profile route compact and overflow-safe", () => {
     expect(profilePageSource).toContain("profile-form");
     expect(profilePageSource).toContain("profile-avatar-url-safe");
-    expect(profilePageSource).toContain("Salvar nome");
+    expect(profilePageSource).toContain("profile-avatar-preview");
+    expect(profilePageSource).toContain("avatarUrl");
+    expect(profilePageSource).toContain("Salvar perfil");
     expect(profilePageSource).toContain("Sair da conta");
     expect(profilePageSource).toContain("logoutCurrentSessionAction");
+    expect(globalCssSource).toContain(".profile-avatar-preview");
     expect(globalCssSource).toContain(".profile-avatar-url-safe .queue2-input");
     expect(globalCssSource).toContain("overflow-wrap: anywhere");
   });
