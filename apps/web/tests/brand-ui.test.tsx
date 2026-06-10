@@ -269,12 +269,17 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
     expect(screen.getByText(/a fila e nossa/i)).toBeInTheDocument();
     expect(screen.getByText(/descubram, sorteiem e zerem coops juntos/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /^entrar$/i })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: /criar conta/i })).toHaveAttribute("href", "/cadastro");
-    expect(screen.getByRole("link", { name: /parear agora/i })).toHaveAttribute("href", "/parear");
-    expect(screen.getByText(/descobrir/i)).toBeInTheDocument();
-    expect(screen.getByText(/sortear/i)).toBeInTheDocument();
-    expect(screen.getByText(/zerar/i)).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("link", { name: /^entrar$/i }).some((link) => link.getAttribute("href") === "/login")
+    ).toBe(true);
+    expect(
+      screen.getAllByRole("link", { name: /criar conta/i }).some((link) => link.getAttribute("href") === "/cadastro")
+    ).toBe(true);
+    expect(screen.getByRole("link", { name: /^parear$/i })).toHaveAttribute("href", "/parear");
+    expect(screen.getByRole("heading", { name: /descobrir\. sortear\. zerar\./i })).toBeInTheDocument();
+    expect(screen.getAllByText(/descobrir/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/sortear/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/zerar/i).length).toBeGreaterThan(0);
   });
 
   it("renders login with accessible email and password fields", async () => {
