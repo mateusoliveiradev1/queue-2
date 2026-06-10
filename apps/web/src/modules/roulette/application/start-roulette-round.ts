@@ -10,10 +10,8 @@ import {
 } from "../domain/roulette-policy";
 import type {
   RouletteBoostLedgerRecord,
-  RouletteEligibleGameRecord,
   RouletteRepository,
   RouletteRepositoryTransaction,
-  RouletteRoundEntryRecord,
   RouletteRoundRecord,
   StartRouletteRoundInput,
   StartRouletteRoundResult
