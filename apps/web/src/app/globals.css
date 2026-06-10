@@ -4240,6 +4240,76 @@ input {
   gap: var(--space-5);
 }
 
+.library-ritual-hero {
+  background:
+    linear-gradient(135deg, color-mix(in oklch, var(--primary) 9%, transparent), transparent 44%),
+    color-mix(in oklch, var(--surface) 84%, black);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  display: grid;
+  gap: var(--space-5);
+  padding: clamp(24px, 5vw, 40px);
+}
+
+.library-ritual-hero > .queue2-button {
+  justify-self: start;
+}
+
+.library-status-strip {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.library-status-strip a,
+.library-status-strip span {
+  align-items: center;
+  background: color-mix(in oklch, var(--bg) 28%, transparent);
+  border: 1px solid color-mix(in oklch, var(--ink-muted) 18%, transparent);
+  border-radius: var(--radius-sharp);
+  color: var(--ink-muted);
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 900;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.library-status-strip a:hover {
+  border-color: color-mix(in oklch, var(--primary) 52%, transparent);
+  color: var(--ink);
+}
+
+.library-status-strip strong {
+  color: var(--primary);
+  font: inherit;
+}
+
+.library-empty-hero {
+  align-items: center;
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1fr) auto;
+}
+
+.library-empty-hero strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 3.75rem;
+  letter-spacing: 0;
+  line-height: 0.9;
+  text-transform: uppercase;
+}
+
+.library-empty-hero span {
+  color: var(--ink-muted);
+  line-height: 1.5;
+}
+
 .library-priority-strip,
 .library-playing-strip {
   background:
@@ -4597,10 +4667,16 @@ input {
   margin: 0;
 }
 
+.discovery-stage-top-copy {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 780px;
+}
+
 .discovery-stage-top .page-title {
-  font-size: 28px;
-  font-weight: 600;
-  line-height: 1.1;
+  font-size: 4.75rem;
+  font-weight: 900;
+  line-height: 0.9;
 }
 
 .discovery-stage-status {
@@ -4760,7 +4836,7 @@ input {
   border-radius: var(--radius-sharp);
   display: grid;
   gap: var(--space-6);
-  min-height: min(760px, calc(100svh - 168px));
+  min-height: min(820px, calc(100svh - 128px));
   padding: var(--space-6);
 }
 
@@ -4884,8 +4960,8 @@ input {
 }
 
 .discovery-card {
-  grid-template-columns: minmax(220px, 0.82fr) minmax(0, 1fr);
-  min-height: min(640px, 72svh);
+  grid-template-columns: minmax(280px, 1.05fr) minmax(0, 0.95fr);
+  min-height: min(720px, 76svh);
   padding: var(--space-5);
 }
 
@@ -4940,6 +5016,10 @@ input {
   text-decoration: none;
 }
 
+.discovery-card-cover {
+  min-height: 520px;
+}
+
 .discovery-card-cover img,
 .match-celebration-cover img {
   height: 100%;
@@ -4987,12 +5067,23 @@ input {
   padding-top: var(--space-4);
 }
 
-.discovery-card h2,
+.discovery-card h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 3.4rem;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-transform: uppercase;
+}
+
 .match-celebration h2 {
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 3.4rem;
+  font-weight: 900;
   letter-spacing: 0;
   line-height: 1.1;
   margin: 0;
@@ -5752,6 +5843,10 @@ input {
     padding-bottom: var(--space-5);
   }
 
+  .discovery-stage-top .page-title {
+    font-size: 3.4rem;
+  }
+
   .discovery-orbit-controls {
     flex-wrap: nowrap;
     justify-content: start;
@@ -5780,7 +5875,8 @@ input {
   }
 
   .discovery-card-cover {
-    max-height: min(42svh, 360px);
+    max-height: min(46svh, 400px);
+    min-height: 260px;
   }
 
   .app-route-rail,
@@ -5799,6 +5895,8 @@ input {
   .challenge-streak-panel,
   .challenge-card-meta,
   .library-overview-grid,
+  .library-status-strip,
+  .library-empty-hero,
   .detail-library-panel,
   .game-session-layout,
   .game-session-layout__primary,
@@ -5936,12 +6034,21 @@ input {
     width: 100%;
   }
 
+  .library-empty-hero strong {
+    font-size: 3rem;
+  }
+
   .home-anchor-current h2 {
     font-size: 3.4rem;
   }
 
   .hall-empty-panel h2 {
     font-size: 3.2rem;
+  }
+
+  .discovery-stage-top .page-title,
+  .discovery-card h2 {
+    font-size: 2.75rem;
   }
 
   .playing-now {

@@ -76,6 +76,7 @@ const gamificationModuleMock = vi.hoisted(() => ({
 }));
 
 vi.mock("../src/platform/auth/session", () => ({
+  logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
 }));
 
@@ -455,6 +456,9 @@ describe("Phase 3 Discovery route shell", () => {
     expect(screen.getAllByRole("button", { name: "Pular" })).toHaveLength(1);
     expect(container.querySelector(".discovery-reaction-badges")).toBeNull();
     expect(container.querySelector(".discovery-card-tray")).not.toBeNull();
+    const sourceMeta = screen.getByLabelText(/fonte e frescor da carta/i);
+    expect(sourceMeta).toHaveTextContent(/RAWG/i);
+    expect(sourceMeta).toHaveTextContent(/Atualizado hoje/i);
     const celebration = screen.getByRole("status", { name: /os dois quiseram/i });
     expect(celebration).toHaveTextContent(
       /entrou no radar da dupla\. escolham para onde esse jogo vai agora\./i

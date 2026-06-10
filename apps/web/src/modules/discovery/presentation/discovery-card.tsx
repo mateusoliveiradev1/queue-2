@@ -120,46 +120,6 @@ export function DiscoveryCard({
           </p>
         </div>
 
-        <div className="discovery-decision-actions" aria-label="Decisoes da carta">
-          <DecisionForm
-            action={decisionAction}
-            catalogGameId={card.catalogGameId}
-            decision="want"
-            enhancedAction={enhancedDecisionAction}
-            formRef={formRefs?.want}
-            label="Quero jogar"
-            onLocalReaction={onLocalReaction}
-            returnTo={returnTo}
-            sourceMode={sourceMode}
-          />
-          <DecisionForm
-            action={decisionAction}
-            catalogGameId={card.catalogGameId}
-            decision="not_now"
-            enhancedAction={enhancedDecisionAction}
-            formRef={formRefs?.not_now}
-            label="Agora nao"
-            onLocalReaction={onLocalReaction}
-            returnTo={returnTo}
-            sourceMode={sourceMode}
-          />
-          <DecisionForm
-            action={decisionAction}
-            catalogGameId={card.catalogGameId}
-            decision="skip"
-            enhancedAction={enhancedDecisionAction}
-            formRef={formRefs?.skip}
-            label="Pular"
-            onLocalReaction={onLocalReaction}
-            returnTo={returnTo}
-            sourceMode={sourceMode}
-          />
-        </div>
-        <p className="discovery-card-failure-copy">
-          Se uma tentativa falhar: Nao deu para mover a carta. Use o mesmo
-          botao para tentar de novo antes de seguir.
-        </p>
-
         <div className="discovery-card-tray" aria-label="Detalhes da carta">
           <div className="tag-row" aria-label="Plataformas compativeis">
             {card.platformLabels.slice(0, 4).map((platform) => (
@@ -212,6 +172,46 @@ export function DiscoveryCard({
             </p>
           )}
         </div>
+
+        <div className="discovery-decision-actions" aria-label="Decisoes da carta">
+          <DecisionForm
+            action={decisionAction}
+            catalogGameId={card.catalogGameId}
+            decision="skip"
+            enhancedAction={enhancedDecisionAction}
+            formRef={formRefs?.skip}
+            label="Pular"
+            onLocalReaction={onLocalReaction}
+            returnTo={returnTo}
+            sourceMode={sourceMode}
+          />
+          <DecisionForm
+            action={decisionAction}
+            catalogGameId={card.catalogGameId}
+            decision="not_now"
+            enhancedAction={enhancedDecisionAction}
+            formRef={formRefs?.not_now}
+            label="Agora nao"
+            onLocalReaction={onLocalReaction}
+            returnTo={returnTo}
+            sourceMode={sourceMode}
+          />
+          <DecisionForm
+            action={decisionAction}
+            catalogGameId={card.catalogGameId}
+            decision="want"
+            enhancedAction={enhancedDecisionAction}
+            formRef={formRefs?.want}
+            label="Quero jogar"
+            onLocalReaction={onLocalReaction}
+            returnTo={returnTo}
+            sourceMode={sourceMode}
+          />
+        </div>
+        <p className="discovery-card-failure-copy">
+          Se uma tentativa falhar: Nao deu para mover a carta. Use o mesmo
+          botao para tentar de novo antes de seguir.
+        </p>
       </div>
     </article>
   );

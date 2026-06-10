@@ -134,10 +134,15 @@ async function renderDiscoveryPage({
     <AppShell currentPage="descobrir">
       <section className="discovery-stage" aria-labelledby="discovery-stage-title">
         <header className="discovery-stage-top">
-          <p className="eyebrow">Descoberta /2</p>
-          <h1 className="page-title" id="discovery-stage-title">
-            Os dois quiseram?
-          </h1>
+          <div className="discovery-stage-top-copy">
+            <p className="eyebrow">Descoberta /2</p>
+            <h1 className="page-title" id="discovery-stage-title">
+              Os dois quiseram?
+            </h1>
+            <p className="lede">
+              Uma carta domina a rodada; filtros, busca e historico ficam como apoio.
+            </p>
+          </div>
         </header>
 
         {statusMessage ? (

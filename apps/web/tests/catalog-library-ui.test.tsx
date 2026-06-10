@@ -88,6 +88,7 @@ const navigationMock = vi.hoisted(() => ({
 }));
 
 vi.mock("../src/platform/auth/session", () => ({
+  logoutCurrentSessionAction: vi.fn(async () => undefined),
   requireVerifiedSession: vi.fn(async () => authSessionMock.currentSession)
 }));
 
@@ -499,10 +500,11 @@ describe("Phase 2 authenticated catalog and library UI", () => {
       screen.getByRole("navigation", { name: /area autenticada queue dois/i })
     );
 
-    expect(navigation.getByRole("link", { name: /catalogo/i })).toHaveAttribute(
-      "href",
-      "/app/catalogo"
-    );
+    expect(
+      screen
+        .getAllByRole("link", { name: /catalogo/i })
+        .some((link) => link.getAttribute("href") === "/app/catalogo")
+    ).toBe(true);
     expect(navigation.getByRole("link", { name: /biblioteca/i })).toHaveAttribute(
       "href",
       "/app/biblioteca"

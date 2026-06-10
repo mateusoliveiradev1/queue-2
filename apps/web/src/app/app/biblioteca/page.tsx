@@ -90,6 +90,7 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
   const state = getSearchParam(params?.estado);
   const statusMessage = getPhase2StatusMessage(state);
   const view = toLibraryQueueView(libraryResult.queue);
+  const activeTotal = view.counts.wishlist + view.counts.jogando + view.counts.pausado;
   const selectedPlatforms =
     libraryResult.queue.memberPlatforms.find((member) => member.userId === session.user.id)
       ?.platforms ?? [];
@@ -97,18 +98,43 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
 
   return measureStage("render", libraryTimingContext, async () => (
     <AppShell currentPage="biblioteca">
-      <header className="app-header">
+      <header className="library-ritual-hero" aria-labelledby="library-ritual-title">
         <div>
           <p className="eyebrow">Biblioteca da dupla</p>
-          <h1 className="page-title">A fila operacional</h1>
+          <h1 className="page-title" id="library-ritual-title">
+            A fila operacional
+          </h1>
           <p className="lede">
             A biblioteca agora mostra o que a dupla pode decidir, pausar ou retomar sem
             transformar a fila em um quadro infinito.
           </p>
         </div>
-        <a className="queue2-button" data-tone="quiet" href="/app/catalogo">
-          Buscar jogos
+        <a className="queue2-button" data-tone="primary" href="/app/descobrir">
+          Descobrir
         </a>
+        <nav className="library-status-strip" aria-label="Resumo por status da biblioteca">
+          <a href={buildLibraryPath(routeParams, { view: "wishlist" })}>
+            Wishlist <strong>{view.counts.wishlist}</strong>
+          </a>
+          <a href={buildLibraryPath(routeParams, { view: "jogando" })}>
+            Jogando <strong>{view.counts.jogando}</strong>
+          </a>
+          <a href={buildLibraryPath(routeParams, { view: "pausado" })}>
+            Pausado <strong>{view.counts.pausado}</strong>
+          </a>
+          <span aria-disabled="true">
+            Zerado <strong>{view.archiveCount}</strong>
+          </span>
+        </nav>
+        {activeTotal === 0 ? (
+          <div className="library-empty-hero dry-panel">
+            <strong>NADA AQUI AINDA /</strong>
+            <span>Chamem a primeira carta em Descobrir e tragam so o que os dois topariam jogar.</span>
+            <a className="queue2-button" data-tone="primary" href="/app/descobrir">
+              Descobrir
+            </a>
+          </div>
+        ) : null}
       </header>
 
       {statusMessage ? (
@@ -121,6 +147,13 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
       ) : null}
 
       <main className="library-operational-shell">
+        <LibraryFilterBar
+          buildHref={(overrides) => buildLibraryPath(routeParams, overrides)}
+          commonPlatformLabels={view.commonPlatformLabels}
+          counts={view.counts}
+          params={routeParams}
+        />
+
         <section className="surface-band app-section library-priority-strip" aria-labelledby="next-queue-title">
           <div className="section-heading">
             <h2 className="eyebrow" id="next-queue-title">
@@ -208,13 +241,6 @@ async function renderLibraryPage({ searchParams }: LibraryPageProps = {}) {
             </div>
           </div>
         </section>
-
-        <LibraryFilterBar
-          buildHref={(overrides) => buildLibraryPath(routeParams, overrides)}
-          commonPlatformLabels={view.commonPlatformLabels}
-          counts={view.counts}
-          params={routeParams}
-        />
 
         <section className="app-section library-results" aria-labelledby="library-results-title">
           <div className="section-heading">
