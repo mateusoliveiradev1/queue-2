@@ -13,19 +13,40 @@ export function SignupFields() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const failedRules = useMemo(
+  const passwordValidation = useMemo(
     () =>
-      new Set(
-        validateQueuePassword(password, {
-          displayName,
-          email
-        }).failedRules
-      ),
+      validateQueuePassword(password, {
+        displayName,
+        email
+      }),
     [displayName, email, password]
   );
+  const failedRules = useMemo(() => new Set(passwordValidation.failedRules), [passwordValidation]);
   const hasPassword = password.length > 0;
+  const completedRuleCount = hasPassword ? queuePasswordRules.length - failedRules.size : 0;
+  const firstFailedRuleIndex = queuePasswordRules.findIndex((rule) => failedRules.has(rule.id));
+  const passwordReady = hasPassword && passwordValidation.ok;
+  const showMatchRule = passwordReady || confirmPassword.length > 0;
   const passwordMatchState =
     confirmPassword.length === 0 ? "pending" : confirmPassword === password ? "met" : "unmet";
+  const visiblePasswordRules = queuePasswordRules.filter((rule, index) => {
+    if (!hasPassword) {
+      return index === 0;
+    }
+
+    if (firstFailedRuleIndex === -1) {
+      return true;
+    }
+
+    return index <= firstFailedRuleIndex;
+  });
+  const coach = getPasswordCoach({
+    completedRuleCount,
+    hasPassword,
+    passwordReady,
+    passwordMatchState,
+    showMatchRule
+  });
 
   return (
     <>
@@ -82,41 +103,116 @@ export function SignupFields() {
           />
         </div>
       </div>
-      <ul
-        aria-label="Checklist da senha"
-        aria-live="polite"
-        className="password-checklist"
-        id="password-rules"
-      >
-        <li data-rule-state={passwordMatchState}>
-          <RoulettePointer
-            aria-hidden="true"
-            label=""
-            tone={passwordMatchState === "met" ? "primary" : "accent"}
-          />
-          <span>
-            {passwordMatchState === "met" ? "As senhas conferem" : "As senhas precisam conferir"}
-          </span>
-        </li>
-        {queuePasswordRules.map((rule) => {
-          const state = hasPassword
-            ? failedRules.has(rule.id)
-              ? "unmet"
-              : "met"
-            : "pending";
+      <section className="password-coach" aria-labelledby="password-coach-title">
+        <div className="password-coach-heading">
+          <p className="eyebrow">Senha segura</p>
+          <strong id="password-coach-title">{coach.title}</strong>
+          <p className="support-copy">{coach.copy}</p>
+        </div>
+        <div
+          aria-label={`${completedRuleCount} de ${queuePasswordRules.length} regras de senha completas`}
+          className="password-meter"
+          role="img"
+        >
+          {queuePasswordRules.map((rule, index) => (
+            <span
+              aria-hidden="true"
+              data-active={index < completedRuleCount ? "true" : "false"}
+              key={rule.id}
+            />
+          ))}
+        </div>
+        <ul
+          aria-label="Checklist da senha"
+          aria-live="polite"
+          className="password-checklist"
+          id="password-rules"
+        >
+          {visiblePasswordRules.map((rule) => {
+            const state = getRuleState(hasPassword, failedRules.has(rule.id));
 
-          return (
-            <li data-rule-state={state} key={rule.id}>
+            return (
+              <li data-rule-state={state} key={rule.id}>
+                <RoulettePointer
+                  aria-hidden="true"
+                  label=""
+                  tone={state === "met" ? "primary" : "accent"}
+                />
+                <span>{state === "met" ? `${rule.label} OK` : rule.label}</span>
+              </li>
+            );
+          })}
+          {showMatchRule ? (
+            <li data-rule-state={passwordMatchState}>
               <RoulettePointer
                 aria-hidden="true"
                 label=""
-                tone={state === "met" ? "primary" : "accent"}
+                tone={passwordMatchState === "met" ? "primary" : "accent"}
               />
-              <span>{rule.label}</span>
+              <span>
+                {passwordMatchState === "met"
+                  ? "As senhas conferem"
+                  : "Confirme a mesma senha"}
+              </span>
             </li>
-          );
-        })}
-      </ul>
+          ) : null}
+        </ul>
+      </section>
     </>
   );
+}
+
+function getRuleState(hasPassword: boolean, failed: boolean): "met" | "pending" | "unmet" {
+  if (!hasPassword) {
+    return "pending";
+  }
+
+  return failed ? "unmet" : "met";
+}
+
+function getPasswordCoach({
+  completedRuleCount,
+  hasPassword,
+  passwordReady,
+  passwordMatchState,
+  showMatchRule
+}: {
+  completedRuleCount: number;
+  hasPassword: boolean;
+  passwordReady: boolean;
+  passwordMatchState: "met" | "pending" | "unmet";
+  showMatchRule: boolean;
+}): { copy: string; title: string } {
+  if (!hasPassword) {
+    return {
+      copy: "A ajuda aparece conforme voce digita.",
+      title: "Comece pela senha"
+    };
+  }
+
+  if (!passwordReady) {
+    return {
+      copy: `${completedRuleCount} de ${queuePasswordRules.length} criterios completos.`,
+      title: "Ajuste o proximo criterio"
+    };
+  }
+
+  if (!showMatchRule || passwordMatchState === "pending") {
+    return {
+      copy: "A senha base esta pronta. Falta repetir no campo de confirmacao.",
+      title: "Senha pronta"
+    };
+  }
+
+  if (passwordMatchState === "unmet") {
+    return {
+      copy: "A senha e a confirmacao precisam ficar identicas.",
+      title: "Quase la"
+    };
+  }
+
+  return {
+    copy: "Tudo certo para criar a conta. A checagem final continua no servidor.",
+    title: "Tudo certo"
+  };
 }

@@ -227,20 +227,29 @@ describe("auth pages wired to flow states", () => {
     const password = screen.getByLabelText(/^senha$/i);
     const confirmPassword = screen.getByLabelText(/confirmar senha/i);
     const lengthRule = screen.getByText(/pelo menos 8 caracteres/i).closest("li");
-    const symbolRule = screen.getByText(/simbolo ou caractere especial/i).closest("li");
-    const matchRule = screen.getByText(/senhas precisam conferir/i).closest("li");
 
     expect(lengthRule).toHaveAttribute("data-rule-state", "pending");
-    expect(matchRule).toHaveAttribute("data-rule-state", "pending");
+    expect(screen.getByText(/comece pela senha/i)).toBeInTheDocument();
+    expect(screen.queryByText(/uma letra e um numero/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/confirme a mesma senha/i)).not.toBeInTheDocument();
+
     fireEvent.change(password, { target: { value: "Fila2026" } });
     expect(lengthRule).toHaveAttribute("data-rule-state", "met");
+    const symbolRule = screen.getByText(/simbolo ou caractere especial/i).closest("li");
     expect(symbolRule).toHaveAttribute("data-rule-state", "unmet");
+    expect(screen.queryByText(/sem nome, email ou senha comum/i)).not.toBeInTheDocument();
+
     fireEvent.change(confirmPassword, { target: { value: "Fila2025" } });
-    expect(matchRule).toHaveAttribute("data-rule-state", "unmet");
+    const mismatchRule = screen.getByText(/confirme a mesma senha/i).closest("li");
+    expect(mismatchRule).toHaveAttribute("data-rule-state", "unmet");
 
     fireEvent.change(password, { target: { value: "Fila!2026" } });
     expect(symbolRule).toHaveAttribute("data-rule-state", "met");
+    expect(screen.getByText(/sem nome, email ou senha comum/i)).toBeInTheDocument();
+    expect(screen.getByText(/quase la/i)).toBeInTheDocument();
+
     fireEvent.change(confirmPassword, { target: { value: "Fila!2026" } });
+    expect(screen.getAllByText(/tudo certo/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/senhas conferem/i).closest("li")).toHaveAttribute(
       "data-rule-state",
       "met"

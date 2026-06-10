@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: ready_for_next_phase
-stopped_at: Phase 07 closed; phase gate, verify and local production build passed; production profile migration confirmed
-last_updated: "2026-06-10T10:49:30.000Z"
+stopped_at: Quick 260610-hk1 complete; landing and signup polish verified locally
+last_updated: "2026-06-10T12:49:34-03:00"
 last_activity: 2026-06-10
 progress:
   total_phases: 13
@@ -144,6 +144,7 @@ Earlier quick-task history is retained in git history and prior STATE versions; 
 | 260607-gamification-streak-achievements | Fix gamification transaction warning and polish achievements/streak | 2026-06-07 | pending | [260607-gamification-streak-achievements](./quick/260607-gamification-streak-achievements/) |
 | 260610-9gm | Melhorar a tela de perfil para ficar completa, funcional, validada e persistir alterações no banco dentro do escopo atual | 2026-06-10 | 201bf98 | [260610-9gm-melhorar-a-tela-de-perfil-para-ficar-com](./quick/260610-9gm-melhorar-a-tela-de-perfil-para-ficar-com/) |
 | 260610-9qp | Completar perfil com bio, redes sociais e avatar visivel na pagina da dupla | 2026-06-10 | d109fef | [260610-9qp-completar-perfil-com-bio-redes-sociais-e](./quick/260610-9qp-completar-perfil-com-bio-redes-sociais-e/) |
+| 260610-hk1 | Melhorar landing publica e cadastro com checklist progressivo de senha | 2026-06-10 | c8c2615 | [260610-hk1-melhorar-landing-page-publica-e-tela-de-](./quick/260610-hk1-melhorar-landing-page-publica-e-tela-de-/) |
 
 ## Accumulated Context
 

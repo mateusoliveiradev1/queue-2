@@ -292,7 +292,9 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(authSessionMock.redirectAuthenticatedUserToApp).toHaveBeenCalledOnce();
     expect(screen.getByRole("heading", { name: /queue\s*\/2/i })).toBeInTheDocument();
     expect(screen.getByText(/a fila e nossa/i)).toBeInTheDocument();
-    expect(screen.getByText(/descubram, sorteiem e zerem coops juntos/i)).toBeInTheDocument();
+    expect(screen.getByText(/guardem o backlog da dupla/i)).toBeInTheDocument();
+    expect(screen.getByText(/uma fila fechada para exatamente duas pessoas/i)).toBeInTheDocument();
+    expect(screen.getByText(/jogando agora/i)).toBeInTheDocument();
     expect(
       screen.getAllByRole("link", { name: /^entrar$/i }).some((link) => link.getAttribute("href") === "/login")
     ).toBe(true);
@@ -340,7 +342,10 @@ describe("public QUEUE/2 route surfaces", () => {
     expect(screen.getByLabelText(/confirmar senha/i)).toBeInTheDocument();
     expect(screen.getByRole("list", { name: /checklist da senha/i })).toBeInTheDocument();
     expect(screen.getByText(/pelo menos 8 caracteres/i)).toBeInTheDocument();
-    expect(screen.getByText(/senhas precisam conferir/i)).toBeInTheDocument();
+    expect(screen.getByText(/comece pela senha/i)).toBeInTheDocument();
+    expect(screen.queryByText(/uma letra e um numero/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/confirme a mesma senha/i)).not.toBeInTheDocument();
+    expect(screen.getByText(/validacao final no servidor/i)).toBeInTheDocument();
   });
 
   it("renders the /2 route loader and favicon placeholder", () => {

@@ -44,8 +44,24 @@ export default async function SignupPage({ searchParams }: SignupPageProps = {})
           <h1 className="page-title" id="signup-title">
             Abrir seu lado da fila
           </h1>
-          <p>Use um email real. A verificacao protege o convite da dupla.</p>
+          <p>
+            Crie sua conta, confirme o email e chame a segunda pessoa para fechar a fila.
+          </p>
         </div>
+        <ul className="signup-assurance-strip" aria-label="Garantias do cadastro">
+          <li>
+            <strong>Email</strong>
+            <span>Verificacao antes da dupla.</span>
+          </li>
+          <li>
+            <strong>2/2</strong>
+            <span>Convite fecha com duas pessoas.</span>
+          </li>
+          <li>
+            <strong>Senha</strong>
+            <span>Validacao final no servidor.</span>
+          </li>
+        </ul>
         {statusMessage ? (
           <p className="neutral-state" role="status">
             {statusMessage}
