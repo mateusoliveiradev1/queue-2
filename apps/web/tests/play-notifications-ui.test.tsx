@@ -33,13 +33,14 @@ describe("Phase 04.5 notification UI", () => {
       />
     );
 
+    expect(screen.getByLabelText(/notificacoes da dupla, 2 nao lidas/i)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /central da dupla/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/2 notificacoes nao lidas/i)).toBeInTheDocument();
     expect(screen.getByText(/sessao agendada/i)).toBeInTheDocument();
     expect(screen.queryByText(/chat/i)).not.toBeInTheDocument();
   });
 
-  it("summarizes notifications outside the sidebar list", () => {
+  it("summarizes notifications inside the compact notification panel", () => {
     render(
       <NotificationCenter
         center={{
@@ -61,6 +62,7 @@ describe("Phase 04.5 notification UI", () => {
     );
 
     expect(screen.getAllByText(/confirmar sessao ao vivo/i)).toHaveLength(5);
+    expect(document.querySelector(".notification-panel")).toBeInTheDocument();
     expect(screen.getByText("+2 pendencias fora do resumo")).toBeInTheDocument();
   });
 

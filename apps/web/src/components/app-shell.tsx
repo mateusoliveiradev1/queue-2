@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { QueueMark, QueueWordmark, RoulettePointer } from "@queue/ui";
+import { QueueMark, QueueWordmark } from "@queue/ui";
 
 import { logoutCurrentSessionAction } from "../platform/auth/session";
 
@@ -57,6 +57,9 @@ export function AppShell({
             ))}
           </nav>
           <div className="app-shell-actions" aria-label="Acoes da conta">
+            {notificationCenter ? (
+              <div className="app-notification-slot">{notificationCenter}</div>
+            ) : null}
             <nav className="app-context-links" aria-label="Acessos contextuais">
               {contextualNavigation.map((item) => (
                 <a
@@ -83,13 +86,6 @@ export function AppShell({
               </button>
             </form>
           </div>
-        </div>
-        <div className="app-topbar-status">
-          {notificationCenter}
-          <p>
-            <RoulettePointer aria-hidden="true" label="" />
-            <span>A fila pertence aos dois.</span>
-          </p>
         </div>
       </header>
       <main className="app-main">{children}</main>
