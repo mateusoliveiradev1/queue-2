@@ -6,7 +6,6 @@ import { CopyPairingCode } from "../../../components/copy-pairing-code";
 import { PairingAutoRefresh } from "../../../components/pairing-auto-refresh";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { PublicBrandLink } from "../../../components/public-brand-link";
-import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { StatusToast } from "../../../components/status-toast";
 import { TimezoneInput } from "../../../components/timezone-input";
 import {
@@ -61,70 +60,70 @@ export default async function PairingPage({ searchParams }: PairingPageProps = {
   const timezone = dashboard.duo?.timezone ?? "America/Sao_Paulo";
 
   return (
-    <main className="public-shell">
-      <section className="public-grid" aria-labelledby="pair-title">
-        <div className="public-intro queue2-grain">
-          <PublicBrandLink variant="stacked" />
-          <div>
-            <p className="eyebrow">/2 e regra do jogo</p>
-            <h1 className="page-title" id="pair-title">
-              Fechar a dupla
-            </h1>
-            <p className="lede">
-              Crie um codigo para a outra pessoa ou use o convite que ela mandou.
-              QUEUE/2 so comeca quando a fila fecha em 2/2.
-            </p>
-          </div>
-          <PublicRitualStrip steps={["convite", "2/2", "fila"]} />
-          <div className="neutral-state">
-            <RoulettePointer aria-hidden="true" label="" tone="accent" />
-            <span>Sem terceiro lugar: exatamente dois jogadores.</span>
-          </div>
+    <main className="public-shell public-shell--compact">
+      <section className="auth-panel public-auth-card public-auth-card--wide" aria-labelledby="pair-title">
+        <PublicBrandLink display="mark" />
+        <nav className="auth-tabs auth-tabs--three" aria-label="Entrada publica">
+          <a className="queue2-focusable" href="/login">
+            Entrar
+          </a>
+          <a className="queue2-focusable" href="/cadastro">
+            Criar conta
+          </a>
+          <a aria-current="page" className="queue2-focusable" href="/parear">
+            Parear
+          </a>
+        </nav>
+        <StatusToast message={statusMessage} state={getSearchParam(params?.estado)} />
+        <div className="auth-panel-header">
+          <p className="eyebrow">/2 e regra do jogo</p>
+          <h1 className="page-title" id="pair-title">
+            Fechar a dupla
+          </h1>
+          <p>
+            Crie um codigo para a outra pessoa ou use o convite que ela mandou.
+            A fila so comeca quando fecha em 2/2.
+          </p>
+        </div>
+        <div className="neutral-state">
+          <RoulettePointer aria-hidden="true" label="" tone="accent" />
+          <span>Sem terceiro lugar: exatamente dois jogadores.</span>
+        </div>
+        <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
+          <a
+            aria-selected={mode === "criar"}
+            className="queue2-button"
+            data-tone={mode === "criar" ? "primary" : "quiet"}
+            href="/parear?modo=criar"
+            role="tab"
+          >
+            Criar dupla
+          </a>
+          <a
+            aria-selected={mode === "entrar"}
+            className="queue2-button"
+            data-tone={mode === "entrar" ? "primary" : "quiet"}
+            href="/parear?modo=entrar"
+            role="tab"
+          >
+            Entrar com codigo
+          </a>
         </div>
 
-        <section className="auth-panel" aria-label="Pareamento por codigo">
-          <PublicBrandLink display="mark" />
-          <StatusToast message={statusMessage} state={getSearchParam(params?.estado)} />
-          <div className="auth-panel-header">
-            <h2>{mode === "criar" ? "Criar convite" : "Usar convite"}</h2>
-            <p>Um codigo ativo forma a dupla; convites expirados nao revelam dados.</p>
-          </div>
-          <div className="pairing-tabs" role="tablist" aria-label="Modo de pareamento">
-            <a
-              aria-selected={mode === "criar"}
-              className="queue2-button"
-              data-tone={mode === "criar" ? "primary" : "quiet"}
-              href="/parear?modo=criar"
-              role="tab"
-            >
-              Criar dupla
-            </a>
-            <a
-              aria-selected={mode === "entrar"}
-              className="queue2-button"
-              data-tone={mode === "entrar" ? "primary" : "quiet"}
-              href="/parear?modo=entrar"
-              role="tab"
-            >
-              Entrar com codigo
-            </a>
-          </div>
+        {statusMessage ? (
+          <p className="status-banner" role="status">
+            {statusMessage}
+          </p>
+        ) : null}
 
-          {statusMessage ? (
-            <p className="status-banner" role="status">
-              {statusMessage}
-            </p>
-          ) : null}
-
-          {mode === "criar" ? (
-            <CreateCodePanel
-              activeCode={activeCode}
-              timezone={timezone}
-            />
-          ) : (
-            <JoinCodePanel disabled={isAwaitingPartner} />
-          )}
-        </section>
+        {mode === "criar" ? (
+          <CreateCodePanel
+            activeCode={activeCode}
+            timezone={timezone}
+          />
+        ) : (
+          <JoinCodePanel disabled={isAwaitingPartner} />
+        )}
       </section>
     </main>
   );

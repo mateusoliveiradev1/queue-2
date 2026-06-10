@@ -235,6 +235,11 @@ input {
   width: min(100%, 520px);
 }
 
+.public-auth-card--wide {
+  max-width: 640px;
+  width: min(100%, 640px);
+}
+
 .public-brand-link {
   color: inherit;
   display: inline-flex;
@@ -288,6 +293,10 @@ input {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   overflow: hidden;
+}
+
+.auth-tabs--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .auth-tabs a {
@@ -653,6 +662,7 @@ input {
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1;
+  overflow-wrap: anywhere;
   padding: var(--space-5);
   text-align: center;
 }

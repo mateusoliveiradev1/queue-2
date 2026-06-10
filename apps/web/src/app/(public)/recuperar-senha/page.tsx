@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { PublicBrandLink } from "../../../components/public-brand-link";
-import { PublicRitualStrip } from "../../../components/public-ritual-strip";
 import { PendingSubmitButton } from "../../../components/pending-submit-button";
 import { StatusToast } from "../../../components/status-toast";
 import { getAuthStatusMessage } from "../../../platform/auth/actions";
@@ -27,81 +26,70 @@ export default async function RecoverPasswordPage({ searchParams }: RecoverPassw
   const statusMessage = getAuthStatusMessage("recover", state);
 
   return (
-    <main className="public-shell">
-      <section className="public-grid" aria-labelledby="recover-title">
-        <div className="public-intro queue2-grain">
-          <PublicBrandLink />
-          <div>
-            <p className="eyebrow">Voltar para a dupla</p>
-            <h1 className="page-title" id="recover-title">
-              Recuperar senha
-            </h1>
-            <p className="lede">
-              Peca um link para voltar a fila. Se o email existir, a resposta
-              continua neutra e a conta nao fica exposta.
-            </p>
-          </div>
-          <PublicRitualStrip steps={["senha", "entrar", "dupla"]} />
+    <main className="public-shell public-shell--compact">
+      <form
+        action={token ? completePasswordResetAction : requestPasswordResetAction}
+        className="auth-panel public-auth-card"
+      >
+        <PublicBrandLink display="mark" />
+        <StatusToast message={statusMessage} state={state} />
+        <div className="auth-panel-header">
+          <p className="eyebrow">Voltar para a dupla</p>
+          <h1 className="page-title" id="recover-title">
+            {token ? "Nova senha" : "Recuperar senha"}
+          </h1>
+          <p>
+            {token
+              ? "Escolha uma senha forte para retomar a fila."
+              : "Informe o email da conta. A resposta fica neutra e a conta nao fica exposta."}
+          </p>
         </div>
-
-        <form action={token ? completePasswordResetAction : requestPasswordResetAction} className="auth-panel">
-          <PublicBrandLink display="mark" />
-          <StatusToast message={statusMessage} state={state} />
-          <div className="auth-panel-header">
-            <h2>{token ? "Nova senha" : "Enviar link"}</h2>
-            <p>
-              {token
-                ? "Escolha uma senha forte para retomar a fila."
-                : "Informe o email da conta. A resposta fica neutra por seguranca."}
-            </p>
-          </div>
-          {statusMessage ? (
-            <p className="neutral-state" role="status">
-              {statusMessage}
-            </p>
-          ) : null}
-          {token ? (
-            <div className="form-stack">
-              <input name="token" type="hidden" value={token} />
-              <div className="field">
-                <label htmlFor="reset-password">Nova senha</label>
-                <input
-                  autoComplete="new-password"
-                  className="queue2-input"
-                  id="reset-password"
-                  name="password"
-                  required
-                  type="password"
-                />
-              </div>
-            </div>
-          ) : (
+        {statusMessage ? (
+          <p className="neutral-state" role="status">
+            {statusMessage}
+          </p>
+        ) : null}
+        {token ? (
+          <div className="form-stack">
+            <input name="token" type="hidden" value={token} />
             <div className="field">
-              <label htmlFor="reset-email">Email da conta</label>
+              <label htmlFor="reset-password">Nova senha</label>
               <input
-                autoComplete="email"
+                autoComplete="new-password"
                 className="queue2-input"
-                id="reset-email"
-                name="email"
+                id="reset-password"
+                name="password"
                 required
-                type="email"
+                type="password"
               />
             </div>
-          )}
-          <div className="form-actions">
-            <PendingSubmitButton
-              label={token ? "Alterar senha" : "Enviar link seguro"}
-              pendingLabel={token ? "Alterando..." : "Enviando..."}
-            />
-            <a className="text-link queue2-focusable" href="/login">
-              Voltar ao login
-            </a>
           </div>
-          <p className="support-copy">
-            O link expira. Se nao chegar, solicite outro depois de alguns minutos.
-          </p>
-        </form>
-      </section>
+        ) : (
+          <div className="field">
+            <label htmlFor="reset-email">Email da conta</label>
+            <input
+              autoComplete="email"
+              className="queue2-input"
+              id="reset-email"
+              name="email"
+              required
+              type="email"
+            />
+          </div>
+        )}
+        <div className="form-actions">
+          <PendingSubmitButton
+            label={token ? "Alterar senha" : "Enviar link seguro"}
+            pendingLabel={token ? "Alterando..." : "Enviando..."}
+          />
+          <a className="text-link queue2-focusable" href="/login">
+            Voltar ao login
+          </a>
+        </div>
+        <p className="support-copy">
+          O link expira. Se nao chegar, solicite outro depois de alguns minutos.
+        </p>
+      </form>
     </main>
   );
 }
